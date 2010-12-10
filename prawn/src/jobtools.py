@@ -6,7 +6,7 @@ kSubmitted = 1
 kRunning   = 2
 kCompleted = 3
 kFailed    = 4
-kUnknown   = 6
+kUnknown   = 5
  
 JobLabel = ['Created','Submitted','Running','Completed','Failed','Unknown']
  
@@ -28,7 +28,7 @@ def argsToNumbers( args ):
                 j = int(nums[1])
                 if i > j:
                     raise ValueError('Invalid interval '+item)
-                numbers.extend(range(i,j))
+                numbers.extend(range(i,j+1))
             else:
                 raise ValueError('Argument '+item+'is not valid')
 
@@ -217,10 +217,8 @@ class Manager:
         r = c.fetchone();
         jid = r[0]
         # if this is the first job, start from 1
-        jid = 1 and jid==None or jid+1
+        jid = jid==None and 1 or jid+1
         return Job(sessionName,jid)
-
-
 
     def insertNewJob(self,job):
         c = self.connection.cursor()
@@ -299,7 +297,7 @@ class Manager:
             print '|   .Mode =',row['mode']
             print '|   .Queue =',row['queue']
             print '|   .NJobs =',row['nJobs']
-            print '|   .EventsPerJob =',row['eventsPerJob'] and row['eventsPerJob'] or 'all' 
+            print '|   .EventsPerJob =', row['eventsPerJob']==0 and 'all' or row['eventsPerJob']
             print '|   .WorkingDir =',row['workingDir']
             print '|   .OutputDir =',row['outputDir']
             print hline
@@ -310,10 +308,9 @@ class Manager:
             print '|   .Files ='
             for line in row['fileList'].split('\n'):
                 print '|     ',line
-        
+
             print hline
 
-    #-----------------------------------------------------------------------
     def showJobsInSession(self, sessionName):
         hline = '-'*80
         c = self.connection.cursor()

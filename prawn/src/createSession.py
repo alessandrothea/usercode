@@ -7,18 +7,24 @@ import os,sys
 
 #-----------------------------------------------------------------------
 def getEntries( treeName, rootFiles ):
-    import ROOT
+    import ROOT 
+    ROOT.gROOT.SetBatch()
     chain = ROOT.TChain(treeName)
+    print '|  Counting the number entries'
     for root in rootFiles:
         if not root:
             continue
 
-        print '"'+root+'"'
+#        print '|  Adding \''+root+'\''
         chain.Add(root)
-        
-    chain.GetEntry(0)
+    
+#    print '|  Building the TChain...',
+#    sys.stdout.flush()
+#    chain.GetEntry(0)
+#    print 'done'
     # return the number of events and the list of files
-    return chain.GetEntries();
+    print '|  ',chain.GetEntries(),'entries found'
+    return chain.GetEntries()
 
 #-----------------------------------------------------------------------
 def main():
@@ -26,7 +32,7 @@ def main():
     parser = optparse.OptionParser(usage)
 
     parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
-    parser.add_option('-n', '--sessionName', dest='sessionName', help='Name of the session', default='mySession')
+    parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-i', '--inputFile', dest='inputFile', help='List of root files to process')
     parser.add_option('-m', '--mode', dest='sessionMode', help='Session mode [file,events]', default='file')
     parser.add_option('-q', '--queue', dest='queue', help='Name of the queue', default='all.q')
@@ -35,10 +41,14 @@ def main():
     parser.add_option('-t', '--treeName', dest='treeName', help='ROOT Tree name')
     parser.add_option('-j', '--nJobs', type='int', dest='nJobs', help='Number of jobs')
     (opt, args) = parser.parse_args()
+    
 
 #     print args
     if len(args) != 1:
         parser.error('Wrong number of arguments')
+    
+    if opt.sessionName is None:
+        parser.error('Please specify a session')
 
     if opt.sessionMode == 'events':
         if not opt.treeName:
@@ -52,18 +62,24 @@ def main():
         opt.outputDir = opt.outputDir+'/'
     if not opt.workingDir.endswith('/'):
         opt.workingDir = opt.workingDir+'/'
+        
+    opt.outputDir += opt.sessionName+'/'
 
     dbPath     = os.path.abspath(os.path.expanduser(opt.database))
     outputDir  = os.path.abspath(os.path.expanduser(opt.outputDir))
     workingDir = os.path.abspath(os.path.expanduser(opt.workingDir))
     inputFile  = os.path.abspath(os.path.expanduser(opt.inputFile))
 
+    hline = '-'*80
+    print hline
+    print '| Creating session ['+opt.sessionName+']'
+    print hline
 
     # expand the inputlist
     rootFiles = open(inputFile).readlines()
     rootFiles = [item.rstrip('\n') for item in rootFiles]
     inputFiles = string.join(rootFiles,'\n') 
-    print 'rootFiles =',rootFiles
+#    print 'rootFiles =',rootFiles
 
     # prepare the parameters according to the mode
     fileList = None
@@ -93,8 +109,6 @@ def main():
         nJobs, nTotEvents, eventsPerJob, opt.queue, workingDir, outputDir)
     s.template = theTemplate
 
-    hline = '-'*80
-
     # open the db
     m = jobtools.Manager(dbPath)
 
@@ -102,9 +116,6 @@ def main():
     tmpl = string.Template(theTemplate)
     print ' Connect to '+m.dbPath
     m.connect()
-    print hline
-    print '| Creating Session',s.name
-    print hline
     print '|  nJobs:',s.nJobs
     print '|  mode:',s.mode
     print '|  nTotEvents:',s.nTotEvents
@@ -118,12 +129,14 @@ def main():
         print '\nError: ',e,'\n'
         return
 
-    print ' Creating',nJobs,'job(s)'
+    print '|  Creating',nJobs,'job(s)'
     for i in range(nJobs):
         job = m.makeNextJob(s.name)
         job.inputFile  = fileList[i]
         job.outputFile = s.outputDir+'/root/'+job.name()+'.root'
         job.firstEvent = firstEvent[i]
+        # set nEvents to 0 (= all) for the last event
+        job.nEvents    = i is not nJobs-1 and eventsPerJob or s.nTotEvents-job.firstEvent
         job.scriptPath = s.outputDir+'/scripts/'+job.name()+'.sh'
         job.stdOutPath = s.outputDir+'/log/'+job.name()+'.out'
         job.stdErrPath = s.outputDir+'/log/'+job.name()+'.err'
@@ -137,7 +150,8 @@ def main():
         job.script = tmpl.safe_substitute(jDict)
         job.script += '\n'+'echo $? > '+job.exitPath
         m.insertNewJob(job)
-        print ' Job \''+job.name()+'\' added to session',s.name,'with',job.nEvents,'events'
+        print '|  Job \''+job.name()+'\' added to session',s.name,'with',job.nEvents,'events (firstEvent =',job.firstEvent,')'
+    
     
     print hline
 

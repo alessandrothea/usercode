@@ -9,7 +9,7 @@ def main():
     parser = optparse.OptionParser(usage)
 
     parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
-    parser.add_option('-n', '--sessionName', dest='sessionName', help='Name of the session')
+    parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-a', '--all', dest='all', help='Selects all jobs', action='store_true')
     parser.add_option('-v', '--verbose', dest='verbose', help='Verbose output', action='store_true')
     (opt, args) = parser.parse_args()
@@ -38,6 +38,7 @@ def main():
     print hline
     for job in jobs:
         print '| ',job.jid,job.name(),'('+jobtools.JobLabel[job.status]+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
+#        print '| ',job.jid,job.name(),'('+str(job.status)+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
         if opt.verbose: 
             print '|  inputFile  = ',job.inputFile
             print '|  outputFile = ',job.outputFile

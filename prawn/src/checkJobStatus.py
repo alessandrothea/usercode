@@ -8,6 +8,7 @@ import checkpython
 import optparse
 import jobtools
 import os, subprocess
+import xml.etree.ElementTree
 
 def runQstat():
     qstat = subprocess.Popen(['qstat'],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -28,7 +29,32 @@ def runQstat():
     
     return q
     
+def runQstatXML():
+    qstat = subprocess.Popen(['qstat','-xml'],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout,stderr) = qstat.communicate()
     
+    if len(stdout)==0:
+        return None
+    
+    element = xml.etree.ElementTree.XML(stdout)
+    qJobs = []
+    qNames =[]
+    
+    for e in element.findall('.//job_list'):
+        qJob = {}
+        name = e.find('JB_name').text
+        qNames.append(name)
+        qJob['name'] = name
+        qJob['owner'] = e.find('JB_owner').text
+        qJob['priority'] = e.find('JAT_prio').text
+        qJob['state'] = e.find('state').text
+        qJob['submissionTime'] = e.find('JB_submission_time').text if e.find('JB_submission_time') is not None else None 
+        qJob['startTime'] = e.find('JAT_start_time').text if e.find('JAT_start_time') is not None else None
+        qJob['queueName'] = e.find('queue_name').text if e.find('queue_name') is not None else None
+        qJobs.append(qJob)
+    
+    return (qNames,qJobs)
+        
 def main():
 
 
@@ -36,7 +62,7 @@ def main():
     parser = optparse.OptionParser(usage)
 
     parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
-    parser.add_option('-n', '--sessionName', dest='sessionName', help='Name of the session', default='mySession')
+    parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
 
     (opt, args) = parser.parse_args()
     
@@ -52,22 +78,17 @@ def main():
     print hline
     print '|  mode:',s.mode,' nJobs:',s.nJobs,' epJ:',str(s.eventsPerJob),' queue:',s.queue
     print hline
-    qstatOut = runQstat()
+    (qNames, qJobs) = runQstatXML()
     
 
     for job in jobs:
-        print ' Checking '+job.name() 
+#        print ' Checking '+job.name() 
         if job.status == jobtools.kSubmitted or job.status == jobtools.kRunning:
             # check if the job is still in the queue
-            found = False
-            if qstatOut:
-                for line in qstatOut:
-                    found = line[2] == job.name()
-                    if found:
-                        break
-            if found:
+#            print job.exitPath,  os.path.exists(job.exitPath)
+            if job.name() in qNames:
                 # check fi the job is still there
-                print ' Job '+job.name()+' is currently Queued/Running'
+#                print ' Job '+job.name()+' is currently Queued/Running'
                 job.status = jobtools.kRunning
                 m.setJobStatus(s.name, job.jid, job.status)
             elif os.path.exists(job.exitPath): 
@@ -82,8 +103,9 @@ def main():
                 print ' Job '+job.name()+' does not exist in the queue and no exit code file was found. Unknown'
                 m.setJobStatus(s.name, job.jid, jobtools.kUnknown)
                 m.setJobExitCode(s.name, job.jid, None)
-        elif job.status == jobtools.kCompleted or job.status == jobtools.kFailed:
-            print '|   ',job.name(), 'is', jobtools.JobLabel(job.status)
+        
+#        elif job.status == jobtools.kCompleted or job.status == jobtools.kFailed:
+        print '|   ',job.name(), 'is', jobtools.JobLabel[job.status]
     print hline
     m.disconnect()
 

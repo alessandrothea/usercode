@@ -9,7 +9,7 @@ def main():
     parser = optparse.OptionParser(usage)
     
     parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
-    parser.add_option('-n', '--sessionName', dest='sessionName', help='Name of the session', default='mySession')
+    parser.add_option('-s', '--session', dest='sessionName', help='Name of the session', default='mySession')
     parser.add_option('-a', '--all', dest='all', help='Selects all jobs', action='store_true')
     (opt, args) = parser.parse_args()
 
