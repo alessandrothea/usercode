@@ -14,35 +14,40 @@ def jmDBPath():
     return os.path.expanduser('~/.prawn/database')
     
 
-def argsToNumbers( args ):
+def strToNumbers( numString ):
     numbers = []
-    for arg in args:
-        items = arg.split(',')
-        for item in items:
-            nums = item.split('-')
-            if len(nums) == 1:
-                # single number
-                numbers.append(int(item))
-            elif len(nums) == 2:
-                i = int(nums[0])
-                j = int(nums[1])
-                if i > j:
-                    raise ValueError('Invalid interval '+item)
-                numbers.extend(range(i,j+1))
-            else:
-                raise ValueError('Argument '+item+'is not valid')
+    if len(numString)==0:
+        return numbers;
+    
+    items = numString.split(',')
+    for item in items:
+        nums = item.split('-')
+        if len(nums) == 1:
+            # single number
+            numbers.append(int(item))
+        elif len(nums) == 2:
+            i = int(nums[0])
+            j = int(nums[1])
+            if i > j:
+                raise ValueError('Invalid interval '+item)
+            numbers.extend(range(i,j+1))
+        else:
+            raise ValueError('Argument '+item+'is not valid')
 
     return set(numbers)
 
 
 class Session:
-    def __init__(self, name=None, mode=None, fileList=None, nJobs=None, 
+    def __init__(self, name=None, label=None, groups=None, cmdLine=None, mode=None, allFiles=None, nJobs=None, 
         nTotEvents=None, eventsPerJob=None, queue=None, workingDir=None, 
         outputDir=None, softLimit=None, hardLimit=None, template=None):
         self.name       = name
+        self.label      = label
+        self.groups     = groups
+        self.cmdLine    = cmdLine
 
         self.mode         = mode
-        self.fileList     = fileList
+        self.allFiles     = allFiles
         self.nJobs        = nJobs
         self.nTotEvents   = nTotEvents
         self.eventsPerJob = eventsPerJob
@@ -53,12 +58,14 @@ class Session:
         self.softLimit    = softLimit
         self.hardLimit    = hardLimit
         self.template     = template
+        self.status = 0
 
     def update(self, row):
         for key in self.__dict__.keys():
             if key not in row.keys():
                 continue
             self.__dict__[key] = row[key]
+        return self
 
     def __str__(self):
         return str(self.__dict__)
@@ -67,22 +74,23 @@ class Session:
 class Job:
     
     def __init__(self, sessionName, jid, script=None, firstEvent=0, nEvents=0, 
-                 inputputFile=None, outputFile=None,
-                 scriptPath=None, stdOutPath=None, exitPath=None,
+                 inputFile=None, outputFile=None,
+                 fileList=None, scriptPath=None, stdOutPath=None, exitPath=None,
                  stdErrPath=None):
         self.sessionName = sessionName
         self.jid         = jid
         self.script      = script
         self.firstEvent  = firstEvent
         self.nEvents     = nEvents
-        self.inputFile   = outputFile
+        self.fileList    = fileList
+        self.inputFile   = inputFile
         self.outputFile  = outputFile
         self.scriptPath  = scriptPath
         self.stdOutPath  = stdOutPath
         self.stdErrPath  = stdErrPath
         self.exitPath    = exitPath
         self.status      = 0
-        self.exitCode  = None
+        self.exitCode    = None
 
     def __str__(self):
         return str(self.__dict__)
@@ -105,6 +113,7 @@ class Job:
         
     def mkDirs(self):
         dirs =[os.path.dirname(self.scriptPath),
+               os.path.dirname(self.inputFile),
                os.path.dirname(self.outputFile),
                os.path.dirname(self.stdOutPath),
                os.path.dirname(self.stdErrPath),
@@ -127,9 +136,12 @@ class Manager:
         conn = sqlite3.connect(self.dbPath)
         c = conn.cursor()
         c.execute('''CREATE table session(
-            name TEXT PRIMARY KEY ON CONFLICT ABORT, 
+            name TEXT PRIMARY KEY ON CONFLICT ABORT,
+            label TEXT,
+            groups TEXT,
+            cmdLine TEXT, 
             mode TEXT NOT NULL,
-            fileList TEXT, 
+            allFiles TEXT, 
             nJobs INTEGER DEFAULT 1 NOT NULL,
             nTotEvents INTEGER DEFAULT 0,
             eventsPerJob INTEGER DEFAULT 0,
@@ -145,6 +157,7 @@ class Manager:
             jid INTEGER NOT NULL,
             status INTEGER DEFAULT '''+str(kCreated)+''' NOT NULL,
             script TEXT,
+            fileList TEXT,
             firstEvent INTEGER NOT NULL,
             nEvents INTEGER,
             inputFile TEXT,
@@ -176,9 +189,10 @@ class Manager:
         if len(c.fetchall()) is not 0:
             raise ValueError('Session '+s.name+' already exists!')
         c.execute('INSERT INTO session(\
-                  name, mode, fileList, nJobs, nTotEvents, eventsPerJob, queue, workingDir, outputDir, softLimit, hardLimit, template) \
+                  name, label, groups, cmdLine, mode, allFiles, nJobs, nTotEvents, eventsPerJob, queue, workingDir, outputDir, softLimit, hardLimit, template) \
                   VALUES (\
-                  :name,:mode,:fileList,:nJobs,:nTotEvents,:eventsPerJob,:queue,:workingDir,:outputDir,:softLimit,:hardLimit,:template)', s.__dict__)
+                  :name,:label,:groups,:cmdLine,:mode,:allFiles,:nJobs,:nTotEvents,:eventsPerJob,:queue,:workingDir,:outputDir,:softLimit,:hardLimit,:template)',
+                  s.__dict__)
         self.connection.commit()
 
 
@@ -209,6 +223,10 @@ class Manager:
 
         self.connection.commit()
         
+    def setSessionStatus(self,sessionName, status):
+        c = self.connection.cursor()
+        c.execute('UPDATE session SET status = ? WHERE name = ?',(status, sessionName))
+        self.connection.commit()
         
     def makeNextJob(self,sessionName):
         c = self.connection.cursor()
@@ -223,8 +241,8 @@ class Manager:
     def insertNewJob(self,job):
         c = self.connection.cursor()
         
-        c.execute('INSERT INTO job(sessionName, jid, status, script, firstEvent, nEvents, inputFile, outputFile, scriptPath, stdOutPath, stdErrPath, exitPath)\
-                  VALUES (:sessionName, :jid, :status, :script, :firstEvent, :nEvents, :inputFile, :outputFile, :scriptPath, :stdOutPath, :stdErrPath, :exitPath)',job.__dict__)
+        c.execute('INSERT INTO job(sessionName, jid, status, script, fileList, firstEvent, nEvents, inputFile, outputFile, scriptPath, stdOutPath, stdErrPath, exitPath)\
+                  VALUES (:sessionName,:jid,:status,:script,:fileList,:firstEvent,:nEvents,:inputFile,:outputFile,:scriptPath,:stdOutPath,:stdErrPath,:exitPath)',job.__dict__)
         self.connection.commit()
     
     def getJobs(self, sessionName,ids=None):
@@ -271,6 +289,18 @@ class Manager:
             print '----------------------------------------------------'
             print row.keys()
             print row
+        
+    def getAllSessions(self, group):
+        c = self.connection.cursor()
+        if group is not None:
+            grpString = '%'+group+'%'
+        else:
+            grpString = '%'
+            
+        c.execute('SELECT * FROM session WHERE groups LIKE ? ORDER BY name',(grpString,))
+        
+        sessions=[ Session().update(row) for row in c.fetchall()]
+        return sessions
         
     def showAllSessions(self, opt=None):
         hline = '-'*80

@@ -12,10 +12,16 @@ def main():
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-a', '--all', dest='all', help='Selects all jobs', action='store_true')
     parser.add_option('-v', '--verbose', dest='verbose', help='Verbose output', action='store_true')
+    parser.add_option('-j', '--jobs', dest='jobs',help='Jobs to process',default='')
+
     (opt, args) = parser.parse_args()
 
     dbPath     = os.path.abspath(os.path.expanduser(opt.database))
 
+    try:
+        numbers = jobtools.strToNumbers(opt.jobs)
+    except ValueError as e:
+        parser.error('Error: '+str(e))
 
     m = jobtools.Manager(dbPath)
     
@@ -37,18 +43,31 @@ def main():
     print '|  id,Name,(Status,ExitCode),firstEvent,nEvents'
     print hline
     for job in jobs:
+        if len(numbers) != 0 and job.jid not in numbers:
+            continue
         print '| ',job.jid,job.name(),'('+jobtools.JobLabel[job.status]+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
 #        print '| ',job.jid,job.name(),'('+str(job.status)+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
         if opt.verbose: 
+            print hline
             print '|  inputFile  = ',job.inputFile
             print '|  outputFile = ',job.outputFile
             print '|  scriptPath = ',job.scriptPath 
             print '|  exitPath   = ',job.exitPath
             print '|  stdOutPath = ',job.stdOutPath
             print '|  stdErrPath = ',job.stdErrPath
+            print hline
+            print '| ',job.name(),'fileList'
+            print hline
+            lines = job.fileList.split('\n')
+            for line in lines:
+                print '| ',line
+            print hline
+            print '| ',job.name(),'script'
+            print hline
             lines = job.script.split('\n')
             for line in lines:
-                print '|   ',line
+                print '| ',line
+            print hline
     print hline
 
     m.disconnect()

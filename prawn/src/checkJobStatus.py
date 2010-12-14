@@ -7,53 +7,10 @@ Created on Dec 3, 2010
 import checkpython
 import optparse
 import jobtools
-import os, subprocess
-import xml.etree.ElementTree
+import qsubtools
+import os
 
-def runQstat():
-    qstat = subprocess.Popen(['qstat'],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (stdout,stderr) = qstat.communicate()
-    
-    if len(stdout)==0:
-        return None
-    # split in lines
-    outLines = stdout.splitlines()
-    
-    # remove header
-    outLines.pop(0)
-    outLines.pop(0)
-    
-    q = []
-    for line in outLines:
-        q.append(line.split())
-    
-    return q
-    
-def runQstatXML():
-    qstat = subprocess.Popen(['qstat','-xml'],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (stdout,stderr) = qstat.communicate()
-    
-    if len(stdout)==0:
-        return None
-    
-    element = xml.etree.ElementTree.XML(stdout)
-    qJobs = []
-    qNames =[]
-    
-    for e in element.findall('.//job_list'):
-        qJob = {}
-        name = e.find('JB_name').text
-        qNames.append(name)
-        qJob['name'] = name
-        qJob['owner'] = e.find('JB_owner').text
-        qJob['priority'] = e.find('JAT_prio').text
-        qJob['state'] = e.find('state').text
-        qJob['submissionTime'] = e.find('JB_submission_time').text if e.find('JB_submission_time') is not None else None 
-        qJob['startTime'] = e.find('JAT_start_time').text if e.find('JAT_start_time') is not None else None
-        qJob['queueName'] = e.find('queue_name').text if e.find('queue_name') is not None else None
-        qJobs.append(qJob)
-    
-    return (qNames,qJobs)
+
         
 def main():
 
@@ -78,9 +35,9 @@ def main():
     print hline
     print '|  mode:',s.mode,' nJobs:',s.nJobs,' epJ:',str(s.eventsPerJob),' queue:',s.queue
     print hline
-    (qNames, qJobs) = runQstatXML()
+    (qNames, qJobs) = qsubtools.runQstatXML()
     
-
+    isCompleted = True
     for job in jobs:
 #        print ' Checking '+job.name() 
         if job.status == jobtools.kSubmitted or job.status == jobtools.kRunning:
@@ -103,9 +60,17 @@ def main():
                 print ' Job '+job.name()+' does not exist in the queue and no exit code file was found. Unknown'
                 m.setJobStatus(s.name, job.jid, jobtools.kUnknown)
                 m.setJobExitCode(s.name, job.jid, None)
-        
-#        elif job.status == jobtools.kCompleted or job.status == jobtools.kFailed:
+        elif job.status == jobtools.kUnknown and os.path.exists(job.exitPath):
+            print ' The exitCode file has appeared. Registering the exit status'
+            exitCode = int(open(job.exitPath).read())
+            status = jobtools.kCompleted if exitCode==0 else jobtools.kFailed
+            m.setJobStatus(s.name, job.jid, status)
+            m.setJobExitCode(s.name, job.jid, exitCode)
         print '|   ',job.name(), 'is', jobtools.JobLabel[job.status]
+        isCompleted &= job.status == jobtools.kCompleted
+    if isCompleted:
+        m.setSessionStatus(s.name, jobtools.kCompleted)
+
     print hline
     m.disconnect()
 

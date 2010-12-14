@@ -18,7 +18,8 @@ def main():
     (opt, args) = parser.parse_args()
     
     if opt.sessionName is None:
-        parser.error('Please specify what session to remove')
+        parser.error('The session name is undefined')
+        
     dbPath     = os.path.abspath(os.path.expanduser(opt.database))
     m = jobtools.Manager(dbPath)
     m.connect()
