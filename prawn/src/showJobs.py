@@ -3,6 +3,8 @@ import checkpython
 import optparse
 import jobtools
 import os
+import console
+from jobtools import Job
 
 def main():
     usage = 'Usage: %prog [options] session jobs'
@@ -15,6 +17,9 @@ def main():
     parser.add_option('-j', '--jobs', dest='jobs',help='Jobs to process',default='')
 
     (opt, args) = parser.parse_args()
+    
+    if opt.sessionName is None:
+        parser.error('The session name is undefined')
 
     dbPath     = os.path.abspath(os.path.expanduser(opt.database))
 
@@ -45,7 +50,8 @@ def main():
     for job in jobs:
         if len(numbers) != 0 and job.jid not in numbers:
             continue
-        print '| ',job.jid,job.name(),'('+jobtools.JobLabel[job.status]+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
+#        colStatus = jobtools.JobColors[job.status]+jobtools.JobLabel[job.status]+console.codes['reset']
+        print '| ',job.jid,job.name(),'('+jobtools.colState(job.status)+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
 #        print '| ',job.jid,job.name(),'('+str(job.status)+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
         if opt.verbose: 
             print hline
@@ -71,9 +77,6 @@ def main():
     print hline
 
     m.disconnect()
-    
-    
-
 
 if __name__ == '__main__':
     main()

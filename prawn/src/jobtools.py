@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import console
  
 kCreated   = 0
 kSubmitted = 1
@@ -7,8 +8,12 @@ kRunning   = 2
 kCompleted = 3
 kFailed    = 4
 kUnknown   = 5
- 
-JobLabel = ['Created','Submitted','Running','Completed','Failed','Unknown']
+
+StateLabel  = ['Created',  'Submitted','Running','Completed','Failed','Unknown']
+StateColors = ['turquoise','yellow',   'blue',   'green',    'red',   'fuchsia']
+
+def colState( state ):
+    return console.colorize(StateColors[state], StateLabel[state] )
  
 def jmDBPath():
     return os.path.expanduser('~/.prawn/database')
@@ -121,6 +126,17 @@ class Job:
         for dir in dirs:
             if not os.path.exists(dir):
                 os.makedirs(dir)
+    
+    def cleanFiles(self):
+        files=[self.scriptPath,
+               self.inputFile,
+               self.outputFile,
+               self.stdOutPath,
+               self.stdErrPath,
+               self.exitPath]
+        for file in files:
+            if os.path.exists(file):
+                os.remove(file)
 
 class Manager:
     """A Simple Job Manager"""
@@ -273,10 +289,15 @@ class Manager:
         c.execute('UPDATE job SET status = ? WHERE sessionName = ? AND jid = ?',(status, sessionName, jid))
         self.connection.commit()
         
-    
     def setJobExitCode(self, sessionName, jid, exitCode):
         c = self.connection.cursor()
         c.execute('UPDATE job SET exitCode = ? WHERE sessionName = ? AND jid = ?',(exitCode, sessionName, jid))
+        self.connection.commit()
+
+    def updateJobCodes(self,sessionName,jobs):
+        c = self.connection.cursor()
+        tuples = [(job.status,job.exitCode,sessionName,job.jid) for job in jobs]
+        c.executemany('UPDATE job SET status = ? , exitCode = ? WHERE sessionName = ? AND jid = ?',tuples)
         self.connection.commit()
 
     def printSession(self,sessionName):

@@ -2,7 +2,7 @@
 import checkpython
 import optparse
 import jobtools
-import sys
+import console
 
 def main():
     usage = 'Usage: %prog [options] session'
@@ -27,7 +27,8 @@ def main():
     padding = 2
     table.append(['name','status','label','groups','nJobs'])
     for s in sessions:
-        table.append([s.name,jobtools.JobLabel[s.status],s.label,s.groups,str(s.nJobs)])
+#        colStatus=jobtools.JobColors[s.status]+jobtools.JobLabel[s.status]+console.codes['reset']
+        table.append([s.name,jobtools.colState(s.status),s.label,s.groups,str(s.nJobs)])
 #        line = '| \''+s.name+'\'\t\''+s.label+'\'\t'+s.groups+'\t'+str(s.nJobs)+'\t'+jobtools.JobLabel[s.status]
 #        print line.expandtabs(15)
 #        print hline

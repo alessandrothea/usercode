@@ -61,10 +61,10 @@ def main():
         inputFile.write(job.fileList)
         inputFile.close()
         
-        tmpFiles = [job.stdOutPath,job.stdErrPath,job.exitPath]
-        for file in tmpFiles:
-            if os.path.exists(file): 
-                os.remove(file)
+#        tmpFiles = [job.stdOutPath,job.stdErrPath,job.exitPath]
+#        for file in tmpFiles:
+#            if os.path.exists(file): 
+#                os.remove(file)
         print 'done'
     print hline
         

@@ -45,7 +45,7 @@ def main():
         if job.status is not jobtools.kCompleted:
             print '|  Not all jobs are completed'
             print hline
-            sys.exit()
+            return
     
 #    print rootFiles
     mergedFile = session.name+'.root'
