@@ -2,8 +2,13 @@
 import checkpython
 import optparse
 import jobtools
-import console
+import re
 
+def plainStr( theStr ):
+    # match the escape codes
+    regex = re.compile('\\x1b\[[0-9;]*?[0-9]{2}m')
+    return regex.sub('',theStr)
+    
 def main():
     usage = 'Usage: %prog [options] session'
     parser = optparse.OptionParser(usage)
@@ -20,35 +25,38 @@ def main():
 #    sessions = sorted(sessions, key=lambda s: s.name)
     
     hline = '-'*80
-    print hline
-    print str('| name\tLabel\t\tnJobs\tstatus').expandtabs(15)
-    print hline
+#    print hline
+#    print str('| name\tLabel\t\tnJobs\tstatus').expandtabs(15)
+#    print hline
     table = []
-    padding = 2
+    padding = 0
     table.append(['name','status','label','groups','nJobs'])
     for s in sessions:
 #        colStatus=jobtools.JobColors[s.status]+jobtools.JobLabel[s.status]+console.codes['reset']
         table.append([s.name,jobtools.colState(s.status),s.label,s.groups,str(s.nJobs)])
 #        line = '| \''+s.name+'\'\t\''+s.label+'\'\t'+s.groups+'\t'+str(s.nJobs)+'\t'+jobtools.JobLabel[s.status]
 #        print line.expandtabs(15)
-#        print hline
+#        print hline     
     
     widths = [0]*len(table[0])
     for j in range(len(table[0])):
-        widths[j] = max([len(row[j]) for row in table])
+        widths[j] = max([len(plainStr(row[j])) for row in table])
 
-#    print widths
-    for row in table[0:0]:
-        print hline
+#\    print widths
+    print hline
+    for row in table[0:1]:
         print '| ',
         for i in range(len(row)):
             print row[i].ljust(widths[i]+padding),
         print
+    print hline
+
     for row in table[1:]:
 #        print hline
         print '| ',
         for i in range(len(row)):
-            print row[i].ljust(widths[i]+padding),
+            dL = len(row[i])-len(plainStr(row[i]))
+            print row[i].ljust(widths[i]+padding+dL),
         print
     print hline 
 

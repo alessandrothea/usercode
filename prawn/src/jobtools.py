@@ -154,7 +154,7 @@ class Manager:
         c.execute('''CREATE table session(
             name TEXT PRIMARY KEY ON CONFLICT ABORT,
             label TEXT,
-            groups TEXT,
+            groups TEXT DEFAULT '',
             cmdLine TEXT, 
             mode TEXT NOT NULL,
             allFiles TEXT, 
