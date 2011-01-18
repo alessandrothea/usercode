@@ -221,6 +221,25 @@ class Manager:
         s = Session()
         s.update(row)
         return s
+
+    def getListOfSessions(self, session=None, group=None ):
+        
+        #if session not defined, take all
+        if not session:
+            session = '%'
+
+        #if session not defined, take all, otherwise filter on the name    
+        if not group:
+            group = '%'
+        else:
+            group = '%'+group+'%'
+        
+        c = self.connection.cursor()
+            
+        c.execute('SELECT * FROM session WHERE name LIKE ? AND groups LIKE ? ORDER BY name',(session,group))
+        
+        sessions=[ Session().update(row) for row in c.fetchall()]
+        return sessions    
     
     def removeSession(self,name):
         c = self.connection.cursor()
@@ -310,18 +329,6 @@ class Manager:
             print '----------------------------------------------------'
             print row.keys()
             print row
-        
-    def getAllSessions(self, group):
-        c = self.connection.cursor()
-        if group is not None:
-            grpString = '%'+group+'%'
-        else:
-            grpString = '%'
-            
-        c.execute('SELECT * FROM session WHERE groups LIKE ? ORDER BY name',(grpString,))
-        
-        sessions=[ Session().update(row) for row in c.fetchall()]
-        return sessions
         
     def showAllSessions(self, opt=None):
         hline = '-'*80

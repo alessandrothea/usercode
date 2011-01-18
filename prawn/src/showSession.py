@@ -21,8 +21,7 @@ def main():
     m = jobtools.Manager(opt.database)
     m.connect()
 
-    sessions = m.getAllSessions(opt.sessionGroups)
-#    sessions = sorted(sessions, key=lambda s: s.name)
+    sessions = m.getListOfSessions(group=opt.sessionGroups)
     
     hline = '-'*80
 #    print hline
@@ -32,17 +31,14 @@ def main():
     padding = 0
     table.append(['name','status','label','groups','nJobs'])
     for s in sessions:
-#        colStatus=jobtools.JobColors[s.status]+jobtools.JobLabel[s.status]+console.codes['reset']
         table.append([s.name,jobtools.colState(s.status),s.label,s.groups,str(s.nJobs)])
-#        line = '| \''+s.name+'\'\t\''+s.label+'\'\t'+s.groups+'\t'+str(s.nJobs)+'\t'+jobtools.JobLabel[s.status]
-#        print line.expandtabs(15)
-#        print hline     
+ 
     
     widths = [0]*len(table[0])
     for j in range(len(table[0])):
         widths[j] = max([len(plainStr(row[j])) for row in table])
 
-#\    print widths
+#    print widths
     print hline
     for row in table[0:1]:
         print '| ',
@@ -52,7 +48,6 @@ def main():
     print hline
 
     for row in table[1:]:
-#        print hline
         print '| ',
         for i in range(len(row)):
             dL = len(row[i])-len(plainStr(row[i]))

@@ -14,35 +14,48 @@ import console
 
         
 def main():
-
-
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
     parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
+    parser.add_option('-g', '--groups', dest='sessionGroups', help='Comma separated list of groups')
 
     (opt, args) = parser.parse_args()
     
-    if opt.sessionName is None:
-        parser.error('The session name is undefined')
-    
+    if opt.sessionName is None and opt.sessionGroups is None:
+        parser.error('Please define either the session or the group')
+   
     dbPath     = os.path.abspath(os.path.expanduser(opt.database))
     m = jobtools.Manager(dbPath)
     m.connect()
-    s = m.getSession(opt.sessionName)
-    jobs = m.getJobs(s.name)
+    
+    ses = m.getListOfSessions(opt.sessionName, opt.sessionGroups)
+    jobMap = qsubtools.runQstatXML()
+    
+    for s in ses:
+        jobs = m.getJobs(s.name)
+    
+        hline = '-'*80
+        print hline
+        print '| Checking jobs for session ['+s.name+']'
+        print hline
+        print '|  mode:',s.mode,' nJobs:',s.nJobs,' epJ:',str(s.eventsPerJob),' queue:',s.queue
+        print hline
+        
+        (completed, updated) = checkJobs(jobs, jobMap)
+
+        m.updateJobCodes(s.name, updated)
+        if completed:
+            m.setSessionStatus(s.name, jobtools.kCompleted)
+
+    print hline
+    m.disconnect()
+
+def checkJobs( jobs, jMap ):
+    completed = True
     updated = []
     
-    hline = '-'*80
-    print hline
-    print '| Checking jobs for session ['+s.name+']'
-    print hline
-    print '|  mode:',s.mode,' nJobs:',s.nJobs,' epJ:',str(s.eventsPerJob),' queue:',s.queue
-    print hline
-    jMap = qsubtools.runQstatXML()
-    
-    isCompleted = True
     for job in jobs:
         if job.status == jobtools.kSubmitted or job.status == jobtools.kRunning:
             # check if the job is still in the queue
@@ -75,14 +88,9 @@ def main():
             updated.append(job)
 
         print '|   ',job.name(), 'is', jobtools.colState(job.status),'(code',job.exitCode,')'
-        isCompleted &= job.status == jobtools.kCompleted
+        completed &= job.status == jobtools.kCompleted
     
-    m.updateJobCodes(s.name, updated)
-    if isCompleted:
-        m.setSessionStatus(s.name, jobtools.kCompleted)
-
-    print hline
-    m.disconnect()
+    return (completed, updated)
 
 if __name__ == '__main__':
     main()
