@@ -5,6 +5,7 @@
 #pragma link off all functions;
 #pragma link C++ nestedclasses;
 
+#pragma link C++ class HWWEvent+;
 #pragma link C++ class HWWNtuple+;
 #pragma link C++ class HWWElectron+;
 #pragma link C++ class HWWMuon+;

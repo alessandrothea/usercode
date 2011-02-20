@@ -7,7 +7,7 @@ void checkCuts() {
     chain.AddFile("../ntuples/H130.root");
 
 
-    HWWNtuple* ev = new HWWNtuple();
+    HWWEvent* ev = new HWWEvent();
 
     chain.SetBranchAddress("ev", &ev);
 

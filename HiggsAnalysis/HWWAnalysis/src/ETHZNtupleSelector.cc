@@ -114,8 +114,9 @@ void ETHZNtupleSelector::Start() {
 		THROW_RUNTIME(std::string("File ") + _outputFile + " not found");
 	}
 
-	// book the new tree
+	// book the new tree before booking the rest
 	fSkimmedTree = new TTree(_skimmedTreeName.c_str(),_skimmedTreeName.c_str());
+	// call book from child classes
 	Book();
 	BeginJob();
 

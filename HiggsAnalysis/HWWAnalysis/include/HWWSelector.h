@@ -9,7 +9,7 @@
 #define HWWSELECTOR_H_
 
 #include "ETHZNtupleSelector.h"
-#include "HWWNtuple.h"
+#include "HWWEvent.h"
 #include <bitset>
 
 class TH1F;
@@ -123,7 +123,7 @@ protected:
 	float _jetDrCut;
 	long long _nSelectedEvents;
 
-	HWWNtuple* _ntuple;
+	HWWEvent* _event;
 	TH1F* _elTightCounters;
 	TH1F* _elLooseCounters;
 	TH1F* _muCounters;

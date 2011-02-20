@@ -11,9 +11,11 @@
 #include "UserAnalyzer.h"
 #include <bitset>
 
+class HWWEvent;
 class HWWNtuple;
 class TTree;
 class TH1F;
+class TParticlePDG;
 
 
 class HWWAnalyzer : public UserAnalyzer {
@@ -24,6 +26,8 @@ public:
 	virtual void Book();
 	virtual void BeginJob();
 	virtual void Process( Long64_t iEvent );
+	virtual void calcNtuple();
+	virtual void cutAndFill();
 	virtual void EndJob();
 
 protected:
@@ -64,11 +68,20 @@ protected:
 
 	const static unsigned short _wordLen = 32;
 
-	typedef std::bitset<_wordLen> higgsBitSet;
+	typedef std::bitset<_wordLen> higgsBitWord;
+
+	TParticlePDG* _Z0;
+
+	higgsBitWord _theMask;
+	std::vector< higgsBitWord > _nthMask;
+
+	void bookNm1Histograms(std::vector<TH1F*>&, const std::string& nPrefix, const std::string& lPrefix);
 
 	void readHiggsCutSet( const std::string& path );
 	HiggsCutSet getHiggsCutSet(int mass);
 //	HiggsCutSet getHiggsCutSet(int mass, int ll);
+
+	std::string _analysisTreeName;
 
 	int   _higgsMass;
 
@@ -78,8 +91,8 @@ protected:
 	float _minMll;
 	float _zVetoWidth;
 
-	float _maxProjMetEM;
-	float _maxProjMetLL;
+	float _minProjMetEM;
+	float _minProjMetLL;
 
 	HiggsCutSet _theCuts;
 //	HiggsCutSet _eeCuts;
@@ -91,12 +104,22 @@ protected:
 	TH1F* _emCounters;
 	TH1F* _llCounters;
 
+	std::vector<TH1F*> _llNm1Hist;
+	std::vector<TH1F*> _eeNm1Hist;
+	std::vector<TH1F*> _emNm1Hist;
+	std::vector<TH1F*> _mmNm1Hist;
+	std::vector<TH1F*> _preCutHist;
+	std::vector<TH1F*> _postCutHist;
+
 	std::string _cutFile;
 
 	std::vector<HiggsCutSet> _cutVector;
 
-	HWWNtuple* _ntuple;
 	TTree* _analysisTree;
+
+	HWWEvent* _event;
+	HWWNtuple* _ntuple;
+
 };
 
 #endif /* HWWANALYZER_H_ */

@@ -50,11 +50,11 @@ void HWWSelector::WorkingPoint::print() {
 
 //_____________________________________________________________________________
 HWWSelector::HWWSelector( int argc, char** argv ) : ETHZNtupleSelector(argc,argv),
-	_elTightWorkingPoint(0), _elLooseWorkingPoint(0), _nSelectedEvents(0), _ntuple(0x0),
+	_elTightWorkingPoint(0), _elLooseWorkingPoint(0), _nSelectedEvents(0), _event(0x0),
 	_elTightCounters(0x0), _elLooseCounters(0x0), _muCounters(0x0), _counters(0x0) {
 	// TODO Auto-generated constructor stub
 
-	_ntuple = new HWWNtuple();
+	_event = new HWWEvent();
 	std::cout <<  fChain->GetName() << "   "<< fChain->GetTree() << std::endl;
 
 	_elTightWorkingPoint = _config.getValue<int>( "HWWSelector.elTightWorkingPoint");
@@ -85,7 +85,7 @@ void HWWSelector::clear() {
 //_____________________________________________________________________________
 void HWWSelector::Book() {
 	std::cout << "Adding the selected objects" << std::endl;
-	fSkimmedTree->Branch("ev","HWWNtuple", &_ntuple);
+	fSkimmedTree->Branch("ev","HWWEvent", &_event);
 
 	std::vector<std::string> labels;
 
@@ -207,6 +207,7 @@ void HWWSelector::tagElectrons() {
 	_elLooseCandidates.clear();
 
 	// loop over electrons
+	// start from the highest pt
 	for(unsigned int i=0; i<NEles; ++i) {
 
 		elBitSet word, ptEtaWord, idWord;
@@ -611,45 +612,45 @@ HWWSelector::elBitSet HWWSelector::electronID( int eff, int i ) {
 //_____________________________________________________________________________
 void HWWSelector::assembleNtuple() {
 	// clear the ntuple
-	_ntuple->Clear();
+	_event->Clear();
 
 	// fill the run parameters
-	_ntuple->Run          = Run;
-	_ntuple->Event        = Event;
-	_ntuple->LumiSection  = LumiSection;
+	_event->Run          = Run;
+	_event->Event        = Event;
+	_event->LumiSection  = LumiSection;
 
     // primary vertexes
-	_ntuple->PrimVtxGood  = PrimVtxGood;
-	_ntuple->PrimVtxx     = PrimVtxx;
-	_ntuple->PrimVtxy     = PrimVtxy;
-	_ntuple->PrimVtxz     = PrimVtxz;
-	_ntuple->NVrtx        = NVrtx;
+	_event->PrimVtxGood  = PrimVtxGood;
+	_event->PrimVtxx     = PrimVtxx;
+	_event->PrimVtxy     = PrimVtxy;
+	_event->PrimVtxz     = PrimVtxz;
+	_event->NVrtx        = NVrtx;
 
-	_ntuple->PFMET        = PFMET;
-	_ntuple->PFMETphi     = PFMETphi;
-	_ntuple->SumEt        = SumEt;
-	_ntuple->MuCorrMET    = MuCorrMET;
-	_ntuple->MuCorrMETphi = MuCorrMETphi;
+	_event->PFMET        = PFMET;
+	_event->PFMETphi     = PFMETphi;
+	_event->SumEt        = SumEt;
+	_event->MuCorrMET    = MuCorrMET;
+	_event->MuCorrMETphi = MuCorrMETphi;
 
-	_ntuple->NEles        = NEles;
-	_ntuple->NMus         = NMus;
-	_ntuple->NJets        = NJets;
-	_ntuple->PFNJets      = PFNJets;
+	_event->NEles        = NEles;
+	_event->NMus         = NMus;
+	_event->NJets        = NJets;
+	_event->PFNJets      = PFNJets;
 
-	_ntuple->HasSoftMus   = _softMuCandidates.size() > 0;
+	_event->HasSoftMus   = _softMuCandidates.size() > 0;
 
-	_ntuple->NEles        = _elTightCandidates.size();
+	_event->NEles        = _elTightCandidates.size();
 
-	_ntuple->NMus         = _muCandidates.size();
+	_event->NMus         = _muCandidates.size();
 
-	_ntuple->NJets        = _jetCandidates.size();
+	_event->NJets        = _jetCandidates.size();
 
-	_ntuple->PFNJets      = _pfJetCandidates.size();
+	_event->PFNJets      = _pfJetCandidates.size();
 
-	for( int i(0); i < _ntuple->NEles ; ++i) {
+	for( int i(0); i < _event->NEles ; ++i) {
 		int k = _elTightCandidates[i];
-		_ntuple->Els.resize(i+1);
-		HWWElectron &e = _ntuple->Els[i];
+		_event->Els.resize(i+1);
+		HWWElectron &e = _event->Els[i];
 		e.ElP.SetXYZT(ElPx[k], ElPy[k], ElPz[k], ElE[k]);
 		e.ElCharge 						= ElCharge[k];
 		e.ElSigmaIetaIeta				= ElSigmaIetaIeta[k];
@@ -666,10 +667,10 @@ void HWWSelector::assembleNtuple() {
 //		std::cout << e.ElP.Eta()-ElEta[k] << std::endl;
 	}
 
-	for( int i(0); i < _ntuple->NMus; ++i ) {
+	for( int i(0); i < _event->NMus; ++i ) {
 		int k = _muCandidates[i];
-		_ntuple->Mus.resize(i+1);
-		HWWMuon &u = _ntuple->Mus[i];
+		_event->Mus.resize(i+1);
+		HWWMuon &u = _event->Mus[i];
 
 		u.MuP.SetXYZT(MuPx[k], MuPy[k], MuPz[k], MuE[k] );
 		u.MuCharge                   = MuCharge[k];
@@ -686,10 +687,10 @@ void HWWSelector::assembleNtuple() {
 		u.MuDzPV                     = MuDzPV[k];
 	}
 
-	for( int i(0); i <_ntuple->NJets; ++i) {
+	for( int i(0); i <_event->NJets; ++i) {
 		int k = _jetCandidates[i];
-		_ntuple->Jets.resize(i+1);
-		HWWJet& j = _ntuple->Jets[i];
+		_event->Jets.resize(i+1);
+		HWWJet& j = _event->Jets[i];
 
 		j.JP.SetXYZT( JPx[k], JPy[k], JPz[k], JE[k] );
 		j.JEMfrac         = JEMfrac[k];
@@ -702,12 +703,12 @@ void HWWSelector::assembleNtuple() {
 		j.JID_ECALTow     = JID_ECALTow[k];
 	}
 
-	_ntuple->PFNJets = _pfJetCandidates.size();
-	for( int i(0); i < _ntuple->PFNJets; ++i) {
+	_event->PFNJets = _pfJetCandidates.size();
+	for( int i(0); i < _event->PFNJets; ++i) {
 		int k = _pfJetCandidates[i];
 
-		_ntuple->PFJets.resize(i+1);
-		HWWPFJet& pfj = _ntuple->PFJets[i];
+		_event->PFJets.resize(i+1);
+		HWWPFJet& pfj = _event->PFJets[i];
 
 		pfj.PFJP.SetXYZT(PFJPx[k], PFJPy[k], PFJPz[k], PFJE[k]);
 		pfj.PFJChHadfrac       = PFJChHadfrac[k];

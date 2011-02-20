@@ -32,7 +32,7 @@ SharedLibrary := $(Library:%=$(LibPath)/lib%.so)
 Includes := -Iinclude
 
 CxxFlags+= $(ROOTCFLAGS) $(Includes)
-LdFlags+=$(ROOTLIBS)
+LdFlags+=$(ROOTLIBS) -lEG
 RootDictSource=$(BuildPath)/$(RootDict).cc
 RootDictHeader=$(BuildPath)/$(RootDict).h
 RootDictObject=$(RootDictSource:.cc=.o)
@@ -45,7 +45,7 @@ BinSources := src/ETHZNtupleReader.cc \
 		src/UserAnalyzer.cc \
 		src/HWWAnalyzer.cc 
 
-LibSources := src/HWWNtuple.cc 
+LibSources := src/HWWNtuple.cc src/HWWEvent.cc
 LibHeaders := $(LibSources:src/%.cc=include/%.h)
 
 BinObjects := $(patsubst src/%.cc,$(BuildPath)/%.o,$(BinSources))
