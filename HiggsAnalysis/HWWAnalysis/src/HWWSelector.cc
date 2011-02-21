@@ -186,9 +186,9 @@ bool HWWSelector::selectAndClean() {
 
 	count();
 
-	std::cout << '(' << NEles << ',' << NMus << '|' << _elTightCandidates.size() << ',' << _elLooseCandidates.size() << ',' <<  _muCandidates.size()
-			<< '|'  << _elTightCandidates.size()+_muCandidates.size() << ',' << _elLooseCandidates.size()+_muCandidates.size()
-			<< '|'<< _softMuCandidates.size() <<')' << std::endl;
+//	std::cout << '(' << NEles << ',' << NMus << '|' << _elTightCandidates.size() << ',' << _elLooseCandidates.size() << ',' <<  _muCandidates.size()
+//			<< '|'  << _elTightCandidates.size()+_muCandidates.size() << ',' << _elLooseCandidates.size()+_muCandidates.size()
+//			<< '|'<< _softMuCandidates.size() <<')' << std::endl;
 
 	// accept only events with 2 good candidates and only 2 loose candidates
 	if ( (_elTightCandidates.size()+_muCandidates.size()) != 2 ||
@@ -431,7 +431,7 @@ void HWWSelector::cleanJets() {
 			TVector3 pEl(ElPx[*it], ElPy[*it], ElPz[*it]);
 
 			//what is the 0.3 cut?
-			match &= ( TMath::Abs(pJet.DeltaR(pEl)) < _jetDrCut );
+			match |= ( TMath::Abs(pJet.DeltaR(pEl)) < _jetDrCut );
 
 		}
 
@@ -439,7 +439,7 @@ void HWWSelector::cleanJets() {
 				it != _muCandidates.end(); ++it) {
 			TVector3 pMu(MuPx[*it], MuPy[*it], MuPz[*it]);
 			//what is the 0.3 cut?
-			match &= ( TMath::Abs(pJet.DeltaR(pMu)) < 0.3 );
+			match |= ( TMath::Abs(pJet.DeltaR(pMu)) < 0.3 );
 		}
 
 		if ( !match ) _jetCandidates.push_back(i);
@@ -461,7 +461,7 @@ void HWWSelector::cleanJets() {
 				it != _elTightCandidates.end(); ++it) {
 			TVector3 pEl(ElPx[*it], ElPy[*it], ElPz[*it]);
 			//what is the 0.3 cut?
-			match &= ( TMath::Abs(pPFJet.DeltaR(pEl)) < _jetDrCut );
+			match |= ( TMath::Abs(pPFJet.DeltaR(pEl)) < _jetDrCut );
 		}
 
 		for( it=_muCandidates.begin();
@@ -469,7 +469,7 @@ void HWWSelector::cleanJets() {
 			TVector3 pMu(MuPx[*it], MuPy[*it], MuPz[*it]);
 
 			//what is the 0.3 cut?
-			match &= ( TMath::Abs(pPFJet.DeltaR(pMu)) < 0.3 );
+			match |= ( TMath::Abs(pPFJet.DeltaR(pMu)) < 0.3 );
 		}
 
 		if ( !match ) _pfJetCandidates.push_back(i);
@@ -632,11 +632,6 @@ void HWWSelector::assembleNtuple() {
 	_event->MuCorrMET    = MuCorrMET;
 	_event->MuCorrMETphi = MuCorrMETphi;
 
-	_event->NEles        = NEles;
-	_event->NMus         = NMus;
-	_event->NJets        = NJets;
-	_event->PFNJets      = PFNJets;
-
 	_event->HasSoftMus   = _softMuCandidates.size() > 0;
 
 	_event->NEles        = _elTightCandidates.size();
@@ -647,75 +642,80 @@ void HWWSelector::assembleNtuple() {
 
 	_event->PFNJets      = _pfJetCandidates.size();
 
+	_event->Els.resize(_event->NEles);
 	for( int i(0); i < _event->NEles ; ++i) {
 		int k = _elTightCandidates[i];
-		_event->Els.resize(i+1);
 		HWWElectron &e = _event->Els[i];
-		e.ElP.SetXYZT(ElPx[k], ElPy[k], ElPz[k], ElE[k]);
-		e.ElCharge 						= ElCharge[k];
-		e.ElSigmaIetaIeta				= ElSigmaIetaIeta[k];
-		e.ElCaloEnergy 					= ElCaloEnergy[k];
-		e.ElDR03TkSumPt 				= ElDR03TkSumPt[k];
-		e.ElDR04EcalRecHitSumEt			= ElDR04EcalRecHitSumEt[k];
-		e.ElDR04HcalTowerSumEt 			= ElDR04HcalTowerSumEt[k];
-		e.ElNumberOfMissingInnerHits 	= ElNumberOfMissingInnerHits[k];
-		e.ElDeltaPhiSuperClusterAtVtx	= ElDeltaPhiSuperClusterAtVtx[k];
-		e.ElDeltaEtaSuperClusterAtVtx	= ElDeltaEtaSuperClusterAtVtx[k];
-		e.ElD0PV 						= ElD0PV[k];
-		e.ElDzPV 						= ElDzPV[k];
+		e.P.SetXYZT(ElPx[k], ElPy[k], ElPz[k], ElE[k]);
+		e.Charge 					= ElCharge[k];
+		e.SigmaIetaIeta				= ElSigmaIetaIeta[k];
+		e.CaloEnergy 				= ElCaloEnergy[k];
+		e.DR03TkSumPt 				= ElDR03TkSumPt[k];
+		e.DR04EcalRecHitSumEt		= ElDR04EcalRecHitSumEt[k];
+		e.DR04HcalTowerSumEt 		= ElDR04HcalTowerSumEt[k];
+		e.NumberOfMissingInnerHits 	= ElNumberOfMissingInnerHits[k];
+		e.DeltaPhiSuperClusterAtVtx	= ElDeltaPhiSuperClusterAtVtx[k];
+		e.DeltaEtaSuperClusterAtVtx	= ElDeltaEtaSuperClusterAtVtx[k];
+		e.D0PV 						= ElD0PV[k];
+		e.DzPV 						= ElDzPV[k];
 
 //		std::cout << e.ElP.Eta()-ElEta[k] << std::endl;
 	}
 
+	_event->Mus.resize(_event->NMus);
 	for( int i(0); i < _event->NMus; ++i ) {
 		int k = _muCandidates[i];
-		_event->Mus.resize(i+1);
 		HWWMuon &u = _event->Mus[i];
 
-		u.MuP.SetXYZT(MuPx[k], MuPy[k], MuPz[k], MuE[k] );
-		u.MuCharge                   = MuCharge[k];
-		u.MuIso03SumPt               = MuIso03SumPt[k];
-		u.MuIso03EmEt                = MuIso03EmEt[k];
-		u.MuIso03HadEt               = MuIso03HadEt[k];
-		u.MuNMuHits                  = MuNMuHits[k];
-		u.MuNTkHits                  = MuNTkHits[k];
-		u.MuNChi2                    = MuNChi2[k];
-		u.MuIsGlobalMuon             = MuIsGlobalMuon[k];
-		u.MuIsTrackerMuon            = MuIsTrackerMuon[k];
-		u.MuIsTMLastStationAngTight  = MuIsTMLastStationAngTight[k];
-		u.MuD0PV                     = MuD0PV[k];
-		u.MuDzPV                     = MuDzPV[k];
+		u.P.SetXYZT(MuPx[k], MuPy[k], MuPz[k], MuE[k] );
+		u.Charge                   = MuCharge[k];
+		u.Iso03SumPt               = MuIso03SumPt[k];
+		u.Iso03EmEt                = MuIso03EmEt[k];
+		u.Iso03HadEt               = MuIso03HadEt[k];
+		u.NMuHits                  = MuNMuHits[k];
+		u.NTkHits                  = MuNTkHits[k];
+		u.NChi2                    = MuNChi2[k];
+		u.IsGlobalMuon             = MuIsGlobalMuon[k];
+		u.IsTrackerMuon            = MuIsTrackerMuon[k];
+		u.IsTMLastStationAngTight  = MuIsTMLastStationAngTight[k];
+		u.D0PV                     = MuD0PV[k];
+		u.DzPV                     = MuDzPV[k];
 	}
 
+	_event->Jets.resize(_event->NJets);
 	for( int i(0); i <_event->NJets; ++i) {
 		int k = _jetCandidates[i];
-		_event->Jets.resize(i+1);
 		HWWJet& j = _event->Jets[i];
 
-		j.JP.SetXYZT( JPx[k], JPy[k], JPz[k], JE[k] );
-		j.JEMfrac         = JEMfrac[k];
-		j.JNConstituents  = JNConstituents[k];
-		j.JID_HPD         = JID_HPD[k];
-		j.JID_RBX         = JID_RBX[k];
-		j.JID_n90Hits     = JID_n90Hits[k];
-		j.JID_resEMF      = JID_resEMF[k];
-		j.JID_HCALTow     = JID_HCALTow[k];
-		j.JID_ECALTow     = JID_ECALTow[k];
+		j.P.SetXYZT( JPx[k], JPy[k], JPz[k], JE[k] );
+		j.EMfrac         = JEMfrac[k];
+		j.NConstituents  = JNConstituents[k];
+		j.ID_HPD         = JID_HPD[k];
+		j.ID_RBX         = JID_RBX[k];
+		j.ID_n90Hits     = JID_n90Hits[k];
+		j.ID_resEMF      = JID_resEMF[k];
+		j.ID_HCALTow     = JID_HCALTow[k];
+		j.ID_ECALTow     = JID_ECALTow[k];
 	}
 
-	_event->PFNJets = _pfJetCandidates.size();
+	_event->PFJets.resize(_event->PFNJets);
 	for( int i(0); i < _event->PFNJets; ++i) {
 		int k = _pfJetCandidates[i];
 
-		_event->PFJets.resize(i+1);
 		HWWPFJet& pfj = _event->PFJets[i];
+		pfj.P.SetXYZT(PFJPx[k], PFJPy[k], PFJPz[k], PFJE[k]);
+		pfj.ChHadfrac       = PFJChHadfrac[k];
+		pfj.NeuHadfrac      = PFJNeuHadfrac[k];
+		pfj.ChEmfrac        = PFJChEmfrac[k];
+		pfj.NeuEmfrac       = PFJNeuEmfrac[k];
+		pfj.NConstituents   = PFJNConstituents[k];
 
-		pfj.PFJP.SetXYZT(PFJPx[k], PFJPy[k], PFJPz[k], PFJE[k]);
-		pfj.PFJChHadfrac       = PFJChHadfrac[k];
-		pfj.PFJNeuHadfrac      = PFJNeuHadfrac[k];
-		pfj.PFJChEmfrac        = PFJChEmfrac[k];
-		pfj.PFJNeuEmfrac       = PFJNeuEmfrac[k];
-		pfj.PFJNConstituents   = PFJNConstituents[k];
+//		double test = TMath::Sqrt(PFJPx[k]*PFJPx[k]+PFJPy[k]*PFJPy[k]);
+//		if ( TMath::Abs(test - PFJPt[k]) > 1e-6 ) {
+//			std::cout << _currentEvent << " "<< '(' << k << '/' << PFNJets  << ") - (" << i << " / " << _event->PFNJets << ") "
+//					<<" - " << pfj.P.Pt() << " : " << PFJPt[k] << " / " << pfj.P.Eta() << " : " << PFJEta[k] << std::endl;
+			//			THROW_RUNTIME("pfj.P.Pt() = " << pfj.P.Pt() << "   PFJPT = " << PFJPt[k]);
+//		}
 	}
 
 }

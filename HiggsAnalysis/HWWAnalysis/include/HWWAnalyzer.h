@@ -104,6 +104,9 @@ protected:
 	TH1F* _emCounters;
 	TH1F* _llCounters;
 
+	TH1F* _jetPt;
+	TH1F* _jetEta;
+
 	std::vector<TH1F*> _llNm1Hist;
 	std::vector<TH1F*> _eeNm1Hist;
 	std::vector<TH1F*> _emNm1Hist;

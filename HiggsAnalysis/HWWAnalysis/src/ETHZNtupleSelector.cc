@@ -14,7 +14,7 @@
 #include "Tools.h"
 
 //_____________________________________________________________________________
-ETHZNtupleSelector::ETHZNtupleSelector( int argc, char** argv ) : _firstEvent(0), _nEvents(0),
+ETHZNtupleSelector::ETHZNtupleSelector( int argc, char** argv ) : _firstEvent(0), _nEvents(0),_currentEvent(0),
 	fSkimmedFile(0x0), fSkimmedTree(0x0) {
 	// TODO Auto-generated constructor stub
 
@@ -145,7 +145,8 @@ void ETHZNtupleSelector::Loop() {
 			std::cout << "i = " << i << " RealTime : " << watch.RealTime() << " Cpu : " << watch.CpuTime() << std::endl;
 			watch.Continue();
 		}
-		Process( i );
+		_currentEvent = i;
+		Process( _currentEvent );
 	}
 }
 

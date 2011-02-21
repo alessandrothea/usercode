@@ -19,7 +19,7 @@ void checkCuts() {
     for( Long64_t i(0); i < chain.GetEntriesFast(); ++i) {
     	chain.GetEntry(i);
     	if ( ev->NEles ==2 ) {
-    		Float_t mass = (ev->Els[0].ElP+ev->Els[1].ElP).Mag();
+    		Float_t mass = (ev->Els[0].P+ev->Els[1].P).Mag();
 //    		std::cout << mass << std::endl;
     		eeMass->Fill(mass);
     	}

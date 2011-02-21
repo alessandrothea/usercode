@@ -46,6 +46,8 @@ protected:
 	long long _firstEvent;
 	long long _nEvents;
 
+	long long _currentEvent;
+
 	TTree* fSkimmedTree;
 	TFile* fSkimmedFile;
 	std::string _skimmedTreeName;

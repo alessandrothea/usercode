@@ -147,20 +147,24 @@ void HWWAnalyzer::Book() {
 		_llCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
 	}
 
+	_jetPt = new TH1F("jetPt", "Jet Pt", 100, 0, 1000);
+	_jetEta = new TH1F("jetEta", "Jet Eta", 100, 0, 3);
+
+
 	_output->mkdir("ll")->cd();
 
-	bookNm1Histograms( _llNm1Hist, "ll", "N-1 Plot - " );
+	bookNm1Histograms( _llNm1Hist, "llNm1", "ll N-1 Plot - " );
 
 	_output->mkdir("ee")->cd();
-	bookNm1Histograms( _eeNm1Hist, "ll", "N-1 Plot - " );
+	bookNm1Histograms( _eeNm1Hist, "eeNm1", "ee N-1 Plot - " );
 
 	_output->mkdir("em")->cd();
-	bookNm1Histograms( _emNm1Hist, "ll", "N-1 Plot - " );
+	bookNm1Histograms( _emNm1Hist, "emNm1", "e#mu N-1 Plot - " );
 
 	_output->mkdir("mm")->cd();
-	bookNm1Histograms( _emNm1Hist, "ll", "N-1 Plot - " );
+	bookNm1Histograms( _mmNm1Hist, "mmNm1", "#mu#mu N-1 Plot - " );
 
-	_output->mkdir("test")->cd();
+	_output->mkdir("checks")->cd();
 	bookNm1Histograms( _preCutHist, "pre", "PreCut - ");
 	bookNm1Histograms( _postCutHist, "post", "PostCut - ");
 	_output->cd();
@@ -190,15 +194,11 @@ void HWWAnalyzer::bookNm1Histograms( std::vector<TH1F*>& histograms , const std:
 	histograms[kZveto]		= new TH1F((nPrefix+"Zveto").c_str(),    (lPrefix+"Z veto").c_str(), 100, 0, 180);
 	histograms[kProjMet]	= new TH1F((nPrefix+"ProjMet").c_str(),  (lPrefix+"Projected MET").c_str(), 100, 0, 50);
 	histograms[kJetVeto]	= new TH1F((nPrefix+"JetVeto").c_str(),  (lPrefix+"n_{jets} = 0").c_str(), 20, 0, 20);
-	histograms[0]	= new TH1F((nPrefix+"JetVetoAft").c_str(),  (lPrefix+"n_{jets} = 0 after").c_str(), 20, 0, 20);
-
-	//	_llNm1Hist[kProjMet]	= new TH1F("llNm1ProjMet",  "N-1 plot = ProjMet");
-//	_llNm1Hist[kJetVeto]	= new TH1F("llNm1JetVeto",  "N-1 plot = n_{jets} == 0");
-//	_llNm1Hist[kSoftMuon]	= new TH1F("llNm1SoftMuon", "N-1 plot = No Soft #mu");
-//	_llNm1Hist[kHardPtMin]	= new TH1F("llNm1HardPtMin","N-1 plot = m^{ll}_{max}");
-//	_llNm1Hist[kSoftPtMin]	= new TH1F("llNm1SoftPtMin","N-1 plot = p^{hard}_{min}");
-//	_llNm1Hist[kMaxMll]		= new TH1F("llNm1MaxMll",   "N-1 plot = p^{soft}_{min}");
-//	_llNm1Hist[kDeltaPhi]	= new TH1F("llNm1DeltaPhi", "N-1 plot = #Delta#Phi_{ll}");
+	histograms[kSoftMuon]	= new TH1F((nPrefix+"SoftMuon").c_str(), (lPrefix+"No Soft #mu").c_str(), 2, 0, 2);
+	histograms[kHardPtMin]	= new TH1F((nPrefix+"HardPtMin").c_str(),(lPrefix+"p^{hard}_{min}").c_str(), 100, 0, _theCuts.minPtHard*1.5);
+	histograms[kSoftPtMin]	= new TH1F((nPrefix+"SoftPtMin").c_str(),(lPrefix+"p^{soft}_{min}").c_str(), 100, 0, _theCuts.minPtSoft*1.5);
+	histograms[kMaxMll]		= new TH1F((nPrefix+"MaxMll").c_str(),   (lPrefix+"m^{ll}_{max}").c_str(), 100, 0,   _theCuts.maxMll*1.5);
+	histograms[kDeltaPhi]	= new TH1F((nPrefix+"DeltaPhi").c_str(), (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
 
 }
 
@@ -261,46 +261,46 @@ void HWWAnalyzer::calcNtuple(){
     switch ( _event->NEles ) {
     case 2:
     	// A has the highst pT?
-    	pA = _event->Els[0].ElP;
-    	pB = _event->Els[1].ElP;
+    	pA = _event->Els[0].P;
+    	pB = _event->Els[1].P;
 
-    	cA = _event->Els[0].ElCharge;
-    	cB = _event->Els[1].ElCharge;
+    	cA = _event->Els[0].Charge;
+    	cB = _event->Els[1].Charge;
 
-    	d0A = _event->Els[0].ElD0PV;
-    	d0B = _event->Els[1].ElD0PV;
+    	d0A = _event->Els[0].D0PV;
+    	d0B = _event->Els[1].D0PV;
 
-    	dZA = _event->Els[0].ElDzPV;
-    	dZB = _event->Els[1].ElDzPV;
+    	dZA = _event->Els[0].DzPV;
+    	dZB = _event->Els[1].DzPV;
 
     	maxProjMet = _minProjMetLL;
     	counters = _eeCounters;
     	break;
     case 1:
-    	if ( _event->Els[0].ElP.Pt() > _event->Mus[0].MuP.Pt() ) {
-        	pA = _event->Els[0].ElP;
-        	pB = _event->Mus[0].MuP;
+    	if ( _event->Els[0].P.Pt() > _event->Mus[0].P.Pt() ) {
+        	pA = _event->Els[0].P;
+        	pB = _event->Mus[0].P;
 
-        	cA = _event->Els[0].ElCharge;
-        	cB = _event->Mus[0].MuCharge;
+        	cA = _event->Els[0].Charge;
+        	cB = _event->Mus[0].Charge;
 
-        	d0A = _event->Els[0].ElD0PV;
-        	d0B = _event->Mus[0].MuD0PV;
+        	d0A = _event->Els[0].D0PV;
+        	d0B = _event->Mus[0].D0PV;
 
-        	dZA = _event->Els[0].ElDzPV;
-        	dZB = _event->Mus[0].MuDzPV;
+        	dZA = _event->Els[0].DzPV;
+        	dZB = _event->Mus[0].DzPV;
     	} else {
-        	pA = _event->Mus[0].MuP;
-        	pB = _event->Els[0].ElP;
+        	pA = _event->Mus[0].P;
+        	pB = _event->Els[0].P;
 
-        	cA = _event->Mus[0].MuCharge;
-        	cB = _event->Els[0].ElCharge;
+        	cA = _event->Mus[0].Charge;
+        	cB = _event->Els[0].Charge;
 
-        	d0A = _event->Mus[0].MuD0PV;
-        	d0B = _event->Els[0].ElD0PV;
+        	d0A = _event->Mus[0].D0PV;
+        	d0B = _event->Els[0].D0PV;
 
-        	dZA = _event->Mus[0].MuDzPV;
-        	dZB = _event->Els[0].ElDzPV;
+        	dZA = _event->Mus[0].DzPV;
+        	dZB = _event->Els[0].DzPV;
     	}
 
     	maxProjMet = _minProjMetEM;
@@ -308,17 +308,17 @@ void HWWAnalyzer::calcNtuple(){
     	break;
     case 0:
     	// A has the highst pT?
-    	pA = _event->Mus[0].MuP;
-    	pB = _event->Mus[1].MuP;
+    	pA = _event->Mus[0].P;
+    	pB = _event->Mus[1].P;
 
-    	cA = _event->Mus[0].MuCharge;
-    	cB = _event->Mus[1].MuCharge;
+    	cA = _event->Mus[0].Charge;
+    	cB = _event->Mus[1].Charge;
 
-    	d0A = _event->Mus[0].MuD0PV;
-    	d0B = _event->Mus[1].MuD0PV;
+    	d0A = _event->Mus[0].D0PV;
+    	d0B = _event->Mus[1].D0PV;
 
-    	dZA = _event->Mus[0].MuDzPV;
-    	dZB = _event->Mus[1].MuDzPV;
+    	dZA = _event->Mus[0].DzPV;
+    	dZB = _event->Mus[1].DzPV;
 
     	maxProjMet = _minProjMetLL;
     	counters = _mmCounters;
@@ -431,40 +431,77 @@ void HWWAnalyzer::cutAndFill() {
 
 	word.set(kSoftPtMin, _ntuple->pB.Pt() > _theCuts.minPtSoft);
 
-	word.set(kMaxMll, _ntuple->type == 1 && _ntuple->mll < _theCuts.maxMll);
+	word.set(kMaxMll, _ntuple->type == 1 || _ntuple->mll < _theCuts.maxMll);
 
-	word.set(kDeltaPhi, _ntuple->dPhi < _theCuts.maxDphi);
+	word.set(kDeltaPhi, _ntuple->dPhi < _theCuts.maxDphi*TMath::DegToRad() );
 
-
-	// N-1 plots
-	if ( (word & _nthMask[kCharge]) == _nthMask[kCharge] )
-		_llNm1Hist[kCharge]->Fill(_ntuple->cA*_ntuple->cB);
-
-	if ( (word & _nthMask[kD0]) == _nthMask[kD0]) {
-		_llNm1Hist[kD0]->Fill(_ntuple->d0A);
-		_llNm1Hist[kD0]->Fill(_ntuple->d0B);
-	}
-
-	if ( (word & _nthMask[kDz]) == _nthMask[kDz]) {
-		_llNm1Hist[kDz]->Fill(_ntuple->dZA);
-		_llNm1Hist[kDz]->Fill(_ntuple->dZB);
-	}
-
-
+	// type-dependent settings
 	TH1F* counters(0x0);
+    std::vector<TH1F*>* nm1;
 	switch ( _ntuple->type ) {
 	case 2:
 		counters = _eeCounters;
+        nm1 = &_eeNm1Hist;
 		break;
 	case 1:
 		counters = _emCounters;
+        nm1 = &_emNm1Hist;
 		break;
 	case 0:
 		counters = _mmCounters;
+        nm1 = &_mmNm1Hist;
 		break;
 	default:
 		THROW_RUNTIME("Wrong event type (NEles): " << _ntuple->type );
 	};
+
+
+	// N-1 plots
+	if ( (word & _nthMask[kCharge]) == _nthMask[kCharge] )
+		nm1->at(kCharge)->Fill(_ntuple->cA*_ntuple->cB);
+
+	if ( (word & _nthMask[kD0]) == _nthMask[kD0]) {
+		nm1->at(kD0)->Fill(_ntuple->d0A);
+		nm1->at(kD0)->Fill(_ntuple->d0B);
+	}
+
+	if ( (word & _nthMask[kDz]) == _nthMask[kDz]) {
+		nm1->at(kDz)->Fill(_ntuple->dZA);
+		nm1->at(kDz)->Fill(_ntuple->dZB);
+	}
+
+	if ( (word & _nthMask[kMinMet]) == _nthMask[kMinMet] )
+		nm1->at(kMinMet)->Fill(_ntuple->pfMet);
+
+	if ( (word & _nthMask[kMinMll]) == _nthMask[kMinMll] )
+		nm1->at(kMinMll)->Fill(_ntuple->mll);
+
+	if ( (word & _nthMask[kZveto]) == _nthMask[kZveto] )
+		nm1->at(kZveto)->Fill(_ntuple->mll);
+
+	if ( (word & _nthMask[kProjMet]) == _nthMask[kProjMet] )
+		nm1->at(kProjMet)->Fill(_ntuple->projPfMet);
+
+	if ( (word & _nthMask[kJetVeto]) == _nthMask[kJetVeto] )
+		nm1->at(kJetVeto)->Fill(_ntuple->nPfJets);
+
+	if ( (word & _nthMask[kSoftMuon]) == _nthMask[kSoftMuon] )
+		nm1->at(kSoftMuon)->Fill(_ntuple->softMu);
+
+	if ( (word & _nthMask[kHardPtMin]) == _nthMask[kHardPtMin] )
+		nm1->at(kHardPtMin)->Fill(_ntuple->pA.Pt());
+
+	if ( (word & _nthMask[kSoftPtMin]) == _nthMask[kSoftPtMin] )
+		nm1->at(kSoftPtMin)->Fill(_ntuple->pB.Pt());
+
+	if ( (word & _nthMask[kMaxMll]) == _nthMask[kMaxMll] )
+		nm1->at(kMaxMll)->Fill(_ntuple->mll);
+
+	if ( (word & _nthMask[kDeltaPhi]) == _nthMask[kDeltaPhi] )
+		nm1->at(kDeltaPhi)->Fill(_ntuple->dPhi);
+
+
+
 
 	counters->Fill(kDileptons);
 	// opposite charge
@@ -514,6 +551,12 @@ void HWWAnalyzer::cutAndFill() {
 	counters->Fill(kProjMet);
 	_postCutHist[kProjMet]->Fill(_ntuple->projPfMet);
 
+	// pause here for jet pt and eta
+	for ( int i(0); i<_event->PFJets.size(); ++i) {
+		_jetPt->Fill(_event->PFJets[i].P.Pt());
+		_jetEta->Fill(_event->PFJets[i].P.Eta());
+	}
+
 	// njets == 0
 	_preCutHist[kJetVeto]->Fill(_ntuple->nPfJets);
 	if ( !word[kJetVeto] ) return;
@@ -521,24 +564,34 @@ void HWWAnalyzer::cutAndFill() {
 	_postCutHist[kJetVeto]->Fill(_ntuple->nPfJets);
 
 	// soft muon
+	_preCutHist[kSoftMuon]->Fill(_ntuple->softMu);
 	if ( !word[kSoftMuon] ) return;
 	counters->Fill(kSoftMuon);
+	_postCutHist[kSoftMuon]->Fill(_ntuple->softMu);
 
 	// hard pt cut
+	_preCutHist[kHardPtMin]->Fill(_ntuple->pA.Pt());
 	if ( !word[kHardPtMin] ) return;
 	counters->Fill(kHardPtMin);
+	_postCutHist[kHardPtMin]->Fill(_ntuple->pA.Pt());
 
 	// soft pt cut
+	_preCutHist[kSoftPtMin]->Fill(_ntuple->pB.Pt());
 	if ( !word[kSoftPtMin] ) return;
 	counters->Fill(kSoftPtMin);
+	_postCutHist[kSoftPtMin]->Fill(_ntuple->pB.Pt());
 
+	_preCutHist[kMaxMll]->Fill(_ntuple->mll);
 	// Mll_max
 	if ( !word[kMaxMll] ) return;
 	counters->Fill(kMaxMll);
+	_postCutHist[kMaxMll]->Fill(_ntuple->mll);
 
 	// delta phi
+	_preCutHist[kDeltaPhi]->Fill(_ntuple->dPhi);
 	if ( !word[kDeltaPhi] ) return;
 	counters->Fill(kDeltaPhi);
+	_postCutHist[kDeltaPhi]->Fill(_ntuple->dPhi);
 
 }
 
@@ -560,12 +613,34 @@ void HWWAnalyzer::Process( Long64_t iEvent ) {
 //_____________________________________________________________________________
 void HWWAnalyzer::EndJob() {
 
-	for ( int i(1); i<= _llCounters->GetNbinsX(); ++i) {
-		float binc(0);
-		binc += _eeCounters->GetBinContent(i);
-		binc += _mmCounters->GetBinContent(i);
-		binc += _emCounters->GetBinContent(i);
+//	for ( int i(1); i <= _llCounters->GetNbinsX(); ++i) {
+//		float binc(0);
+//		binc += _eeCounters->GetBinContent(i);
+//		binc += _mmCounters->GetBinContent(i);
+//		binc += _emCounters->GetBinContent(i);
+//
+//		_llCounters->SetBinContent(i,binc);
+//	}
 
-		_llCounters->SetBinContent(i,binc);
+//	for ( int i(1); i <= _llNm1Hist[k]->GetNbinsX(); ++i ) {
+//
+//		float binc(0);
+//		binc += _eeNm1Hist[k]->GetBinContent(i);
+//		binc += _emNm1Hist[k]->GetBinContent(i);
+//		binc += _mmNm1Hist[k]->GetBinContent(i);
+//
+//	_llNm1Hist[k];
+//	}
+
+	_llCounters->Add(_eeCounters);
+	_llCounters->Add(_emCounters);
+	_llCounters->Add(_mmCounters);
+
+	for ( int k(0); k<_llNm1Hist.size(); ++k) {
+		if (!_llNm1Hist[k] ) continue;
+		_llNm1Hist[k]->Add(_eeNm1Hist[k]);
+		_llNm1Hist[k]->Add(_emNm1Hist[k]);
+		_llNm1Hist[k]->Add(_mmNm1Hist[k]);
 	}
+
 }

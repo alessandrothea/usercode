@@ -15,18 +15,18 @@ class HWWElectron : public TObject {
 public:
 	HWWElectron() {}
 	virtual ~HWWElectron() {}
-	TLorentzVector 	ElP;
-	Int_t           ElCharge;
-	Double_t        ElSigmaIetaIeta;
-	Double_t        ElCaloEnergy;
-	Double_t        ElDR03TkSumPt;
-	Double_t        ElDR04EcalRecHitSumEt;
-	Double_t        ElDR04HcalTowerSumEt;
-	Int_t           ElNumberOfMissingInnerHits;
-	Double_t        ElDeltaPhiSuperClusterAtVtx;
-	Double_t        ElDeltaEtaSuperClusterAtVtx;
-	Double_t        ElD0PV;
-	Double_t        ElDzPV;
+	TLorentzVector 	P;
+	Int_t           Charge;
+	Double_t        SigmaIetaIeta;
+	Double_t        CaloEnergy;
+	Double_t        DR03TkSumPt;
+	Double_t        DR04EcalRecHitSumEt;
+	Double_t        DR04HcalTowerSumEt;
+	Int_t           NumberOfMissingInnerHits;
+	Double_t        DeltaPhiSuperClusterAtVtx;
+	Double_t        DeltaEtaSuperClusterAtVtx;
+	Double_t        D0PV;
+	Double_t        DzPV;
 
 	ClassDef(HWWElectron,1)
 };
@@ -35,34 +35,34 @@ class HWWMuon : public TObject {
 public:
 	HWWMuon() {}
 	virtual ~HWWMuon() {}
-	TLorentzVector	MuP;
-	Int_t           MuCharge;
-	Double_t        MuIso03SumPt;
-	Double_t        MuIso03EmEt;
-	Double_t        MuIso03HadEt;
-	Int_t           MuNMuHits;
-	Int_t           MuNTkHits;
-	Double_t        MuNChi2;
-	Int_t           MuIsGlobalMuon;
-	Int_t           MuIsTrackerMuon;
-	Int_t           MuIsTMLastStationAngTight;
-	Double_t        MuD0PV;
-	Double_t        MuDzPV;
+	TLorentzVector	P;
+	Int_t           Charge;
+	Double_t        Iso03SumPt;
+	Double_t        Iso03EmEt;
+	Double_t        Iso03HadEt;
+	Int_t           NMuHits;
+	Int_t           NTkHits;
+	Double_t        NChi2;
+	Int_t           IsGlobalMuon;
+	Int_t           IsTrackerMuon;
+	Int_t           IsTMLastStationAngTight;
+	Double_t        D0PV;
+	Double_t        DzPV;
 
 	ClassDef(HWWMuon, 1)
 };
 
 class HWWJet : public TObject {
 public:
-	TLorentzVector	JP;
-	Double_t        JEMfrac;
-	Int_t           JNConstituents;
-	Double_t        JID_HPD;
-	Double_t        JID_RBX;
-	Double_t        JID_n90Hits;
-	Double_t        JID_resEMF;
-	Double_t        JID_HCALTow;
-	Double_t        JID_ECALTow;
+	TLorentzVector	P;
+	Double_t        EMfrac;
+	Int_t           NConstituents;
+	Double_t        ID_HPD;
+	Double_t        ID_RBX;
+	Double_t        ID_n90Hits;
+	Double_t        ID_resEMF;
+	Double_t        ID_HCALTow;
+	Double_t        ID_ECALTow;
 
 
 	ClassDef(HWWJet,1)
@@ -70,12 +70,12 @@ public:
 
 class HWWPFJet : public TObject {
 public:
-	TLorentzVector  PFJP;
-	Double_t        PFJChHadfrac;
-	Double_t        PFJNeuHadfrac;
-	Double_t        PFJChEmfrac;
-	Double_t        PFJNeuEmfrac;
-	Int_t           PFJNConstituents;
+	TLorentzVector  P;
+	Double_t        ChHadfrac;
+	Double_t        NeuHadfrac;
+	Double_t        ChEmfrac;
+	Double_t        NeuEmfrac;
+	Int_t           NConstituents;
 
 	ClassDef(HWWPFJet,1)
 };
