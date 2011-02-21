@@ -11,7 +11,7 @@ import optparse
 import os, subprocess, sys
 
 def main():
-    usage = 'Usage: %prog [options] session jobs'
+    usage = 'Usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
     parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())

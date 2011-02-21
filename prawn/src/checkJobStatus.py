@@ -19,18 +19,18 @@ def main():
 
     parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
-    parser.add_option('-g', '--groups', dest='sessionGroups', help='Comma separated list of groups')
+    parser.add_option('-g', '--group', dest='sessionGroup', help='Comma separated list of groups')
 
     (opt, args) = parser.parse_args()
     
-    if opt.sessionName is None and opt.sessionGroups is None:
+    if opt.sessionName is None and opt.sessionGroup is None:
         parser.error('Please define either the session or the group')
    
     dbPath     = os.path.abspath(os.path.expanduser(opt.database))
     m = jobtools.Manager(dbPath)
     m.connect()
     
-    ses = m.getListOfSessions(opt.sessionName, opt.sessionGroups)
+    ses = m.getListOfSessions(opt.sessionName, opt.sessionGroup)
     jobMap = qsubtools.runQstatXML()
     
     for s in ses:

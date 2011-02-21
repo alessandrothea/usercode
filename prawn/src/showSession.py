@@ -14,14 +14,14 @@ def main():
     parser = optparse.OptionParser(usage)
 
     parser.add_option('-d', '--database', dest='database', help='Database path', default=jobtools.jmDBPath())
-    parser.add_option('-g', '--groups', dest='sessionGroups', help='Comma separated list of groups')
+    parser.add_option('-g', '--group', dest='sessionGroup', help='Comma separated list of groups')
 
     (opt, args) = parser.parse_args()
 
     m = jobtools.Manager(opt.database)
     m.connect()
 
-    sessions = m.getListOfSessions(group=opt.sessionGroups)
+    sessions = m.getListOfSessions(group=opt.sessionGroup)
     
     hline = '-'*80
 #    print hline

@@ -6,7 +6,7 @@ import os, sys, subprocess
 import console
 
 def main():
-    usage = 'Usage: %prog [options] jobs'
+    usage = 'Usage: %prog [options]'
     parser = optparse.OptionParser(usage)
     
     parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
