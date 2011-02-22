@@ -148,7 +148,7 @@ void HWWAnalyzer::Book() {
 	}
 
 	_jetPt = new TH1F("jetPt", "Jet Pt", 100, 0, 1000);
-	_jetEta = new TH1F("jetEta", "Jet Eta", 100, 0, 3);
+	_jetEta = new TH1F("jetEta", "Jet Eta", 100, -5, 5);
 
 
 	_output->mkdir("ll")->cd();
@@ -191,13 +191,13 @@ void HWWAnalyzer::bookNm1Histograms( std::vector<TH1F*>& histograms , const std:
 	histograms[kDz]			= new TH1F((nPrefix+"Dz").c_str(),       (lPrefix+"Dz").c_str(), 100, -3*_maxDz, 3*_maxDz);
 	histograms[kMinMet]		= new TH1F((nPrefix+"MinMet").c_str(),   (lPrefix+"Met_{min}").c_str(), 100, 0, 100);
 	histograms[kMinMll]		= new TH1F((nPrefix+"MinMll").c_str(),   (lPrefix+"m^{ll}_{min}").c_str(), 100, 0, 100);
-	histograms[kZveto]		= new TH1F((nPrefix+"Zveto").c_str(),    (lPrefix+"Z veto").c_str(), 100, 0, 180);
-	histograms[kProjMet]	= new TH1F((nPrefix+"ProjMet").c_str(),  (lPrefix+"Projected MET").c_str(), 100, 0, 50);
-	histograms[kJetVeto]	= new TH1F((nPrefix+"JetVeto").c_str(),  (lPrefix+"n_{jets} = 0").c_str(), 20, 0, 20);
+	histograms[kZveto]		= new TH1F((nPrefix+"Zveto").c_str(),    (lPrefix+"Z veto").c_str(), 100, 0, 120);
+	histograms[kProjMet]	= new TH1F((nPrefix+"ProjMet").c_str(),  (lPrefix+"Projected MET").c_str(), 100, 0, 100);
+	histograms[kJetVeto]	= new TH1F((nPrefix+"JetVeto").c_str(),  (lPrefix+"n_{jets} = 0").c_str(), 20, 0, 15);
 	histograms[kSoftMuon]	= new TH1F((nPrefix+"SoftMuon").c_str(), (lPrefix+"No Soft #mu").c_str(), 2, 0, 2);
-	histograms[kHardPtMin]	= new TH1F((nPrefix+"HardPtMin").c_str(),(lPrefix+"p^{hard}_{min}").c_str(), 100, 0, _theCuts.minPtHard*1.5);
-	histograms[kSoftPtMin]	= new TH1F((nPrefix+"SoftPtMin").c_str(),(lPrefix+"p^{soft}_{min}").c_str(), 100, 0, _theCuts.minPtSoft*1.5);
-	histograms[kMaxMll]		= new TH1F((nPrefix+"MaxMll").c_str(),   (lPrefix+"m^{ll}_{max}").c_str(), 100, 0,   _theCuts.maxMll*1.5);
+	histograms[kHardPtMin]	= new TH1F((nPrefix+"HardPtMin").c_str(),(lPrefix+"p^{hard}_{min}").c_str(), 100, 0, 3.*_theCuts.minPtHard);
+	histograms[kSoftPtMin]	= new TH1F((nPrefix+"SoftPtMin").c_str(),(lPrefix+"p^{soft}_{min}").c_str(), 100, 0, 3.*_theCuts.minPtSoft);
+	histograms[kMaxMll]		= new TH1F((nPrefix+"MaxMll").c_str(),   (lPrefix+"m^{ll}_{max}").c_str(), 100, 0,  100);
 	histograms[kDeltaPhi]	= new TH1F((nPrefix+"DeltaPhi").c_str(), (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
 
 }
@@ -418,7 +418,7 @@ void HWWAnalyzer::cutAndFill() {
 
 	word.set(kMinMll, _ntuple->type == 1 || _ntuple->mll > _minMll);
 
-	word.set(kZveto, TMath::Abs(_ntuple->mll - _Z0->Mass()) > _zVetoWidth );
+	word.set(kZveto, _ntuple->type == 1 || TMath::Abs(_ntuple->mll - _Z0->Mass()) > _zVetoWidth );
 
 	float minProjMet = _ntuple->type == 1 ? _minProjMetEM : _minProjMetLL;
 	word.set(kProjMet, _ntuple->projPfMet > minProjMet);
@@ -431,7 +431,8 @@ void HWWAnalyzer::cutAndFill() {
 
 	word.set(kSoftPtMin, _ntuple->pB.Pt() > _theCuts.minPtSoft);
 
-	word.set(kMaxMll, _ntuple->type == 1 || _ntuple->mll < _theCuts.maxMll);
+	//TODO check if maxMll applies to all the combinations
+	word.set(kMaxMll, _ntuple->mll < _theCuts.maxMll);
 
 	word.set(kDeltaPhi, _ntuple->dPhi < _theCuts.maxDphi*TMath::DegToRad() );
 

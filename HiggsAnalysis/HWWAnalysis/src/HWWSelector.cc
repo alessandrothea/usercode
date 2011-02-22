@@ -415,7 +415,7 @@ std::vector<unsigned int> HWWSelector::countSoftMuons( const wordVector& bits, s
 void HWWSelector::cleanJets() {
 	// so far so good, let's clean the jets up
 	_jetCandidates.clear();
-	// loop on jets
+     	// loop on jets
 	for ( int i=0; i<NJets; ++i) {
 
 		// jet ptcut
