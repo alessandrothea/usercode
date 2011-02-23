@@ -75,7 +75,7 @@ protected:
 	higgsBitWord _theMask;
 	std::vector< higgsBitWord > _nthMask;
 
-	void bookNm1Histograms(std::vector<TH1F*>&, const std::string& nPrefix, const std::string& lPrefix);
+	void bookCutHistograms(std::vector<TH1F*>&, const std::string& nPrefix, const std::string& lPrefix);
 
 	void readHiggsCutSet( const std::string& path );
 	HiggsCutSet getHiggsCutSet(int mass);
@@ -95,17 +95,21 @@ protected:
 	float _minProjMetLL;
 
 	HiggsCutSet _theCuts;
-//	HiggsCutSet _eeCuts;
-//	HiggsCutSet _mmCuts;
-//	HiggsCutSet _emCuts;
 
 	TH1F* _eeCounters;
 	TH1F* _mmCounters;
 	TH1F* _emCounters;
 	TH1F* _llCounters;
 
+	TH1F* _jetN;
 	TH1F* _jetPt;
 	TH1F* _jetEta;
+	TH1F* _projMet;
+	TH1F* _ptHardLet;
+	TH1F* _ptSoftLep;
+	TH1F* _mll;
+	TH1F* _deltaPhi;
+
 
 	std::vector<TH1F*> _llNm1Hist;
 	std::vector<TH1F*> _eeNm1Hist;

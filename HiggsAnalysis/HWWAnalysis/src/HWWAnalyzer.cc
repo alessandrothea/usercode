@@ -147,26 +147,33 @@ void HWWAnalyzer::Book() {
 		_llCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
 	}
 
-	_jetPt = new TH1F("jetPt", "Jet Pt", 100, 0, 1000);
-	_jetEta = new TH1F("jetEta", "Jet Eta", 100, -5, 5);
+	_jetN      = new TH1F("jetN",    "n_{jets}", 15, 0, 15);
+	_jetPt     = new TH1F("jetPt",   "Jet Pt", 100, 0, 1000);
+	_jetEta    = new TH1F("jetEta",  "Jet Eta", 100, -5, 5);
+	_projMet   = new TH1F("projMet", "Projected MET", 100, 0, 100);
+	_ptHardLet = new TH1F("hardPt",  "p^{hard}", 100, 0, 3.*_theCuts.minPtHard);
+	_ptSoftLep = new TH1F("softPt",  "p^{soft}", 100, 0, 3.*_theCuts.minPtSoft);
+	_mll       = new TH1F("mll",     "m^{ll}", 100, 0,  100);
+	_deltaPhi  = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, TMath::Pi());
 
 
 	_output->mkdir("ll")->cd();
 
-	bookNm1Histograms( _llNm1Hist, "llNm1", "ll N-1 Plot - " );
+	bookCutHistograms( _llNm1Hist, "llNm1", "ll N-1 Plot - " );
 
 	_output->mkdir("ee")->cd();
-	bookNm1Histograms( _eeNm1Hist, "eeNm1", "ee N-1 Plot - " );
+	bookCutHistograms( _eeNm1Hist, "eeNm1", "ee N-1 Plot - " );
 
 	_output->mkdir("em")->cd();
-	bookNm1Histograms( _emNm1Hist, "emNm1", "e#mu N-1 Plot - " );
+	bookCutHistograms( _emNm1Hist, "emNm1", "e#mu N-1 Plot - " );
 
 	_output->mkdir("mm")->cd();
-	bookNm1Histograms( _mmNm1Hist, "mmNm1", "#mu#mu N-1 Plot - " );
+	bookCutHistograms( _mmNm1Hist, "mmNm1", "#mu#mu N-1 Plot - " );
 
 	_output->mkdir("checks")->cd();
-	bookNm1Histograms( _preCutHist, "pre", "PreCut - ");
-	bookNm1Histograms( _postCutHist, "post", "PostCut - ");
+	bookCutHistograms( _preCutHist, "pre", "PreCut - ");
+	bookCutHistograms( _postCutHist, "post", "PostCut - ");
+
 	_output->cd();
 
 	_analysisTree = new TTree(_analysisTreeName.c_str(),"HWW variables Tree");
@@ -181,24 +188,24 @@ void HWWAnalyzer::BeginJob() {
 }
 
 //_____________________________________________________________________________
-void HWWAnalyzer::bookNm1Histograms( std::vector<TH1F*>& histograms , const std::string& nPrefix, const std::string& lPrefix ) {
+void HWWAnalyzer::bookCutHistograms( std::vector<TH1F*>& histograms , const std::string& nPrefix, const std::string& lPrefix ) {
 
 	// all numbers to 0, just to be sure;
 	histograms.assign(kNumCuts,0x0);
 
-	histograms[kCharge] 	= new TH1F((nPrefix+"Charge").c_str(),   (lPrefix+"Charge").c_str(),3,-1,2);
-	histograms[kD0]			= new TH1F((nPrefix+"D0").c_str(),       (lPrefix+"D0").c_str(), 100, -3*_maxD0, 3*_maxD0);
-	histograms[kDz]			= new TH1F((nPrefix+"Dz").c_str(),       (lPrefix+"Dz").c_str(), 100, -3*_maxDz, 3*_maxDz);
-	histograms[kMinMet]		= new TH1F((nPrefix+"MinMet").c_str(),   (lPrefix+"Met_{min}").c_str(), 100, 0, 100);
-	histograms[kMinMll]		= new TH1F((nPrefix+"MinMll").c_str(),   (lPrefix+"m^{ll}_{min}").c_str(), 100, 0, 100);
-	histograms[kZveto]		= new TH1F((nPrefix+"Zveto").c_str(),    (lPrefix+"Z veto").c_str(), 100, 0, 120);
-	histograms[kProjMet]	= new TH1F((nPrefix+"ProjMet").c_str(),  (lPrefix+"Projected MET").c_str(), 100, 0, 100);
-	histograms[kJetVeto]	= new TH1F((nPrefix+"JetVeto").c_str(),  (lPrefix+"n_{jets} = 0").c_str(), 20, 0, 15);
-	histograms[kSoftMuon]	= new TH1F((nPrefix+"SoftMuon").c_str(), (lPrefix+"No Soft #mu").c_str(), 2, 0, 2);
-	histograms[kHardPtMin]	= new TH1F((nPrefix+"HardPtMin").c_str(),(lPrefix+"p^{hard}_{min}").c_str(), 100, 0, 3.*_theCuts.minPtHard);
-	histograms[kSoftPtMin]	= new TH1F((nPrefix+"SoftPtMin").c_str(),(lPrefix+"p^{soft}_{min}").c_str(), 100, 0, 3.*_theCuts.minPtSoft);
-	histograms[kMaxMll]		= new TH1F((nPrefix+"MaxMll").c_str(),   (lPrefix+"m^{ll}_{max}").c_str(), 100, 0,  100);
-	histograms[kDeltaPhi]	= new TH1F((nPrefix+"DeltaPhi").c_str(), (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
+	histograms[kCharge] 	= new TH1F((nPrefix+"Charge").c_str(),     (lPrefix+"Charge").c_str(),3,-1,2);
+	histograms[kD0]			= new TH1F((nPrefix+"D0").c_str(),         (lPrefix+"D0").c_str(), 100, -3*_maxD0, 3*_maxD0);
+	histograms[kDz]			= new TH1F((nPrefix+"Dz").c_str(),         (lPrefix+"Dz").c_str(), 100, -3*_maxDz, 3*_maxDz);
+	histograms[kMinMet]		= new TH1F((nPrefix+"MinMet").c_str(),     (lPrefix+"Met_{min}").c_str(), 100, 0, 100);
+	histograms[kMinMll]		= new TH1F((nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(), 100, 0, 100);
+	histograms[kZveto]		= new TH1F((nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(), 100, 0, 120);
+	histograms[kProjMet]	= new TH1F((nPrefix+"MinProjMet").c_str(), (lPrefix+"Projected MET").c_str(), 100, 0, 100);
+	histograms[kJetVeto]	= new TH1F((nPrefix+"JetVeto").c_str(),    (lPrefix+"n_{jets} = 0").c_str(), 15, 0, 15);
+	histograms[kSoftMuon]	= new TH1F((nPrefix+"SoftMuon").c_str(),   (lPrefix+"No Soft #mu").c_str(), 2, 0, 2);
+	histograms[kHardPtMin]	= new TH1F((nPrefix+"MinHardPt").c_str(),  (lPrefix+"p^{hard}_{min}").c_str(), 100, 0, 3.*_theCuts.minPtHard);
+	histograms[kSoftPtMin]	= new TH1F((nPrefix+"MinSoftPt").c_str(),  (lPrefix+"p^{soft}_{min}").c_str(), 100, 0, 3.*_theCuts.minPtSoft);
+	histograms[kMaxMll]		= new TH1F((nPrefix+"MaxMll").c_str(),     (lPrefix+"m^{ll}_{max}").c_str(), 100, 0,  100);
+	histograms[kDeltaPhi]	= new TH1F((nPrefix+"DeltaPhi").c_str(),   (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
 
 }
 
@@ -553,6 +560,7 @@ void HWWAnalyzer::cutAndFill() {
 	_postCutHist[kProjMet]->Fill(_ntuple->projPfMet);
 
 	// pause here for jet pt and eta
+	_jetN->Fill(_event->PFJets.size());
 	for ( int i(0); i<_event->PFJets.size(); ++i) {
 		_jetPt->Fill(_event->PFJets[i].P.Pt());
 		_jetEta->Fill(_event->PFJets[i].P.Eta());
@@ -593,6 +601,12 @@ void HWWAnalyzer::cutAndFill() {
 	if ( !word[kDeltaPhi] ) return;
 	counters->Fill(kDeltaPhi);
 	_postCutHist[kDeltaPhi]->Fill(_ntuple->dPhi);
+
+	_projMet->Fill(_ntuple->projPfMet);
+	_ptHardLet->Fill(_ntuple->pA.Pt());
+	_ptSoftLep->Fill(_ntuple->pB.Pt());
+	_mll->Fill(_ntuple->mll);
+	_deltaPhi->Fill(_ntuple->dPhi);
 
 }
 

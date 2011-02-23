@@ -255,7 +255,8 @@ void HWWSelector::tagMuons() {
 
 		muBitSet word;
 
-		word.set( kMuEta, TMath::Abs( MuEta[i] ) < _etaMaxEE);
+		// to check
+		word.set( kMuEta, TMath::Abs( MuEta[i] ) < _etaMaxMu);
 
 		// drop mus with pT < _leptonPtCut
 		word.set( kMuPt, MuPt[i] > _leptonPtCut );
