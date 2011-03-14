@@ -20,6 +20,7 @@ ETHZNtupleSelector::ETHZNtupleSelector( int argc, char** argv ) : _firstEvent(0)
 
 	_config.parse(argc, argv);
 
+	_debugLvl    = _config.getValue<int>("Selector.debugLevel",0);
 	_treeName	 = _config.getValue<std::string>("Selector.treeName");
 	_inputFile   = _config.getValue<std::string>("Selector.inputFile");
 	_outputFile  = _config.getValue<std::string>("Selector.outputFile");
@@ -34,6 +35,13 @@ ETHZNtupleSelector::ETHZNtupleSelector( int argc, char** argv ) : _firstEvent(0)
 ETHZNtupleSelector::~ETHZNtupleSelector() {
 	// TODO Auto-generated destructor stub
 
+}
+
+//_____________________________________________________________________________
+std::ostream& ETHZNtupleSelector::Debug(int level) {
+	static std::ostream rc(std::clog.rdbuf());
+	rc.rdbuf(level <= _debugLvl ? std::clog.rdbuf() : 0);
+	return rc;
 }
 
 //_____________________________________________________________________________

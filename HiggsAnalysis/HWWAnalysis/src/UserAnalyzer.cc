@@ -19,12 +19,12 @@ UserAnalyzer::UserAnalyzer( int argc, char** argv ) : _chain(0x0), _output(0x0) 
 
 	_config.parse(argc,argv);
 
-	_treeName = _config.getValue<std::string>("UserAnalyzer.treeName");
+	_treeName   = _config.getValue<std::string>("UserAnalyzer.treeName");
 
-	_inputFile = _config.getValue<std::string>("UserAnalyzer.inputFile");
+	_inputFile  = _config.getValue<std::string>("UserAnalyzer.inputFile");
 	_outputFile = _config.getValue<std::string>("UserAnalyzer.outputFile");
 	_firstEvent = _config.getValue<long long>("UserAnalyzer.firstEvent");
-	_nEvents = _config.getValue<long long>("UserAnalyzer.nEvents");
+	_nEvents    = _config.getValue<long long>("UserAnalyzer.nEvents");
 
 }
 
@@ -60,9 +60,9 @@ void UserAnalyzer::Start() {
 	if ( ::access(_inputFile.c_str(), F_OK ) )
 		THROW_RUNTIME("Input file " << _inputFile << " not accessible");
 
-	std::string dotRoot = ".root";
+	std::string dotRoot  = ".root";
 	std::string dotInput = ".input";
-	std::string dotDcap = ".dcap";
+	std::string dotDcap  = ".dcap";
 
 	// build the TChain
 	_chain = new TChain(_treeName.c_str());

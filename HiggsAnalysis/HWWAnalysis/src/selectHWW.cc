@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include <stdexcept>
-#include "HWWSelector.h"
+#include "HWWSelectorB.h"
 #include "Tools.h"
 #include "CommandLine.h"
 
@@ -27,7 +27,7 @@ int main( int argc, char **argv ) {
 //	return 0;
 
 	try {
-		HWWSelector selector( argc, argv );
+		HWWSelectorB selector( argc, argv );
 		selector.Analyze();
 	} catch ( std::exception &e ) {
 		std::cout << "---" << TermColors::kRed << " Caught exception " << TermColors::kReset << e.what() << std::endl;

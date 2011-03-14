@@ -1,5 +1,5 @@
 CXX:=g++
-CxxFlags:=-g
+CxxFlags:=-g -ggdb
 CPPVERBOSE:=true
 
 ifdef ROOTSYS
@@ -40,6 +40,7 @@ RootDictObject=$(RootDictSource:.cc=.o)
 BinSources := src/ETHZNtupleReader.cc \
 		src/ETHZNtupleSelector.cc \
 		src/HWWSelector.cc \
+		src/HWWSelectorB.cc \
 		src/Configurator.cc \
 		src/CommandLine.cc \
 		src/UserAnalyzer.cc \

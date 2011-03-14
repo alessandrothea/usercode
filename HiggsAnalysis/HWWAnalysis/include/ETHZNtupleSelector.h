@@ -19,6 +19,7 @@ class ETHZNtupleSelector: public ETHZNtupleReader, public TObject {
 public:
 	ETHZNtupleSelector( int argc, char** argv );
 	virtual ~ETHZNtupleSelector();
+	std::ostream& Debug(int level);
 
 	virtual void Start();
 	virtual void Analyze();
@@ -40,6 +41,7 @@ protected:
 	// configuration file
 	CommandLine _config;
 
+	int _debugLvl;
 	std::string _treeName;
 	std::string _inputFile;
 	std::string _outputFile;

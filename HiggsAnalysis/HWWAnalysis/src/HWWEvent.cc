@@ -28,27 +28,28 @@ HWWEvent::~HWWEvent() {
 
 //______________________________________________________________________________
 void HWWEvent::Clear( Option_t* option ){
-	Run          = 0;
-	Event        = 0;
-	LumiSection  = 0;
+	Run            = 0;
+	Event          = 0;
+	LumiSection    = 0;
 
-	PrimVtxGood  = 0;
-	PrimVtxx     = 0;
-	PrimVtxy     = 0;
-	PrimVtxz     = 0;
-	NVrtx        = 0;
+	PrimVtxGood    = 0;
+	PrimVtxx       = 0;
+	PrimVtxy       = 0;
+	PrimVtxz       = 0;
+	NVrtx          = 0;
 
-	PFMET        = 0;
-	PFMETphi     = 0;
-	SumEt        = 0;
-	MuCorrMET    = 0;
-	MuCorrMETphi = 0;
+	PFMET          = 0;
+	PFMETphi       = 0;
+	SumEt          = 0;
+	MuCorrMET      = 0;
+	MuCorrMETphi   = 0;
 
-	HasSoftMus   = kFALSE;
-	NEles        = 0;
-	NMus         = 0;
-	NJets        = 0;
-	PFNJets      = 0;
+	HasSoftMus     = kFALSE;
+	HasBTaggedJets = kFALSE;
+	NEles          = 0;
+	NMus           = 0;
+	NJets          = 0;
+	PFNJets        = 0;
 
 	Els.clear();
 	Mus.clear();

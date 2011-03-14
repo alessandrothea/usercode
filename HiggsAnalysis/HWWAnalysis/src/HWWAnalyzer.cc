@@ -18,6 +18,7 @@
 #include <TH1F.h>
 #include <TDatabasePDG.h>
 #include <TParticlePDG.h>
+#include <THashList.h>
 
 //_____________________________________________________________________________
 void HWWAnalyzer::HiggsCutSet::print() {
@@ -40,6 +41,7 @@ void HWWAnalyzer::HiggsCutSet::print() {
 				<< maxDphi << '\t'
 				<< std::endl;
 }
+
 //_____________________________________________________________________________
 HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthMask(kNumCuts),
 		_analysisTree(0x0), _event(0x0), _ntuple(0x0) {
@@ -58,15 +60,15 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
 	_minProjMetEM     = _config.getValue<float>("HWWAnalyzer.minProjMetEM");
 	_minProjMetLL     = _config.getValue<float>("HWWAnalyzer.minProjMetLL");
 
+	_histLabels = _config.getVector<std::string>("HWWAnalyzer.copyHistograms");
+
+	std::ostream_iterator< std::string > output( std::cout, "," );
+	std::copy(_histLabels.begin(), _histLabels.end(), output);
 
 	TDatabasePDG* pdg = TDatabasePDG::Instance();
 	_Z0 = pdg->GetParticle("Z0");
 
 	readHiggsCutSet( _cutFile );
-
-//	_eeCuts = getHiggsCutSet( _higgsMass, kEE );
-//	_mmCuts = getHiggsCutSet( _higgsMass, kMM );
-//	_emCuts = getHiggsCutSet( _higgsMass, kEM );
 
 	_theCuts = getHiggsCutSet( _higgsMass );
 
@@ -79,7 +81,6 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
 	for( int k=2; k<kNumCuts; ++k) {
 		_nthMask[k] = _theMask;
 		_nthMask[k].set(k,false);
-//		std::cout << _nthMask[k].to_string() << std::endl;
 	}
 
 //	std::cout << "----" << std::endl;
@@ -118,16 +119,17 @@ void HWWAnalyzer::Book() {
 
 	std::map<int,std::string> labels;
 
-	labels[kDileptons] = "N_{dileptons}";
-	labels[kCharge]    = "Opposite charge";
-	labels[kD0]        = "D0";
-	labels[kDz]        = "Dz";
+	labels[kDileptons] = "N_{l^{+}l^{-}}";
+//	labels[kCharge]    = "Opposite charge";
+//	labels[kD0]        = "D0";
+//	labels[kDz]        = "Dz";
 	labels[kMinMet]    = "Met_{min}";
 	labels[kMinMll]    = "m^{ll}_{min}";
 	labels[kZveto]     = "Z veto";
 	labels[kProjMet]   = "ProjMet";
 	labels[kJetVeto]   = "n_{jets} == 0";
 	labels[kSoftMuon]  = "No Soft #mu";
+	labels[kTopVeto]   = "Top Veto";
 	labels[kMaxMll]    = "m^{ll}_{max}";
 	labels[kHardPtMin] = "p^{hard}_{min}";
 	labels[kSoftPtMin] = "p^{soft}_{min}";
@@ -148,17 +150,15 @@ void HWWAnalyzer::Book() {
 	}
 
 	_jetN      = new TH1F("jetN",    "n_{jets}", 15, 0, 15);
-	_jetPt     = new TH1F("jetPt",   "Jet Pt", 100, 0, 1000);
-	_jetEta    = new TH1F("jetEta",  "Jet Eta", 100, -5, 5);
+	_jetPt     = new TH1F("jetPt",   "Jet Pt",   100, 0, 1000);
+	_jetEta    = new TH1F("jetEta",  "Jet Eta",  100, -5, 5);
 	_projMet   = new TH1F("projMet", "Projected MET", 100, 0, 100);
 	_ptHardLet = new TH1F("hardPt",  "p^{hard}", 100, 0, 3.*_theCuts.minPtHard);
 	_ptSoftLep = new TH1F("softPt",  "p^{soft}", 100, 0, 3.*_theCuts.minPtSoft);
-	_mll       = new TH1F("mll",     "m^{ll}", 100, 0,  100);
+	_mll       = new TH1F("mll",     "m^{ll}",   100, 0,  100);
 	_deltaPhi  = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, TMath::Pi());
 
-
 	_output->mkdir("ll")->cd();
-
 	bookCutHistograms( _llNm1Hist, "llNm1", "ll N-1 Plot - " );
 
 	_output->mkdir("ee")->cd();
@@ -182,6 +182,29 @@ void HWWAnalyzer::Book() {
 }
 
 //_____________________________________________________________________________
+Bool_t HWWAnalyzer::Notify() {
+	if (  _chain->GetCurrentFile() ) {
+		std::cout << "--- Notify(): New file opened: "<<  _chain->GetCurrentFile()->GetName() << std::endl;
+		bool add = TH1::AddDirectoryStatus();
+		TH1::AddDirectory(kFALSE);
+		std::vector<std::string>::iterator it;
+		for( it = _histLabels.begin(); it!=_histLabels.end();it++) {
+			//std::cout << *it << "  " << _chain->GetCurrentFile()->Get(it->c_str()) << std::endl;
+			TH1F* h = (TH1F*)_chain->GetCurrentFile()->Get(it->c_str());
+			if ( _hists.find(*it) == _hists.end() ) {
+				_hists[*it] = (TH1F*)h->Clone();
+			} else {
+				_hists[*it]->Add(h);
+			}
+		}
+		TH1::AddDirectory(add);
+
+	} else {
+		std::cout << "--- Notify(): No file opened yet" << std::endl;
+	}
+}
+
+//_____________________________________________________________________________
 void HWWAnalyzer::BeginJob() {
 	_chain->SetBranchAddress("ev", &_event);
 
@@ -193,18 +216,19 @@ void HWWAnalyzer::bookCutHistograms( std::vector<TH1F*>& histograms , const std:
 	// all numbers to 0, just to be sure;
 	histograms.assign(kNumCuts,0x0);
 
-	histograms[kCharge] 	= new TH1F((nPrefix+"Charge").c_str(),     (lPrefix+"Charge").c_str(),3,-1,2);
-	histograms[kD0]			= new TH1F((nPrefix+"D0").c_str(),         (lPrefix+"D0").c_str(), 100, -3*_maxD0, 3*_maxD0);
-	histograms[kDz]			= new TH1F((nPrefix+"Dz").c_str(),         (lPrefix+"Dz").c_str(), 100, -3*_maxDz, 3*_maxDz);
-	histograms[kMinMet]		= new TH1F((nPrefix+"MinMet").c_str(),     (lPrefix+"Met_{min}").c_str(), 100, 0, 100);
-	histograms[kMinMll]		= new TH1F((nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(), 100, 0, 100);
-	histograms[kZveto]		= new TH1F((nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(), 100, 0, 120);
-	histograms[kProjMet]	= new TH1F((nPrefix+"MinProjMet").c_str(), (lPrefix+"Projected MET").c_str(), 100, 0, 100);
-	histograms[kJetVeto]	= new TH1F((nPrefix+"JetVeto").c_str(),    (lPrefix+"n_{jets} = 0").c_str(), 15, 0, 15);
-	histograms[kSoftMuon]	= new TH1F((nPrefix+"SoftMuon").c_str(),   (lPrefix+"No Soft #mu").c_str(), 2, 0, 2);
-	histograms[kHardPtMin]	= new TH1F((nPrefix+"MinHardPt").c_str(),  (lPrefix+"p^{hard}_{min}").c_str(), 100, 0, 3.*_theCuts.minPtHard);
-	histograms[kSoftPtMin]	= new TH1F((nPrefix+"MinSoftPt").c_str(),  (lPrefix+"p^{soft}_{min}").c_str(), 100, 0, 3.*_theCuts.minPtSoft);
-	histograms[kMaxMll]		= new TH1F((nPrefix+"MaxMll").c_str(),     (lPrefix+"m^{ll}_{max}").c_str(), 100, 0,  100);
+//	histograms[kCharge] 	= new TH1F((nPrefix+"Charge").c_str(),     (lPrefix+"Charge").c_str(),3,-1,2);
+//	histograms[kD0]			= new TH1F((nPrefix+"D0").c_str(),         (lPrefix+"D0").c_str(), 100, -3*_maxD0, 3*_maxD0);
+//	histograms[kDz]			= new TH1F((nPrefix+"Dz").c_str(),         (lPrefix+"Dz").c_str(), 100, -3*_maxDz, 3*_maxDz);
+	histograms[kMinMet]		= new TH1F((nPrefix+"MinMet").c_str(),     (lPrefix+"Met_{min}").c_str(),	    100, 0, 100);
+	histograms[kMinMll]		= new TH1F((nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(),    100, 0, 100);
+	histograms[kZveto]		= new TH1F((nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(), 		    100, 0, 120);
+	histograms[kProjMet]	= new TH1F((nPrefix+"MinProjMet").c_str(), (lPrefix+"Projected MET").c_str(),   100, 0, 100);
+	histograms[kJetVeto]	= new TH1F((nPrefix+"JetVeto").c_str(),    (lPrefix+"n_{jets} = 0").c_str(),     15, 0, 15);
+	histograms[kSoftMuon]	= new TH1F((nPrefix+"SoftMuon").c_str(),   (lPrefix+"No Soft #mu").c_str(),       2, 0, 2);
+	histograms[kTopVeto]	= new TH1F((nPrefix+"TopVeto").c_str(),    (lPrefix+"Top Veto").c_str(),          2, 0, 2);
+	histograms[kHardPtMin]	= new TH1F((nPrefix+"MinHardPt").c_str(),  (lPrefix+"p^{hard}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtHard);
+	histograms[kSoftPtMin]	= new TH1F((nPrefix+"MinSoftPt").c_str(),  (lPrefix+"p^{soft}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtSoft);
+	histograms[kMaxMll]		= new TH1F((nPrefix+"MaxMll").c_str(),     (lPrefix+"m^{ll}_{max}").c_str(),    100, 0,  100);
 	histograms[kDeltaPhi]	= new TH1F((nPrefix+"DeltaPhi").c_str(),   (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
 
 }
@@ -403,7 +427,7 @@ void HWWAnalyzer::calcNtuple(){
 	_ntuple->dPhi     = dPhiLL;
 	_ntuple->nPfJets	 = nPfJets;
 	_ntuple->nJets      = nJets;
-	_ntuple->softMu     = softMu;
+	_ntuple->softMus     = softMu;
 
 	_analysisTree->Fill();
 
@@ -413,13 +437,6 @@ void HWWAnalyzer::calcNtuple(){
 void HWWAnalyzer::cutAndFill() {
 
 	higgsBitWord word;
-
-
-	word.set(kCharge, _ntuple->cA*_ntuple->cB < 0 );
-
-	word.set(kD0, TMath::Abs(_ntuple->d0A) < _maxD0 && TMath::Abs(_ntuple->d0B) < _maxD0);
-
-	word.set(kDz, TMath::Abs(_ntuple->dZA) < _maxDz && TMath::Abs(_ntuple->dZB) < _maxDz);
 
 	word.set(kMinMet, _ntuple->pfMet > _minMet );
 
@@ -432,7 +449,9 @@ void HWWAnalyzer::cutAndFill() {
 
 	word.set(kJetVeto, _ntuple->nPfJets == 0);
 
-	word.set(kSoftMuon, _ntuple->softMu == 0);
+	word.set(kSoftMuon, _ntuple->softMus == 0);
+
+	word.set(kTopVeto, !_ntuple->bJets);
 
 	word.set(kHardPtMin, _ntuple->pA.Pt() > _theCuts.minPtHard);
 
@@ -463,21 +482,6 @@ void HWWAnalyzer::cutAndFill() {
 		THROW_RUNTIME("Wrong event type (NEles): " << _ntuple->type );
 	};
 
-
-	// N-1 plots
-	if ( (word & _nthMask[kCharge]) == _nthMask[kCharge] )
-		nm1->at(kCharge)->Fill(_ntuple->cA*_ntuple->cB);
-
-	if ( (word & _nthMask[kD0]) == _nthMask[kD0]) {
-		nm1->at(kD0)->Fill(_ntuple->d0A);
-		nm1->at(kD0)->Fill(_ntuple->d0B);
-	}
-
-	if ( (word & _nthMask[kDz]) == _nthMask[kDz]) {
-		nm1->at(kDz)->Fill(_ntuple->dZA);
-		nm1->at(kDz)->Fill(_ntuple->dZB);
-	}
-
 	if ( (word & _nthMask[kMinMet]) == _nthMask[kMinMet] )
 		nm1->at(kMinMet)->Fill(_ntuple->pfMet);
 
@@ -494,7 +498,10 @@ void HWWAnalyzer::cutAndFill() {
 		nm1->at(kJetVeto)->Fill(_ntuple->nPfJets);
 
 	if ( (word & _nthMask[kSoftMuon]) == _nthMask[kSoftMuon] )
-		nm1->at(kSoftMuon)->Fill(_ntuple->softMu);
+		nm1->at(kSoftMuon)->Fill(_ntuple->softMus);
+
+	if ( (word & _nthMask[kTopVeto]) == _nthMask[kTopVeto] )
+		nm1->at(kTopVeto)->Fill(_ntuple->bJets);
 
 	if ( (word & _nthMask[kHardPtMin]) == _nthMask[kHardPtMin] )
 		nm1->at(kHardPtMin)->Fill(_ntuple->pA.Pt());
@@ -512,29 +519,6 @@ void HWWAnalyzer::cutAndFill() {
 
 
 	counters->Fill(kDileptons);
-	// opposite charge
-	_preCutHist[kCharge]->Fill(_ntuple->cA*_ntuple->cB);
-	if ( !word[kCharge] ) return;
-	counters->Fill(kCharge);
-	_postCutHist[kCharge]->Fill(_ntuple->cA*_ntuple->cB);
-
-	// d0
-	_preCutHist[kD0]->Fill( _ntuple->d0A );
-	_preCutHist[kD0]->Fill( _ntuple->d0B );
-	if ( !word[kD0]) return;
-	counters->Fill(kD0);
-	_postCutHist[kD0]->Fill( _ntuple->d0A );
-	_postCutHist[kD0]->Fill( _ntuple->d0B );
-
-	// dz
-	_preCutHist[kDz]->Fill( _ntuple->dZA );
-	_preCutHist[kDz]->Fill( _ntuple->dZB );
-	if ( !word[kDz] ) return;
-	counters->Fill(kDz);
-	_postCutHist[kDz]->Fill( _ntuple->dZA );
-	_postCutHist[kDz]->Fill( _ntuple->dZB );
-
-
 	// min missing Et
 	_preCutHist[kMinMet]->Fill(_ntuple->pfMet);
 	if ( !word[kMinMet] ) return;
@@ -573,10 +557,16 @@ void HWWAnalyzer::cutAndFill() {
 	_postCutHist[kJetVeto]->Fill(_ntuple->nPfJets);
 
 	// soft muon
-	_preCutHist[kSoftMuon]->Fill(_ntuple->softMu);
+	_preCutHist[kSoftMuon]->Fill(_ntuple->softMus);
 	if ( !word[kSoftMuon] ) return;
 	counters->Fill(kSoftMuon);
-	_postCutHist[kSoftMuon]->Fill(_ntuple->softMu);
+	_postCutHist[kSoftMuon]->Fill(_ntuple->softMus);
+
+	// soft muon
+	_preCutHist[kTopVeto]->Fill(_ntuple->bJets);
+	if ( !word[kTopVeto] ) return;
+	counters->Fill(kTopVeto);
+	_postCutHist[kTopVeto]->Fill(_ntuple->bJets);
 
 	// hard pt cut
 	_preCutHist[kHardPtMin]->Fill(_ntuple->pA.Pt());
@@ -628,25 +618,6 @@ void HWWAnalyzer::Process( Long64_t iEvent ) {
 //_____________________________________________________________________________
 void HWWAnalyzer::EndJob() {
 
-//	for ( int i(1); i <= _llCounters->GetNbinsX(); ++i) {
-//		float binc(0);
-//		binc += _eeCounters->GetBinContent(i);
-//		binc += _mmCounters->GetBinContent(i);
-//		binc += _emCounters->GetBinContent(i);
-//
-//		_llCounters->SetBinContent(i,binc);
-//	}
-
-//	for ( int i(1); i <= _llNm1Hist[k]->GetNbinsX(); ++i ) {
-//
-//		float binc(0);
-//		binc += _eeNm1Hist[k]->GetBinContent(i);
-//		binc += _emNm1Hist[k]->GetBinContent(i);
-//		binc += _mmNm1Hist[k]->GetBinContent(i);
-//
-//	_llNm1Hist[k];
-//	}
-
 	_llCounters->Add(_eeCounters);
 	_llCounters->Add(_emCounters);
 	_llCounters->Add(_mmCounters);
@@ -657,5 +628,80 @@ void HWWAnalyzer::EndJob() {
 		_llNm1Hist[k]->Add(_emNm1Hist[k]);
 		_llNm1Hist[k]->Add(_mmNm1Hist[k]);
 	}
+
+	_output->mkdir("lepSelection")->cd();
+	std::map<std::string,TH1F*>::iterator it;
+	for( it = _hists.begin(); it!=_hists.end();it++) {
+		it->second->Write();
+	}
+
+	_output->mkdir("fullSelection")->cd();
+	glueCounters(_eeCounters);
+	glueCounters(_emCounters);
+	glueCounters(_mmCounters);
+	glueCounters(_llCounters);
+
+}
+
+//_____________________________________________________________________________
+TH1F* HWWAnalyzer::glueCounters(TH1F* c) {
+
+	std::string name = c->GetName();
+	std::map<std::string,TH1F*>::iterator it = _hists.find(name);
+	if ( it == _hists.end() ) return 0x0;
+	TH1F* cPre = it->second;
+
+	bool add = TDirectory::AddDirectoryStatus();
+	TDirectory::AddDirectory(kFALSE);
+	TH1F* cClone = dynamic_cast<TH1F*>(c->Clone("cClone"));
+	TDirectory::AddDirectory(add);
+
+	int nBins    = cClone->GetNbinsX();
+	int nBinsPre = cPre->GetNbinsX();
+
+	// check bin content
+	if ( cPre->GetBinContent(nBinsPre) != cClone->GetBinContent(1) )
+		THROW_RUNTIME("Bin mismatch: Wrong histogram? "<<nBins << "  "<<nBinsPre );
+
+	cClone->Fill(1,cClone->GetBinContent(1)*-1);
+
+	// matching possible, build labels
+	THashList labels;
+	labels.AddAll(cPre->GetXaxis()->GetLabels());
+	labels.AddAll(cClone->GetXaxis()->GetLabels());
+	labels.RemoveAt(nBinsPre);
+
+//	TIter iter(&labels);
+//	while( TObjString* str = (TObjString*)iter.Next() )
+//		std::cout << str->GetName() << std::endl;
+
+	int nBinsNew = nBinsPre+nBins-1;
+
+	float xmin = cPre->GetXaxis()->GetXmin();
+	float xmax = xmin+nBinsNew;
+	TH1F* hNew = new TH1F(cPre->GetName(),cPre->GetTitle(),nBinsNew,xmin,xmax);
+
+	TAxis* ax = hNew->GetXaxis();
+	for( int i(0); i<labels.GetEntries(); ++i)
+		ax->SetBinLabel(i+1,labels.At(i)->GetName());
+
+	THashList histograms;
+	histograms.Add(cPre);
+	histograms.Add(cClone);
+
+	hNew->Merge(&histograms);
+	if ( hNew->GetNbinsX() != nBinsNew )
+		THROW_RUNTIME("Merge screwed it up! "<< hNew->GetNbinsX() << "  " << nBinsNew );
+
+	for( int i(1);i<=cPre->GetNbinsX(); ++i)
+		if( hNew->GetBinContent(i) != cPre->GetBinContent(i))
+			THROW_RUNTIME("Failed HA check:" << i << ":"<< hNew->GetBinContent(i) << "  "<< cPre->GetBinContent(i))
+	for( int i(2);i<=cClone->GetNbinsX(); ++i)
+		if( hNew->GetBinContent(i+cPre->GetNbinsX()-1) != cClone->GetBinContent(i))
+			THROW_RUNTIME("Failed HB check:" << i << ":"<< hNew->GetBinContent(i+cPre->GetNbinsX()-1) << "  "<< cClone->GetBinContent(i))
+
+	delete cClone;
+
+	return hNew;
 
 }

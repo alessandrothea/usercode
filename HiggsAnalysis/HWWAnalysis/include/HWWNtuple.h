@@ -37,7 +37,8 @@ public:
 	double dPhi;
 	int    nPfJets;
 	int    nJets;
-	bool   softMu;
+	bool   softMus;
+	bool   bJets;
 
 	ClassDef(HWWNtuple,1)
 };

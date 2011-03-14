@@ -32,6 +32,48 @@ protected:
 	static const float _etaMaxEE;
 	static const float _etaMaxMu;
 
+
+	enum lepTags {
+		kLepTagEtaPt,
+		kLepTagImpactPar,
+		kLepTagIsolation,
+		kLepTagId,
+		kLepTagNoConv,
+		kLepTagLast
+	};
+	enum elTags {
+		kElBitEta = kLepTagLast,
+		kElBitPt,
+		kElBitD0PV,
+		kElBitDzPV,
+		kElBitSee,
+		kElBitDeta,
+		kElBitDphi,
+		kElBitHoE,
+		kElBitTkIso,
+		kElBitEcalIso,
+		kElBitHcalIso,
+		kElBitCombIso,
+		kElBitHits,
+		kElBitDist,
+		kElBitCot,
+	};
+
+	enum muTags {
+		kMuBitEta = kLepTagLast,
+		kMuBitPt,
+		kMuBitD0PV,
+		kMuBitDzPV,
+		kMuBitSoft,
+		kMuBitSoftPt,
+		kMuBitIsGlobal,
+		kMuBitIsTracker,
+		kMuBitNChi2,
+		kMuBitNMuHits,
+		kMuBitNTkHits,
+		kMuBitIsTMLastStationAngTight,
+	};
+
 	enum ElCuts {
 		kElEta,
 		kElPt,
@@ -69,6 +111,16 @@ protected:
 		kMuNumBits
 	};
 
+	enum LlBins {
+		kLLHLT,
+		kLLDilepton,
+		kLLEtaPt,
+		kLLIntPoint,
+		kLLIso,
+		kLLId,
+		kLLNoConv
+	};
+
 	enum Partition {
 		kBarrel,
 		kEndcap
@@ -101,8 +153,7 @@ protected:
 	template<size_t N>
 	unsigned int countCuts( ElCuts cut, std::vector< std::bitset<N> > array);
 
-	virtual bool selectAndClean();
-	virtual void assembleNtuple();
+
 	WorkingPoint getWorkingPoint(unsigned short part, int eff);
 	virtual void readWorkingPoints( const std::string& path );
 	virtual elBitSet electronID( int eff, int i );
@@ -115,6 +166,8 @@ protected:
 	virtual std::vector<unsigned int> countSoftMuons( const wordVector& bits, std::vector<unsigned int>& candidates );
 	virtual void cleanJets();
 	virtual void clear();
+	virtual bool selectAndClean();
+	virtual void assembleNtuple();
 
 	int _elTightWorkingPoint;
 	int _elLooseWorkingPoint;

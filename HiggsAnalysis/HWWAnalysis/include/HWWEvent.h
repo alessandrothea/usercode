@@ -107,6 +107,7 @@ public:
 	Double_t MuCorrMETphi;
 
 	Bool_t   HasSoftMus;
+	Bool_t	 HasBTaggedJets;
 	Int_t	 NEles;   // Electrons
 	Int_t 	 NMus;    // Mus
 	Int_t    NJets;	  //Jets

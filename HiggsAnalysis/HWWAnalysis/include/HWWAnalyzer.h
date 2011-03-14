@@ -23,6 +23,7 @@ public:
 	HWWAnalyzer(int argc,char** argv);
 	virtual ~HWWAnalyzer();
 
+	virtual Bool_t Notify();
 	virtual void Book();
 	virtual void BeginJob();
 	virtual void Process( Long64_t iEvent );
@@ -50,15 +51,16 @@ protected:
 
 	enum HCuts_t {
 		kDileptons = 1,
-		kCharge,
-		kD0,
-		kDz,
+//		kCharge,
+//		kD0,
+//		kDz,
 		kMinMet,
 		kMinMll,
 		kZveto,
 		kProjMet,
 		kJetVeto,
 		kSoftMuon,
+		kTopVeto,
 		kHardPtMin,
 		kSoftPtMin,
 		kMaxMll,
@@ -80,6 +82,7 @@ protected:
 	void readHiggsCutSet( const std::string& path );
 	HiggsCutSet getHiggsCutSet(int mass);
 //	HiggsCutSet getHiggsCutSet(int mass, int ll);
+	TH1F* glueCounters(TH1F* h);
 
 	std::string _analysisTreeName;
 
@@ -93,6 +96,9 @@ protected:
 
 	float _minProjMetEM;
 	float _minProjMetLL;
+
+	std::vector<std::string> _histLabels;
+	std::map<std::string,TH1F*> _hists;
 
 	HiggsCutSet _theCuts;
 
