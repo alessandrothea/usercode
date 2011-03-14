@@ -53,8 +53,13 @@ def main():
     m.disconnect()
 
 def checkJobs( jobs, jMap ):
-    completed = True
+    isCompleted = True
     updated = []
+    
+    hasCreated   = False;
+    hasSubmitted = False;
+    hasRunning   = False;
+    hasCompleted = False;
     
     for job in jobs:
         if job.status == jobtools.kSubmitted or job.status == jobtools.kRunning:
@@ -88,9 +93,9 @@ def checkJobs( jobs, jMap ):
             updated.append(job)
 
         print '|   ',job.name(), 'is', jobtools.colState(job.status),'(code',job.exitCode,')'
-        completed &= job.status == jobtools.kCompleted
+        isCompleted &= job.status == jobtools.kCompleted
     
-    return (completed, updated)
+    return (isCompleted, updated)
 
 if __name__ == '__main__':
     main()

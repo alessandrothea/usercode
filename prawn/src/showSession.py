@@ -15,18 +15,44 @@ def main():
 
     parser.add_option('-d', '--database', dest='database', help='Database path', default=jobtools.jmDBPath())
     parser.add_option('-g', '--group', dest='sessionGroup', help='Comma separated list of groups')
+    parser.add_option('-v', '--verbose', dest='verbose', help='Verbose output',  action='store_true')
+    parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
 
     (opt, args) = parser.parse_args()
 
     m = jobtools.Manager(opt.database)
     m.connect()
 
-    sessions = m.getListOfSessions(group=opt.sessionGroup)
+    sessions = m.getListOfSessions(opt.sessionName,opt.sessionGroup)
     
+    if opt.verbose or opt.sessionName is not None:
+        printDetails(sessions)
+    else:
+        printSummary(sessions)
+        
+    
+    
+def printDetails( sessions ):
     hline = '-'*80
-#    print hline
-#    print str('| name\tLabel\t\tnJobs\tstatus').expandtabs(15)
-#    print hline
+    for s in sessions:
+        print hline
+        print '|  Session:',s.name,'-',s.label,jobtools.colState(s.status)
+        print hline
+        print '|  Groups:',s.groups
+        print '|  Mode:',s.mode,'Njobs:',s.nJobs
+        print '|  Nevents:',s.nTotEvents
+        print '|  Output dir:',s.outputDir
+        print '|  Working dir:',s.workingDir
+        print hline
+        print '|  Command Line:'
+        print s.cmdLine
+        print hline
+        print '|  File list:'
+        print s.allFiles
+        print hline
+    
+def printSummary( sessions ):
+    hline = '-'*80
     table = []
     padding = 0
     table.append(['name','status','label','groups','nJobs'])
@@ -53,7 +79,8 @@ def main():
             dL = len(row[i])-len(plainStr(row[i]))
             print row[i].ljust(widths[i]+padding+dL),
         print
-    print hline 
+    print hline
+
 
 if __name__ == '__main__':
     main()
