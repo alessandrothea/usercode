@@ -51,9 +51,6 @@ protected:
 
 	enum HCuts_t {
 		kDileptons = 1,
-//		kCharge,
-//		kD0,
-//		kDz,
 		kMinMet,
 		kMinMll,
 		kZveto,

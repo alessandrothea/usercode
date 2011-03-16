@@ -23,6 +23,8 @@ public:
 	virtual void Process(Long64_t iEvent);
 	virtual void EndJob();
 
+	virtual Bool_t Notify();
+
 protected:
 	const static unsigned short _wordLen = 32;
 	typedef std::bitset<_wordLen> elBitSet;
@@ -186,6 +188,7 @@ protected:
 	};
 
 	enum LlBins {
+		kLLBinAll,
 		kLLBinHLT,
 		kLLBinDilepton,
 		kLLBinEtaPt,
@@ -197,12 +200,11 @@ protected:
 		kLLBinLast
 	};
 
-
 	WorkingPoint getWorkingPoint(unsigned short part, int eff);
 	virtual void readWorkingPoints( const std::string& path );
 	TH1F* makeLabelHistogram( const std::string& name, const std::string& title, std::map<int,std::string> labels);
 
-
+	virtual bool matchDataHLT();
 	virtual elBitSet electronIsoId( elBitSet& tags, int idx, int eff );
 	virtual void tagElectrons();
 	virtual void tagMuons();
@@ -250,6 +252,11 @@ protected:
 	long long _nSelectedEvents;
 
 	HWWEvent* _event;
+
+	std::string _runInfoName;
+	std::vector<std::string>  _hltAllNames;
+	std::vector<std::string>  _hltActiveNames;
+	std::vector<unsigned int> _hltIdx;
 
 	std::string _wpFile;
 

@@ -187,13 +187,15 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 		_nSelectedEvents(0), _llCounters(0x0), _eeCounters(0x0), _emCounters(0x0), _mmCounters(0x0){
 	// TODO Auto-generated constructor stub
 	_event = new HWWEvent();
+
 	std::cout <<  fChain->GetName() << "   "<< fChain->GetTree() << std::endl;
+
+	_runInfoName         = _config.getValue<std::string>("HWWSelector.runInfoName");
 
 	_elCut_TightWorkingPoint = _config.getValue<int>( "HWWSelector.elTightWorkingPoint");
 	_elCut_LooseWorkingPoint = _config.getValue<int>( "HWWSelector.elLooseWorkingPoint");
 
 	_wpFile				 = _config.getValue<std::string>( "HWWSelector.elWorkingPointFile");
-
 
 	_lepCut_Pt			 = _config.getValue<float>("HWWSelector.lepCut.Pt"); // = 20.
 	_lepCut_D0PV		 = _config.getValue<float>("HWWSelector.lepCut.d0PrimaryVertex");// = 0.2
@@ -215,6 +217,19 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 	_muSoftCut_Pt		 = _config.getValue<float>("HWWSelector.muSoftCut.Pt");
 	_muSoftCut_HighPt	 = _config.getValue<float>("HWWSelector.muSoftCut.HighPt");
 	_muSoftCut_NotIso    = _config.getValue<float>("HWWSelector.muSoftCut.NotIso");
+
+	// config from file ?
+	_hltActiveNames.clear();
+	_hltActiveNames.push_back("HLT_Ele10_LW_L1R");
+	_hltActiveNames.push_back("HLT_Ele15_SW_L1R");
+	_hltActiveNames.push_back("HLT_Ele15_SW_CaloEleId_L1R");
+	_hltActiveNames.push_back("HLT_Ele17_SW_CaloEleId_L1R");
+	_hltActiveNames.push_back("HLT_Ele17_SW_TightEleId_L1R");
+	_hltActiveNames.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v2");
+	_hltActiveNames.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v3");
+	_hltActiveNames.push_back("HLT_Mu9");
+	_hltActiveNames.push_back("HLT_Mu15_v1");
+
 }
 
 //_____________________________________________________________________________
@@ -231,6 +246,7 @@ void HWWSelectorB::Book() {
 	std::map<int,std::string> labels;
 
 
+	labels[kLLBinAll]	   = "All events";
 	labels[kLLBinHLT]      = "HLT";
 	labels[kLLBinDilepton] = "l^{+}l^{-}";
 	labels[kLLBinEtaPt]    = "EtaPt";
@@ -311,7 +327,45 @@ void HWWSelectorB::Process(Long64_t iEvent) {
 
 //_____________________________________________________________________________
 void HWWSelectorB::EndJob() {
+	_llCounters->SetEntries(_llCounters->GetBinContent(1));
+	_eeCounters->SetEntries(_eeCounters->GetBinContent(1));
+	_emCounters->SetEntries(_emCounters->GetBinContent(1));
+	_mmCounters->SetEntries(_mmCounters->GetBinContent(1));
 	std::cout << "--- Job completed " << _nEvents << " processed " << _nSelectedEvents << " selected"<< std::endl;
+}
+
+//_____________________________________________________________________________
+Bool_t HWWSelectorB::Notify() {
+	ETHZNtupleSelector::Notify();
+	if (  fChain->GetCurrentFile() ) {
+		_hltAllNames.clear();
+
+		std::vector<std::string>*names = 0;
+		TTree* runInfo = (TTree*)(fChain->GetCurrentFile()->Get(_runInfoName.c_str()));
+		runInfo->SetBranchAddress("HLTNames",&names);
+		runInfo->GetEntry(0);
+		_hltAllNames = *names;
+	}
+
+//	for( int i(0); i<_hltNames.size(); ++i)
+//		Debug(1) << i << "   " << _hltNames[i] << std::endl;
+
+//	std::vector<std::string> _hltActiveNames;
+
+
+	_hltIdx.clear();
+
+	std::vector<std::string>::iterator it;
+	for( unsigned int i(0); i < _hltAllNames.size(); ++i)
+		for( it = _hltActiveNames.begin(); it != _hltActiveNames.end(); ++it)
+			if ( _hltAllNames[i] == *it ) {
+				_hltIdx.push_back(i);
+				break;
+			}
+
+//	for( int i(0); i<_hltIdx.size(); ++i)
+//		Debug(1) << i << "   " << _hltNames[_hltIdx[i]] << "   " << _hltIdx[i] << std::endl;
+
 }
 
 //_____________________________________________________________________________void HWWSelectorB::readWorkingPoints( const std::string& path ) {	std::cout << "Reading Working points from file " << path << std::endl;	ifstream wpFile(path.c_str(), ifstream::in);	if ( !wpFile.is_open() ) {		THROW_RUNTIME(std::string("File ") + path + " not found");	}	std::string line;	while( wpFile.good() ) {		getline(wpFile, line);		// remove trailing and leading spaces		std::stringstream ss(line);		std::string dummy;		ss >> dummy;		if ( dummy.empty() || dummy[0]=='#') continue;		if ( dummy.length() != 1 )			THROW_RUNTIME("Corrupted wp file: " + dummy + " is supposed to be 1 char long.");		WorkingPoint p;		switch (dummy[0]) {		case 'B':		case 'b':			// Barrel			p.partition = kBarrel;			break;		case 'E':		case 'e':			// Endcaps			p.partition = kEndcap;			break;		default:			std::cout << "Corrupted line\n" << line<< std::endl;			continue;		}		ss >> p.efficiency >> p.See >> p.dPhi >> p.dEta>>p.HoE >> p.tkIso >> p.ecalIso >> p.hcalIso >> p.combIso>> p.missHits>> p.dist>> p.cot;		p.print();		_elWorkingPoints.push_back(p);	}}//_____________________________________________________________________________HWWSelectorB::WorkingPoint HWWSelectorB::getWorkingPoint(unsigned short part, int eff) {	std::vector<WorkingPoint>::iterator it;	for ( it=_elWorkingPoints.begin(); it != _elWorkingPoints.end(); ++it) {		if ( (*it).partition == part && (*it).efficiency == eff)			return *it;	}	std::stringstream msg;	msg << "Working point " << part << "(" << eff << ") not found";	THROW_RUNTIME(msg.str());}
@@ -344,9 +398,14 @@ bool HWWSelectorB::selectAndClean() {
 	// loop over electrons and mus.
 	// proceed only if there are 2 leptons (both tight and loose)
 
+
+
 	Debug(3) << "- NtupleLeptons: " << NEles+NMus << '\n'
 			<< "  NtupleMuons: " << NMus << '\n'
 			<< "  NtupleElectrons: " << NEles << std::endl;
+
+	// check the HLT flags
+	if ( !matchDataHLT() ) return false;
 
 	// select electrons
 	tagElectrons();
@@ -367,6 +426,36 @@ bool HWWSelectorB::selectAndClean() {
 	// then clean the jets up
 	cleanJets();
 	return true;
+}
+
+//_____________________________________________________________________________
+bool HWWSelectorB::matchDataHLT() {
+
+    _llCounters->Fill(kLLBinAll);
+    _eeCounters->Fill(kLLBinAll);
+    _emCounters->Fill(kLLBinAll);
+    _mmCounters->Fill(kLLBinAll);
+
+    // use the GetMet to detect whether is MC or not
+    bool isData = ( GenMET  < -999.);
+	bool trigger = false;
+
+	// this is data, check the HLT bits
+	if ( isData ) {
+		std::vector<unsigned int>::iterator it;
+		for ( int i(0); i<_hltIdx.size(); ++i)
+			trigger |= HLTResults[_hltIdx[i]];
+	}
+
+	// fill the HLT
+	if ( trigger || !isData ) {
+	    _llCounters->Fill(kLLBinHLT);
+	    _eeCounters->Fill(kLLBinHLT);
+	    _emCounters->Fill(kLLBinHLT);
+	    _mmCounters->Fill(kLLBinHLT);
+	}
+	return (trigger || !isData);
+
 }
 
 //_____________________________________________________________________________
@@ -701,10 +790,6 @@ void HWWSelectorB::countPairs() {
 				oppChargePairs.push_back(p);
 		}
 
-    _llCounters->Fill(kLLBinHLT);
-    _eeCounters->Fill(kLLBinHLT);
-    _emCounters->Fill(kLLBinHLT);
-    _mmCounters->Fill(kLLBinHLT);
 
 	if ( oppChargePairs.size() == 0 ) {
 		Debug(3) << "- No pairs found" << std::endl;

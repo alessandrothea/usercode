@@ -50,8 +50,8 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
 	_analysisTreeName = _config.getValue<std::string>("HWWAnalyzer.analysisTreeName");
 	_higgsMass        = _config.getValue<int>("HWWAnalyzer.higgsMass");
 
-	_maxD0            = _config.getValue<float>("HWWAnalyzer.maxD0");
-	_maxDz            = _config.getValue<float>("HWWAnalyzer.maxDz");
+//	_maxD0            = _config.getValue<float>("HWWAnalyzer.maxD0");
+//	_maxDz            = _config.getValue<float>("HWWAnalyzer.maxDz");
 	_cutFile          = _config.getValue<std::string>("HWWAnalyzer.cutFile");
 	_minMet           = _config.getValue<float>("HWWAnalyzer.minMet");
 	_minMll           = _config.getValue<float>("HWWAnalyzer.minMll");
@@ -216,9 +216,6 @@ void HWWAnalyzer::bookCutHistograms( std::vector<TH1F*>& histograms , const std:
 	// all numbers to 0, just to be sure;
 	histograms.assign(kNumCuts,0x0);
 
-//	histograms[kCharge] 	= new TH1F((nPrefix+"Charge").c_str(),     (lPrefix+"Charge").c_str(),3,-1,2);
-//	histograms[kD0]			= new TH1F((nPrefix+"D0").c_str(),         (lPrefix+"D0").c_str(), 100, -3*_maxD0, 3*_maxD0);
-//	histograms[kDz]			= new TH1F((nPrefix+"Dz").c_str(),         (lPrefix+"Dz").c_str(), 100, -3*_maxDz, 3*_maxDz);
 	histograms[kMinMet]		= new TH1F((nPrefix+"MinMet").c_str(),     (lPrefix+"Met_{min}").c_str(),	    100, 0, 100);
 	histograms[kMinMll]		= new TH1F((nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(),    100, 0, 100);
 	histograms[kZveto]		= new TH1F((nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(), 		    100, 0, 120);
@@ -424,8 +421,8 @@ void HWWAnalyzer::calcNtuple(){
 	_ntuple->muMet      = muMet;
 	_ntuple->projPfMet  = projPfMet;
 	_ntuple->projMuMet  = projMuMet;
-	_ntuple->dPhi     = dPhiLL;
-	_ntuple->nPfJets	 = nPfJets;
+	_ntuple->dPhi       = dPhiLL;
+	_ntuple->nPfJets	= nPfJets;
 	_ntuple->nJets      = nJets;
 	_ntuple->softMus     = softMu;
 
@@ -438,24 +435,24 @@ void HWWAnalyzer::cutAndFill() {
 
 	higgsBitWord word;
 
-	word.set(kMinMet, _ntuple->pfMet > _minMet );
+	word[kMinMet]    = ( _ntuple->pfMet > _minMet );
 
-	word.set(kMinMll, _ntuple->type == 1 || _ntuple->mll > _minMll);
+	word[kMinMll]    = ( _ntuple->type == 1 || _ntuple->mll > _minMll);
 
-	word.set(kZveto, _ntuple->type == 1 || TMath::Abs(_ntuple->mll - _Z0->Mass()) > _zVetoWidth );
+	word[kZveto]     =  ( _ntuple->type == 1 || TMath::Abs(_ntuple->mll - _Z0->Mass()) > _zVetoWidth );
 
 	float minProjMet = _ntuple->type == 1 ? _minProjMetEM : _minProjMetLL;
-	word.set(kProjMet, _ntuple->projPfMet > minProjMet);
+	word[kProjMet]   = ( _ntuple->projPfMet > minProjMet);
 
-	word.set(kJetVeto, _ntuple->nPfJets == 0);
+	word[kJetVeto]   = ( _ntuple->nPfJets == 0);
 
-	word.set(kSoftMuon, _ntuple->softMus == 0);
+	word[kSoftMuon]  = ( _ntuple->softMus == 0);
 
-	word.set(kTopVeto, !_ntuple->bJets);
+	word[kTopVeto]   = (!_ntuple->bJets);
 
-	word.set(kHardPtMin, _ntuple->pA.Pt() > _theCuts.minPtHard);
+	word[kHardPtMin] = ( _ntuple->pA.Pt() > _theCuts.minPtHard);
 
-	word.set(kSoftPtMin, _ntuple->pB.Pt() > _theCuts.minPtSoft);
+	word[kSoftPtMin] = ( _ntuple->pB.Pt() > _theCuts.minPtSoft);
 
 	//TODO check if maxMll applies to all the combinations
 	word.set(kMaxMll, _ntuple->mll < _theCuts.maxMll);
@@ -618,6 +615,10 @@ void HWWAnalyzer::Process( Long64_t iEvent ) {
 //_____________________________________________________________________________
 void HWWAnalyzer::EndJob() {
 
+	_eeCounters->SetEntries(_eeCounters->GetBinContent(1));
+	_emCounters->SetEntries(_emCounters->GetBinContent(1));
+	_mmCounters->SetEntries(_mmCounters->GetBinContent(1));
+
 	_llCounters->Add(_eeCounters);
 	_llCounters->Add(_emCounters);
 	_llCounters->Add(_mmCounters);
@@ -702,6 +703,8 @@ TH1F* HWWAnalyzer::glueCounters(TH1F* c) {
 
 	delete cClone;
 
+	//being a counter histogram, set the number of entries to the first bin:
+	hNew->SetEntries(hNew->GetBinContent(1));
 	return hNew;
 
 }

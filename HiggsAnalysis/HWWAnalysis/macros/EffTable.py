@@ -21,6 +21,7 @@ for s in fStates:
     print '\n-',s+'Counters'
     counters = f.Get(s+'Counters')
     lastBin = counters.GetNbinsX()
+    print 'Entries:',counters.GetBinContent(1)
     for i in range(2,lastBin+1):
         ax = counters.GetXaxis()
         labelAbs = ax.GetBinLabel(i)
@@ -31,10 +32,10 @@ for s in fStates:
         theBin  = counters.GetBinContent(i)
         
         absEff = 100.*counters.GetBinContent(i)/entries
-        print prevBin==0,theBin==0
+        #print prevBin==0,theBin==0
         if ( prevBin==0 or theBin==0):
             relEff = 0
         else:
             relEff = 100.*theBin/prevBin
         
-        print '  %s = %.3f%% (%.3f%%)' % (labelAbs.ljust(15), absEff, relEff)
+        print '  %s = %d - %.3f%% (%.3f%%)' % (labelAbs.ljust(15), theBin,absEff, relEff)
