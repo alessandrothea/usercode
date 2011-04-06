@@ -79,6 +79,7 @@ protected:
 	void readHiggsCutSet( const std::string& path );
 	HiggsCutSet getHiggsCutSet(int mass);
 //	HiggsCutSet getHiggsCutSet(int mass, int ll);
+	TH1F* makeLabelHistogram( const std::string& name, const std::string& title, std::map<int,std::string> labels);
 	TH1F* glueCounters(TH1F* h);
 
 	std::string _analysisTreeName;
@@ -98,6 +99,8 @@ protected:
 	std::map<std::string,TH1F*> _hists;
 
 	HiggsCutSet _theCuts;
+
+	TH1F* _hEntries;
 
 	TH1F* _eeCounters;
 	TH1F* _mmCounters;

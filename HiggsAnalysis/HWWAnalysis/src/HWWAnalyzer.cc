@@ -83,27 +83,6 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
 		_nthMask[k].set(k,false);
 	}
 
-//	std::cout << "----" << std::endl;
-//
-//	std::cout << kCharge << "  " << _nthMask[kCharge].to_string() << std::endl;
-//	std::cout << kZveto << "  " << _nthMask[kZveto].to_string() << std::endl;
-//	std::cout << kMaxMll << "  " << _nthMask[kMaxMll].to_string() << std::endl;
-//
-//	std::cout << "----" << std::endl;
-//
-//	higgsBitWord wTest, wK;
-//
-//	wTest.set(kCharge,1).set(kD0,1).set(kDz,1)
-//			.set(kMinMet,1).set(kMinMll,1).set(kZveto,1)
-//			.set(kProjMet,1).set(kJetVeto,1).set(kSoftMuon,1)
-//			.set(kHardPtMin,1).set(kSoftPtMin,1).set(kMaxMll,1).set(kDeltaPhi,1);
-//
-//	std::cout << _theMask.to_string() << "   " << wTest.to_string() << std::endl;
-//	std::cout << "are the same?" << (_theMask == wTest) << std::endl;
-//
-//	std::cout << wK <<  "  " << (_theMask & wK).to_string() << std::endl;
-
-//	THROW_RUNTIME("End Test");
 }
 
 //_____________________________________________________________________________
@@ -116,13 +95,14 @@ void HWWAnalyzer::Book() {
 	if (!_output) return;
 
 	_output->cd();
+	std::map<int,std::string> entriesLabels;
+	entriesLabels[0] = "processedEntries";
+	entriesLabels[1] = "selectedEntries";
+	_hEntries = makeLabelHistogram("preSelEntries","HWW pre-selection entries",entriesLabels);
 
 	std::map<int,std::string> labels;
 
 	labels[kDileptons] = "N_{l^{+}l^{-}}";
-//	labels[kCharge]    = "Opposite charge";
-//	labels[kD0]        = "D0";
-//	labels[kDz]        = "Dz";
 	labels[kMinMet]    = "Met_{min}";
 	labels[kMinMll]    = "m^{ll}_{min}";
 	labels[kZveto]     = "Z veto";
@@ -136,18 +116,24 @@ void HWWAnalyzer::Book() {
 	labels[kDeltaPhi]  = "#Delta#Phi_{ll}";
 
 
-	_eeCounters = new TH1F("eeCounters","eeCounters",labels.size(),1,labels.size()+1);
-	_mmCounters = new TH1F("mmCounters","mmCounters",labels.size(),1,labels.size()+1);
-	_emCounters = new TH1F("emCounters","emCounters",labels.size(),1,labels.size()+1);
-	_llCounters = new TH1F("llCounters","llCounters",labels.size(),1,labels.size()+1);
+	_eeCounters = makeLabelHistogram("eeCounters","eeCounters",labels);
+	_mmCounters = makeLabelHistogram("mmCounters","mmCounters",labels);
+	_emCounters = makeLabelHistogram("emCounters","emCounters",labels);
+	_llCounters = makeLabelHistogram("llCounters","llCounters",labels);
 
-	std::map<int,std::string>::iterator it;
-	for ( it = labels.begin(); it != labels.end(); ++it) {
-		_eeCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
-		_mmCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
-		_emCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
-		_llCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
-	}
+
+//	_eeCounters = new TH1F("eeCounters","eeCounters",labels.size(),1,labels.size()+1);
+//	_mmCounters = new TH1F("mmCounters","mmCounters",labels.size(),1,labels.size()+1);
+//	_emCounters = new TH1F("emCounters","emCounters",labels.size(),1,labels.size()+1);
+//	_llCounters = new TH1F("llCounters","llCounters",labels.size(),1,labels.size()+1);
+//
+//	std::map<int,std::string>::iterator it;
+//	for ( it = labels.begin(); it != labels.end(); ++it) {
+//		_eeCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
+//		_mmCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
+//		_emCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
+//		_llCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
+//	}
 
 	_jetN      = new TH1F("jetN",    "n_{jets}", 15, 0, 15);
 	_jetPt     = new TH1F("jetPt",   "Jet Pt",   100, 0, 1000);
@@ -187,10 +173,21 @@ Bool_t HWWAnalyzer::Notify() {
 		std::cout << "--- Notify(): New file opened: "<<  _chain->GetCurrentFile()->GetName() << std::endl;
 		bool add = TH1::AddDirectoryStatus();
 		TH1::AddDirectory(kFALSE);
+
+		TH1F* entries = (TH1F*)_chain->GetCurrentFile()->Get("entries");
+		if ( !entries )
+			std::cout << "Warning: Preselection entries not found" << std::endl;
+		else
+			_hEntries->Add(entries);
+
 		std::vector<std::string>::iterator it;
 		for( it = _histLabels.begin(); it!=_histLabels.end();it++) {
-			//std::cout << *it << "  " << _chain->GetCurrentFile()->Get(it->c_str()) << std::endl;
 			TH1F* h = (TH1F*)_chain->GetCurrentFile()->Get(it->c_str());
+			if ( !h ) {
+				std::cout << "Warning: histogram "<< *it << " not found" << std::endl;
+				continue;
+			}
+
 			if ( _hists.find(*it) == _hists.end() ) {
 				_hists[*it] = (TH1F*)h->Clone();
 			} else {
@@ -644,6 +641,29 @@ void HWWAnalyzer::EndJob() {
 
 }
 
+//_____________________________________________________________________________
+TH1F* HWWAnalyzer::makeLabelHistogram( const std::string& name, const std::string& title, std::map<int,std::string> labels) {
+	int xmin = labels.begin()->first;
+	int xmax = labels.begin()->first;
+
+	std::map<int, std::string>::iterator it;
+	for( it = labels.begin(); it != labels.end(); ++it ) {
+		xmin = it->first < xmin ? it->first : xmin;
+		xmax = it->first > xmax ? it->first : xmax;
+	}
+
+	++xmax;
+	int nbins = xmax-xmin;
+
+	TH1F* h = new TH1F(name.c_str(), title.c_str(), nbins, xmin, xmax);
+	for( it = labels.begin(); it != labels.end(); ++it ) {
+		int bin = h->GetXaxis()->FindBin(it->first);
+		h->GetXaxis()->SetBinLabel(bin, it->second.c_str());
+	}
+
+	return h;
+
+}
 //_____________________________________________________________________________
 TH1F* HWWAnalyzer::glueCounters(TH1F* c) {
 
