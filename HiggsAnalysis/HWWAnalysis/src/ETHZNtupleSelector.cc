@@ -18,6 +18,8 @@ ETHZNtupleSelector::ETHZNtupleSelector( int argc, char** argv ) : _firstEvent(0)
 	fSkimmedFile(0x0), fSkimmedTree(0x0) {
 	// TODO Auto-generated constructor stub
 
+	_rootConfigMap = new TEnv();
+
 	_config.parse(argc, argv);
 
 	_debugLvl    = _config.getValue<int>("Selector.debugLevel",0);
@@ -34,6 +36,7 @@ ETHZNtupleSelector::ETHZNtupleSelector( int argc, char** argv ) : _firstEvent(0)
 //_____________________________________________________________________________
 ETHZNtupleSelector::~ETHZNtupleSelector() {
 	// TODO Auto-generated destructor stub
+	delete _rootConfigMap;
 
 }
 
@@ -49,6 +52,25 @@ void ETHZNtupleSelector::Analyze() {
 	Start();
 	Loop();
 	Finish();
+}
+
+//_____________________________________________________________________________
+void ETHZNtupleSelector::SaveConfig() {
+	Debug(0) << "Adding configuration map" << std::endl;
+
+	_rootConfigDir->cd();
+    std::map<std::string, std::string> pars = _config.getOptionMap();
+    std::map<std::string, std::string>::iterator it;
+    for( it = pars.begin(); it != pars.end(); ++it) {
+//        TObjString* key = new TObjString(it->first.c_str());
+//        TObjString* val = new TObjString(it->second.c_str());
+//        _rootConfigMap->Add(key,val);
+    	_rootConfigMap->SetValue(it->first.c_str(),it->second.c_str());
+    }
+
+    _rootConfigDir->cd();
+    _rootConfigMap->Write("selectorConfig");
+
 }
 
 //_____________________________________________________________________________
@@ -124,8 +146,11 @@ void ETHZNtupleSelector::Start() {
 
 	// book the new tree before booking the rest
 	fSkimmedTree = new TTree(_skimmedTreeName.c_str(),_skimmedTreeName.c_str());
+
+	_rootConfigDir = fSkimmedFile->mkdir("config");
 	// call book from child classes
 	Book();
+	SaveConfig();
 	BeginJob();
 
 }

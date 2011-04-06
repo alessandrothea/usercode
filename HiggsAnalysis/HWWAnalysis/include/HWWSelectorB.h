@@ -251,6 +251,7 @@ protected:
 
 	long long _nSelectedEvents;
 
+	TH1F*	  _hEntries;
 	HWWEvent* _event;
 
 	std::string _runInfoName;

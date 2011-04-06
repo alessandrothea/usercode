@@ -14,6 +14,7 @@
 #include "ETHZNtupleReader.h"
 #include "Configurator.h"
 #include <TBenchmark.h>
+#include <TEnv.h>
 
 class ETHZNtupleSelector: public ETHZNtupleReader, public TObject {
 public:
@@ -25,6 +26,7 @@ public:
 	virtual void Analyze();
 	virtual void Finish();
 	virtual void Book() = 0;
+	virtual void SaveConfig();
 	virtual void BeginJob() = 0;
 	virtual void Loop();
 	virtual void Process( Long64_t iEvent ) = 0;
@@ -48,7 +50,9 @@ protected:
 	long long _firstEvent;
 	long long _nEvents;
 
-	long long _currentEvent;
+	long long  _currentEvent;
+	TDirectory* _rootConfigDir;
+	TEnv*       _rootConfigMap;
 
 	TTree* fSkimmedTree;
 	TFile* fSkimmedFile;

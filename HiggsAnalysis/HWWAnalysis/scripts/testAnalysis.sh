@@ -1,7 +1,8 @@
 # bin/runHWW.exe config/TestAnalysis.config -UserAnalyzer.nEvents 1
 
 # samples=( DYEE10 DYEE20 DYuu10 DYuu20 H160 TT W2ENu W2MuNu WW WZ ZZ )
-samples=( WW H160 El2010 )
+# samples=( WW El2010 )
+samples=( TT DYEE20 )
 
 for sample in ${samples[@]}
 do

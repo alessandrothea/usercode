@@ -185,7 +185,7 @@ bool HWWSelectorB::ElCandicate::isExtra() {
 //_____________________________________________________________________________
 HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, argv ),
 		_nSelectedEvents(0), _llCounters(0x0), _eeCounters(0x0), _emCounters(0x0), _mmCounters(0x0){
-	// TODO Auto-generated constructor stub
+
 	_event = new HWWEvent();
 
 	std::cout <<  fChain->GetName() << "   "<< fChain->GetTree() << std::endl;
@@ -234,12 +234,18 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 
 //_____________________________________________________________________________
 HWWSelectorB::~HWWSelectorB() {
-	// TODO Auto-generated destructor stub
+
 }
 
 //_____________________________________________________________________________
 void HWWSelectorB::Book() {
-	std::cout << "Adding the selected objects" << std::endl;
+
+	std::map<int,std::string> entriesLabels;
+	entriesLabels[0] = "processedEntries";
+	entriesLabels[1] = "selectedEntries";
+	_hEntries = makeLabelHistogram("entries","HWWS selection entries",entriesLabels);
+
+	Debug(0) << "Adding the selected objects" << std::endl;
 	fSkimmedTree->Branch("ev","HWWEvent", &_event);
 
 	// counting histogram
@@ -331,7 +337,14 @@ void HWWSelectorB::EndJob() {
 	_eeCounters->SetEntries(_eeCounters->GetBinContent(1));
 	_emCounters->SetEntries(_emCounters->GetBinContent(1));
 	_mmCounters->SetEntries(_mmCounters->GetBinContent(1));
-	std::cout << "--- Job completed " << _nEvents << " processed " << _nSelectedEvents << " selected"<< std::endl;
+
+
+	Debug(0) << "--- Job completed " << _nEvents << " processed " << _nSelectedEvents << " selected"<< std::endl;
+
+	// add the number of processed events
+	_hEntries->Fill("processedEntries",(double)_nEvents);
+	_hEntries->Fill("selectedEntries",(double)_nSelectedEvents);
+
 }
 
 //_____________________________________________________________________________
@@ -368,7 +381,69 @@ Bool_t HWWSelectorB::Notify() {
 
 }
 
-//_____________________________________________________________________________void HWWSelectorB::readWorkingPoints( const std::string& path ) {	std::cout << "Reading Working points from file " << path << std::endl;	ifstream wpFile(path.c_str(), ifstream::in);	if ( !wpFile.is_open() ) {		THROW_RUNTIME(std::string("File ") + path + " not found");	}	std::string line;	while( wpFile.good() ) {		getline(wpFile, line);		// remove trailing and leading spaces		std::stringstream ss(line);		std::string dummy;		ss >> dummy;		if ( dummy.empty() || dummy[0]=='#') continue;		if ( dummy.length() != 1 )			THROW_RUNTIME("Corrupted wp file: " + dummy + " is supposed to be 1 char long.");		WorkingPoint p;		switch (dummy[0]) {		case 'B':		case 'b':			// Barrel			p.partition = kBarrel;			break;		case 'E':		case 'e':			// Endcaps			p.partition = kEndcap;			break;		default:			std::cout << "Corrupted line\n" << line<< std::endl;			continue;		}		ss >> p.efficiency >> p.See >> p.dPhi >> p.dEta>>p.HoE >> p.tkIso >> p.ecalIso >> p.hcalIso >> p.combIso>> p.missHits>> p.dist>> p.cot;		p.print();		_elWorkingPoints.push_back(p);	}}//_____________________________________________________________________________HWWSelectorB::WorkingPoint HWWSelectorB::getWorkingPoint(unsigned short part, int eff) {	std::vector<WorkingPoint>::iterator it;	for ( it=_elWorkingPoints.begin(); it != _elWorkingPoints.end(); ++it) {		if ( (*it).partition == part && (*it).efficiency == eff)			return *it;	}	std::stringstream msg;	msg << "Working point " << part << "(" << eff << ") not found";	THROW_RUNTIME(msg.str());}
+//_____________________________________________________________________________
+void HWWSelectorB::readWorkingPoints( const std::string& path ) {
+
+	std::cout << "Reading Working points from file " << path << std::endl;
+
+	ifstream wpFile(path.c_str(), ifstream::in);
+	if ( !wpFile.is_open() ) {
+		THROW_RUNTIME(std::string("File ") + path + " not found");
+	}
+
+	std::string line;
+	while( wpFile.good() ) {
+		getline(wpFile, line);
+		// remove trailing and leading spaces
+
+		std::stringstream ss(line);
+		std::string dummy;
+
+		ss >> dummy;
+		if ( dummy.empty() || dummy[0]=='#') continue;
+
+		if ( dummy.length() != 1 )
+			THROW_RUNTIME("Corrupted wp file: " + dummy + " is supposed to be 1 char long.");
+
+		WorkingPoint p;
+		switch (dummy[0]) {
+		case 'B':
+		case 'b':
+			// Barrel
+			p.partition = kBarrel;
+			break;
+		case 'E':
+		case 'e':
+			// Endcaps
+			p.partition = kEndcap;
+			break;
+		default:
+			std::cout << "Corrupted line\n" << line<< std::endl;
+			continue;
+		}
+
+		ss >> p.efficiency >> p.See >> p.dPhi >> p.dEta>>p.HoE >> p.tkIso >> p.ecalIso >> p.hcalIso >> p.combIso>> p.missHits>> p.dist>> p.cot;
+
+		p.print();
+
+		_elWorkingPoints.push_back(p);
+	}
+}
+
+//_____________________________________________________________________________
+HWWSelectorB::WorkingPoint HWWSelectorB::getWorkingPoint(unsigned short part, int eff) {
+	std::vector<WorkingPoint>::iterator it;
+	for ( it=_elWorkingPoints.begin(); it != _elWorkingPoints.end(); ++it) {
+		if ( (*it).partition == part && (*it).efficiency == eff)
+			return *it;
+	}
+
+	std::stringstream msg;
+	msg << "Working point " << part << "(" << eff << ") not found";
+	THROW_RUNTIME(msg.str());
+
+}
+
 //_____________________________________________________________________________
 void HWWSelectorB::clear() {
 

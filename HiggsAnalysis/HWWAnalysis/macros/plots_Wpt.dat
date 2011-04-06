@@ -1,0 +1,25 @@
+###############################################################################################
+# this file conatins a list of plots to make
+###############################################################################################
+#
+# histogram name		logX=1	log=1	xaxis	rebin	normalzation
+#
+
+llCounters				0	0	bla		1	
+#s_W_ElTransMass_5		0	1	blub2	1
+#s_W_ElTransMass_8		0	0	blub2	1	s_W_ElTransMass_8
+#s_W_ElTransMass_6		0	0	blub2	4
+#s_W_ElPt_0			0	0	blub	1
+# PAOLOs PLOTS
+#bpt_electronPt				0	1	bla	4	bpt_electronPt 
+#bpt_electronPt_met30		0	1	bla	4	bpt_electronPt
+#bpt_transmass_pt25met30		0	1	bla	4	bpt_transmass_pt25met30mt60	
+#bpt_transmass_pt25met30mt60	0	1	bla	4	bpt_transmass_pt25met30mt60
+#bpt_transmass_pt25met30jet0	0	1	bla	4	bpt_transmass_pt25met30mt60
+#bpt_transmass_pt25met30jet1	0	1	bla	4	bpt_transmass_pt25met30mt60
+#bpt_transmass_pt25met30jet2	0	1	bla	4	bpt_transmass_pt25met30mt60
+#bpt_transmass_pt25met30jet3	0	1	bla	4	bpt_transmass_pt25met30mt60
+#bpt_deltaphi_eJet		0	1	bla	2	bpt_transmass_pt25met30mt60
+#bpt_WPt_jet1			0	1	bla	10	bpt_transmass_pt25met30mt60
+###############################################################################################
+# DO NOT BEGIN NEW LINE AFTER THIS ONE!!!
