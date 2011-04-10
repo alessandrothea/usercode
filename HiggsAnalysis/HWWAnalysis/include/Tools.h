@@ -8,6 +8,9 @@
 #ifndef TOOLS_H_
 #define TOOLS_H_
 
+#include <stdexcept>
+#include <sstream>
+
 #define THROW_RUNTIME(__STRING__) { \
 	std::stringstream ss; \
 	ss << __STRING__ << " - " <<__FILE__<<':'<<__LINE__<<"   "<<__PRETTY_FUNCTION__;\

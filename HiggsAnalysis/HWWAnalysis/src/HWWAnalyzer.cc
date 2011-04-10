@@ -19,21 +19,10 @@
 #include <TDatabasePDG.h>
 #include <TParticlePDG.h>
 #include <THashList.h>
+#include <TH2F.h>
 
 //_____________________________________________________________________________
 void HWWAnalyzer::HiggsCutSet::print() {
-//	std::cout << hMass << '\t'
-//			<< ll << '\t'
-//			<< etaMax << '\t'
-//			<< etaMaxHard << '\t'
-//			<< etaMaxSoft << '\t'
-//			<< metMin << '\t'
-//			<< metMax << '\t'
-//			<< invMassMax << '\t'
-//			<< deltaPhi << '\t'
-//			<< ptMaxMin << '\t'
-//			<< ptMaxMax << '\t'
-//			<< ptMinMax << std::endl;
 		std::cout << hMass << '\t'
 				<< minPtHard << '\t'
 				<< minPtSoft << '\t'
@@ -44,14 +33,13 @@ void HWWAnalyzer::HiggsCutSet::print() {
 
 //_____________________________________________________________________________
 HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthMask(kNumCuts),
-		_analysisTree(0x0), _event(0x0), _ntuple(0x0) {
+		_analysisTree(0x0), _event(0x0), _ntuple(0x0), _hEntries(0x0) {
 	// TODO Auto-generated constructor stub
 
 	_analysisTreeName = _config.getValue<std::string>("HWWAnalyzer.analysisTreeName");
+
 	_higgsMass        = _config.getValue<int>("HWWAnalyzer.higgsMass");
 
-//	_maxD0            = _config.getValue<float>("HWWAnalyzer.maxD0");
-//	_maxDz            = _config.getValue<float>("HWWAnalyzer.maxDz");
 	_cutFile          = _config.getValue<std::string>("HWWAnalyzer.cutFile");
 	_minMet           = _config.getValue<float>("HWWAnalyzer.minMet");
 	_minMll           = _config.getValue<float>("HWWAnalyzer.minMll");
@@ -96,9 +84,9 @@ void HWWAnalyzer::Book() {
 
 	_output->cd();
 	std::map<int,std::string> entriesLabels;
-	entriesLabels[0] = "processedEntries";
-	entriesLabels[1] = "selectedEntries";
-	_hEntries = makeLabelHistogram("preSelEntries","HWW pre-selection entries",entriesLabels);
+	entriesLabels[0] = "Entries";
+	entriesLabels[1] = "Pre-selected Entries";
+	_hEntries = makeLabelHistogram("entries","HWW selection entries",entriesLabels);
 
 	std::map<int,std::string> labels;
 
@@ -121,21 +109,8 @@ void HWWAnalyzer::Book() {
 	_emCounters = makeLabelHistogram("emCounters","emCounters",labels);
 	_llCounters = makeLabelHistogram("llCounters","llCounters",labels);
 
-
-//	_eeCounters = new TH1F("eeCounters","eeCounters",labels.size(),1,labels.size()+1);
-//	_mmCounters = new TH1F("mmCounters","mmCounters",labels.size(),1,labels.size()+1);
-//	_emCounters = new TH1F("emCounters","emCounters",labels.size(),1,labels.size()+1);
-//	_llCounters = new TH1F("llCounters","llCounters",labels.size(),1,labels.size()+1);
-//
-//	std::map<int,std::string>::iterator it;
-//	for ( it = labels.begin(); it != labels.end(); ++it) {
-//		_eeCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
-//		_mmCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
-//		_emCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
-//		_llCounters->GetXaxis()->SetBinLabel(it->first, it->second.c_str());
-//	}
-
-	_jetN      = new TH1F("jetN",    "n_{jets}", 15, 0, 15);
+	_nVrtx	   = new TH1F("nVrtx",	 "n_{vrtx}", 20, 0, 20);
+	_jetN      = new TH1F("jetN",    "n_{jets}", 20, 0, 20);
 	_jetPt     = new TH1F("jetPt",   "Jet Pt",   100, 0, 1000);
 	_jetEta    = new TH1F("jetEta",  "Jet Eta",  100, -5, 5);
 	_projMet   = new TH1F("projMet", "Projected MET", 100, 0, 100);
@@ -143,6 +118,9 @@ void HWWAnalyzer::Book() {
 	_ptSoftLep = new TH1F("softPt",  "p^{soft}", 100, 0, 3.*_theCuts.minPtSoft);
 	_mll       = new TH1F("mll",     "m^{ll}",   100, 0,  100);
 	_deltaPhi  = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, TMath::Pi());
+
+	_jetNVsNvrtx = new TH2F("jetNVsNvrtx","n_{jets} vs .n_{vrtx}",
+			20, 0, 20, 20, 0, 20);
 
 	_output->mkdir("ll")->cd();
 	bookCutHistograms( _llNm1Hist, "llNm1", "ll N-1 Plot - " );
@@ -156,9 +134,21 @@ void HWWAnalyzer::Book() {
 	_output->mkdir("mm")->cd();
 	bookCutHistograms( _mmNm1Hist, "mmNm1", "#mu#mu N-1 Plot - " );
 
-	_output->mkdir("checks")->cd();
-	bookCutHistograms( _preCutHist, "pre", "PreCut - ");
-	bookCutHistograms( _postCutHist, "post", "PostCut - ");
+	_output->mkdir("llCuts")->cd();
+	bookCutHistograms( _llPreCutHist,  "llPre",  "ll PreCut - ");
+	bookCutHistograms( _llPostCutHist, "llPost", "ll PostCut - ");
+
+	_output->mkdir("eeCuts")->cd();
+	bookCutHistograms( _eePreCutHist,  "eePre",  "ee PreCut - ");
+	bookCutHistograms( _eePostCutHist, "eePost", "ee PostCut - ");
+
+	_output->mkdir("emCuts")->cd();
+	bookCutHistograms( _emPreCutHist,  "emPre",  "em PreCut - ");
+	bookCutHistograms( _emPostCutHist, "emPost", "em PostCut - ");
+
+	_output->mkdir("mmCuts")->cd();
+	bookCutHistograms( _mmPreCutHist,  "mmPre",  "mm PreCut - ");
+	bookCutHistograms( _mmPostCutHist, "mmPost", "mm PostCut - ");
 
 	_output->cd();
 
@@ -169,11 +159,18 @@ void HWWAnalyzer::Book() {
 
 //_____________________________________________________________________________
 Bool_t HWWAnalyzer::Notify() {
+
+	if ( !isInitialized() ) {
+		std::cout << "Analyzer not initialized yet" << std::endl;
+		return true;
+	}
+
 	if (  _chain->GetCurrentFile() ) {
 		std::cout << "--- Notify(): New file opened: "<<  _chain->GetCurrentFile()->GetName() << std::endl;
 		bool add = TH1::AddDirectoryStatus();
 		TH1::AddDirectory(kFALSE);
 
+		std::cout << _hEntries << std::endl;
 		TH1F* entries = (TH1F*)_chain->GetCurrentFile()->Get("entries");
 		if ( !entries )
 			std::cout << "Warning: Preselection entries not found" << std::endl;
@@ -213,17 +210,17 @@ void HWWAnalyzer::bookCutHistograms( std::vector<TH1F*>& histograms , const std:
 	// all numbers to 0, just to be sure;
 	histograms.assign(kNumCuts,0x0);
 
-	histograms[kMinMet]		= new TH1F((nPrefix+"MinMet").c_str(),     (lPrefix+"Met_{min}").c_str(),	    100, 0, 100);
-	histograms[kMinMll]		= new TH1F((nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(),    100, 0, 100);
-	histograms[kZveto]		= new TH1F((nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(), 		    100, 0, 120);
-	histograms[kProjMet]	= new TH1F((nPrefix+"MinProjMet").c_str(), (lPrefix+"Projected MET").c_str(),   100, 0, 100);
-	histograms[kJetVeto]	= new TH1F((nPrefix+"JetVeto").c_str(),    (lPrefix+"n_{jets} = 0").c_str(),     15, 0, 15);
-	histograms[kSoftMuon]	= new TH1F((nPrefix+"SoftMuon").c_str(),   (lPrefix+"No Soft #mu").c_str(),       2, 0, 2);
-	histograms[kTopVeto]	= new TH1F((nPrefix+"TopVeto").c_str(),    (lPrefix+"Top Veto").c_str(),          2, 0, 2);
-	histograms[kHardPtMin]	= new TH1F((nPrefix+"MinHardPt").c_str(),  (lPrefix+"p^{hard}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtHard);
-	histograms[kSoftPtMin]	= new TH1F((nPrefix+"MinSoftPt").c_str(),  (lPrefix+"p^{soft}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtSoft);
-	histograms[kMaxMll]		= new TH1F((nPrefix+"MaxMll").c_str(),     (lPrefix+"m^{ll}_{max}").c_str(),    100, 0,  100);
-	histograms[kDeltaPhi]	= new TH1F((nPrefix+"DeltaPhi").c_str(),   (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
+	histograms[kMinMet]		= new TH1F(("01_"+nPrefix+"MinMet").c_str(),     (lPrefix+"Met_{min}").c_str(),	    100, 0, 100);
+	histograms[kMinMll]		= new TH1F(("02_"+nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(),    100, 0, 100);
+	histograms[kZveto]		= new TH1F(("03_"+nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(), 		    100, 0, 120);
+	histograms[kProjMet]	= new TH1F(("04_"+nPrefix+"MinProjMet").c_str(), (lPrefix+"Projected MET").c_str(),   100, 0, 100);
+	histograms[kJetVeto]	= new TH1F(("05_"+nPrefix+"JetVeto").c_str(),    (lPrefix+"n_{jets} = 0").c_str(),     15, 0, 15);
+	histograms[kSoftMuon]	= new TH1F(("06_"+nPrefix+"SoftMuon").c_str(),   (lPrefix+"No Soft #mu").c_str(),       2, 0, 2);
+	histograms[kTopVeto]	= new TH1F(("07_"+nPrefix+"TopVeto").c_str(),    (lPrefix+"Top Veto").c_str(),          2, 0, 2);
+	histograms[kHardPtMin]	= new TH1F(("08_"+nPrefix+"MinHardPt").c_str(),  (lPrefix+"p^{hard}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtHard);
+	histograms[kSoftPtMin]	= new TH1F(("09_"+nPrefix+"MinSoftPt").c_str(),  (lPrefix+"p^{soft}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtSoft);
+	histograms[kMaxMll]		= new TH1F(("10_"+nPrefix+"MaxMll").c_str(),     (lPrefix+"m^{ll}_{max}").c_str(),    100, 0,  100);
+	histograms[kDeltaPhi]	= new TH1F(("11_"+nPrefix+"DeltaPhi").c_str(),   (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
 
 }
 
@@ -365,6 +362,8 @@ void HWWAnalyzer::calcNtuple(){
 	double pfMet = _event->PFMET;
 	// 4b - muMet
 	double muMet = _event->MuCorrMET;
+	// 4c - tcMet
+	double tcMet = _event->TCMET;
 
 	// 5 - projected MeT
 	// 5a - projPfMet
@@ -383,6 +382,14 @@ void HWWAnalyzer::calcNtuple(){
 
 	double muMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(muMet)), TMath::Abs(pB.DeltaPhi(muMet)));
 	double projMuMet = muMetDphi < TMath::PiOver2() ? muMet*TMath::Sin(muMetDphi) : muMet;
+
+
+	TLorentzVector tcMetV;
+	pfMetV.SetPtEtaPhiE(_event->TCMET, 0, _event->TCMETphi,0);
+
+	double tcMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(tcMetV)), TMath::Abs(pB.DeltaPhi(tcMetV)));
+	double projTcMet = tcMetDphi < TMath::PiOver2() ? tcMet*TMath::Sin(tcMetDphi) : tcMet;
+
 
 	// 6 - dPhiEE
 	double dPhiLL = TMath::Abs(pA.DeltaPhi(pB));
@@ -434,9 +441,9 @@ void HWWAnalyzer::cutAndFill() {
 
 	word[kMinMet]    = ( _ntuple->pfMet > _minMet );
 
-	word[kMinMll]    = ( _ntuple->type == 1 || _ntuple->mll > _minMll);
+	word[kMinMll]    = ( _ntuple->mll > _minMll);
 
-	word[kZveto]     =  ( _ntuple->type == 1 || TMath::Abs(_ntuple->mll - _Z0->Mass()) > _zVetoWidth );
+	word[kZveto]     =  ( TMath::Abs(_ntuple->mll - _Z0->Mass()) > _zVetoWidth );
 
 	float minProjMet = _ntuple->type == 1 ? _minProjMetEM : _minProjMetLL;
 	word[kProjMet]   = ( _ntuple->projPfMet > minProjMet);
@@ -458,19 +465,27 @@ void HWWAnalyzer::cutAndFill() {
 
 	// type-dependent settings
 	TH1F* counters(0x0);
-    std::vector<TH1F*>* nm1;
+	std::vector<TH1F*>* nm1;
+	std::vector<TH1F*>* preCuts;
+	std::vector<TH1F*>* postCuts;
 	switch ( _ntuple->type ) {
 	case 2:
 		counters = _eeCounters;
-        nm1 = &_eeNm1Hist;
+        nm1      = &_eeNm1Hist;
+        preCuts  = &_eePreCutHist;
+        postCuts = &_eePostCutHist;
 		break;
 	case 1:
 		counters = _emCounters;
-        nm1 = &_emNm1Hist;
+        nm1 	 = &_emNm1Hist;
+        preCuts  = &_emPreCutHist;
+        postCuts = &_emPostCutHist;
 		break;
 	case 0:
 		counters = _mmCounters;
-        nm1 = &_mmNm1Hist;
+        nm1 	 = &_mmNm1Hist;
+        preCuts  = &_mmPreCutHist;
+        postCuts = &_mmPostCutHist;
 		break;
 	default:
 		THROW_RUNTIME("Wrong event type (NEles): " << _ntuple->type );
@@ -511,31 +526,32 @@ void HWWAnalyzer::cutAndFill() {
 
 
 
+	_nVrtx->Fill(_event->NVrtx);
 
 	counters->Fill(kDileptons);
 	// min missing Et
-	_preCutHist[kMinMet]->Fill(_ntuple->pfMet);
+	preCuts->at(kMinMet)->Fill(_ntuple->pfMet);
 	if ( !word[kMinMet] ) return;
 	counters->Fill(kMinMet);
-	_postCutHist[kMinMet]->Fill(_ntuple->pfMet);
+	postCuts->at(kMinMet)->Fill(_ntuple->pfMet);
 
 	// min invariant mass
-	_preCutHist[kMinMll]->Fill(_ntuple->mll);
+	preCuts->at(kMinMll)->Fill(_ntuple->mll);
 	if ( !word[kMinMll] ) return;
 	counters->Fill(kMinMll);
-	_postCutHist[kMinMll]->Fill(_ntuple->mll);
+	postCuts->at(kMinMll)->Fill(_ntuple->mll);
 
 	// Z veto (m_ll-m_Z < 15 GeV)
-	_preCutHist[kZveto]->Fill(_ntuple->mll);
+	preCuts->at(kZveto)->Fill(_ntuple->mll);
 	if ( !word[kZveto] ) return;
 	counters->Fill(kZveto);
-	_postCutHist[kZveto]->Fill(_ntuple->mll);
+	postCuts->at(kZveto)->Fill(_ntuple->mll);
 
 	// proj Met (20 GeV for ee)
-	_preCutHist[kProjMet]->Fill(_ntuple->projPfMet);
+	preCuts->at(kProjMet)->Fill(_ntuple->projPfMet);
 	if ( !word[kProjMet] ) return;
 	counters->Fill(kProjMet);
-	_postCutHist[kProjMet]->Fill(_ntuple->projPfMet);
+	postCuts->at(kProjMet)->Fill(_ntuple->projPfMet);
 
 	// pause here for jet pt and eta
 	_jetN->Fill(_event->PFJets.size());
@@ -544,47 +560,49 @@ void HWWAnalyzer::cutAndFill() {
 		_jetEta->Fill(_event->PFJets[i].P.Eta());
 	}
 
+	_jetNVsNvrtx->Fill(_event->NVrtx, _event->PFJets.size());
+
 	// njets == 0
-	_preCutHist[kJetVeto]->Fill(_ntuple->nPfJets);
+	preCuts->at(kJetVeto)->Fill(_ntuple->nPfJets);
 	if ( !word[kJetVeto] ) return;
 	counters->Fill(kJetVeto);
-	_postCutHist[kJetVeto]->Fill(_ntuple->nPfJets);
+	postCuts->at(kJetVeto)->Fill(_ntuple->nPfJets);
 
 	// soft muon
-	_preCutHist[kSoftMuon]->Fill(_ntuple->softMus);
+	preCuts->at(kSoftMuon)->Fill(_ntuple->softMus);
 	if ( !word[kSoftMuon] ) return;
 	counters->Fill(kSoftMuon);
-	_postCutHist[kSoftMuon]->Fill(_ntuple->softMus);
+	postCuts->at(kSoftMuon)->Fill(_ntuple->softMus);
 
 	// soft muon
-	_preCutHist[kTopVeto]->Fill(_ntuple->bJets);
+	preCuts->at(kTopVeto)->Fill(_ntuple->bJets);
 	if ( !word[kTopVeto] ) return;
 	counters->Fill(kTopVeto);
-	_postCutHist[kTopVeto]->Fill(_ntuple->bJets);
+	postCuts->at(kTopVeto)->Fill(_ntuple->bJets);
 
 	// hard pt cut
-	_preCutHist[kHardPtMin]->Fill(_ntuple->pA.Pt());
+	preCuts->at(kHardPtMin)->Fill(_ntuple->pA.Pt());
 	if ( !word[kHardPtMin] ) return;
 	counters->Fill(kHardPtMin);
-	_postCutHist[kHardPtMin]->Fill(_ntuple->pA.Pt());
+	postCuts->at(kHardPtMin)->Fill(_ntuple->pA.Pt());
 
 	// soft pt cut
-	_preCutHist[kSoftPtMin]->Fill(_ntuple->pB.Pt());
+	preCuts->at(kSoftPtMin)->Fill(_ntuple->pB.Pt());
 	if ( !word[kSoftPtMin] ) return;
 	counters->Fill(kSoftPtMin);
-	_postCutHist[kSoftPtMin]->Fill(_ntuple->pB.Pt());
+	postCuts->at(kSoftPtMin)->Fill(_ntuple->pB.Pt());
 
-	_preCutHist[kMaxMll]->Fill(_ntuple->mll);
+	preCuts->at(kMaxMll)->Fill(_ntuple->mll);
 	// Mll_max
 	if ( !word[kMaxMll] ) return;
 	counters->Fill(kMaxMll);
-	_postCutHist[kMaxMll]->Fill(_ntuple->mll);
+	postCuts->at(kMaxMll)->Fill(_ntuple->mll);
 
 	// delta phi
-	_preCutHist[kDeltaPhi]->Fill(_ntuple->dPhi);
+	preCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi);
 	if ( !word[kDeltaPhi] ) return;
 	counters->Fill(kDeltaPhi);
-	_postCutHist[kDeltaPhi]->Fill(_ntuple->dPhi);
+	postCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi);
 
 	_projMet->Fill(_ntuple->projPfMet);
 	_ptHardLet->Fill(_ntuple->pA.Pt());
@@ -625,6 +643,20 @@ void HWWAnalyzer::EndJob() {
 		_llNm1Hist[k]->Add(_eeNm1Hist[k]);
 		_llNm1Hist[k]->Add(_emNm1Hist[k]);
 		_llNm1Hist[k]->Add(_mmNm1Hist[k]);
+	}
+
+	for ( int k(0); k<_llPreCutHist.size(); ++k ) {
+		if( !_llPreCutHist[k] ) continue;
+		_llPreCutHist[k]->Add( _eePreCutHist[k]);
+		_llPreCutHist[k]->Add( _emPreCutHist[k]);
+		_llPreCutHist[k]->Add( _mmPreCutHist[k]);
+	}
+
+	for ( int k(0); k<_llPostCutHist.size(); ++k ) {
+		if( !_llPreCutHist[k] ) continue;
+		_llPostCutHist[k]->Add( _eePostCutHist[k]);
+		_llPostCutHist[k]->Add( _emPostCutHist[k]);
+		_llPostCutHist[k]->Add( _mmPostCutHist[k]);
 	}
 
 	_output->mkdir("lepSelection")->cd();

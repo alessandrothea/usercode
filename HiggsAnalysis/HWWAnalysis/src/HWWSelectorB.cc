@@ -190,10 +190,12 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 
 	std::cout <<  fChain->GetName() << "   "<< fChain->GetTree() << std::endl;
 
-	_runInfoName         = _config.getValue<std::string>("HWWSelector.runInfoName");
+	_hltMode		  = _config.getValue<std::string>("HWWSelector.hltMode","el_mu");
+	_runInfoName      = _config.getValue<std::string>("HWWSelector.runInfoName");
 
 	_elCut_TightWorkingPoint = _config.getValue<int>( "HWWSelector.elTightWorkingPoint");
 	_elCut_LooseWorkingPoint = _config.getValue<int>( "HWWSelector.elLooseWorkingPoint");
+	_elCut_EtaSCEbEe     = _config.getValue<float>("HWWSelector.elCut.etaSCEbEe"); // 1.479
 
 	_wpFile				 = _config.getValue<std::string>( "HWWSelector.elWorkingPointFile");
 
@@ -204,6 +206,7 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 
 	_jetCut_Dr			 = _config.getValue<float>("HWWSelector.jetCut.Dr");// = 0.3
 	_jetCut_Pt			 = _config.getValue<float>("HWWSelector.jetCut.Pt");// = 30
+	_jetCut_Eta			 = _config.getValue<float>("HWWSelector.jetCut.Eta");// = 5
 	_jetCut_BtagProb	 = _config.getValue<float>("HWWSelector.jetCut.BtagProb");// = 2.1
 
 	_muCut_NMuHist       = _config.getValue<int>(  "HWWSelector.muCut.nMuHits");// = 0
@@ -219,16 +222,37 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 	_muSoftCut_NotIso    = _config.getValue<float>("HWWSelector.muSoftCut.NotIso");
 
 	// config from file ?
-	_hltActiveNames.clear();
-	_hltActiveNames.push_back("HLT_Ele10_LW_L1R");
-	_hltActiveNames.push_back("HLT_Ele15_SW_L1R");
-	_hltActiveNames.push_back("HLT_Ele15_SW_CaloEleId_L1R");
-	_hltActiveNames.push_back("HLT_Ele17_SW_CaloEleId_L1R");
-	_hltActiveNames.push_back("HLT_Ele17_SW_TightEleId_L1R");
-	_hltActiveNames.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v2");
-	_hltActiveNames.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v3");
-	_hltActiveNames.push_back("HLT_Mu9");
-	_hltActiveNames.push_back("HLT_Mu15_v1");
+	_hlt.add("el","HLT_Ele10_LW_L1R");
+	_hlt.add("el","HLT_Ele15_SW_L1R");
+	_hlt.add("el","HLT_Ele15_SW_CaloEleId_L1R");
+	_hlt.add("el","HLT_Ele17_SW_CaloEleId_L1R");
+	_hlt.add("el","HLT_Ele17_SW_TightEleId_L1R");
+	_hlt.add("el","HLT_Ele17_SW_TighterEleIdIsol_L1R_v2");
+	_hlt.add("el","HLT_Ele17_SW_TighterEleIdIsol_L1R_v3");
+	_hlt.add("mu","HLT_Mu9");
+	_hlt.add("mu","HLT_Mu15_v1");
+
+	if ( _hltMode == "el_mu") {
+		_hlt.set("el",ETHZHltChecker::kMatch);
+		_hlt.set("mu",ETHZHltChecker::kMatch);
+	} else if ( _hltMode == "el" ) {
+		_hlt.set("el",ETHZHltChecker::kMatch);
+	} else if ( _hltMode == "mu_not_el" ) {
+		_hlt.set("mu",ETHZHltChecker::kMatch);
+		_hlt.set("el",ETHZHltChecker::kReject);
+	} else {
+		THROW_RUNTIME("hltMode "<< _hltMode << " not defined");
+	}
+//	_hltActiveNames.clear();
+//	_hltActiveNames.push_back("HLT_Ele10_LW_L1R");
+//	_hltActiveNames.push_back("HLT_Ele15_SW_L1R");
+//	_hltActiveNames.push_back("HLT_Ele15_SW_CaloEleId_L1R");
+//	_hltActiveNames.push_back("HLT_Ele17_SW_CaloEleId_L1R");
+//	_hltActiveNames.push_back("HLT_Ele17_SW_TightEleId_L1R");
+//	_hltActiveNames.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v2");
+//	_hltActiveNames.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v3");
+//	_hltActiveNames.push_back("HLT_Mu9");
+//	_hltActiveNames.push_back("HLT_Mu15_v1");
 
 }
 
@@ -239,6 +263,7 @@ HWWSelectorB::~HWWSelectorB() {
 
 //_____________________________________________________________________________
 void HWWSelectorB::Book() {
+
 
 	std::map<int,std::string> entriesLabels;
 	entriesLabels[0] = "processedEntries";
@@ -313,6 +338,7 @@ TH1F* HWWSelectorB::makeLabelHistogram( const std::string& name, const std::stri
 //_____________________________________________________________________________
 void HWWSelectorB::BeginJob() {
 	readWorkingPoints( _wpFile );
+	_hlt.connect(fChain, _runInfoName);
 }
 
 //_____________________________________________________________________________
@@ -350,31 +376,30 @@ void HWWSelectorB::EndJob() {
 //_____________________________________________________________________________
 Bool_t HWWSelectorB::Notify() {
 	ETHZNtupleSelector::Notify();
-	if (  fChain->GetCurrentFile() ) {
-		_hltAllNames.clear();
 
-		std::vector<std::string>*names = 0;
-		TTree* runInfo = (TTree*)(fChain->GetCurrentFile()->Get(_runInfoName.c_str()));
-		runInfo->SetBranchAddress("HLTNames",&names);
-		runInfo->GetEntry(0);
-		_hltAllNames = *names;
-	}
-
-//	for( int i(0); i<_hltNames.size(); ++i)
-//		Debug(1) << i << "   " << _hltNames[i] << std::endl;
-
-//	std::vector<std::string> _hltActiveNames;
-
-
-	_hltIdx.clear();
-
-	std::vector<std::string>::iterator it;
-	for( unsigned int i(0); i < _hltAllNames.size(); ++i)
-		for( it = _hltActiveNames.begin(); it != _hltActiveNames.end(); ++it)
-			if ( _hltAllNames[i] == *it ) {
-				_hltIdx.push_back(i);
-				break;
-			}
+//	Debug(0) << "Chain " << fChain << " New file opened " << fChain->GetCurrentFile() << std::endl;
+	_hlt.updateIds();
+//
+//	if (  fChain->GetCurrentFile() ) {
+//		_hltAllNames.clear();
+//
+//		std::vector<std::string>*names = 0;
+//		TTree* runInfo = (TTree*)(fChain->GetCurrentFile()->Get(_runInfoName.c_str()));
+//		runInfo->SetBranchAddress("HLTNames",&names);
+//		runInfo->GetEntry(0);
+//		_hltAllNames = *names;
+//	}
+//
+//
+//	_hltIdx.clear();
+//
+//	std::vector<std::string>::iterator it;
+//	for( unsigned int i(0); i < _hltAllNames.size(); ++i)
+//		for( it = _hltActiveNames.begin(); it != _hltActiveNames.end(); ++it)
+//			if ( _hltAllNames[i] == *it ) {
+//				_hltIdx.push_back(i);
+//				break;
+//			}
 
 //	for( int i(0); i<_hltIdx.size(); ++i)
 //		Debug(1) << i << "   " << _hltNames[_hltIdx[i]] << "   " << _hltIdx[i] << std::endl;
@@ -462,9 +487,6 @@ void HWWSelectorB::clear() {
 
 	_btaggedJets.clear();
 
-//	_elLooseBits.clear();
-//	_elTightBits.clear();
-//	_muBits.clear();
 }
 
 //_____________________________________________________________________________
@@ -511,26 +533,18 @@ bool HWWSelectorB::matchDataHLT() {
     _emCounters->Fill(kLLBinAll);
     _mmCounters->Fill(kLLBinAll);
 
-    // use the GetMet to detect whether is MC or not
+    // GenMET is -1000 if it's a data file
     bool isData = ( GenMET  < -999.);
-	bool trigger = false;
+    bool match = !isData || _hlt.match( HLTResults );
 
-	// this is data, check the HLT bits
-	if ( isData ) {
-		std::vector<unsigned int>::iterator it;
-		for ( int i(0); i<_hltIdx.size(); ++i)
-			trigger |= HLTResults[_hltIdx[i]];
-	}
-
-	// fill the HLT
-	if ( trigger || !isData ) {
+	if ( match ) {
 	    _llCounters->Fill(kLLBinHLT);
 	    _eeCounters->Fill(kLLBinHLT);
 	    _emCounters->Fill(kLLBinHLT);
 	    _mmCounters->Fill(kLLBinHLT);
 	}
-	return (trigger || !isData);
-
+//	return (trigger || !isData);
+	return match;
 }
 
 //_____________________________________________________________________________
@@ -553,11 +567,11 @@ HWWSelectorB::elBitSet HWWSelectorB::electronIsoId( elBitSet& tags, int idx, int
 	float combIso   = 0;
 
 	unsigned short p;
-	if ( TMath::Abs(eta) <= _etaMaxEB ) {
+	if ( TMath::Abs(eta) <= _elCut_EtaSCEbEe ) {
 		// barrel
 		p = kBarrel;
 		combIso = combIso_B;
-	} else if ( TMath::Abs(eta) >= _etaMinEE ) {
+	} else if ( TMath::Abs(eta) > _elCut_EtaSCEbEe ) {
 		p = kEndcap;
 		combIso = combIso_E;
 	} else {
@@ -1074,6 +1088,8 @@ void HWWSelectorB::assembleNtuple() {
 	_event->PrimVtxz     = PrimVtxz;
 	_event->NVrtx        = NVrtx;
 
+	_event->TCMET		 = TCMET;
+	_event->TCMETphi	 = TCMETphi;
 	_event->PFMET        = PFMET;
 	_event->PFMETphi     = PFMETphi;
 	_event->SumEt        = SumEt;
@@ -1213,7 +1229,7 @@ void HWWSelectorB::cleanJets() {
 		if ( match ) continue;
 
 		// jet ptcut
-		if ( JPt[i] > _jetCut_Pt )
+		if ( JPt[i] > _jetCut_Pt && JEta[i] < _jetCut_Eta )
 			_selectedJets.insert(i);
 		// or check for btagged jets
 		else if ( JbTagProbTkCntHighEff[i] > _jetCut_BtagProb )
@@ -1248,7 +1264,7 @@ void HWWSelectorB::cleanJets() {
 		}
 
 		// jet ptcut
-		if ( match || PFJPt[i] < _jetCut_Pt ) continue;
+		if ( match || PFJPt[i] < _jetCut_Pt  && PFJEta[i] < _jetCut_Eta ) continue;
 
 		_selectedPFJets.insert(i);
 	}

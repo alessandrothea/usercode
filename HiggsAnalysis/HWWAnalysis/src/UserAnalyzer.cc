@@ -14,7 +14,7 @@
 #include "Tools.h"
 
 //_____________________________________________________________________________
-UserAnalyzer::UserAnalyzer( int argc, char** argv ) : _chain(0x0), _output(0x0) {
+UserAnalyzer::UserAnalyzer( int argc, char** argv ) : _initialized(false), _chain(0x0), _output(0x0) {
 	// TODO Auto-generated constructor stub
 
 	_config.parse(argc,argv);
@@ -102,17 +102,20 @@ void UserAnalyzer::Start() {
 	}
 
 	_chain->SetNotify(this);
-	std::cout << "Checking " << _inputFile << ": " <<_chain->GetEntries() << " events found" << std::endl;
 
 	// open the new file
 	if ( !_outputFile.empty() && !(_output = TFile::Open(_outputFile.c_str(),"recreate")) )
 		THROW_RUNTIME("Could not open " << _outputFile);
 	Book();
+	setInitialized();
 	BeginJob();
 }
 
 //_____________________________________________________________________________
 void UserAnalyzer::Loop() {
+
+	std::cout << "Checking " << _inputFile << ": " <<_chain->GetEntries() << " events found" << std::endl;
+
 	// loop over the events (to be moved to the parent class?)
 	Long64_t lastEvent = _firstEvent + _nEvents;
 	if ( _nEvents == 0 ) {

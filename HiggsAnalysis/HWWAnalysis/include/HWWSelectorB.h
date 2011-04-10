@@ -10,6 +10,7 @@
 
 #include "ETHZNtupleSelector.h"
 #include "HWWEvent.h"
+#include "ETHZHltChecker.h"
 #include <TH1F.h>
 #include <bitset>
 
@@ -235,7 +236,10 @@ protected:
 
 	float _jetCut_Pt;
 	float _jetCut_Dr;
+	float _jetCut_Eta;
 	float _jetCut_BtagProb;
+
+	float _elCut_EtaSCEbEe;
 
 	int   _muCut_NMuHist;
 	int   _muCut_NMuMatches;
@@ -254,10 +258,12 @@ protected:
 	TH1F*	  _hEntries;
 	HWWEvent* _event;
 
+	std::string _hltMode;
 	std::string _runInfoName;
-	std::vector<std::string>  _hltAllNames;
-	std::vector<std::string>  _hltActiveNames;
-	std::vector<unsigned int> _hltIdx;
+	ETHZHltChecker _hlt;
+//	std::vector<std::string>  _hltAllNames;
+//	std::vector<std::string>  _hltActiveNames;
+//	std::vector<unsigned int> _hltIdx;
 
 	std::string _wpFile;
 

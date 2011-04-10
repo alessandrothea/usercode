@@ -2,10 +2,13 @@
 # this file conatins a list of plots to make
 ###############################################################################################
 #
-# histogram name		logX=1	log=1	xaxis	rebin	normalzation
+# histogram name			logX=1	log=1	xaxis	rebin	normalzation
 #
 
-llCounters				0	0	bla		1	
+fullSelection/llCounters	0   	1	    bla		1	
+fullSelection/eeCounters	0	    1	    bla		1	
+fullSelection/emCounters	0	    1	    bla		1	
+fullSelection/mmCounters	0	    1	    bla		1	
 #s_W_ElTransMass_5		0	1	blub2	1
 #s_W_ElTransMass_8		0	0	blub2	1	s_W_ElTransMass_8
 #s_W_ElTransMass_6		0	0	blub2	4

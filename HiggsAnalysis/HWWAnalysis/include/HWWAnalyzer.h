@@ -15,6 +15,7 @@ class HWWEvent;
 class HWWNtuple;
 class TTree;
 class TH1F;
+class TH2F;
 class TParticlePDG;
 
 
@@ -107,6 +108,7 @@ protected:
 	TH1F* _emCounters;
 	TH1F* _llCounters;
 
+	TH1F* _nVrtx;
 	TH1F* _jetN;
 	TH1F* _jetPt;
 	TH1F* _jetEta;
@@ -116,13 +118,20 @@ protected:
 	TH1F* _mll;
 	TH1F* _deltaPhi;
 
+	TH2F* _jetNVsNvrtx;
 
 	std::vector<TH1F*> _llNm1Hist;
 	std::vector<TH1F*> _eeNm1Hist;
 	std::vector<TH1F*> _emNm1Hist;
 	std::vector<TH1F*> _mmNm1Hist;
-	std::vector<TH1F*> _preCutHist;
-	std::vector<TH1F*> _postCutHist;
+	std::vector<TH1F*> _llPreCutHist;
+	std::vector<TH1F*> _llPostCutHist;
+	std::vector<TH1F*> _eePreCutHist;
+	std::vector<TH1F*> _eePostCutHist;
+	std::vector<TH1F*> _emPreCutHist;
+	std::vector<TH1F*> _emPostCutHist;
+	std::vector<TH1F*> _mmPreCutHist;
+	std::vector<TH1F*> _mmPostCutHist;
 
 	std::string _cutFile;
 

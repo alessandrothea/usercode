@@ -130,13 +130,7 @@ void ETHZNtupleSelector::Start() {
 		THROW_RUNTIME("Input file extension  not supported" << _inputFile);
 	}
 
-	// initialize the input
-	Init( chain );
-	fChain->SetNotify(this);
-	std::cout << " input tree build: " << fChain->GetEntries() << " found" << std::endl;
-	if ( fChain->GetEntriesFast() == 0 ){
-		THROW_RUNTIME("No events in the tree. Check the file list and the tree name?");
-	}
+
 
 	// open the output file
 	fSkimmedFile = new TFile(_outputFile.c_str(), "recreate");
@@ -151,6 +145,15 @@ void ETHZNtupleSelector::Start() {
 	// call book from child classes
 	Book();
 	SaveConfig();
+
+	// initialize the input _after booking_ otherwise it could mess stuff up in Notify
+	Init( chain );
+	fChain->SetNotify(this);
+	std::cout << " input tree build: " << fChain->GetEntries() << " found" << std::endl;
+	if ( fChain->GetEntriesFast() == 0 ){
+		THROW_RUNTIME("No events in the tree. Check the file list and the tree name?");
+	}
+
 	BeginJob();
 
 }

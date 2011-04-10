@@ -39,6 +39,7 @@ RootDictObject=$(RootDictSource:.cc=.o)
 
 BinSources := src/ETHZNtupleReader.cc \
 		src/ETHZNtupleSelector.cc \
+		src/ETHZHltChecker.cc \
 		src/HWWSelector.cc \
 		src/HWWSelectorB.cc \
 		src/Configurator.cc \

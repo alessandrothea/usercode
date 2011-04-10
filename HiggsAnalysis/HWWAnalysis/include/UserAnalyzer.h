@@ -32,6 +32,9 @@ public:
 	virtual Bool_t Notify();
 
 protected:
+	void setInitialized() { _initialized = true; }
+	bool isInitialized() { return _initialized; }
+
 	std::string _treeName;
 	std::string _inputFile;
 	std::string _outputFile;
@@ -44,6 +47,10 @@ protected:
 
 	TChain* _chain;
 	TFile* _output;
+
+private:
+	bool _initialized;
+
 };
 
 #endif /* USERANALYZER_H_ */
