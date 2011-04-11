@@ -36,6 +36,7 @@ class plotEntry:
         self.name = ''
         self.logX = False
         self.logY = False
+        self.title = 'title'
         self.xAxis = 'x'
 
 class sampleEntry:
@@ -66,6 +67,7 @@ class Plotter:
             d.name = r[0]
             d.logX = int(r[1])
             d.logY = int(r[2])
+            d.title = r[3]
             self.plots[d.name] = d
     
     def readSamples(self,file):
@@ -160,6 +162,31 @@ class Plotter:
             h.Scale(fact)
             print '%f\t%d\t%f\t%s'%(s.xSec, N, fact, s.path)
             
+    def makeLegend(self, data, mc):
+                
+        entries = [ ROOT.TLatex(0,0,sample.legend) for sample in self.mcSamples ]
+        entries.append( ROOT.TLatex(0,0,self.dataSamples[0].legend))
+        
+        Dx = max([txt.GetXsize() for txt in entries])        
+        dy = entries[0].GetYsize()
+        rows = len(mc)+1
+        
+        x1 = 0.95
+        y1 = 0.95
+        
+#        print x1,dx,maxLen
+#        print y1,dy,rows
+        x0 = x1-Dx
+        y0 = y1-dy*1.1*rows
+        
+        legend = ROOT.TLegend(x0,y0,x1,y1)
+        legend.SetFillColor(ROOT.kWhite)
+        legend.AddEntry(data[0], self.dataSamples[0].legend,'p')
+        for i in range(len(mc)):
+            legend.AddEntry(mc[i],self.mcSamples[i].legend,'f')
+        
+        return legend
+    
     def makePlot(self,name):
         pl = self.plots[name]
         data = self.getDataHistograms(name)
@@ -168,15 +195,17 @@ class Plotter:
         self.normalize(mc, self.mcSamples)
 #        print data,len(data),mc,len(mc)
         stack = ROOT.THStack(data[0].GetName(),data[0].GetTitle())
-        legend = ROOT.TLegend(0.7 ,0.7,0.95,0.95)
-        legend.SetFillColor(ROOT.kWhite)
-        legend.AddEntry(data[0], self.dataSamples[0].legend,'p')
+#        legend = ROOT.TLegend(0.7 ,0.7,0.95,0.95)
+#        legend.SetFillColor(ROOT.kWhite)
+#        legend.AddEntry(data[0], self.dataSamples[0].legend,'p')
+        
+        
         for i in range(len(mc)):
             stack.Add(mc[i],'hist')
-            legend.AddEntry(mc[i],self.mcSamples[i].legend,'f')
+#            legend.AddEntry(mc[i],self.mcSamples[i].legend,'f')
         cName = 'c_'+name.replace('/','_')
         c = ROOT.TCanvas(cName)
-        c.Set
+        c.SetTicks();
         print '- logx =', pl.logX, ': logy =',pl.logY
         max = ROOT.TMath.Max(data[0].GetMaximum(),stack.GetMaximum())
         min = ROOT.TMath.Min(data[0].GetMinimum(),stack.GetMinimum())
@@ -198,7 +227,9 @@ class Plotter:
         frame.Reset()
         frame.SetMaximum(max)
         frame.SetMinimum(min)
+        frame.GetYaxis().SetLimits(min,max)
         frame.SetBit(ROOT.TH1.kNoStats)
+        frame.SetTitle(pl.title)
         frame.Draw()
         data[0].SetFillColor(1);
         data[0].SetMarkerColor(1);
@@ -208,6 +239,7 @@ class Plotter:
         stack.Draw('same')
         data[0].Draw('e1 same')
 
+        legend = self.makeLegend(data,mc)
         legend.Draw()
         c.Write()
 
@@ -235,6 +267,11 @@ def main():
     sys.argv.append('-b')
     ROOT.gROOT.SetBatch()
     ROOT.gSystem.Load("lib/libHWWNtuple.so")
+    
+    ROOT.gStyle.SetTitleAlign(21)
+    ROOT.gStyle.SetTitleX(0.5)
+    ROOT.gStyle.SetTitleY(0.9)
+    
     
     out = ROOT.TFile.Open('results.root','recreate')
     

@@ -80,6 +80,7 @@ protected:
 	void readHiggsCutSet( const std::string& path );
 	HiggsCutSet getHiggsCutSet(int mass);
 //	HiggsCutSet getHiggsCutSet(int mass, int ll);
+	TH2F* makeNjetsNvrtx( const std::string& name, const std::string& prefix = "");
 	TH1F* makeLabelHistogram( const std::string& name, const std::string& title, std::map<int,std::string> labels);
 	TH1F* glueCounters(TH1F* h);
 
@@ -118,7 +119,10 @@ protected:
 	TH1F* _mll;
 	TH1F* _deltaPhi;
 
-	TH2F* _jetNVsNvrtx;
+	TH2F* _llJetNVsNvrtx;
+	TH2F* _eeJetNVsNvrtx;
+	TH2F* _emJetNVsNvrtx;
+	TH2F* _mmJetNVsNvrtx;
 
 	std::vector<TH1F*> _llNm1Hist;
 	std::vector<TH1F*> _eeNm1Hist;

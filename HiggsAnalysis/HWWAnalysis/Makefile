@@ -31,7 +31,7 @@ SharedLibrary := $(Library:%=$(LibPath)/lib%.so)
 
 Includes := -Iinclude
 
-CxxFlags+= $(ROOTCFLAGS) $(Includes)
+CxxFlags+= $(ROOTCFLAGS) -fPIC $(Includes)
 LdFlags+=$(ROOTLIBS) -lEG -lTreePlayer
 RootDictSource=$(BuildPath)/$(RootDict).cc
 RootDictHeader=$(BuildPath)/$(RootDict).h

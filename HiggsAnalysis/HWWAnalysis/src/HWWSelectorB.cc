@@ -193,6 +193,10 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 	_hltMode		  = _config.getValue<std::string>("HWWSelector.hltMode","el_mu");
 	_runInfoName      = _config.getValue<std::string>("HWWSelector.runInfoName");
 
+	_vrtxCut_nDof		 = _config.getValue<float>("HWWSelector.vrtxCut.nDof"); // 4
+	_vrtxCut_rho 		 = _config.getValue<float>("HWWSelector.vrtxCut.rho"); // 2
+	_vrtxCut_z			 = _config.getValue<float>("HWWSelector.vrtxCut.z"); // 24
+
 	_elCut_TightWorkingPoint = _config.getValue<int>( "HWWSelector.elTightWorkingPoint");
 	_elCut_LooseWorkingPoint = _config.getValue<int>( "HWWSelector.elLooseWorkingPoint");
 	_elCut_EtaSCEbEe     = _config.getValue<float>("HWWSelector.elCut.etaSCEbEe"); // 1.479
@@ -279,9 +283,10 @@ void HWWSelectorB::Book() {
 
 	labels[kLLBinAll]	   = "All events";
 	labels[kLLBinHLT]      = "HLT";
+	labels[kLLBinVertex]   = "Good Vertex";
 	labels[kLLBinDilepton] = "l^{+}l^{-}";
 	labels[kLLBinEtaPt]    = "EtaPt";
-	labels[kLLBinVertex]   = "Vertex";
+	labels[kLLBinIp]   	   = "Impact Parameter";
 	labels[kLLBinIso]      = "Isolation";
 	labels[kLLBinId]       = "Id";
 	labels[kLLBinNoConv]   = "No Conversion";
@@ -477,7 +482,6 @@ void HWWSelectorB::clear() {
 
 	_selectedPairs.clear();
 
-	//-old stuff----
 	_selectedEls.clear();
 	_selectedMus.clear();
 	_softMus.clear();
@@ -503,6 +507,8 @@ bool HWWSelectorB::selectAndClean() {
 
 	// check the HLT flags
 	if ( !matchDataHLT() ) return false;
+
+	if ( !hasGoodVertex() ) return false;
 
 	// select electrons
 	tagElectrons();
@@ -545,6 +551,28 @@ bool HWWSelectorB::matchDataHLT() {
 	}
 //	return (trigger || !isData);
 	return match;
+}
+
+//_____________________________________________________________________________
+bool HWWSelectorB::hasGoodVertex() {
+	//TODO move to config file
+
+//	std::cout << "vrtxGood: " << PrimVtxGood << "\n"
+//			<< "vrtxFake: " << PrimVtxIsFake << std::endl;
+	bool goodVrtx = (PrimVtxNdof >= _vrtxCut_nDof ) &&
+	(PrimVtxGood == 0 ) &&
+	(PrimVtxIsFake != 1) &&
+	(TMath::Abs(PrimVtxRho < _vrtxCut_rho )) &&
+	(TMath::Abs(PrimVtxz) < _vrtxCut_z );
+
+	if ( goodVrtx ) {
+		_llCounters->Fill(kLLBinVertex);
+		_eeCounters->Fill(kLLBinVertex);
+		_emCounters->Fill(kLLBinVertex);
+		_mmCounters->Fill(kLLBinVertex);
+	}
+
+	return goodVrtx;
 }
 
 //_____________________________________________________________________________
@@ -924,7 +952,7 @@ void HWWSelectorB::countPairs() {
 		(*counts)[kLLBinEtaPt]++;
 
 		if ( !iP->isVertex() ) continue;
-		(*counts)[kLLBinVertex]++;
+		(*counts)[kLLBinIp]++;
 
 		if ( !iP->isIso() ) continue;
 		(*counts)[kLLBinIso]++;
@@ -988,7 +1016,7 @@ void HWWSelectorB::fillCounts( TH1F* h, const std::vector<unsigned int>& counts)
 
 	if ( counts[kLLBinDilepton] ) h->Fill(kLLBinDilepton);
 	if ( counts[kLLBinEtaPt] )    h->Fill(kLLBinEtaPt);
-	if ( counts[kLLBinVertex] )	  h->Fill(kLLBinVertex);
+	if ( counts[kLLBinIp] )	  	  h->Fill(kLLBinIp);
 	if ( counts[kLLBinIso] )      h->Fill(kLLBinIso);
 	if ( counts[kLLBinId] )       h->Fill(kLLBinId);
 	if ( counts[kLLBinNoConv] )   h->Fill(kLLBinNoConv);

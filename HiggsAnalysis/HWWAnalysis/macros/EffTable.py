@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 import sys
+import optparse
+
+
 args = sys.argv[:]
 sys.argv.append( '-b' )
 import ROOT
@@ -39,3 +42,15 @@ for s in fStates:
             relEff = 100.*theBin/prevBin
         
         print '  %s = %d - %.3f%% (%.3f%%)' % (labelAbs.ljust(15), theBin,absEff, relEff)
+        
+
+#if __name__ == '__main__':
+#    
+#    usage = 'usage: %prog [options]'
+#    parser = optparse.OptionParser(usage)
+#    
+#    parser.add_option('-p', '--path', dest=plotPath, help='Path to the plot in the ROOTfile')
+#    
+#    (opt, args) = parser.parse_args()
+#        
+#    dumpEfficiencies( file, plotPath )

@@ -191,9 +191,10 @@ protected:
 	enum LlBins {
 		kLLBinAll,
 		kLLBinHLT,
+		kLLBinVertex,
 		kLLBinDilepton,
 		kLLBinEtaPt,
-		kLLBinVertex,
+		kLLBinIp,
 		kLLBinIso,
 		kLLBinId,
 		kLLBinNoConv,
@@ -206,6 +207,7 @@ protected:
 	TH1F* makeLabelHistogram( const std::string& name, const std::string& title, std::map<int,std::string> labels);
 
 	virtual bool matchDataHLT();
+	virtual bool hasGoodVertex();
 	virtual elBitSet electronIsoId( elBitSet& tags, int idx, int eff );
 	virtual void tagElectrons();
 	virtual void tagMuons();
@@ -229,6 +231,12 @@ protected:
 	int _elCut_LooseWorkingPoint;
 
 	// cuts
+	// vrtx
+	float _vrtxCut_nDof;
+	float _vrtxCut_rho;
+	float _vrtxCut_z;
+
+	// lep common
 	float _lepCut_Pt;
 	float _lepCut_extraPt;
 	float _lepCut_D0PV;
@@ -261,9 +269,6 @@ protected:
 	std::string _hltMode;
 	std::string _runInfoName;
 	ETHZHltChecker _hlt;
-//	std::vector<std::string>  _hltAllNames;
-//	std::vector<std::string>  _hltActiveNames;
-//	std::vector<unsigned int> _hltIdx;
 
 	std::string _wpFile;
 

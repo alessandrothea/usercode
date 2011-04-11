@@ -119,8 +119,12 @@ void HWWAnalyzer::Book() {
 	_mll       = new TH1F("mll",     "m^{ll}",   100, 0,  100);
 	_deltaPhi  = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, TMath::Pi());
 
-	_jetNVsNvrtx = new TH2F("jetNVsNvrtx","n_{jets} vs .n_{vrtx}",
-			20, 0, 20, 20, 0, 20);
+
+	_output->mkdir("pileUp")->cd();
+	_llJetNVsNvrtx = makeNjetsNvrtx("llNjetsNvrtx");
+	_eeJetNVsNvrtx = makeNjetsNvrtx("eeNjetsNvrtx", "ee - ");
+	_emJetNVsNvrtx = makeNjetsNvrtx("emNjetsNvrtx", "em - ");
+	_mmJetNVsNvrtx = makeNjetsNvrtx("mmNjetsNvrtx", "mm - ");
 
 	_output->mkdir("ll")->cd();
 	bookCutHistograms( _llNm1Hist, "llNm1", "ll N-1 Plot - " );
@@ -423,8 +427,13 @@ void HWWAnalyzer::calcNtuple(){
 	_ntuple->mll        = mll;
 	_ntuple->pfMet      = pfMet;
 	_ntuple->muMet      = muMet;
+	_ntuple->tcMet		= tcMet;
+	_ntuple->pfMetDphi  = pfMetDphi;
+	_ntuple->muMetDphi  = muMetDphi;
+	_ntuple->tcMetDphi	= tcMetDphi;
 	_ntuple->projPfMet  = projPfMet;
 	_ntuple->projMuMet  = projMuMet;
+	_ntuple->projTcMet  = projTcMet;
 	_ntuple->dPhi       = dPhiLL;
 	_ntuple->nPfJets	= nPfJets;
 	_ntuple->nJets      = nJets;
@@ -439,14 +448,18 @@ void HWWAnalyzer::cutAndFill() {
 
 	higgsBitWord word;
 
-	word[kMinMet]    = ( _ntuple->pfMet > _minMet );
+	double met = _ntuple->tcMet;
+	double projMet = _ntuple->projTcMet;
+
+	word[kMinMet]    = ( met > _minMet );
 
 	word[kMinMll]    = ( _ntuple->mll > _minMll);
 
 	word[kZveto]     =  ( TMath::Abs(_ntuple->mll - _Z0->Mass()) > _zVetoWidth );
 
 	float minProjMet = _ntuple->type == 1 ? _minProjMetEM : _minProjMetLL;
-	word[kProjMet]   = ( _ntuple->projPfMet > minProjMet);
+	//	word[kProjMet]   = ( _ntuple->projPfMet > minProjMet);
+	word[kProjMet]   = ( projMet > minProjMet);
 
 	word[kJetVeto]   = ( _ntuple->nPfJets == 0);
 
@@ -468,24 +481,28 @@ void HWWAnalyzer::cutAndFill() {
 	std::vector<TH1F*>* nm1;
 	std::vector<TH1F*>* preCuts;
 	std::vector<TH1F*>* postCuts;
+	TH2F* nJnV;
 	switch ( _ntuple->type ) {
 	case 2:
 		counters = _eeCounters;
         nm1      = &_eeNm1Hist;
         preCuts  = &_eePreCutHist;
         postCuts = &_eePostCutHist;
+        nJnV	 = _eeJetNVsNvrtx;
 		break;
 	case 1:
 		counters = _emCounters;
         nm1 	 = &_emNm1Hist;
         preCuts  = &_emPreCutHist;
         postCuts = &_emPostCutHist;
+        nJnV 	 = _emJetNVsNvrtx;
 		break;
 	case 0:
 		counters = _mmCounters;
         nm1 	 = &_mmNm1Hist;
         preCuts  = &_mmPreCutHist;
         postCuts = &_mmPostCutHist;
+        nJnV	 = _mmJetNVsNvrtx;
 		break;
 	default:
 		THROW_RUNTIME("Wrong event type (NEles): " << _ntuple->type );
@@ -501,7 +518,7 @@ void HWWAnalyzer::cutAndFill() {
 		nm1->at(kZveto)->Fill(_ntuple->mll);
 
 	if ( (word & _nthMask[kProjMet]) == _nthMask[kProjMet] )
-		nm1->at(kProjMet)->Fill(_ntuple->projPfMet);
+		nm1->at(kProjMet)->Fill( projMet );
 
 	if ( (word & _nthMask[kJetVeto]) == _nthMask[kJetVeto] )
 		nm1->at(kJetVeto)->Fill(_ntuple->nPfJets);
@@ -548,10 +565,10 @@ void HWWAnalyzer::cutAndFill() {
 	postCuts->at(kZveto)->Fill(_ntuple->mll);
 
 	// proj Met (20 GeV for ee)
-	preCuts->at(kProjMet)->Fill(_ntuple->projPfMet);
+	preCuts->at(kProjMet)->Fill(projMet);
 	if ( !word[kProjMet] ) return;
 	counters->Fill(kProjMet);
-	postCuts->at(kProjMet)->Fill(_ntuple->projPfMet);
+	postCuts->at(kProjMet)->Fill(projMet);
 
 	// pause here for jet pt and eta
 	_jetN->Fill(_event->PFJets.size());
@@ -560,7 +577,7 @@ void HWWAnalyzer::cutAndFill() {
 		_jetEta->Fill(_event->PFJets[i].P.Eta());
 	}
 
-	_jetNVsNvrtx->Fill(_event->NVrtx, _event->PFJets.size());
+	nJnV->Fill(_event->NVrtx, _event->PFJets.size());
 
 	// njets == 0
 	preCuts->at(kJetVeto)->Fill(_ntuple->nPfJets);
@@ -604,7 +621,7 @@ void HWWAnalyzer::cutAndFill() {
 	counters->Fill(kDeltaPhi);
 	postCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi);
 
-	_projMet->Fill(_ntuple->projPfMet);
+	_projMet->Fill(projMet);
 	_ptHardLet->Fill(_ntuple->pA.Pt());
 	_ptSoftLep->Fill(_ntuple->pB.Pt());
 	_mll->Fill(_ntuple->mll);
@@ -659,6 +676,10 @@ void HWWAnalyzer::EndJob() {
 		_llPostCutHist[k]->Add( _mmPostCutHist[k]);
 	}
 
+	_llJetNVsNvrtx->Add(_eeJetNVsNvrtx);
+	_llJetNVsNvrtx->Add(_emJetNVsNvrtx);
+	_llJetNVsNvrtx->Add(_mmJetNVsNvrtx);
+
 	_output->mkdir("lepSelection")->cd();
 	std::map<std::string,TH1F*>::iterator it;
 	for( it = _hists.begin(); it!=_hists.end();it++) {
@@ -671,6 +692,16 @@ void HWWAnalyzer::EndJob() {
 	glueCounters(_mmCounters);
 	glueCounters(_llCounters);
 
+}
+
+//_____________________________________________________________________________
+TH2F* HWWAnalyzer::makeNjetsNvrtx( const std::string& name, const std::string& prefix  ) {
+	int nJets(20), nVrtx(20);
+	TH2F* h2 = new TH2F(name.c_str(),(prefix+"n_{jets} vs .n_{vrtx}").c_str(),
+			nVrtx, 1, nVrtx+1, nJets, 0, nJets);
+	h2->GetXaxis()->SetTitle("n_{vrtx}");
+	h2->GetYaxis()->SetTitle("n_{jets} p_{T} > 25 GeV");
+	return h2;
 }
 
 //_____________________________________________________________________________
