@@ -21,6 +21,18 @@ ETHZHltChecker::~ETHZHltChecker() {
 	// TODO Auto-generated destructor stub
 }
 
+void ETHZHltChecker::print() {
+
+	std::map<std::string,HLTSet>::iterator it;
+	for ( it = _hltMap.begin(); it != _hltMap.end(); ++it ){
+		std::cout << "--- HLTSet " << it->first << " : " << it->second.status << std::endl;
+		std::vector<std::string>& paths = it->second.paths;
+		std::vector<std::string>::iterator pt;
+		for ( pt = paths.begin(); pt != paths.end(); ++pt)
+			std::cout << "   . " << *pt << std::endl;
+
+	}
+}
 //_____________________________________________________________________________
 void ETHZHltChecker::connect( TTree* chain, const std::string& runInfoName ) {
 	_chain = chain;

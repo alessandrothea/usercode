@@ -226,15 +226,26 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 	_muSoftCut_NotIso    = _config.getValue<float>("HWWSelector.muSoftCut.NotIso");
 
 	// config from file ?
-	_hlt.add("el","HLT_Ele10_LW_L1R");
-	_hlt.add("el","HLT_Ele15_SW_L1R");
-	_hlt.add("el","HLT_Ele15_SW_CaloEleId_L1R");
-	_hlt.add("el","HLT_Ele17_SW_CaloEleId_L1R");
-	_hlt.add("el","HLT_Ele17_SW_TightEleId_L1R");
-	_hlt.add("el","HLT_Ele17_SW_TighterEleIdIsol_L1R_v2");
-	_hlt.add("el","HLT_Ele17_SW_TighterEleIdIsol_L1R_v3");
-	_hlt.add("mu","HLT_Mu9");
-	_hlt.add("mu","HLT_Mu15_v1");
+
+	std::vector<std::string> hltPaths_el = _config.getVector<std::string>("HWWSelector.hltPaths.el");
+	std::vector<std::string> hltPaths_mu = _config.getVector<std::string>("HWWSelector.hltPaths.mu");
+
+	std::vector<std::string>::iterator hltIt;
+	for (hltIt = hltPaths_el.begin(); hltIt != hltPaths_el.end(); ++hltIt)
+		_hlt.add("el",*hltIt);
+
+	for (hltIt = hltPaths_mu.begin(); hltIt != hltPaths_mu.end(); ++hltIt)
+		_hlt.add("mu",*hltIt);
+
+//	_hlt.add("el","HLT_Ele10_LW_L1R");
+//	_hlt.add("el","HLT_Ele15_SW_L1R");
+//	_hlt.add("el","HLT_Ele15_SW_CaloEleId_L1R");
+//	_hlt.add("el","HLT_Ele17_SW_CaloEleId_L1R");
+//	_hlt.add("el","HLT_Ele17_SW_TightEleId_L1R");
+//	_hlt.add("el","HLT_Ele17_SW_TighterEleIdIsol_L1R_v2");
+//	_hlt.add("el","HLT_Ele17_SW_TighterEleIdIsol_L1R_v3");
+//	_hlt.add("mu","HLT_Mu9");
+//	_hlt.add("mu","HLT_Mu15_v1");
 
 	if ( _hltMode == "el_mu") {
 		_hlt.set("el",ETHZHltChecker::kMatch);
@@ -247,6 +258,8 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 	} else {
 		THROW_RUNTIME("hltMode "<< _hltMode << " not defined");
 	}
+
+	_hlt.print();
 //	_hltActiveNames.clear();
 //	_hltActiveNames.push_back("HLT_Ele10_LW_L1R");
 //	_hltActiveNames.push_back("HLT_Ele15_SW_L1R");
@@ -1259,10 +1272,6 @@ void HWWSelectorB::cleanJets() {
 		// jet ptcut
 		if ( JPt[i] > _jetCut_Pt && JEta[i] < _jetCut_Eta )
 			_selectedJets.insert(i);
-		// or check for btagged jets
-		else if ( JbTagProbTkCntHighEff[i] > _jetCut_BtagProb )
-				_btaggedJets.insert(i);
-
 
 	}
 
@@ -1291,10 +1300,15 @@ void HWWSelectorB::cleanJets() {
 			match |= ( TMath::Abs(pPFJet.DeltaR(pMu)) < _jetCut_Dr );
 		}
 
-		// jet ptcut
-		if ( match || PFJPt[i] < _jetCut_Pt  && PFJEta[i] < _jetCut_Eta ) continue;
+		if ( match ) continue;
 
-		_selectedPFJets.insert(i);
+		// jet ptcut
+		if ( PFJPt[i] > _jetCut_Pt  && PFJEta[i] < _jetCut_Eta )
+			_selectedPFJets.insert(i);
+		// or check for btagged jets
+		else if ( PFJbTagProbTkCntHighEff[i] > _jetCut_BtagProb )
+			_btaggedJets.insert(i);
+
 	}
 
 }

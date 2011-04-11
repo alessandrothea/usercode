@@ -1,0 +1,12 @@
+###############################################################################################
+# this file conatins a list of plots to make
+###############################################################################################
+#
+# histogram name			logX=1	log=1	title 	xaxis	rebin	normalzation
+#
+fullSelection/llCounters	0   	1	    "hww yields - ll"		1	
+fullSelection/eeCounters	0	    1	    "hww yields - ee"		1	
+fullSelection/emCounters	0	    1	    "hww yields - e#mu"		1	
+fullSelection/mmCounters	0	    1	    "hww yields - #mu#mu"	1	
+###############################################################################################
+# DO NOT BEGIN NEW LINE AFTER THIS ONE!!!

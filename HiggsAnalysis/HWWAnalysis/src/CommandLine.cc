@@ -195,60 +195,62 @@ void CommandLine::print()
 //______________________________________________________________________________
 bool CommandLine::parse_file(const string& file_name)
 {
-  ifstream fin(file_name.c_str());
-  if (!fin.is_open()) {
-    cout<<"Can't open configuration file "<<file_name<<endl;
-    return false;
-  }
+	ifstream fin(file_name.c_str());
+	if (!fin.is_open()) {
+		cout<<"Can't open configuration file "<<file_name<<endl;
+		return false;
+	}
 
-  deque<string> tokens;
-  tokens.push_back("");
-  bool filter(false);
-  bool instr(false);
-  while (!fin.eof()) {
-    char next;
-    fin.get(next);
-    if (!filter&&!instr&&next=='$') filter=true;
-    if (next=='"') instr=(!instr);
-    else if (!filter) {
-      if ((next=='\n'||(!instr&&next==' '))&&!tokens.back().empty())
+	deque<string> tokens;
 	tokens.push_back("");
-      else if (instr||(next!=' '&&next!='\n'&&next!='\t'))
-	tokens.back()=tokens.back()+next;
-    }
-    if (filter&&next=='\n') filter=false;
-  }
-  if (tokens.back().empty()) tokens.pop_back();
-  
-  string token, last_token, key;
-  while (tokens.size()) {
-    if (token!="") last_token = token;
-    token = tokens.front(); tokens.pop_front();
-    if (token=="include") {
-      key="";
-      string cfgfile = tokens.front(); tokens.pop_front();
-      cout<<"CommandLine INFO: include configuration file: "<<cfgfile<<endl;
-      bool success = parse_file(cfgfile);
-      if (!success) return false;
-    }
-    else if (token=="=") {
-      key = last_token;
-      string value = tokens.front(); tokens.pop_front();
-      if (key.find('+')==key.length()-1) {
-	key.erase(key.length()-1);
-	if (_options.find(key)==_options.end())_options[key]=make_pair(value,false);
-	else _options[key].first += _vecsep+value;
-      }
-      else {
-	_options[key] = make_pair(value,false);
-      }
-    }
-    else if (!key.empty()&&!token.empty()&&(tokens.size()==0||tokens.front()!="=")) {
-      _options[key].first += _vecsep+token;
-    }
-  }
-  
-  return true;
+	bool filter(false);
+	bool instr(false);
+	while (!fin.eof()) {
+		char next;
+		fin.get(next);
+		if (!filter&&!instr&&next=='$') filter=true;
+		if (next=='"') instr=(!instr);
+		else if (!filter) {
+			if ((next=='\n'||(!instr&&next==' '))&&!tokens.back().empty())
+				tokens.push_back("");
+			else if (instr||(next!=' '&&next!='\n'&&next!='\t'))
+				tokens.back()=tokens.back()+next;
+		}
+		if (filter&&next=='\n') filter=false;
+	}
+	if (tokens.back().empty()) tokens.pop_back();
+
+	string token, last_token, key;
+	while (tokens.size()) {
+		if (token!="") last_token = token;
+		token = tokens.front(); tokens.pop_front();
+		if (token=="include") {
+			key="";
+			string cfgfile = tokens.front(); tokens.pop_front();
+			cout<<"CommandLine INFO: include configuration file: "<<cfgfile<<endl;
+			bool success = parse_file(cfgfile);
+			if (!success) return false;
+		}
+		else if (token=="=") {
+			key = last_token;
+			string value = tokens.front(); tokens.pop_front();
+			if (key.find('+')==key.length()-1) {
+				key.erase(key.length()-1);
+				if (_options.find(key)==_options.end())
+					_options[key]=make_pair(value,false);
+				else
+					_options[key].first += _vecsep+value;
+			}
+			else {
+				_options[key] = make_pair(value,false);
+			}
+		}
+		else if (!key.empty()&&!token.empty()&&(tokens.size()==0||tokens.front()!="=")) {
+			_options[key].first += _vecsep+token;
+		}
+	}
+
+	return true;
 }
 
 //______________________________________________________________________________

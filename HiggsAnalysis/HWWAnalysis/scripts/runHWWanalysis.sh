@@ -7,12 +7,13 @@ bkg_bos=( PhV W2ENu W2MuNu WJets )
 
 background=( ${bkg_dy[@]} ${bkg_top[@]} ${bkg_dibos[@]} ${bkg_bos[@]}  )
 higgs=( H160 )
+higgs2011=( H160pu )
 data2010=( El2010B El2010A Mu2010A Mu2010B )
 samples=( "${data2010[@]}" ) 
 # samples=( "${higgs[@]}" ) 
 # samples=( "${bkg_dibos[@]}" ) 
 samples=( "${background[@]}" "${higgs[@]}" "${data2010[@]}" )
-# samples=( WW )
+samples=( ${higgs2011[@]} )
  
 
 

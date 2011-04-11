@@ -61,8 +61,8 @@ def JVetoEff( rootFile ):
         hists.append(h)
 #        print i,h.GetName()
     
-    print y
-    print ey
+#    print y
+#    print ey
     
     c1 = ROOT.TCanvas()
     ROOT.SetOwnership( c1 , False )

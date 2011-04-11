@@ -10,11 +10,13 @@ import re
 MAX_NMUS     = 30
 MAX_NELES    = 20
 MAX_NGENLEPT = 100
+MAX_NGENJE   = 100
 MAX_NJETS    = 100
 MAX_NPHOS    = 50
 MAX_NTRKS    = 500
 MAX_HLTOBJ   = 10
 MAX_NVRTX    = 25
+MAX_PILEUP   = 50
 
 def main():
     usage = 'usage: %prog [options]'

@@ -162,10 +162,11 @@ class Plotter:
             h.Scale(fact)
             print '%f\t%d\t%f\t%s'%(s.xSec, N, fact, s.path)
             
-    def makeLegend(self, data, mc):
+    def makeLegend(self, data = [], mc = []):
                 
         entries = [ ROOT.TLatex(0,0,sample.legend) for sample in self.mcSamples ]
-        entries.append( ROOT.TLatex(0,0,self.dataSamples[0].legend))
+        entries.extend( [ ROOT.TLatex(0,0,sample.legend) for sample in self.dataSamples ] )
+#        entries.append( ROOT.TLatex(0,0,self.dataSamples[0].legend))
         
         Dx = max([txt.GetXsize() for txt in entries])        
         dy = entries[0].GetYsize()
@@ -181,28 +182,25 @@ class Plotter:
         
         legend = ROOT.TLegend(x0,y0,x1,y1)
         legend.SetFillColor(ROOT.kWhite)
-        legend.AddEntry(data[0], self.dataSamples[0].legend,'p')
+        for i in range(len(data)):
+            legend.AddEntry(data[i], self.dataSamples[i].legend,'p')
+       
         for i in range(len(mc)):
             legend.AddEntry(mc[i],self.mcSamples[i].legend,'f')
         
         return legend
     
-    def makePlot(self,name):
+    def makeDataMCPlot(self,name):
         pl = self.plots[name]
         data = self.getDataHistograms(name)
         mc   = self.getMCHistograms(name)
         
         self.normalize(mc, self.mcSamples)
-#        print data,len(data),mc,len(mc)
         stack = ROOT.THStack(data[0].GetName(),data[0].GetTitle())
-#        legend = ROOT.TLegend(0.7 ,0.7,0.95,0.95)
-#        legend.SetFillColor(ROOT.kWhite)
-#        legend.AddEntry(data[0], self.dataSamples[0].legend,'p')
-        
-        
+                
         for i in range(len(mc)):
             stack.Add(mc[i],'hist')
-#            legend.AddEntry(mc[i],self.mcSamples[i].legend,'f')
+
         cName = 'c_'+name.replace('/','_')
         c = ROOT.TCanvas(cName)
         c.SetTicks();
@@ -242,6 +240,41 @@ class Plotter:
         legend = self.makeLegend(data,mc)
         legend.Draw()
         c.Write()
+        
+    def makeMCStackPlot(self,name,nostack):
+        pl = self.plots[name]
+        mc = self.getMCHistograms(name)
+        
+        
+        self.normalize(mc, self.mcSamples)
+
+        stName = name.replace('/','_')
+        stack = ROOT.THStack(stName,pl.title)
+                
+        for i in range(len(mc)):
+            stack.Add(mc[i],'hist')
+
+        cName = 'c_'+name.replace('/','_')
+        c = ROOT.TCanvas(cName)
+        c.SetTicks();
+        print '- logx =', pl.logX, ': logy =',pl.logY
+#        max = ROOT.TMath.Max(data[0].GetMaximum(),stack.GetMaximum())
+#        min = ROOT.TMath.Min(data[0].GetMinimum(),stack.GetMinimum())
+        
+        if pl.logX is 1:
+            c.SetLogx()
+            
+        if pl.logY is 1:
+            c.SetLogy()
+        
+        opt = ''
+        if nostack:
+            opt = opt+'nostack'
+        stack.Draw(opt)
+
+        legend = self.makeLegend(mc=mc)
+        legend.Draw()
+        c.Write()
 
         
 def main():
@@ -251,6 +284,8 @@ def main():
     parser.add_option('-p', '--plotList', dest='plotList', help='Name of the tree', )
     parser.add_option('-s', '--sampleList', dest='sampleList', help='Path to the rootfile', )
     parser.add_option('-o', '--outputFile', dest='outputFile', help='new rootfile', )
+    parser.add_option('-m', '--mode', dest='mode', help='mode [data,mc]', default='data')
+    parser.add_option('--nostack', dest='nostack', help='nostack', action="store_true")
 
     (opt, args) = parser.parse_args()
 
@@ -258,12 +293,12 @@ def main():
         parser.error('No plot list defined')
     if opt.sampleList is None:
         parser.error('No list of sample defined')
-#    if opt.outputFile is None:
-#        parser.error('No output file')
-#        
-
-
-
+    if opt.outputFile is None:
+        parser.error('No output file')
+        
+    if opt.mode != 'data' and opt.mode != 'mc':
+        parser.error('Mode not recognized')
+        
     sys.argv.append('-b')
     ROOT.gROOT.SetBatch()
     ROOT.gSystem.Load("lib/libHWWNtuple.so")
@@ -273,7 +308,7 @@ def main():
     ROOT.gStyle.SetTitleY(0.9)
     
     
-    out = ROOT.TFile.Open('results.root','recreate')
+    out = ROOT.TFile.Open(opt.outputFile,'recreate')
     
     p = Plotter()
     try:
@@ -282,8 +317,13 @@ def main():
         p.connect()
         #name = 'fullSelection/llCounters'
         out.cd()
-        for name in p.plots.iterkeys():
-            p.makePlot(name)
+        if opt.mode=='data':
+            for name in p.plots.iterkeys():
+                p.makeDataMCPlot(name)
+        elif opt.mode=='mc':
+            for name in p.plots.iterkeys():
+                print name
+                p.makeMCStackPlot(name,opt.nostack)
        
     except ValueError as e:
         print e

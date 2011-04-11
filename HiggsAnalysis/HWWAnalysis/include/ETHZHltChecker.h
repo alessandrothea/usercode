@@ -25,6 +25,7 @@ public:
 
 	void updateIds();
 	bool match( const int hltResults[] );
+	void print();
 
 	enum {
 		kIgnore,
