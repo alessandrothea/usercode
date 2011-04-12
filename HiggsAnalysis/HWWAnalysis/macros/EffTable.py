@@ -20,9 +20,11 @@ f = ROOT.TFile(args[1])
 
 fStates = ['ll','ee','em','mm']
 
+prefix='fullSelection/'
+
 for s in fStates:
     print '\n-',s+'Counters'
-    counters = f.Get(s+'Counters')
+    counters = f.Get(prefix+s+'Counters')
     lastBin = counters.GetNbinsX()
     print 'Entries:',counters.GetBinContent(1)
     for i in range(2,lastBin+1):

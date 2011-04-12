@@ -12,8 +12,8 @@ data2010=( El2010B El2010A Mu2010A Mu2010B )
 samples=( "${data2010[@]}" ) 
 # samples=( "${higgs[@]}" ) 
 # samples=( "${bkg_dibos[@]}" ) 
-samples=( "${background[@]}" "${higgs[@]}" "${data2010[@]}" )
-samples=( ${higgs2011[@]} )
+samples=( "${background[@]}" "${higgs[@]}" "${data2010[@]}" "${higgs2011[@]}" )
+# samples=( ${higgs2011[@]} ${higgs[@]} )
  
 
 
@@ -23,7 +23,7 @@ echo "Running on:"
 echo "   ${samples[@]}"
 for sample in ${samples[@]}
 do
-    cmd="bin/runHWW.exe config/analysisHWW.config -UserAnalyzer.inputFile ../nTuples/${sample}.root -UserAnalyzer.outputFile output/hww_${sample}.root"
+    cmd="bin/runHWW.exe config/analysisHWW.config -UserAnalyzer.inputFile ../Ntuples/${sample}.root -UserAnalyzer.outputFile output/hww_${sample}.root"
     echo $cmd
     $cmd
 done

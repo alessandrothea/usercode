@@ -109,18 +109,22 @@ void HWWAnalyzer::Book() {
 	_emCounters = makeLabelHistogram("emCounters","emCounters",labels);
 	_llCounters = makeLabelHistogram("llCounters","llCounters",labels);
 
-	_nVrtx	   = new TH1F("nVrtx",	 "n_{vrtx}", 20, 0, 20);
-	_jetN      = new TH1F("jetN",    "n_{jets}", 20, 0, 20);
-	_jetPt     = new TH1F("jetPt",   "Jet Pt",   100, 0, 1000);
-	_jetEta    = new TH1F("jetEta",  "Jet Eta",  100, -5, 5);
-	_projMet   = new TH1F("projMet", "Projected MET", 100, 0, 100);
-	_ptHardLet = new TH1F("hardPt",  "p^{hard}", 100, 0, 3.*_theCuts.minPtHard);
-	_ptSoftLep = new TH1F("softPt",  "p^{soft}", 100, 0, 3.*_theCuts.minPtSoft);
-	_mll       = new TH1F("mll",     "m^{ll}",   100, 0,  100);
+
+	_output->mkdir("jetVeto")->cd();
+	_jetN      = new TH1F("jetN",    "n_{jets} (pre-veto)", 20, 0, 20);
+	_jetPt     = new TH1F("jetPt",   "Jet Pt (pre-veto)",   100, 0, 1000);
+	_jetEta    = new TH1F("jetEta",  "Jet Eta (pre-veto)",  100, -5, 5);
+
+	_output->mkdir("summary")->cd();
+	_projMet   = new TH1F("projMet", "Projected MET", 200, 0, 200);
+	_ptHardLet = new TH1F("hardPt",  "p^{hard}", 200, 0, 200);
+	_ptSoftLep = new TH1F("softPt",  "p^{soft}", 200, 0, 200);
+	_mll       = new TH1F("mll",     "m^{ll}",   300, 0,  300);
 	_deltaPhi  = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, TMath::Pi());
 
 
 	_output->mkdir("pileUp")->cd();
+	_nVrtx	   = new TH1F("nVrtx",	 "n_{vrtx}", 20, 1, 21);
 	_llJetNVsNvrtx = makeNjetsNvrtx("llNjetsNvrtx");
 	_eeJetNVsNvrtx = makeNjetsNvrtx("eeNjetsNvrtx", "ee - ");
 	_emJetNVsNvrtx = makeNjetsNvrtx("emNjetsNvrtx", "em - ");
@@ -455,7 +459,7 @@ void HWWAnalyzer::cutAndFill() {
 
 	word[kMinMll]    = ( _ntuple->mll > _minMll);
 
-	word[kZveto]     =  ( TMath::Abs(_ntuple->mll - _Z0->Mass()) > _zVetoWidth );
+	word[kZveto]     =  ( _ntuple->type == 1 || TMath::Abs(_ntuple->mll - _Z0->Mass()) > _zVetoWidth );
 
 	float minProjMet = _ntuple->type == 1 ? _minProjMetEM : _minProjMetLL;
 	//	word[kProjMet]   = ( _ntuple->projPfMet > minProjMet);
@@ -544,13 +548,18 @@ void HWWAnalyzer::cutAndFill() {
 
 
 	_nVrtx->Fill(_event->NVrtx);
+	_projMet->Fill(projMet);
+	_ptHardLet->Fill(_ntuple->pA.Pt());
+	_ptSoftLep->Fill(_ntuple->pB.Pt());
+	_mll->Fill(_ntuple->mll);
+	_deltaPhi->Fill(_ntuple->dPhi);
 
 	counters->Fill(kDileptons);
 	// min missing Et
-	preCuts->at(kMinMet)->Fill(_ntuple->pfMet);
+	preCuts->at(kMinMet)->Fill(met);
 	if ( !word[kMinMet] ) return;
 	counters->Fill(kMinMet);
-	postCuts->at(kMinMet)->Fill(_ntuple->pfMet);
+	postCuts->at(kMinMet)->Fill(met);
 
 	// min invariant mass
 	preCuts->at(kMinMll)->Fill(_ntuple->mll);
@@ -621,11 +630,7 @@ void HWWAnalyzer::cutAndFill() {
 	counters->Fill(kDeltaPhi);
 	postCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi);
 
-	_projMet->Fill(projMet);
-	_ptHardLet->Fill(_ntuple->pA.Pt());
-	_ptSoftLep->Fill(_ntuple->pB.Pt());
-	_mll->Fill(_ntuple->mll);
-	_deltaPhi->Fill(_ntuple->dPhi);
+
 
 }
 

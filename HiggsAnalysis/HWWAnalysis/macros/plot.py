@@ -43,9 +43,12 @@ class sampleEntry:
     def __init__(self):
         self.path = ''
         self.entries = 0
+        self.sum = "no"
         self.xSec = 0.
         self.kFact = 1
-        self.color = ROOT.kBlack
+        self.fillColor = ROOT.kBlack
+        self.lineColor = ROOT.kBlack
+        self.lineWidth = 1
         self.legend = ''
         self.file = None
 
@@ -54,6 +57,7 @@ class Plotter:
         self.plots = {}
         self.dataSamples = []
         self.mcSamples = []
+        self.sumSamples = []
         self.luminosity = 0
         self.baseDir = ""
     
@@ -85,24 +89,30 @@ class Plotter:
                 continue
                 
             e = sampleEntry()
-            e.path = self.baseDir+'/'+r[0]
-            type = r[1]
-            e.xSec  = float(r[2])
-            e.kFact = float(r[3])
-            e.color = eval(r[4])
-            e.legend = r[5]
+            e.path      = r[0]
+            type        = r[1]
+            e.sum       = r[2]
+            e.xSec      = float(r[3])
+            e.kFact     = float(r[4])
+            e.fillColor = eval(r[5])
+            e.lineColor = eval(r[6])
+            e.lineWidth = int(r[7])
+            e.legend    = r[8]
             
 #            print type,e.__dict__
             if type == 'data':
                 self.dataSamples.append(e)
             elif type == 'mc':
                 self.mcSamples.append(e)
+            elif type == 'sum':
+                self.sumSamples.append(e)
             else:
                 raise NameError('Sample type '+type+' what?')
     
     def connect(self):
         for e in self.dataSamples:
-            e.file = ROOT.TFile(e.path)
+            fullPath = self.baseDir+'/'+e.path
+            e.file = ROOT.TFile(fullPath)
             if not e.file.IsOpen():
                 raise NameError('file '+e.path+' not found')
             entries = e.file.Get('entries')
@@ -135,11 +145,13 @@ class Plotter:
             if not h.__nonzero__():
                 raise NameError('histogram '+plot.name+' not found in '+e.path)
             hClone = h.Clone(prefix+'_'+plot.name)
-            hClone.SetFillColor(s.color)
+            hClone.SetFillColor(s.fillColor)
+            hClone.SetLineColor(s.lineColor)
+            hClone.SetLineWidth(s.lineWidth)
             hClone.SetLineColor(1)
-#            print s.color
+#            print s.fillColor
             #hClone.Sumw2()
-            histograms.append(hClone)
+#            histograms.append( (hClone,s) )
 
         return histograms
 
@@ -161,7 +173,18 @@ class Plotter:
             h.Sumw2()
             h.Scale(fact)
             print '%f\t%d\t%f\t%s'%(s.xSec, N, fact, s.path)
+    
+    def sum(self, histograms, samples):
+        if len(histograms) != len(samples):
+            raise ValueError('Trying to normalize apples and carrots')
+        
+        summed = []
+        toSum = {}
+#        for i in range(len(histograms)):
             
+            
+        return histograms;
+    
     def makeLegend(self, data = [], mc = []):
                 
         entries = [ ROOT.TLatex(0,0,sample.legend) for sample in self.mcSamples ]
@@ -196,7 +219,8 @@ class Plotter:
         mc   = self.getMCHistograms(name)
         
         self.normalize(mc, self.mcSamples)
-        stack = ROOT.THStack(data[0].GetName(),data[0].GetTitle())
+        mc   = self.sum(mc,self.mcSamples)
+        stack = ROOT.THStack('mcstack_'+name,data[0].GetTitle())
                 
         for i in range(len(mc)):
             stack.Add(mc[i],'hist')
