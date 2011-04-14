@@ -38,6 +38,9 @@ class plotEntry:
         self.logY = False
         self.title = 'title'
         self.xAxis = 'x'
+        self.rebin = 1
+        self.xtitle = ''
+        self.ytitle = ''
 
 class sampleEntry:
     def __init__(self):
@@ -51,13 +54,14 @@ class sampleEntry:
         self.lineWidth = 1
         self.legend = ''
         self.file = None
+        self.order = -1
 
 class Plotter:
     def __init__(self):
         self.plots = {}
         self.dataSamples = []
         self.mcSamples = []
-        self.sumSamples = []
+        self.virSamples = []
         self.luminosity = 0
         self.baseDir = ""
     
@@ -71,16 +75,21 @@ class Plotter:
             d.name = r[0]
             d.logX = int(r[1])
             d.logY = int(r[2])
-            d.title = r[3]
+            d.rebin = int(r[3])
+            d.title = r[4]
+            d.xtitle = r[5]
+            d.ytitle = r[6]
             self.plots[d.name] = d
     
     def readSamples(self,file):
         self.dataSamples = []
         self.mcSamples = []
+        self.virSamples = []
         f = BlankCommentFile(open(file,'r'))
         rows = [shlex.split(line) for line in f]
+        i = 0
         for r in rows:
-            
+            i += 1
             if (r[0],r[1]) == ('LUMI','='):
                 self.luminosity = float(r[2])
                 continue
@@ -98,6 +107,7 @@ class Plotter:
             e.lineColor = eval(r[6])
             e.lineWidth = int(r[7])
             e.legend    = r[8]
+            e.order = i
             
 #            print type,e.__dict__
             if type == 'data':
@@ -105,7 +115,7 @@ class Plotter:
             elif type == 'mc':
                 self.mcSamples.append(e)
             elif type == 'sum':
-                self.sumSamples.append(e)
+                self.virSamples.append(e)
             else:
                 raise NameError('Sample type '+type+' what?')
     
@@ -121,7 +131,8 @@ class Plotter:
 #            print e.path,e.entries
             
         for e in self.mcSamples:
-            e.file = ROOT.TFile(e.path)
+            fullPath = self.baseDir+'/'+e.path
+            e.file = ROOT.TFile(fullPath)
             if not e.file.IsOpen():
                 raise NameError('file '+e.path+' not found')
 #            e.file.ls()
@@ -145,13 +156,12 @@ class Plotter:
             if not h.__nonzero__():
                 raise NameError('histogram '+plot.name+' not found in '+e.path)
             hClone = h.Clone(prefix+'_'+plot.name)
+            hClone.UseCurrentStyle()
             hClone.SetFillColor(s.fillColor)
             hClone.SetLineColor(s.lineColor)
             hClone.SetLineWidth(s.lineWidth)
-            hClone.SetLineColor(1)
-#            print s.fillColor
-            #hClone.Sumw2()
-#            histograms.append( (hClone,s) )
+
+            histograms.append( (hClone,s) )
 
         return histograms
 
@@ -161,55 +171,86 @@ class Plotter:
     def getMCHistograms(self,name):
         return self.getHistograms(self.mcSamples,name,"mc")
     
-    def normalize(self, histograms, samples ):
-        if len(histograms) != len(samples):
-            raise ValueError('Trying to normalize apples and carrots')
-        
-        for i in range(len(histograms)):
-            s = samples[i]
-            h = histograms[i]
+    def normalize(self, histograms ):
+
+        for (h,s) in histograms:
+
             N = s.xSec*self.luminosity
             fact = N / s.entries
             h.Sumw2()
             h.Scale(fact)
             print '%f\t%d\t%f\t%s'%(s.xSec, N, fact, s.path)
     
-    def sum(self, histograms, samples):
-        if len(histograms) != len(samples):
-            raise ValueError('Trying to normalize apples and carrots')
-        
+    def sum(self, histograms):#, samples):
+#        if len(histograms) != len(samples):
+#            raise ValueError('Trying to normalize apples and carrots')
+        sentry = TH1AddDirSentry()
+
         summed = []
-        toSum = {}
+        sumList = {}
 #        for i in range(len(histograms)):
+        # make a map and remove the histograms not to sum
+        
+        for (h,s) in histograms:
+            if s.sum == 'no':
+                summed.append((h,s))
+                continue
+            if not s.sum in sumList:
+                sumList[s.sum] = [h]
+            else:
+                sumList[s.sum].append(h)
+        
+        virKeys = [ sample.path for sample in self.virSamples]
+        
+        for name,hists in sumList.iteritems():
+            if not name in virKeys:
+                raise ValueError('Virtual sample '+name+' not defined')
+            i = virKeys.index(name)
+            vs = self.virSamples[i]
+            h0 = hists[0].Clone(name)
+            h0.Reset()
+#            h0.Sumw2()
+            for h in hists:
+                h0.Add(h)
+            h0.SetFillColor(vs.fillColor)
+            h0.SetLineColor(vs.lineColor)
+            h0.SetLineWidth(vs.lineWidth)
             
+            summed.append( (h0,vs) )
             
-        return histograms;
+        # re-sort the array on the file's order
+        sumsorted = sorted( summed, key=lambda pair: pair[1].order)
+#        print [(h.GetName(), s.path) for (h,s) in sumsorted]
+        # return histograms;
+        return sumsorted
     
     def makeLegend(self, data = [], mc = []):
                 
-        entries = [ ROOT.TLatex(0,0,sample.legend) for sample in self.mcSamples ]
-        entries.extend( [ ROOT.TLatex(0,0,sample.legend) for sample in self.dataSamples ] )
-#        entries.append( ROOT.TLatex(0,0,self.dataSamples[0].legend))
+        allSamples = []
+        allSamples.extend(data)
+        allSamples.extend(mc)
+        
+        entries = [ ROOT.TLatex(0,0,sample.legend) for (h,sample) in allSamples ]
         
         Dx = max([txt.GetXsize() for txt in entries])        
         dy = entries[0].GetYsize()
-        rows = len(mc)+1
+        rows = len(entries)+1
         
         x1 = 0.95
         y1 = 0.95
         
-#        print x1,dx,maxLen
-#        print y1,dy,rows
         x0 = x1-Dx
         y0 = y1-dy*1.1*rows
         
         legend = ROOT.TLegend(x0,y0,x1,y1)
         legend.SetFillColor(ROOT.kWhite)
-        for i in range(len(data)):
-            legend.AddEntry(data[i], self.dataSamples[i].legend,'p')
+
+        for (h,s) in data:
+            legend.AddEntry(h, s.legend,'p')
        
-        for i in range(len(mc)):
-            legend.AddEntry(mc[i],self.mcSamples[i].legend,'f')
+        for (h,s) in mc:
+
+            legend.AddEntry(h,s.legend,'f')
         
         return legend
     
@@ -218,54 +259,67 @@ class Plotter:
         data = self.getDataHistograms(name)
         mc   = self.getMCHistograms(name)
         
-        self.normalize(mc, self.mcSamples)
-        mc   = self.sum(mc,self.mcSamples)
-        stack = ROOT.THStack('mcstack_'+name,data[0].GetTitle())
-                
-        for i in range(len(mc)):
-            stack.Add(mc[i],'hist')
+        self.normalize(mc) #, self.mcSamples)
+        
+        mc   = self.sum(mc) #,self.mcSamples)
+        (data0, sample0) = data[0]
+        stack = ROOT.THStack('mcstack_'+name,data0.GetTitle())
+            
+        if pl.rebin != 1:
+            data0.Rebin(pl.rebin)
+        mcMinima = []    
+        for (h,s) in mc:
+            if pl.rebin != 1:
+                h.Rebin(pl.rebin)
+            mcMinima.append(h.GetMinimum())
+            stack.Add(h,'hist')
+            
 
         cName = 'c_'+name.replace('/','_')
         c = ROOT.TCanvas(cName)
         c.SetTicks();
         print '- logx =', pl.logX, ': logy =',pl.logY
-        max = ROOT.TMath.Max(data[0].GetMaximum(),stack.GetMaximum())
-        min = ROOT.TMath.Min(data[0].GetMinimum(),stack.GetMinimum())
+        maxY = ROOT.TMath.Max(data0.GetMaximum(),stack.GetMaximum())
+        minY = ROOT.TMath.Min(data0.GetMinimum(),min(mcMinima))
         
         if pl.logX is 1:
             c.SetLogx()
             
         if pl.logY is 1:
             c.SetLogy()
-            if min==0.:
-                min = 1
-            max *= ROOT.TMath.Power(max/min,0.1)
-            min /= ROOT.TMath.Power(max/min,0.1)
+            if minY==0.:
+                minY = 0.1
+            maxY *= ROOT.TMath.Power(maxY/minY,0.1)
+            minY /= ROOT.TMath.Power(maxY/minY,0.1)
         else:
-            max += (max-min)*0.1
-            min -= (max-min)*0.1
+            maxY += (maxY-minY)*0.1
+            minY -= (maxY-minY)*0.1
+    
 
-        frame = data[0].Clone('frame')
+        frame = data0.Clone('frame')
         frame.Reset()
-        frame.SetMaximum(max)
-        frame.SetMinimum(min)
-        frame.GetYaxis().SetLimits(min,max)
+        frame.SetMaximum(maxY)
+        frame.SetMinimum(minY)
+        frame.GetYaxis().SetLimits(minY,maxY)
         frame.SetBit(ROOT.TH1.kNoStats)
         frame.SetTitle(pl.title)
+        frame.SetXTitle(pl.xtitle)
+        frame.SetYTitle(pl.ytitle)
         frame.Draw()
-        data[0].SetFillColor(1);
-        data[0].SetMarkerColor(1);
-        data[0].SetMarkerStyle(20);
-        data[0].SetMarkerSize(0.7);
+        data0.SetFillColor(1);
+        data0.SetMarkerColor(1);
+        data0.SetMarkerStyle(20);
+        data0.SetMarkerSize(0.7);
         
         stack.Draw('same')
-        data[0].Draw('e1 same')
+        data0.Draw('e1 same')
 
         legend = self.makeLegend(data,mc)
         legend.Draw()
         c.Write()
         
     def makeMCStackPlot(self,name,nostack):
+        raise ValueError('I\'m broken')
         pl = self.plots[name]
         mc = self.getMCHistograms(name)
         
@@ -330,7 +384,12 @@ def main():
     ROOT.gStyle.SetTitleAlign(21)
     ROOT.gStyle.SetTitleX(0.5)
     ROOT.gStyle.SetTitleY(0.9)
-    
+    ROOT.gStyle.SetFrameLineWidth(2)
+    ROOT.gStyle.SetTitleStyle(0)
+    ROOT.gStyle.SetTitleFont(42,"xyz")
+    ROOT.gStyle.SetTitleFont(42,"")
+    ROOT.gStyle.SetLabelFont(42,"xyz")
+    ROOT.gStyle.SetTextFont(42)   
     
     out = ROOT.TFile.Open(opt.outputFile,'recreate')
     

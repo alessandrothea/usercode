@@ -8,10 +8,9 @@ import array
 canvases = []
 
 def JVetoEff( rootFile ):
-    global canvases
     f = ROOT.TFile.Open( rootFile )
     if not f.IsOpen():
-        pass 
+        return 
     
     name = 'pileUp/llNjetsNvrtx'
     jv = f.Get(name)
