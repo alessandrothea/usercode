@@ -26,7 +26,7 @@ def main():
     m = jobtools.Manager(dbPath)
     m.connect()
 
-    sessions = m.getListOfSessions(group=opt.sessionGroup)
+    sessions = m.getListOfSessions(opt.sessionName,opt.sessionGroup)
     
     for s in sessions:
         m.removeSession(s.name)
