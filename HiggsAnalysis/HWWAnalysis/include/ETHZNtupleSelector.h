@@ -33,7 +33,7 @@ public:
     Double_t getTCMETphi();
     Double_t getPFMET();
     Double_t getPFMETphi();
-    Double_t getSumEt(); 
+//    Double_t getSumEt();
 
     Double_t getMuCorrMET();
     Double_t getMuCorrMETphi();

@@ -149,7 +149,6 @@ protected:
 	std::set< unsigned int > _selectedMus;
 
 	std::set< unsigned int > _softMus;
-//	std::set< unsigned int > _selectedJets;
 	std::set< unsigned int > _selectedPFJets;
 	std::set< unsigned int > _btaggedJets;
 
