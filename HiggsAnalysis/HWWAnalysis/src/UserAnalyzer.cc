@@ -14,7 +14,7 @@
 #include "Tools.h"
 
 //_____________________________________________________________________________
-UserAnalyzer::UserAnalyzer( int argc, char** argv ) : _initialized(false), _chain(0x0), _output(0x0) {
+UserAnalyzer::UserAnalyzer( int argc, char** argv ) : _chain(0x0), _output(0x0), _initialized(false)  {
 	// TODO Auto-generated constructor stub
 
 	_config.parse(argc,argv);
@@ -40,6 +40,7 @@ Bool_t UserAnalyzer::Notify() {
 	} else {
 		std::cout << "--- Notify(): No file opened yet" << std::endl;
 	}
+	return true;
 }
 
 //_____________________________________________________________________________

@@ -52,21 +52,22 @@ public:
 	ClassDef(HWWMuon, 1)
 };
 
-class HWWJet : public TObject {
-public:
-	TLorentzVector	P;
-	Double_t        EMfrac;
-	Int_t           NConstituents;
-	Double_t        ID_HPD;
-	Double_t        ID_RBX;
-	Double_t        ID_n90Hits;
-	Double_t        ID_resEMF;
-	Double_t        ID_HCALTow;
-	Double_t        ID_ECALTow;
-
-
-	ClassDef(HWWJet,1)
-};
+//FIXME
+//class HWWJet : public TObject {
+//public:
+//	TLorentzVector	P;
+//	Double_t        EMfrac;
+//	Int_t           NConstituents;
+//	Double_t        ID_HPD;
+//	Double_t        ID_RBX;
+//	Double_t        ID_n90Hits;
+//	Double_t        ID_resEMF;
+//	Double_t        ID_HCALTow;
+//	Double_t        ID_ECALTow;
+//
+//
+//	ClassDef(HWWJet,1)
+//};
 
 class HWWPFJet : public TObject {
 public:
@@ -75,6 +76,7 @@ public:
 	Double_t        NeuHadfrac;
 	Double_t        ChEmfrac;
 	Double_t        NeuEmfrac;
+	Double_t        TrkCountingHighEffBJet;
 	Int_t           NConstituents;
 
 	ClassDef(HWWPFJet,1)
@@ -104,20 +106,21 @@ public:
 	Double_t TCMETphi;
 	Double_t PFMET;
 	Double_t PFMETphi;
-	Double_t SumEt;
-	Double_t MuCorrMET;
-	Double_t MuCorrMETphi;
+//	Double_t SumEt;
+//FIXME
+//	Double_t MuCorrMET;
+//	Double_t MuCorrMETphi;
 
 	Bool_t   HasSoftMus;
 	Bool_t	 HasBTaggedJets;
 	Int_t	 NEles;   // Electrons
 	Int_t 	 NMus;    // Mus
-	Int_t    NJets;	  //Jets
+//	Int_t    NJets;	  //Jets
 	Int_t    PFNJets; // Particle flow
 
 	std::vector<HWWElectron> Els;
 	std::vector<HWWMuon> 	 Mus;
-	std::vector<HWWJet>	 	 Jets;
+//	std::vector<HWWJet>	 	 Jets;
 	std::vector<HWWPFJet>	 PFJets;
 
 	ClassDef(HWWEvent,1)

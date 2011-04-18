@@ -10,11 +10,11 @@
 ClassImp(HWWEvent)
 ClassImp(HWWElectron)
 ClassImp(HWWMuon)
-ClassImp(HWWJet)
+//ClassImp(HWWJet)
 ClassImp(HWWPFJet)
 
 //______________________________________________________________________________
-HWWEvent::HWWEvent() : NEles(0), NMus(0), NJets(0), PFNJets(0) {
+HWWEvent::HWWEvent() : NEles(0), NMus(0), PFNJets(0) {
 	// TODO Auto-generated constructor stub
 
 	Clear();
@@ -40,19 +40,20 @@ void HWWEvent::Clear( Option_t* option ){
 
 	PFMET          = 0;
 	PFMETphi       = 0;
-	SumEt          = 0;
-	MuCorrMET      = 0;
-	MuCorrMETphi   = 0;
+//	SumEt          = 0;
+//FIXME
+//	MuCorrMET      = 0;
+//	MuCorrMETphi   = 0;
 
 	HasSoftMus     = kFALSE;
 	HasBTaggedJets = kFALSE;
 	NEles          = 0;
 	NMus           = 0;
-	NJets          = 0;
+//	NJets          = 0;
 	PFNJets        = 0;
 
 	Els.clear();
 	Mus.clear();
-	Jets.clear();
+//	Jets.clear();
 	PFJets.clear();
 }

@@ -1,6 +1,7 @@
 CXX:=g++
-CxxFlags:=-g -ggdb
+CxxFlags:=-g -ggdb -pedantic -ansi -pthread -pipe -fvisibility-inlines-hidden -felide-constructors -fmessage-length=0 -ftemplate-depth-300 -Wall -Wno-non-template-friend -Wno-long-long -Wimplicit -Wreturn-type -Wunused -Wparentheses -Wno-deprecated -Werror=return-type -Werror=missing-braces -Werror=unused-value -Werror=address -Werror=format -Werror=sign-compare -Werror=write-strings -Werror=strict-overflow -fdiagnostics-show-option 
 CPPVERBOSE:=true
+ROOTCINT:=rootcint -v4
 
 ifdef ROOTSYS
 ROOTCFLAGS=$(shell root-config --cflags)
@@ -40,8 +41,8 @@ RootDictObject=$(RootDictSource:.cc=.o)
 BinSources := src/ETHZNtupleReader.cc \
 		src/ETHZNtupleSelector.cc \
 		src/ETHZHltChecker.cc \
-		src/HWWSelector.cc \
 		src/HWWSelectorB.cc \
+		src/HWWCandidates.cc \
 		src/Configurator.cc \
 		src/CommandLine.cc \
 		src/UserAnalyzer.cc \
@@ -96,9 +97,9 @@ $(RootDictObject): $(RootDictSource)
 $(RootDictSource): $(LibHeaders) $(LinkDef)
 	@echo Building $(@F) dictionary...
 ifdef CPPVERBOSE
-	rootcint -v4 -f $@ -c -p $(Includes) -I. $(LibHeaders) $(LinkDef)
+	$(ROOTCINT) -f $@ -c -p $(Includes) -I. $(LibHeaders) $(LinkDef)
 else
-	@rootcint -v4 -f $@ -c -p $(Includes) -I. $(HDRS) $(LinkDef)
+	@$(ROOTCINT) -f $@ -c -p $(Includes) -I. $(HDRS) $(LinkDef)
 endif
 
 $(BuildPath)/%.o: src/%.cc

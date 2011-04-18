@@ -62,5 +62,5 @@ const char *const kBright    = "\033[1m";
 const char *const kDark      = "\033[2m";
 
 
-};
+}
 #endif /* TOOLS_H_ */

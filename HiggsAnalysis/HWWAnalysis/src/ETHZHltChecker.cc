@@ -125,10 +125,10 @@ bool ETHZHltChecker::match( const int hltResults[] ) {
 	bool match = false;
 	bool reject = false;
 
-	for ( int i(0); i<_matchIds.size(); ++i)
+	for ( unsigned int i(0); i<_matchIds.size(); ++i)
 		match |= hltResults[_matchIds[i]];
 
-	for ( int i(0); i<_rejectIds.size(); ++i)
+	for ( unsigned int i(0); i<_rejectIds.size(); ++i)
 		reject |= hltResults[_rejectIds[i]];
 
 	return ( match && !reject );

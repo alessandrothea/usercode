@@ -41,7 +41,7 @@ public:
 	double projTcMet;
 	double dPhi;
 	int    nPfJets;
-	int    nJets;
+//	int    nJets;
 	bool   softMus;
 	bool   bJets;
 

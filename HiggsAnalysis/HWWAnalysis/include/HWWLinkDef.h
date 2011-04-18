@@ -9,12 +9,12 @@
 #pragma link C++ class HWWNtuple+;
 #pragma link C++ class HWWElectron+;
 #pragma link C++ class HWWMuon+;
-#pragma link C++ class HWWJet+;
+//FIXME #pragma link C++ class HWWJet+;
 #pragma link C++ class HWWPFJet+;
 
 #pragma link C++ class std::vector<HWWElectron>+;
 #pragma link C++ class std::vector<HWWMuon>+;
-#pragma link C++ class std::vector<HWWJet>+;
+//FIXME #pragma link C++ class std::vector<HWWJet>+;
 #pragma link C++ class std::vector<HWWPFJet>+;
 
 #endif

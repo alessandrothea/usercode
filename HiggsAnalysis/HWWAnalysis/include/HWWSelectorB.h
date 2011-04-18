@@ -10,6 +10,7 @@
 
 #include "ETHZNtupleSelector.h"
 #include "HWWEvent.h"
+#include "HWWCandidates.h"
 #include "ETHZHltChecker.h"
 #include <TH1F.h>
 #include <bitset>
@@ -27,9 +28,7 @@ public:
 	virtual Bool_t Notify();
 
 protected:
-	const static unsigned short _wordLen = 32;
-	typedef std::bitset<_wordLen> elBitSet;
-	typedef std::bitset<_wordLen> muBitSet;
+
 
 	// container for the working point cuts
 	struct WorkingPoint {
@@ -49,143 +48,10 @@ protected:
 		void print();
 	};
 
-	// contains the basic info used by the selection
-	class LepCandidate {
-	public:
-		enum {
-			kMu_t = 0,
-			kEl_t = 1
-		};
-
-		LepCandidate( char t, unsigned int i ) : type(t), idx(i) {}
-		short type;
-		unsigned int idx;
-		short charge;
-
-		virtual bool isPtEta() = 0;
-		virtual bool isVertex() = 0;
-		virtual bool isIso() = 0;
-		virtual bool isId() = 0;
-		virtual bool isNoConv() = 0;
-		virtual bool isGood() = 0;
-		virtual bool isExtra() = 0;
-
-	};
-
-	class LepPair {
-	public:
-		LepPair( LepCandidate* lA, LepCandidate* lB) : _lA(lA), _lB(lB) {}
-
-		LepCandidate* _lA;
-		LepCandidate* _lB;
-
-		static const char kEE_t = LepCandidate::kEl_t*2;
-		static const char kEM_t = LepCandidate::kEl_t+LepCandidate::kMu_t;
-		static const char kMM_t = LepCandidate::kMu_t*2;
-
-		virtual bool isOpposite() { return (_lA->charge * _lB->charge < 0 );}
-		virtual bool isPtEta()  { return this->isOpposite() && (_lA->isPtEta() && _lB->isPtEta()); }
-		virtual bool isVertex() { return this->isOpposite() && (_lA->isVertex() && _lB->isVertex()); }
-		virtual bool isIso()    { return this->isOpposite() && (_lA->isIso() && _lB->isIso()); }
-		virtual bool isId()     { return this->isOpposite() && (_lA->isId() && _lB->isId()); }
-		virtual bool isNoConv() { return this->isOpposite() && (_lA->isNoConv() && _lB->isNoConv()); }
-		virtual bool isGood()   { return this->isOpposite() && (_lA->isGood() && _lB->isGood()); }
-
-		virtual int  finalState() { return _lA->type + _lB->type; }
-
-		LepCandidate* operator[]( unsigned int i);
-	};
-
-
-	class ElCandicate : public LepCandidate {
-	public:
-		ElCandicate( unsigned int i ) : LepCandidate(kEl_t, i) {}
-
-		elBitSet tightTags;
-		elBitSet looseTags;
-
-		virtual bool isPtEta();
-		virtual bool isVertex();
-		virtual bool isIso();
-		virtual bool isId();
-		virtual bool isNoConv();
-		virtual bool isGood();
-		virtual bool isLooseIso();
-		virtual bool isLooseId();
-		virtual bool isLooseNoConv();
-		virtual bool isExtra();
-
-	};
-
-	class MuCandidate : public LepCandidate {
-	public:
-		MuCandidate( unsigned int i ) : LepCandidate(kMu_t, i) {}
-
-		muBitSet tags;
-
-		virtual bool isPtEta();
-		virtual bool isVertex();
-		virtual bool isIso();
-		virtual bool isId();
-		virtual bool isNoConv() { return true; }
-		virtual bool isGood();
-		virtual bool isExtra();
-		virtual bool isSoft();
-	};
 
 	enum WpPartition {
 		kBarrel,
 		kEndcap
-	};
-
-
-	enum elTags {
-		kElTagEta,
-		kElTagPt,
-		kElTagD0PV,
-		kElTagDzPV,
-		kElTagSee,
-		kElTagDeta,
-		kElTagDphi,
-		kElTagHoE,
-		kElTagCombIso,
-		kElTagHits,
-		kElTagDist,
-		kElTagCot,
-	};
-
-	enum muTags {
-		kMuTagEta,
-		kMuTagPt,
-		kMuTagExtraPt,
-		kMuTagD0PV,
-		kMuTagDzPV,
-		kMuTagIsGlobal,
-		kMuTagIsTracker,
-		kMuTagNMuHits,
-		kMuTagNMatches,
-		kMuTagNTkHits,
-		kMuTagNPxHits,
-		kMuTagNChi2,
-		kMuTagRelPtRes,
-		kMuTagCombIso,
-
-		kMuTagSoftPt,
-		kMuTagSoftHighPt,
-		kMuTagIsTMLastStationAngTight,
-		kMuTagNotIso
-	};
-
-	enum lepTags {
-		kLepTagAll,
-		kLepTagEta,
-		kLepTagPt,
-		kLepTagD0,
-		kLepTagDz,
-		kLepTagIsolation,
-		kLepTagId,
-		kLepTagNoConv,
-		kLepTagLast
 	};
 
 	enum LlBins {
@@ -208,7 +74,7 @@ protected:
 
 	virtual bool matchDataHLT();
 	virtual bool hasGoodVertex();
-	virtual elBitSet electronIsoId( elBitSet& tags, int idx, int eff );
+	virtual void electronIsoId( LepCandidate::elBitSet& tags, int idx, int eff );
 	virtual void tagElectrons();
 	virtual void tagMuons();
 	virtual void countPairs();
@@ -237,8 +103,8 @@ protected:
 	float _vrtxCut_z;
 
 	// lep common
-	float _lepCut_Pt;
-	float _lepCut_extraPt;
+	float _lepCut_leadingPt;
+	float _lepCut_trailingPt;
 	float _lepCut_D0PV;
 	float _lepCut_DzPV;
 
@@ -264,7 +130,7 @@ protected:
 	long long _nSelectedEvents;
 
 	TH1F*	  _hEntries;
-	HWWEvent* _event;
+	HWWEvent* _diLepEvent;
 
 	std::string _hltMode;
 	std::string _runInfoName;
@@ -283,7 +149,7 @@ protected:
 	std::set< unsigned int > _selectedMus;
 
 	std::set< unsigned int > _softMus;
-	std::set< unsigned int > _selectedJets;
+//	std::set< unsigned int > _selectedJets;
 	std::set< unsigned int > _selectedPFJets;
 	std::set< unsigned int > _btaggedJets;
 

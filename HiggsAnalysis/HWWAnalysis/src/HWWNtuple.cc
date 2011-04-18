@@ -37,7 +37,7 @@ void HWWNtuple::Clear( Option_t* option ){
 	projMuMet = 0;
 	dPhi = 0;
 	nPfJets = 0;
-	nJets = 0;
+//	nJets = 0;
 	softMus = false;
 	bJets  = false;
 }

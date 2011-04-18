@@ -33,7 +33,7 @@ void HWWAnalyzer::HiggsCutSet::print() {
 
 //_____________________________________________________________________________
 HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthMask(kNumCuts),
-		_analysisTree(0x0), _event(0x0), _ntuple(0x0), _hEntries(0x0) {
+		_hEntries(0x0), _analysisTree(0x0), _event(0x0), _ntuple(0x0) {
 	// TODO Auto-generated constructor stub
 
 	_analysisTreeName = _config.getValue<std::string>("HWWAnalyzer.analysisTreeName");
@@ -173,6 +173,7 @@ Bool_t HWWAnalyzer::Notify() {
 		return true;
 	}
 
+
 	if (  _chain->GetCurrentFile() ) {
 		std::cout << "--- Notify(): New file opened: "<<  _chain->GetCurrentFile()->GetName() << std::endl;
 		bool add = TH1::AddDirectoryStatus();
@@ -204,6 +205,8 @@ Bool_t HWWAnalyzer::Notify() {
 	} else {
 		std::cout << "--- Notify(): No file opened yet" << std::endl;
 	}
+
+	return true;
 }
 
 //_____________________________________________________________________________
@@ -218,16 +221,16 @@ void HWWAnalyzer::bookCutHistograms( std::vector<TH1F*>& histograms , const std:
 	// all numbers to 0, just to be sure;
 	histograms.assign(kNumCuts,0x0);
 
-	histograms[kMinMet]		= new TH1F(("01_"+nPrefix+"MinMet").c_str(),     (lPrefix+"Met_{min}").c_str(),	    100, 0, 100);
-	histograms[kMinMll]		= new TH1F(("02_"+nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(),    100, 0, 100);
-	histograms[kZveto]		= new TH1F(("03_"+nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(), 		    100, 0, 120);
+	histograms[kMinMet]		= new TH1F(("01_"+nPrefix+"MinMet").c_str(),     (lPrefix+"Met_{min}").c_str(),	      100, 0, 100);
+	histograms[kMinMll]		= new TH1F(("02_"+nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(),    300, 0, 300);
+	histograms[kZveto]		= new TH1F(("03_"+nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(), 		  300, 0, 300);
 	histograms[kProjMet]	= new TH1F(("04_"+nPrefix+"MinProjMet").c_str(), (lPrefix+"Projected MET").c_str(),   100, 0, 100);
 	histograms[kJetVeto]	= new TH1F(("05_"+nPrefix+"JetVeto").c_str(),    (lPrefix+"n_{jets} = 0").c_str(),     15, 0, 15);
 	histograms[kSoftMuon]	= new TH1F(("06_"+nPrefix+"SoftMuon").c_str(),   (lPrefix+"No Soft #mu").c_str(),       2, 0, 2);
 	histograms[kTopVeto]	= new TH1F(("07_"+nPrefix+"TopVeto").c_str(),    (lPrefix+"Top Veto").c_str(),          2, 0, 2);
 	histograms[kHardPtMin]	= new TH1F(("08_"+nPrefix+"MinHardPt").c_str(),  (lPrefix+"p^{hard}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtHard);
 	histograms[kSoftPtMin]	= new TH1F(("09_"+nPrefix+"MinSoftPt").c_str(),  (lPrefix+"p^{soft}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtSoft);
-	histograms[kMaxMll]		= new TH1F(("10_"+nPrefix+"MaxMll").c_str(),     (lPrefix+"m^{ll}_{max}").c_str(),    100, 0,  100);
+	histograms[kMaxMll]		= new TH1F(("10_"+nPrefix+"MaxMll").c_str(),     (lPrefix+"m^{ll}_{max}").c_str(),    300, 0,  300);
 	histograms[kDeltaPhi]	= new TH1F(("11_"+nPrefix+"DeltaPhi").c_str(),   (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
 
 }
@@ -360,22 +363,18 @@ void HWWAnalyzer::calcNtuple(){
     	THROW_RUNTIME("A.Pt < B.Pt");
     }
 
-    // opposite charge
-    bool oppositeCharge = ( cA*cB < 0 );
-
     // 3 - invariant mass
     double mll = (pA+pB).Mag();
 
     // 4a pfMet
 	double pfMet = _event->PFMET;
 	// 4b - muMet
-	double muMet = _event->MuCorrMET;
+//	double muMet = _event->MuCorrMET;
 	// 4c - tcMet
 	double tcMet = _event->TCMET;
 
 	// 5 - projected MeT
 	// 5a - projPfMet
-	short i;
 
 	TLorentzVector pfMetV;
 	pfMetV.SetPtEtaPhiE(_event->PFMET, 0, _event->PFMETphi,0);
@@ -385,11 +384,11 @@ void HWWAnalyzer::calcNtuple(){
 
 
 	// 5b - projMuMet
-	TLorentzVector muMetV;
-	muMetV.SetPtEtaPhiE(_event->MuCorrMET, 0, _event->MuCorrMETphi, 0);
-
-	double muMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(muMet)), TMath::Abs(pB.DeltaPhi(muMet)));
-	double projMuMet = muMetDphi < TMath::PiOver2() ? muMet*TMath::Sin(muMetDphi) : muMet;
+//	TLorentzVector muMetV;
+//	muMetV.SetPtEtaPhiE(_event->MuCorrMET, 0, _event->MuCorrMETphi, 0);
+//
+//	double muMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(muMet)), TMath::Abs(pB.DeltaPhi(muMet)));
+//	double projMuMet = muMetDphi < TMath::PiOver2() ? muMet*TMath::Sin(muMetDphi) : muMet;
 
 
 	TLorentzVector tcMetV;
@@ -406,10 +405,7 @@ void HWWAnalyzer::calcNtuple(){
 	// 7a - pf jets
 	int nPfJets = _event->PFNJets;
 	// 7b - calo jets
-	int nJets   = _event->NJets;
-
-	double pTHard = pA.Pt();
-	double pTSoft = pB.Pt();
+//	int nJets   = _event->NJets;
 
 	// 8 soft  muon
 	bool softMu = _event->HasSoftMus;
@@ -430,17 +426,17 @@ void HWWAnalyzer::calcNtuple(){
 
 	_ntuple->mll        = mll;
 	_ntuple->pfMet      = pfMet;
-	_ntuple->muMet      = muMet;
+//	_ntuple->muMet      = muMet;
 	_ntuple->tcMet		= tcMet;
 	_ntuple->pfMetDphi  = pfMetDphi;
-	_ntuple->muMetDphi  = muMetDphi;
+//	_ntuple->muMetDphi  = muMetDphi;
 	_ntuple->tcMetDphi	= tcMetDphi;
 	_ntuple->projPfMet  = projPfMet;
-	_ntuple->projMuMet  = projMuMet;
+//	_ntuple->projMuMet  = projMuMet;
 	_ntuple->projTcMet  = projTcMet;
 	_ntuple->dPhi       = dPhiLL;
 	_ntuple->nPfJets	= nPfJets;
-	_ntuple->nJets      = nJets;
+//	_ntuple->nJets      = nJets;
 	_ntuple->softMus     = softMu;
 
 	_analysisTree->Fill();
@@ -454,6 +450,8 @@ void HWWAnalyzer::cutAndFill() {
 
 	double met = _ntuple->tcMet;
 	double projMet = _ntuple->projTcMet;
+//	double met = _ntuple->pfMet;
+//	double projMet = _ntuple->projPfMet;
 
 	word[kMinMet]    = ( met > _minMet );
 
@@ -581,7 +579,7 @@ void HWWAnalyzer::cutAndFill() {
 
 	// pause here for jet pt and eta
 	_jetN->Fill(_event->PFJets.size());
-	for ( int i(0); i<_event->PFJets.size(); ++i) {
+	for ( unsigned int i(0); i<_event->PFJets.size(); ++i) {
 		_jetPt->Fill(_event->PFJets[i].P.Pt());
 		_jetEta->Fill(_event->PFJets[i].P.Eta());
 	}
@@ -660,21 +658,21 @@ void HWWAnalyzer::EndJob() {
 	_llCounters->Add(_emCounters);
 	_llCounters->Add(_mmCounters);
 
-	for ( int k(0); k<_llNm1Hist.size(); ++k) {
+	for ( unsigned int k(0); k<_llNm1Hist.size(); ++k) {
 		if (!_llNm1Hist[k] ) continue;
 		_llNm1Hist[k]->Add(_eeNm1Hist[k]);
 		_llNm1Hist[k]->Add(_emNm1Hist[k]);
 		_llNm1Hist[k]->Add(_mmNm1Hist[k]);
 	}
 
-	for ( int k(0); k<_llPreCutHist.size(); ++k ) {
+	for ( unsigned int k(0); k<_llPreCutHist.size(); ++k ) {
 		if( !_llPreCutHist[k] ) continue;
 		_llPreCutHist[k]->Add( _eePreCutHist[k]);
 		_llPreCutHist[k]->Add( _emPreCutHist[k]);
 		_llPreCutHist[k]->Add( _mmPreCutHist[k]);
 	}
 
-	for ( int k(0); k<_llPostCutHist.size(); ++k ) {
+	for ( unsigned int k(0); k<_llPostCutHist.size(); ++k ) {
 		if( !_llPreCutHist[k] ) continue;
 		_llPostCutHist[k]->Add( _eePostCutHist[k]);
 		_llPostCutHist[k]->Add( _emPostCutHist[k]);

@@ -48,147 +48,13 @@ void HWWSelectorB::WorkingPoint::print() {
 			<< std::endl;
 }
 
-//_____________________________________________________________________________
-HWWSelectorB::LepCandidate* HWWSelectorB::LepPair::operator [](unsigned int i){
-	switch (i) {
-	case 0:
-		return _lA;
-	case 1:
-		return _lB;
-	default:
-		THROW_RUNTIME("index out of bound i="<< i)
-	}
-}
-//_____________________________________________________________________________
-bool HWWSelectorB::MuCandidate::isPtEta(){
-	return (tags[kMuTagPt] && tags[kMuTagEta]);
-}
 
-//_____________________________________________________________________________
-bool HWWSelectorB::MuCandidate::isVertex() {
-	return (tags[kMuTagD0PV] && tags[kMuTagDzPV] );
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::MuCandidate::isId() {
-	return ( tags[kMuTagIsGlobal] &&
-				tags[kMuTagIsTracker] &&
-				tags[kMuTagNMuHits] &&
-				tags[kMuTagNMatches] &&
-				tags[kMuTagNTkHits] &&
-				tags[kMuTagNPxHits] &&
-				tags[kMuTagNChi2] &&
-				tags[kMuTagRelPtRes]
-			);
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::MuCandidate::isIso() {
-	return tags[kMuTagCombIso];
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::MuCandidate::isExtra() {
-	return (tags[kMuTagPt] && tags[kMuTagExtraPt])
-		&& this->isVertex()
-		&& this->isId()
-		&& this->isIso();
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::MuCandidate::isGood() {
-	return this->isPtEta()
-		&& this->isVertex()
-		&& this->isId()
-		&& this->isIso();
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::MuCandidate::isSoft() {
-	return ( tags[kMuTagEta] &&
-			tags[kMuTagSoftPt] &&
-			tags[kMuTagIsTracker] &&
-			tags[kMuTagIsTMLastStationAngTight] &&
-			tags[kMuTagNTkHits] &&
-			tags[kMuTagD0PV] &&
-			( !tags[kMuTagSoftHighPt] || tags[kMuTagSoftHighPt] && tags[kMuTagNotIso] )
-		);
-
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isPtEta() {
-	return (tightTags[kElTagPt] && tightTags[kElTagEta]);
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isVertex() {
-	return (tightTags[kElTagD0PV] && tightTags[kElTagDzPV] );
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isIso() {
-	return tightTags[kElTagCombIso];
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isId() {
-	return tightTags[kElTagSee] && tightTags[kElTagDphi] && tightTags[kElTagDeta] && tightTags[kElTagHoE];
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isNoConv() {
-	// !conversion
-	return !( ( tightTags[kElTagDist] && tightTags[kElTagCot] ) || tightTags[kElTagHits]);
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isLooseIso() {
-	return looseTags[kElTagCombIso];
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isLooseId() {
-	return looseTags[kElTagSee] && looseTags[kElTagDphi] && looseTags[kElTagDeta] && looseTags[kElTagHoE];
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isLooseNoConv() {
-	// !conversion
-	return !( ( looseTags[kElTagDist] && looseTags[kElTagCot] ) || looseTags[kElTagHits]);
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isGood() {
-	return this->isPtEta()
-		&& this->isVertex()
-		&& this->isIso()
-		&& this->isId()
-		&& this->isNoConv();
-}
-
-//_____________________________________________________________________________
-bool HWWSelectorB::ElCandicate::isExtra() {
-	return
-			// ptEta
-			(looseTags[kElTagPt] && looseTags[kElTagEta])
-			// vertex
-			&& (looseTags[kElTagD0PV] && looseTags[kElTagDzPV] )
-			// iso
-			&& isLooseIso()
-			// id
-            && isLooseId()
-            // no conversion
-            && isLooseNoConv();
-}
-
-//_____________________________________________________________________________
 HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, argv ),
 		_nSelectedEvents(0), _llCounters(0x0), _eeCounters(0x0), _emCounters(0x0), _mmCounters(0x0){
 
-	_event = new HWWEvent();
+	_diLepEvent = new HWWEvent();
 
-	std::cout <<  fChain->GetName() << "   "<< fChain->GetTree() << std::endl;
+	std::cout <<  this->getChain()->GetName() << "   "<< this->getChain()->GetTree() << std::endl;
 
 	_hltMode		  = _config.getValue<std::string>("HWWSelector.hltMode","el_mu");
 	_runInfoName      = _config.getValue<std::string>("HWWSelector.runInfoName");
@@ -203,10 +69,10 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 
 	_wpFile				 = _config.getValue<std::string>( "HWWSelector.elWorkingPointFile");
 
-	_lepCut_Pt			 = _config.getValue<float>("HWWSelector.lepCut.Pt"); // = 20.
+	_lepCut_leadingPt	 = _config.getValue<float>("HWWSelector.lepCut.leadingPt"); // = 20.
+	_lepCut_trailingPt 	 = _config.getValue<float>("HWWSelector.lepCut.trailingPt"); // =10.
 	_lepCut_D0PV		 = _config.getValue<float>("HWWSelector.lepCut.d0PrimaryVertex");// = 0.2
 	_lepCut_DzPV		 = _config.getValue<float>("HWWSelector.lepCut.dZPrimaryVertex");// = 10.
-	_lepCut_extraPt 	 = _config.getValue<float>("HWWSelector.lepCut.extraPt"); // =10.
 
 	_jetCut_Dr			 = _config.getValue<float>("HWWSelector.jetCut.Dr");// = 0.3
 	_jetCut_Pt			 = _config.getValue<float>("HWWSelector.jetCut.Pt");// = 30
@@ -288,7 +154,7 @@ void HWWSelectorB::Book() {
 	_hEntries = makeLabelHistogram("entries","HWWS selection entries",entriesLabels);
 
 	Debug(0) << "Adding the selected objects" << std::endl;
-	fSkimmedTree->Branch("ev","HWWEvent", &_event);
+	fSkimmedTree->Branch("ev","HWWEvent", &_diLepEvent);
 
 	// counting histogram
 	std::map<int,std::string> labels;
@@ -356,12 +222,12 @@ TH1F* HWWSelectorB::makeLabelHistogram( const std::string& name, const std::stri
 //_____________________________________________________________________________
 void HWWSelectorB::BeginJob() {
 	readWorkingPoints( _wpFile );
-	_hlt.connect(fChain, _runInfoName);
+	_hlt.connect(this->getChain(), _runInfoName);
 }
 
 //_____________________________________________________________________________
 void HWWSelectorB::Process(Long64_t iEvent) {
-	GetEntry(iEvent);
+	this->getEntry(iEvent);
 
 	Debug(3) << "--"<< iEvent << "-----------------------------------------------" << std::endl;
 	// make sure the previous event is cleared
@@ -394,33 +260,8 @@ void HWWSelectorB::EndJob() {
 //_____________________________________________________________________________
 Bool_t HWWSelectorB::Notify() {
 	ETHZNtupleSelector::Notify();
-
-//	Debug(0) << "Chain " << fChain << " New file opened " << fChain->GetCurrentFile() << std::endl;
 	_hlt.updateIds();
-//
-//	if (  fChain->GetCurrentFile() ) {
-//		_hltAllNames.clear();
-//
-//		std::vector<std::string>*names = 0;
-//		TTree* runInfo = (TTree*)(fChain->GetCurrentFile()->Get(_runInfoName.c_str()));
-//		runInfo->SetBranchAddress("HLTNames",&names);
-//		runInfo->GetEntry(0);
-//		_hltAllNames = *names;
-//	}
-//
-//
-//	_hltIdx.clear();
-//
-//	std::vector<std::string>::iterator it;
-//	for( unsigned int i(0); i < _hltAllNames.size(); ++i)
-//		for( it = _hltActiveNames.begin(); it != _hltActiveNames.end(); ++it)
-//			if ( _hltAllNames[i] == *it ) {
-//				_hltIdx.push_back(i);
-//				break;
-//			}
-
-//	for( int i(0); i<_hltIdx.size(); ++i)
-//		Debug(1) << i << "   " << _hltNames[_hltIdx[i]] << "   " << _hltIdx[i] << std::endl;
+    return kTRUE;
 
 }
 
@@ -499,7 +340,7 @@ void HWWSelectorB::clear() {
 	_selectedMus.clear();
 	_softMus.clear();
 
-	_selectedJets.clear();
+//	_selectedJets.clear();
 	_selectedPFJets.clear();
 
 	_btaggedJets.clear();
@@ -514,9 +355,9 @@ bool HWWSelectorB::selectAndClean() {
 
 
 
-	Debug(3) << "- NtupleLeptons: " << NEles+NMus << '\n'
-			<< "  NtupleMuons: " << NMus << '\n'
-			<< "  NtupleElectrons: " << NEles << std::endl;
+	Debug(3) << "- NtupleLeptons: " << getEvent()->getNEles()+getEvent()->getNMus() << '\n'
+			<< "  NtupleMuons: " << getEvent()->getNMus() << '\n'
+			<< "  NtupleElectrons: " <<getEvent()->getNEles() << std::endl;
 
 	// check the HLT flags
 	if ( !matchDataHLT() ) return false;
@@ -553,8 +394,8 @@ bool HWWSelectorB::matchDataHLT() {
     _mmCounters->Fill(kLLBinAll);
 
     // GenMET is -1000 if it's a data file
-    bool isData = ( GenMET  < -999.);
-    bool match = !isData || _hlt.match( HLTResults );
+    bool isData = ( getEvent()->getGenMET()  < -999.);
+    bool match = !isData || _hlt.match( getEvent()->getHLTResults() );
 
 	if ( match ) {
 	    _llCounters->Fill(kLLBinHLT);
@@ -572,11 +413,12 @@ bool HWWSelectorB::hasGoodVertex() {
 
 //	std::cout << "vrtxGood: " << PrimVtxGood << "\n"
 //			<< "vrtxFake: " << PrimVtxIsFake << std::endl;
-	bool goodVrtx = (PrimVtxNdof >= _vrtxCut_nDof ) &&
-	(PrimVtxGood == 0 ) &&
-	(PrimVtxIsFake != 1) &&
-	(TMath::Abs(PrimVtxRho < _vrtxCut_rho )) &&
-	(TMath::Abs(PrimVtxz) < _vrtxCut_z );
+	ETHZEvent* ev = getEvent();
+	bool goodVrtx = (ev->getPrimVtxNdof() >= _vrtxCut_nDof ) &&
+	(ev->getPrimVtxGood() == 0 ) &&
+	(ev->getPrimVtxIsFake() != 1) &&
+	(TMath::Abs(ev->getPrimVtxRho() < _vrtxCut_rho )) &&
+	(TMath::Abs(ev->getPrimVtxz()) < _vrtxCut_z );
 
 	if ( goodVrtx ) {
 		_llCounters->Fill(kLLBinVertex);
@@ -589,22 +431,23 @@ bool HWWSelectorB::hasGoodVertex() {
 }
 
 //_____________________________________________________________________________
-HWWSelectorB::elBitSet HWWSelectorB::electronIsoId( elBitSet& tags, int idx, int eff ) {
+void HWWSelectorB::electronIsoId( LepCandidate::elBitSet& tags, int idx, int eff ) {
 	// identify tight electron
 
-	float eta = ElSCEta[idx];
+	ETHZEvent* ev = getEvent();
+	float eta = ev->getElSCEta(idx);
 
 	// apply the correction for the endcaps
-	float dPhi = ElDeltaPhiSuperClusterAtVtx[idx];
-	float dEta = ElDeltaEtaSuperClusterAtVtx[idx];
+	float dPhi = ev->getElDeltaPhiSuperClusterAtVtx(idx);
+	float dEta = ev->getElDeltaEtaSuperClusterAtVtx(idx);
 
-	float See       = ElSigmaIetaIeta[idx];
-	float HoE       = ElHcalOverEcal[idx];
-	float trkIso    = ElDR03TkSumPt[idx];
-	float ecalIso   = ElDR03EcalRecHitSumEt[idx];
-	float hcalIso   = ElDR03HcalTowerSumEt[idx];
-	float combIso_B = (trkIso + TMath::Max(0., ecalIso - 1.) + hcalIso) / ElPt[idx];
-	float combIso_E = (trkIso + ecalIso + hcalIso) / ElPt[idx];
+	float See       = ev->getElSigmaIetaIeta(idx);
+	float HoE       = ev->getElHcalOverEcal(idx);
+	float trkIso    = ev->getElDR03TkSumPt(idx);
+	float ecalIso   = ev->getElDR03EcalRecHitSumEt(idx);
+	float hcalIso   = ev->getElDR03HcalTowerSumEt(idx);
+	float combIso_B = (trkIso + TMath::Max(0., ecalIso - 1.) + hcalIso) / ev->getElPt(idx);
+	float combIso_E = (trkIso + ecalIso + hcalIso) / ev->getElPt(idx);
 	float combIso   = 0;
 
 	unsigned short p;
@@ -618,7 +461,7 @@ HWWSelectorB::elBitSet HWWSelectorB::electronIsoId( elBitSet& tags, int idx, int
 	} else {
 		//std::cout << "Candidate out of acceptance region" << std::endl;
 		//return kOutOfAcc;
-		return false;
+		return;
 	}
 
 	WorkingPoint wp = getWorkingPoint(p, eff );
@@ -627,53 +470,54 @@ HWWSelectorB::elBitSet HWWSelectorB::electronIsoId( elBitSet& tags, int idx, int
 	// if |dist| < distCut and |delta cot(theta)| < cotCut
 	// or
 	// missingHist > hitsCut
-	tags[kElTagDist] = (TMath::Abs(ElConvPartnerTrkDist[idx]) < wp.dist);
-	tags[kElTagCot]  = (TMath::Abs(ElConvPartnerTrkDCot[idx]) < wp.cot);
-	tags[kElTagHits] = (ElNumberOfMissingInnerHits[idx] > wp.missHits);
+	tags[kElTagDist] = (TMath::Abs(ev->getElConvPartnerTrkDist(idx)) < wp.dist);
+	tags[kElTagCot]  = (TMath::Abs(ev->getElConvPartnerTrkDCot(idx)) < wp.cot);
+	tags[kElTagHits] = (ev->getElNumberOfMissingInnerHits(idx) > wp.missHits);
 
 	tags[kElTagSee]     = ( See < wp.See);
 	tags[kElTagDphi]    = ( TMath::Abs(dPhi) < wp.dPhi);
 	tags[kElTagDeta]    = ( TMath::Abs(dEta) < wp.dEta);
 	tags[kElTagHoE]     = ( HoE  < wp.HoE);
 	tags[kElTagCombIso] = ( combIso < wp.combIso);
-	//std::cout << "elIdWord[" << i << "," << eta << ","<< ElPt[i] << "]: [" << wp.See << "][" << elIdWord.to_string() << "] See: " << See << ", dPhi: "<< dPhi << ", dEta: " << dEta << ", HoE: " << HoE << ", Comb: " << combIso << std::endl;
+	//std::cout << "elIdWord[" << i << "," << eta << ","<< _reader->ElPt[i] << "]: [" << wp.See << "][" << elIdWord.to_string() << "] See: " << See << ", dPhi: "<< dPhi << ", dEta: " << dEta << ", HoE: " << HoE << ", Comb: " << combIso << std::endl;
 
-	return tags;
+	return;
 
 }
 
 //_____________________________________________________________________________
 void HWWSelectorB::tagElectrons() {
 
+	ETHZEvent* ev = getEvent();
 	_elTagged.clear();
 
 	//loop over els
-	for( int i(0); i<NEles; ++i) {
+	for( int i(0);i < ev->getNEles(); ++i) {
 
 		ElCandicate theEl(i);
-		theEl.charge = ElCharge[i];
+		theEl.charge = ev->getElCharge(i);
 
 		// first tag the tight word
-		theEl.tightTags[kElTagEta] = (TMath::Abs( ElEta[i] ) < _etaMaxEE);
+		theEl.tightTags[kElTagEta] = (TMath::Abs( ev->getElEta(i) ) < _etaMaxEE);
 
 		// interaction point
-		theEl.tightTags[kElTagD0PV] = ( TMath::Abs(ElD0PV[i]) < _lepCut_D0PV);
-		theEl.tightTags[kElTagDzPV] = ( TMath::Abs(ElDzPV[i]) < _lepCut_DzPV);
+		theEl.tightTags[kElTagD0PV] = ( TMath::Abs(ev->getElD0PV(i)) < _lepCut_D0PV);
+		theEl.tightTags[kElTagDzPV] = ( TMath::Abs(ev->getElDzPV(i)) < _lepCut_DzPV);
 
 		// drop electrons with pT < _leptonPtCut
-		theEl.tightTags[kElTagPt] = ( ElPt[i] > _lepCut_Pt );
+		theEl.tightTags[kElTagPt] = ( ev->getElPt(i) > _lepCut_leadingPt );
 
 		electronIsoId(theEl.tightTags, theEl.idx, _elCut_TightWorkingPoint );
 
 		// it's duplicate, I know
-		theEl.looseTags[kElTagEta] = (TMath::Abs( ElEta[i] ) < _etaMaxEE);
+		theEl.looseTags[kElTagEta] = (TMath::Abs( ev->getElEta(i) ) < _etaMaxEE);
 
 		// interaction point
-		theEl.looseTags[kElTagD0PV] = ( TMath::Abs(ElD0PV[i]) < _lepCut_D0PV);
-		theEl.looseTags[kElTagDzPV] = ( TMath::Abs(ElDzPV[i]) < _lepCut_DzPV);
+		theEl.looseTags[kElTagD0PV] = ( TMath::Abs(ev->getElD0PV(i)) < _lepCut_D0PV);
+		theEl.looseTags[kElTagDzPV] = ( TMath::Abs(ev->getElDzPV(i)) < _lepCut_DzPV);
 
 		// drop electrons with pT < _leptonPtCut
-		theEl.looseTags[kElTagPt] = ( ElPt[i] > _lepCut_extraPt );
+		theEl.looseTags[kElTagPt] = ( ev->getElPt(i) > _lepCut_trailingPt );
 
 		electronIsoId(theEl.looseTags, theEl.idx, _elCut_LooseWorkingPoint );
 
@@ -683,12 +527,12 @@ void HWWSelectorB::tagElectrons() {
 				<<"  elLooseTags: " << theEl.looseTags.to_string() << std::endl;
 
 		if ( theEl.isGood() && !theEl.isExtra()) {
-			float trkIso    = ElDR03TkSumPt[i];
-			float ecalIso   = ElDR03EcalRecHitSumEt[i];
-			float hcalIso   = ElDR03HcalTowerSumEt[i];
-			float combIso_B = (trkIso + TMath::Max(0., ecalIso - 1.) + hcalIso) / ElPt[i];
-			float combIso_E = (trkIso + ecalIso + hcalIso) / ElPt[i];
-			THROW_RUNTIME("something fishy cIso: eta:" << ElEta[i] << " b:" << combIso_B << " e:" << combIso_E);
+			float trkIso    = ev->getElDR03TkSumPt(i);
+			float ecalIso   = ev->getElDR03EcalRecHitSumEt(i);
+			float hcalIso   = ev->getElDR03HcalTowerSumEt(i);
+			float combIso_B = (trkIso + TMath::Max(0., ecalIso - 1.) + hcalIso) / ev->getElPt(i);
+			float combIso_E = (trkIso + ecalIso + hcalIso) / ev->getElPt(i);
+			THROW_RUNTIME("something fishy cIso: eta:" << ev->getElEta(i) << " b:" << combIso_B << " e:" << combIso_E);
 		}
 
 	}
@@ -697,58 +541,59 @@ void HWWSelectorB::tagElectrons() {
 //_____________________________________________________________________________
 void HWWSelectorB::tagMuons() {
 	// muon id cuts
-	// isolation = (MuIso03SumPt[i] + MuIso03EmEt[i] + MuIso03HadEt[i] ) / MuPt[i] < 0.15
+	// isolation = (ev->getMuIso03SumPt(i) + ev->getMuIso03EmEt(i) + ev->getMuIso03HadEt(i) ) / ev->getMuPt(i) < 0.15
 	// isGlobalMu
-	// MuNChi2[i] < 10
-	// MuNMuHits[i] > 0
-	// MuNTkHits[i] > 10
+	// ev->getMuNChi2(i) < 10
+	// ev->getMuNMuHits(i) > 0
+	// ev->getMuNTkHits(i) > 10
 
+	ETHZEvent* ev = getEvent();
 	_muTagged.clear();
 	// loop on mus
-	for (int i=0; i<NMus; ++i) {
+	for (int i=0; i < ev->getNMus(); ++i) {
 		// reject mus with eta > _etaMaxMu
 		// and pT < 10 GeV
 
 		MuCandidate theMu(i);
-		theMu.charge = MuCharge[i];
-		muBitSet& tags = theMu.tags;
+		theMu.charge = ev->getMuCharge(i);
+		LepCandidate::muBitSet& tags = theMu.tags;
 
 		// to check
-		tags[kMuTagEta] = (TMath::Abs( MuEta[i] ) < _etaMaxMu);
+		tags[kMuTagEta] = (TMath::Abs( ev->getMuEta(i) ) < _etaMaxMu);
 
 		// drop mus with pT < _leptonPtCut
-		tags[kMuTagPt] = (  MuPt[i] > _lepCut_Pt );
+		tags[kMuTagPt] = (  ev->getMuPt(i) > _lepCut_leadingPt );
 
 		// check if the mu can be an extra
-		tags[kMuTagExtraPt] = ( MuPt[i] > _lepCut_extraPt );
+		tags[kMuTagExtraPt] = ( ev->getMuPt(i) > _lepCut_trailingPt );
 
 		// interaction point
-		tags[kMuTagD0PV] = ( TMath::Abs(MuD0PV[i]) < _lepCut_D0PV);
-		tags[kMuTagDzPV] = ( TMath::Abs(MuDzPV[i]) < _lepCut_DzPV);
+		tags[kMuTagD0PV] = ( TMath::Abs(ev->getMuD0PV(i)) < _lepCut_D0PV);
+		tags[kMuTagDzPV] = ( TMath::Abs(ev->getMuDzPV(i)) < _lepCut_DzPV);
 
 		// isolation, where does it come from?
-		double combIso = (MuIso03SumPt[i] + MuIso03EmEt[i] + MuIso03HadEt[i] )/ MuPt[i];
+		double combIso = (ev->getMuIso03SumPt(i) + ev->getMuIso03EmEt(i) + ev->getMuIso03HadEt(i) )/ ev->getMuPt(i);
 
 		// the track is identified as a global muon
 		// chi2/ndof of the global muon fit < 10
 		// number of valid muon-detector hits used in the global fit > 0
 		// Number of hits in the tracker track, Nhits, > 10.
 
-		tags[kMuTagIsGlobal] = ( MuIsGlobalMuon[i]==1 );
-		tags[kMuTagIsTracker]= ( MuIsTrackerMuon[i]==1 );
-		tags[kMuTagNMuHits]  = ( MuNMuHits[i] > _muCut_NMuHist);
-		tags[kMuTagNMatches] = ( MuNMatches[i] > _muCut_NMuMatches);
-		tags[kMuTagNTkHits]  = ( MuNTkHits[i] > _muCut_NTrackerHits);
-		tags[kMuTagNPxHits]  = ( MuNPxHits[i] > _muCut_NPixelHits);
-		tags[kMuTagNChi2]    = ( MuNChi2[i] < _muCut_NChi2);
-		tags[kMuTagRelPtRes] = ( MuPtE[i]/MuPt[i] < _muCut_relPtRes);
+		tags[kMuTagIsGlobal] = ( ev->getMuIsGlobalMuon(i)==1 );
+		tags[kMuTagIsTracker]= ( ev->getMuIsTrackerMuon(i)==1 );
+		tags[kMuTagNMuHits]  = ( ev->getMuNMuHits(i) > _muCut_NMuHist);
+		tags[kMuTagNMatches] = ( ev->getMuNMatches(i) > _muCut_NMuMatches);
+		tags[kMuTagNTkHits]  = ( ev->getMuNTkHits(i) > _muCut_NTrackerHits);
+		tags[kMuTagNPxHits]  = ( ev->getMuNPxHits(i) > _muCut_NPixelHits);
+		tags[kMuTagNChi2]    = ( ev->getMuNChi2(i) < _muCut_NChi2);
+		tags[kMuTagRelPtRes] = ( ev->getMuPtE(i)/ev->getMuPt(i) < _muCut_relPtRes);
 		tags[kMuTagCombIso]  = ( combIso < _muCut_combIsoOverPt );
 
 
 		// additional soft muon tags
-		tags[kMuTagSoftPt] = ( MuPt[i] > _muSoftCut_Pt );
-		tags[kMuTagSoftHighPt] = ( MuPt[i] < _muSoftCut_HighPt);
-		tags[kMuTagIsTMLastStationAngTight] = ( MuIsTMLastStationAngTight[i]==1 );
+		tags[kMuTagSoftPt] = ( ev->getMuPt(i) > _muSoftCut_Pt );
+		tags[kMuTagSoftHighPt] = ( ev->getMuPt(i) < _muSoftCut_HighPt);
+		tags[kMuTagIsTMLastStationAngTight] = ( ev->getMuIsTMLastStationAngTight(i)==1 );
 		tags[kMuTagNotIso] = ( combIso > _muSoftCut_NotIso );
 
 		_muTagged.push_back(theMu);
@@ -905,14 +750,14 @@ void HWWSelectorB::countPairs() {
 	for( itMu = _muTagged.begin(); itMu != _muTagged.end(); ++itMu)
 		allTags.push_back(&(*itMu));
 
-	Debug(4) << "  - nLepToPair: " << allTags.size() << "   nEl: " << _elTagged.size() <<" " << NEles
-			<< "   nMu: " << _muTagged.size() << " " << NMus << std::endl;
+	Debug(4) << "  - nLepToPair: " << allTags.size() << "   nEl: " << _elTagged.size() <<" " <<getEvent()->getNEles()
+			<< "   nMu: " << _muTagged.size() << " " <<getEvent()->getNMus() << std::endl;
 
 	// make all the opposite sign pairs
 	std::vector<LepPair> oppChargePairs;
 
-	for( int i(0); i<allTags.size(); ++i)
-		for( int j(i+1); j<allTags.size(); ++j) {
+	for( unsigned int i(0); i<allTags.size(); ++i)
+		for( unsigned int j(i+1); j<allTags.size(); ++j) {
 			LepPair p( allTags[i], allTags[j]);
 			Debug(3) << "i:" <<  i << " j:" << j
 					<< " opp " << p.isOpposite() << std::endl;
@@ -983,7 +828,7 @@ void HWWSelectorB::countPairs() {
 	//
 	std::stringstream see, sem, smm, sll;
 
-	for( int i(1); i<llCounts.size()-1; ++i ){
+	for( unsigned int i(1); i<llCounts.size()-1; ++i ){
 		see << eeCounts[i] << ",";
 		sem << emCounts[i] << ",";
 		smm << mmCounts[i] << ",";
@@ -1019,8 +864,8 @@ void HWWSelectorB::countPairs() {
 		}
 	}
 
-	Debug(3) << "Selected Els: "  << _selectedEls.size() << '\n'
-			 << "Selected Mus: "  << _selectedMus.size() << std::endl;
+	Debug(3) << "Selected _reader->Els: "  << _selectedEls.size() << '\n'
+			 << "Selected _reader->Mus: "  << _selectedMus.size() << std::endl;
 
 }
 
@@ -1110,125 +955,128 @@ bool HWWSelectorB::checkExtraLeptons() {
 	_llCounters->Fill(kLLBinExtraLep);
 
 	return true;
-};
+}
 
 //_____________________________________________________________________________
 void HWWSelectorB::assembleNtuple() {
+
+	ETHZEvent* ev = getEvent();
+
 	// clear the ntuple
-	_event->Clear();
+	_diLepEvent->Clear();
 
 	// fill the run parameters
-	_event->Run          = Run;
-	_event->Event        = Event;
-	_event->LumiSection  = LumiSection;
+	_diLepEvent->Run          = ev->getRun();
+	_diLepEvent->Event        = ev->getEvent();
+	_diLepEvent->LumiSection  = ev->getLumiSection();
 
     // primary vertexes
-	_event->PrimVtxGood  = PrimVtxGood;
-	_event->PrimVtxx     = PrimVtxx;
-	_event->PrimVtxy     = PrimVtxy;
-	_event->PrimVtxz     = PrimVtxz;
-	_event->NVrtx        = NVrtx;
+	_diLepEvent->PrimVtxGood  = ev->getPrimVtxGood();
+	_diLepEvent->PrimVtxx     = ev->getPrimVtxx();
+	_diLepEvent->PrimVtxy     = ev->getPrimVtxy();
+	_diLepEvent->PrimVtxz     = ev->getPrimVtxz();
+	_diLepEvent->NVrtx        = ev->getNVrtx();
 
-	_event->TCMET		 = TCMET;
-	_event->TCMETphi	 = TCMETphi;
-	_event->PFMET        = PFMET;
-	_event->PFMETphi     = PFMETphi;
-	_event->SumEt        = SumEt;
-	_event->MuCorrMET    = MuCorrMET;
-	_event->MuCorrMETphi = MuCorrMETphi;
+	_diLepEvent->TCMET		  = ev->getTCMET();
+	_diLepEvent->TCMETphi     = ev->getTCMETphi();
+	_diLepEvent->PFMET        = ev->getPFMET();
+	_diLepEvent->PFMETphi     = ev->getPFMETphi();
+//	_diLepEvent->SumEt        = ev->getSumEt();
+//	_diLepEvent->MuCorrMET    = ev->getMuCorrMET();
+//	_diLepEvent->MuCorrMETphi = ev->getMuCorrMETphi();
 
-	_event->HasSoftMus   = _softMus.size() > 0;
-	_event->HasBTaggedJets = _btaggedJets.size() > 0;
+	_diLepEvent->HasSoftMus   = _softMus.size() > 0;
+//	_diLepEvent->HasBTaggedJets = _btaggedJets.size() > 0;
 
-	_event->NEles        = _selectedEls.size();
+	_diLepEvent->NEles        = _selectedEls.size();
 
-	_event->NMus         = _selectedMus.size();
+	_diLepEvent->NMus         = _selectedMus.size();
 
-	_event->NJets        = _selectedJets.size();
+//	_diLepEvent->NJets        = _selectedJets.size();
 
-	_event->PFNJets      = _selectedPFJets.size();
+	_diLepEvent->PFNJets      = _selectedPFJets.size();
 
-	_event->Els.resize(_event->NEles);
+	_diLepEvent->Els.resize(_diLepEvent->NEles);
 	std::set<unsigned int>::iterator itEl = _selectedEls.begin();
-	for( unsigned int i(0); i < _event->NEles ; ++i) {
+	for( int i(0); i < _diLepEvent->NEles ; ++i) {
 		unsigned int k = *itEl;
-		HWWElectron &e = _event->Els[i];
-		e.P.SetXYZT(ElPx[k], ElPy[k], ElPz[k], ElE[k]);
-		e.Charge 					= ElCharge[k];
-		e.SigmaIetaIeta				= ElSigmaIetaIeta[k];
-		e.CaloEnergy 				= ElCaloEnergy[k];
-		e.DR03TkSumPt 				= ElDR03TkSumPt[k];
-		e.DR04EcalRecHitSumEt		= ElDR04EcalRecHitSumEt[k];
-		e.DR04HcalTowerSumEt 		= ElDR04HcalTowerSumEt[k];
-		e.NumberOfMissingInnerHits 	= ElNumberOfMissingInnerHits[k];
-		e.DeltaPhiSuperClusterAtVtx	= ElDeltaPhiSuperClusterAtVtx[k];
-		e.DeltaEtaSuperClusterAtVtx	= ElDeltaEtaSuperClusterAtVtx[k];
-		e.D0PV 						= ElD0PV[k];
-		e.DzPV 						= ElDzPV[k];
+		HWWElectron &e = _diLepEvent->Els[i];
+		e.P.SetXYZT(ev->getElPx(k), ev->getElPy(k), ev->getElPz(k), ev->getElE(k));
+		e.Charge 					= ev->getElCharge(k);
+		e.SigmaIetaIeta				= ev->getElSigmaIetaIeta(k);
+		e.CaloEnergy 				= ev->getElCaloEnergy(k);
+		e.DR03TkSumPt 				= ev->getElDR03TkSumPt(k);
+		e.DR04EcalRecHitSumEt		= ev->getElDR04EcalRecHitSumEt(k);
+		e.DR04HcalTowerSumEt 		= ev->getElDR04HcalTowerSumEt(k);
+		e.NumberOfMissingInnerHits 	= ev->getElNumberOfMissingInnerHits(k);
+		e.DeltaPhiSuperClusterAtVtx	= ev->getElDeltaPhiSuperClusterAtVtx(k);
+		e.DeltaEtaSuperClusterAtVtx	= ev->getElDeltaEtaSuperClusterAtVtx(k);
+		e.D0PV 						= ev->getElD0PV(k);
+		e.DzPV 						= ev->getElDzPV(k);
 
 		++itEl;
 	}
 	if ( itEl != _selectedEls.end() )
 		THROW_RUNTIME("Not all electrons were copied?");
 
-	_event->Mus.resize(_event->NMus);
+	_diLepEvent->Mus.resize(_diLepEvent->NMus);
 	std::set<unsigned int>::iterator itMu = _selectedMus.begin();
-    for( unsigned int i(0); i < _event->NMus; ++i ) {
+    for( int i(0); i < _diLepEvent->NMus; ++i ) {
 		unsigned int k = *itMu;
-		HWWMuon &u = _event->Mus[i];
+		HWWMuon &u = _diLepEvent->Mus[i];
 
-		u.P.SetXYZT(MuPx[k], MuPy[k], MuPz[k], MuE[k] );
-		u.Charge                   = MuCharge[k];
-		u.Iso03SumPt               = MuIso03SumPt[k];
-		u.Iso03EmEt                = MuIso03EmEt[k];
-		u.Iso03HadEt               = MuIso03HadEt[k];
-		u.NMuHits                  = MuNMuHits[k];
-		u.NTkHits                  = MuNTkHits[k];
-		u.NChi2                    = MuNChi2[k];
-		u.IsGlobalMuon             = MuIsGlobalMuon[k];
-		u.IsTrackerMuon            = MuIsTrackerMuon[k];
-		u.IsTMLastStationAngTight  = MuIsTMLastStationAngTight[k];
-		u.D0PV                     = MuD0PV[k];
-		u.DzPV                     = MuDzPV[k];
+		u.P.SetXYZT(ev->getMuPx(k), ev->getMuPy(k), ev->getMuPz(k), ev->getMuE(k) );
+		u.Charge                   = ev->getMuCharge(k);
+		u.Iso03SumPt               = ev->getMuIso03SumPt(k);
+		u.Iso03EmEt                = ev->getMuIso03EmEt(k);
+		u.Iso03HadEt               = ev->getMuIso03HadEt(k);
+		u.NMuHits                  = ev->getMuNMuHits(k);
+		u.NTkHits                  = ev->getMuNTkHits(k);
+		u.NChi2                    = ev->getMuNChi2(k);
+		u.IsGlobalMuon             = ev->getMuIsGlobalMuon(k);
+		u.IsTrackerMuon            = ev->getMuIsTrackerMuon(k);
+		u.IsTMLastStationAngTight  = ev->getMuIsTMLastStationAngTight(k);
+		u.D0PV                     = ev->getMuD0PV(k);
+		u.DzPV                     = ev->getMuDzPV(k);
 
 		++itMu;
 	}
 	if ( itMu != _selectedMus.end() )
 		THROW_RUNTIME("Not all muons were copied?");
 
-	_event->Jets.resize(_event->NJets);
-	std::set<unsigned int>::iterator itJ = _selectedJets.begin();
-	for( int i(0); i <_event->NJets; ++i) {
-		int k = *itJ;
-		HWWJet& j = _event->Jets[i];
+//	_diLepEvent->Jets.resize(_diLepEvent->NJets);
+//	std::set<unsigned int>::iterator itJ = _selectedJets.begin();
+//	for( int i(0); i <_diLepEvent->NJets; ++i) {
+//		int k = *itJ;
+//		HWWJet& j = _diLepEvent->Jets[i];
+//
+//		j.P.SetXYZT( ev->getJPx(k), ev->getJPy(k), ev->getJPz(k), ev->getJE(k) );
+//		j.EMfrac         = ev->getJEMfrac(k);
+//		j.NConstituents  = ev->getJNConstituents(k);
+//		j.ID_HPD         = ev->getJID_HPD(k);
+//		j.ID_RBX         = ev->getJID_RBX(k);
+//		j.ID_n90Hits     = ev->getJID_n90Hits(k);
+//		j.ID_resEMF      = ev->getJID_resEMF(k);
+//		j.ID_HCALTow     = ev->getJID_HCALTow(k);
+//		j.ID_ECALTow     = ev->getJID_ECALTow(k);
+//
+//		++itJ;
+//	}
+//	if ( itJ != _selectedJets.end() )
+//		THROW_RUNTIME("Not all jets were copied?");
 
-		j.P.SetXYZT( JPx[k], JPy[k], JPz[k], JE[k] );
-		j.EMfrac         = JEMfrac[k];
-		j.NConstituents  = JNConstituents[k];
-		j.ID_HPD         = JID_HPD[k];
-		j.ID_RBX         = JID_RBX[k];
-		j.ID_n90Hits     = JID_n90Hits[k];
-		j.ID_resEMF      = JID_resEMF[k];
-		j.ID_HCALTow     = JID_HCALTow[k];
-		j.ID_ECALTow     = JID_ECALTow[k];
-
-		++itJ;
-	}
-	if ( itJ != _selectedJets.end() )
-		THROW_RUNTIME("Not all jets were copied?");
-
-	_event->PFJets.resize(_event->PFNJets);
+	_diLepEvent->PFJets.resize(_diLepEvent->PFNJets);
 	std::set<unsigned int>::iterator itPFJ = _selectedPFJets.begin();
-	for( int i(0); i < _event->PFNJets; ++i) {
+	for( int i(0); i < _diLepEvent->PFNJets; ++i) {
 		int k = *itPFJ;
-		HWWPFJet& pfj = _event->PFJets[i];
+		HWWPFJet& pfj = _diLepEvent->PFJets[i];
 
-		pfj.P.SetXYZT(PFJPx[k], PFJPy[k], PFJPz[k], PFJE[k]);
-		pfj.ChHadfrac       = PFJChHadfrac[k];
-		pfj.NeuHadfrac      = PFJNeuHadfrac[k];
-		pfj.ChEmfrac        = PFJChEmfrac[k];
-		pfj.NeuEmfrac       = PFJNeuEmfrac[k];
-		pfj.NConstituents   = PFJNConstituents[k];
+		pfj.P.SetXYZT(ev->getPFJPx(k), ev->getPFJPy(k), ev->getPFJPz(k), ev->getPFJE(k));
+		pfj.ChHadfrac       = ev->getPFJChHadfrac(k);
+		pfj.NeuHadfrac      = ev->getPFJNeuHadfrac(k);
+		pfj.ChEmfrac        = ev->getPFJChEmfrac(k);
+		pfj.NeuEmfrac       = ev->getPFJNeuEmfrac(k);
+		pfj.NConstituents   = ev->getPFJNConstituents(k);
 
 		++itPFJ;
 	}
@@ -1241,60 +1089,62 @@ void HWWSelectorB::assembleNtuple() {
 //_____________________________________________________________________________
 void HWWSelectorB::cleanJets() {
 	// so far so good, let's clean the jets up
-	_selectedJets.clear();
-	_btaggedJets.clear();
+
+	ETHZEvent* ev = getEvent();
+//	_selectedJets.clear();
+//	_btaggedJets.clear();
      	// loop on jets
-	for ( int i=0; i<NJets; ++i) {
-
-		TVector3 pJet( JPx[i], JPy[i], JPz[i]);
-		std::set<unsigned int>::iterator it;
-
-		bool match = false;
-		// try to match the jet with an electron
-		for( it=_selectedEls.begin();
-				it != _selectedEls.end(); ++it) {
-			TVector3 pEl(ElPx[*it], ElPy[*it], ElPz[*it]);
-
-			//what is the 0.3 cut?
-			match |= ( TMath::Abs(pJet.DeltaR(pEl)) < _jetCut_Dr );
-
-		}
-
-		for( it=_selectedMus.begin();
-				it != _selectedMus.end(); ++it) {
-			TVector3 pMu(MuPx[*it], MuPy[*it], MuPz[*it]);
-			//what is the 0.3 cut?
-			match |= ( TMath::Abs(pJet.DeltaR(pMu)) < _jetCut_Dr );
-		}
-
-		if ( match ) continue;
-
-		// jet ptcut
-		if ( JPt[i] > _jetCut_Pt && JEta[i] < _jetCut_Eta )
-			_selectedJets.insert(i);
-
-	}
+//	for ( int i=0; i<ev->getNJets(); ++i) {
+//
+//		TVector3 pJet( ev->getJPx(i), ev->getJPy(i), ev->getJPz(i));
+//		std::set<unsigned int>::iterator it;
+//
+//		bool match = false;
+//		// try to match the jet with an electron
+//		for( it=_selectedEls.begin();
+//				it != _selectedEls.end(); ++it) {
+//			TVector3 pEl(ev->getElPx(*it), ev->getElPy(*it), ev->getElPz(*it));
+//
+//			//what is the 0.3 cut?
+//			match |= ( TMath::Abs(pJet.DeltaR(pEl)) < _jetCut_Dr );
+//
+//		}
+//
+//		for( it=_selectedMus.begin();
+//				it != _selectedMus.end(); ++it) {
+//			TVector3 pMu(ev->getMuPx(*it), ev->getMuPy(*it), ev->getMuPz(*it));
+//			//what is the 0.3 cut?
+//			match |= ( TMath::Abs(pJet.DeltaR(pMu)) < _jetCut_Dr );
+//		}
+//
+//		if ( match ) continue;
+//
+//		// jet ptcut
+//		if ( ev->getJPt(i) > _jetCut_Pt && ev->getJEta(i) < _jetCut_Eta )
+//			_selectedJets.insert(i);
+//
+//	}
 
 	_selectedPFJets.clear();
 	// loop on pf jets now
-	for ( int i=0; i<PFNJets; ++i) {
+	for ( int i=0; i<ev->getPFNJets(); ++i) {
 
 
-		TVector3 pPFJet( PFJPx[i], PFJPy[i], PFJPz[i]);
+		TVector3 pPFJet( ev->getPFJPx(i), ev->getPFJPy(i), ev->getPFJPz(i));
 		std::set<unsigned int>::iterator it;
 
 		bool match = false;
 		// try to match the jet with an electron
 		for( it=_selectedEls.begin();
 				it != _selectedEls.end(); ++it) {
-			TVector3 pEl(ElPx[*it], ElPy[*it], ElPz[*it]);
+			TVector3 pEl(ev->getElPx(*it), ev->getElPy(*it), ev->getElPz(*it));
 			//what is the 0.3 cut?
 			match |= ( TMath::Abs(pPFJet.DeltaR(pEl)) < _jetCut_Dr );
 		}
 
 		for( it=_selectedMus.begin();
 				it != _selectedMus.end(); ++it) {
-			TVector3 pMu(MuPx[*it], MuPy[*it], MuPz[*it]);
+			TVector3 pMu(ev->getMuPx(*it), ev->getMuPy(*it), ev->getMuPz(*it));
 
 			//what is the 0.3 cut?
 			match |= ( TMath::Abs(pPFJet.DeltaR(pMu)) < _jetCut_Dr );
@@ -1303,10 +1153,10 @@ void HWWSelectorB::cleanJets() {
 		if ( match ) continue;
 
 		// jet ptcut
-		if ( PFJPt[i] > _jetCut_Pt  && PFJEta[i] < _jetCut_Eta )
+		if ( ev->getPFJPt(i) > _jetCut_Pt  && ev->getPFJEta(i) < _jetCut_Eta )
 			_selectedPFJets.insert(i);
 		// or check for btagged jets
-		else if ( PFJbTagProbTkCntHighEff[i] > _jetCut_BtagProb )
+		else if ( ev->getPFJbTagProbTkCntHighEff(i) > _jetCut_BtagProb )
 			_btaggedJets.insert(i);
 
 	}
