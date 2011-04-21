@@ -409,9 +409,9 @@ def main():
                 p.makeMCStackPlot(name,opt.nostack)
        
     except ValueError as e:
-        print e
+        print 'ValueError',e
     except NameError as e:
-        print e
+        print 'NameError',e
     out.Write()
     out.Close()
     print 'lumi =',p.luminosity

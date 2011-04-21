@@ -44,10 +44,16 @@ protected:
 		void print();
 	};
 
+	enum Lep_t {
+		kEl_t,
+		kMu_t
+	};
+
 	enum LL_t {
-		kEE,
-		kMM,
-		kEM
+		kElEl_t = kEl_t*11,
+		kElMu_t = kEl_t*10+kMu_t,
+		kMuEl_t = kMu_t*10+kEl_t,
+		kMuMu_t = kMu_t*11
 	};
 
 	enum HCuts_t {
@@ -70,7 +76,7 @@ protected:
 
 	typedef std::bitset<_wordLen> higgsBitWord;
 
-	TParticlePDG* _Z0;
+	static const double _Z0Mass;
 
 	higgsBitWord _theMask;
 	std::vector< higgsBitWord > _nthMask;
@@ -105,28 +111,35 @@ protected:
 	TH1F* _hEntries;
 
 	TH1F* _eeCounters;
-	TH1F* _mmCounters;
 	TH1F* _emCounters;
+	TH1F* _meCounters;//TODO
+	TH1F* _mmCounters;
+
 	TH1F* _llCounters;
 
 	TH1F* _nVrtx;
 	TH1F* _jetN;
 	TH1F* _jetPt;
 	TH1F* _jetEta;
-	TH1F* _projMet;
-	TH1F* _ptHardLet;
-	TH1F* _ptSoftLep;
-	TH1F* _mll;
-	TH1F* _deltaPhi;
+	TH1F* _diLep_PfMet;
+	TH1F* _diLep_TcMet;
+	TH1F* _diLep_projPfMet;
+	TH1F* _diLep_projTcMet;
+	TH1F* _diLep_ptLeadLep;
+	TH1F* _diLep_ptTrailLep;
+	TH1F* _diLep_mll;
+	TH1F* _diLep_deltaPhi;
 
 	TH2F* _llJetNVsNvrtx;
 	TH2F* _eeJetNVsNvrtx;
 	TH2F* _emJetNVsNvrtx;
+	TH2F* _meJetNVsNvrtx; //TODO
 	TH2F* _mmJetNVsNvrtx;
 
 	std::vector<TH1F*> _llNm1Hist;
 	std::vector<TH1F*> _eeNm1Hist;
 	std::vector<TH1F*> _emNm1Hist;
+	std::vector<TH1F*> _meNm1Hist; //TODO
 	std::vector<TH1F*> _mmNm1Hist;
 	std::vector<TH1F*> _llPreCutHist;
 	std::vector<TH1F*> _llPostCutHist;
@@ -134,6 +147,8 @@ protected:
 	std::vector<TH1F*> _eePostCutHist;
 	std::vector<TH1F*> _emPreCutHist;
 	std::vector<TH1F*> _emPostCutHist;
+	std::vector<TH1F*> _mePreCutHist;//TODO
+	std::vector<TH1F*> _mePostCutHist;//TODO
 	std::vector<TH1F*> _mmPreCutHist;
 	std::vector<TH1F*> _mmPostCutHist;
 

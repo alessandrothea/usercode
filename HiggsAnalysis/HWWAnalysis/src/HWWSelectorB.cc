@@ -103,15 +103,6 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 	for (hltIt = hltPaths_mu.begin(); hltIt != hltPaths_mu.end(); ++hltIt)
 		_hlt.add("mu",*hltIt);
 
-//	_hlt.add("el","HLT_Ele10_LW_L1R");
-//	_hlt.add("el","HLT_Ele15_SW_L1R");
-//	_hlt.add("el","HLT_Ele15_SW_CaloEleId_L1R");
-//	_hlt.add("el","HLT_Ele17_SW_CaloEleId_L1R");
-//	_hlt.add("el","HLT_Ele17_SW_TightEleId_L1R");
-//	_hlt.add("el","HLT_Ele17_SW_TighterEleIdIsol_L1R_v2");
-//	_hlt.add("el","HLT_Ele17_SW_TighterEleIdIsol_L1R_v3");
-//	_hlt.add("mu","HLT_Mu9");
-//	_hlt.add("mu","HLT_Mu15_v1");
 
 	if ( _hltMode == "el_mu") {
 		_hlt.set("el",ETHZHltChecker::kMatch);
@@ -126,16 +117,6 @@ HWWSelectorB::HWWSelectorB( int argc, char** argv ) : ETHZNtupleSelector( argc, 
 	}
 
 	_hlt.print();
-//	_hltActiveNames.clear();
-//	_hltActiveNames.push_back("HLT_Ele10_LW_L1R");
-//	_hltActiveNames.push_back("HLT_Ele15_SW_L1R");
-//	_hltActiveNames.push_back("HLT_Ele15_SW_CaloEleId_L1R");
-//	_hltActiveNames.push_back("HLT_Ele17_SW_CaloEleId_L1R");
-//	_hltActiveNames.push_back("HLT_Ele17_SW_TightEleId_L1R");
-//	_hltActiveNames.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v2");
-//	_hltActiveNames.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v3");
-//	_hltActiveNames.push_back("HLT_Mu9");
-//	_hltActiveNames.push_back("HLT_Mu15_v1");
 
 }
 
@@ -174,6 +155,7 @@ void HWWSelectorB::Book() {
 	_llCounters = makeLabelHistogram("llCounters","HWW selection",labels);
 	_eeCounters = makeLabelHistogram("eeCounters","HWW selection - ee",labels);
 	_emCounters = makeLabelHistogram("emCounters","HWW selection - em",labels);
+	_meCounters = makeLabelHistogram("meCounters","HWW selection - me",labels);
 	_mmCounters = makeLabelHistogram("mmCounters","HWW selection - mm",labels);
 
 	std::map<int,std::string> ctrlLabels;
@@ -246,6 +228,7 @@ void HWWSelectorB::EndJob() {
 	_llCounters->SetEntries(_llCounters->GetBinContent(1));
 	_eeCounters->SetEntries(_eeCounters->GetBinContent(1));
 	_emCounters->SetEntries(_emCounters->GetBinContent(1));
+	_meCounters->SetEntries(_meCounters->GetBinContent(1));
 	_mmCounters->SetEntries(_mmCounters->GetBinContent(1));
 
 
@@ -260,7 +243,7 @@ void HWWSelectorB::EndJob() {
 //_____________________________________________________________________________
 Bool_t HWWSelectorB::Notify() {
 	ETHZNtupleSelector::Notify();
-	_hlt.updateIds();
+	_hlt.updateIds( getEvent()->getRun() );
     return kTRUE;
 
 }
@@ -359,6 +342,8 @@ bool HWWSelectorB::selectAndClean() {
 			<< "  NtupleMuons: " << getEvent()->getNMus() << '\n'
 			<< "  NtupleElectrons: " <<getEvent()->getNEles() << std::endl;
 
+    _hlt.updateIds( getEvent()->getRun());
+
 	// check the HLT flags
 	if ( !matchDataHLT() ) return false;
 
@@ -391,6 +376,7 @@ bool HWWSelectorB::matchDataHLT() {
     _llCounters->Fill(kLLBinAll);
     _eeCounters->Fill(kLLBinAll);
     _emCounters->Fill(kLLBinAll);
+    _meCounters->Fill(kLLBinAll);
     _mmCounters->Fill(kLLBinAll);
 
     // GenMET is -1000 if it's a data file
@@ -401,6 +387,7 @@ bool HWWSelectorB::matchDataHLT() {
 	    _llCounters->Fill(kLLBinHLT);
 	    _eeCounters->Fill(kLLBinHLT);
 	    _emCounters->Fill(kLLBinHLT);
+	    _meCounters->Fill(kLLBinHLT);
 	    _mmCounters->Fill(kLLBinHLT);
 	}
 //	return (trigger || !isData);
@@ -424,6 +411,7 @@ bool HWWSelectorB::hasGoodVertex() {
 		_llCounters->Fill(kLLBinVertex);
 		_eeCounters->Fill(kLLBinVertex);
 		_emCounters->Fill(kLLBinVertex);
+		_meCounters->Fill(kLLBinVertex);
 		_mmCounters->Fill(kLLBinVertex);
 	}
 
@@ -496,6 +484,7 @@ void HWWSelectorB::tagElectrons() {
 
 		ElCandicate theEl(i);
 		theEl.charge = ev->getElCharge(i);
+		theEl.pt     = ev->getElPt(i);
 
 		// first tag the tight word
 		theEl.tightTags[kElTagEta] = (TMath::Abs( ev->getElEta(i) ) < _etaMaxEE);
@@ -556,6 +545,8 @@ void HWWSelectorB::tagMuons() {
 
 		MuCandidate theMu(i);
 		theMu.charge = ev->getMuCharge(i);
+		theMu.pt     = ev->getMuPt(i);
+
 		LepCandidate::muBitSet& tags = theMu.tags;
 
 		// to check
@@ -775,6 +766,7 @@ void HWWSelectorB::countPairs() {
 	std::vector<LepPair>::iterator iP;
 	std::vector<unsigned int> eeCounts(kLLBinLast);
 	std::vector<unsigned int> emCounts(kLLBinLast);
+	std::vector<unsigned int> meCounts(kLLBinLast);
 	std::vector<unsigned int> mmCounts(kLLBinLast);
 	std::vector<unsigned int> llCounts(kLLBinLast);
 
@@ -794,6 +786,9 @@ void HWWSelectorB::countPairs() {
 				break;
 			case LepPair::kEM_t:
 				counts = &emCounts;
+				break;
+			case LepPair::kME_t:
+				counts = &meCounts;
 				break;
 			case LepPair::kMM_t:
 				counts = &mmCounts;
@@ -831,9 +826,10 @@ void HWWSelectorB::countPairs() {
 	for( unsigned int i(1); i<llCounts.size()-1; ++i ){
 		see << eeCounts[i] << ",";
 		sem << emCounts[i] << ",";
+		sem << meCounts[i] << ",";
 		smm << mmCounts[i] << ",";
 
-		if ( eeCounts[i] ||  emCounts[i] || mmCounts[i] )
+		if ( eeCounts[i] || emCounts[i] || meCounts[i] || mmCounts[i] )
 			llCounts[i]++;
 
 		sll << llCounts[i] << ",";
@@ -841,6 +837,7 @@ void HWWSelectorB::countPairs() {
 
 	Debug(3) << "ee: " << see.str() << '\n'
 		     << "em: " << sem.str() << '\n'
+		     << "me: " << sem.str() << '\n'
 		     << "mm: " << smm.str() << '\n'
 		     << "ll: " << sll.str()  << std::endl;
 
@@ -850,6 +847,7 @@ void HWWSelectorB::countPairs() {
 	fillCounts( _llCounters, llCounts);
 	fillCounts( _eeCounters, eeCounts);
 	fillCounts( _emCounters, emCounts);
+	fillCounts( _meCounters, meCounts);
 	fillCounts( _mmCounters, mmCounts);
 
 	for( iP = _selectedPairs.begin(); iP != _selectedPairs.end(); ++iP ) {
@@ -943,6 +941,9 @@ bool HWWSelectorB::checkExtraLeptons() {
 		break;
 	case LepPair::kEM_t:
 		counters = _emCounters;
+		break;
+	case LepPair::kME_t:
+		counters = _meCounters;
 		break;
 	case LepPair::kMM_t:
 		counters = _mmCounters;

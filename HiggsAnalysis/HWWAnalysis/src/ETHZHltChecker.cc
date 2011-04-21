@@ -12,7 +12,7 @@
 #include <iostream>
 
 //_____________________________________________________________________________
-ETHZHltChecker::ETHZHltChecker() : _chain(0x0){
+ETHZHltChecker::ETHZHltChecker() : _lastRun(0), _chain(0x0){
 	// TODO Auto-generated constructor stub
 }
 
@@ -38,17 +38,21 @@ void ETHZHltChecker::connect( TTree* chain, const std::string& runInfoName ) {
 	_chain = chain;
 	_runInfoName = runInfoName;
 
-	if ( !_chain )
-		THROW_RUNTIME("Input Chain is "<< _chain );
-
-	if ( _chain->GetCurrentFile() ) {
-		std::cout << "- HltChecker: open file found. Updating ids" << std::endl;
-		updateIds();
-	}
+//	if ( !_chain )
+//		THROW_RUNTIME("Input Chain is "<< _chain );
+//
+//	if ( _chain->GetCurrentFile() ) {
+//		std::cout << "- HltChecker: open file found. Updating ids" << std::endl;
+//		updateIds();
+//	}
 }
 
 //_____________________________________________________________________________
-void ETHZHltChecker::updateIds() {
+void ETHZHltChecker::updateIds( long long run ) {
+
+	if ( run == _lastRun )
+		return;
+	std::cout << " - Updating HLT bits for run " << run <<std::endl;
 
 	if ( !_chain )
 		//THROW_RUNTIME("No input chain defined!")
@@ -66,7 +70,7 @@ void ETHZHltChecker::updateIds() {
 	std::vector<std::string>*names = 0;
 	TTree* runInfo = (TTree*)(_chain->GetCurrentFile()->Get(_runInfoName.c_str()));
 	runInfo->SetBranchAddress("HLTNames",&names);
-	runInfo->GetEntry(0);
+	runInfo->GetEntryWithIndex( run );
 	_labels = *names;
 
 	_matchIds.clear();
@@ -116,6 +120,7 @@ void ETHZHltChecker::updateIds() {
 		std::cout << *kt << ", ";
 	}
 	std::cout << std::endl;
+	_lastRun = run;
 
 }
 

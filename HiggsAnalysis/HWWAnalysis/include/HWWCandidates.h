@@ -69,6 +69,7 @@ public:
 	short type;
 	unsigned int idx;
 	short charge;
+	float pt;
 
 	virtual bool isPtEta() = 0;
 	virtual bool isVertex() = 0;
@@ -82,14 +83,15 @@ public:
 
 class LepPair {
 public:
-	LepPair( LepCandidate* lA, LepCandidate* lB) : _lA(lA), _lB(lB) {}
+	LepPair( LepCandidate* lA, LepCandidate* lB);
 
 	LepCandidate* _lA;
 	LepCandidate* _lB;
 
-	static const char kEE_t = LepCandidate::kEl_t*2;
-	static const char kEM_t = LepCandidate::kEl_t+LepCandidate::kMu_t;
-	static const char kMM_t = LepCandidate::kMu_t*2;
+	static const char kEE_t = LepCandidate::kEl_t*11;
+	static const char kEM_t = LepCandidate::kEl_t*10+LepCandidate::kMu_t;
+	static const char kME_t = LepCandidate::kMu_t*10+LepCandidate::kEl_t;
+	static const char kMM_t = LepCandidate::kMu_t*11;
 
 	virtual bool isOpposite() { return (_lA->charge * _lB->charge < 0 );}
 	virtual bool isPtEta()  { return this->isOpposite() && (_lA->isPtEta() && _lB->isPtEta()); }
@@ -99,7 +101,7 @@ public:
 	virtual bool isNoConv() { return this->isOpposite() && (_lA->isNoConv() && _lB->isNoConv()); }
 	virtual bool isGood()   { return this->isOpposite() && (_lA->isGood() && _lB->isGood()); }
 
-	virtual int  finalState() { return _lA->type + _lB->type; }
+	virtual int  finalState() { return _lA->type*10 + _lB->type; }
 
 	LepCandidate* operator[]( unsigned int i);
 };

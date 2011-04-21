@@ -131,7 +131,7 @@ Double_t ETHZEvent::getPFJbTagProbTkCntHighEff(int i) { return _reader->PFJbTagP
 
 
 //_____________________________________________________________________________
-ETHZNtupleSelector::ETHZNtupleSelector( int argc, char** argv ) : _firstEvent(0), _nEvents(0),_currentEvent(0),
+ETHZNtupleSelector::ETHZNtupleSelector( int argc, char** argv ) : _firstEvent(0), _nEvents(0), _currentEvent(0),
 	fSkimmedTree(0x0), fSkimmedFile(0x0) {
 	// TODO Auto-generated constructor stub
 

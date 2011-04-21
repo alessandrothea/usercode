@@ -18,7 +18,7 @@ public:
 
 	void Clear( Option_t* option="" );
 
-	char type;
+	short type;
 
 	TLorentzVector pA;
 	TLorentzVector pB;

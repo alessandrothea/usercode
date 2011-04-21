@@ -19,6 +19,7 @@ int main( int argc, char **argv ) {
 
 	} catch ( std::exception &e ) {
 		std::cout << "---" << TermColors::kRed << " Caught exception " << TermColors::kReset << e.what() << std::endl;
+		return -1;
 	}
 	return 0;
 }

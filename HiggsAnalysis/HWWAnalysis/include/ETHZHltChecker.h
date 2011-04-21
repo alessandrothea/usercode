@@ -23,7 +23,7 @@ public:
 	void add( const std::string& mode, const std::string& path );
 	void set( const std::string& mode, int state);
 
-	void updateIds();
+	void updateIds( long long run );
 	bool match( const int hltResults[] );
 	void print();
 
@@ -46,6 +46,7 @@ protected:
 	std::vector<unsigned int> _rejectIds;
 	std::vector<std::string> _labels;
 
+	long long _lastRun;
 	TTree* _chain;
 	std::string _runInfoName;
 };

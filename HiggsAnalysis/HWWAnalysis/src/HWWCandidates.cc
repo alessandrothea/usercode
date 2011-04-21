@@ -9,6 +9,17 @@
 #include "Tools.h"
 
 //_____________________________________________________________________________
+LepPair::LepPair( LepCandidate* l1, LepCandidate* l2) {
+	if ( l1->pt >= l2->pt ) {
+		_lA = l1;
+		_lB = l2;
+	} else {
+		_lA = l2;
+		_lB = l1;
+	}
+}
+
+//_____________________________________________________________________________
 LepCandidate* LepPair::operator [](unsigned int i){
 	switch (i) {
 	case 0:

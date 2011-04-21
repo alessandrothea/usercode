@@ -155,6 +155,7 @@ protected:
 	TH1F* _llCounters;
 	TH1F* _eeCounters;
 	TH1F* _emCounters;
+	TH1F* _meCounters;
 	TH1F* _mmCounters;
 
 	TH1F* _elTightCtrl;
