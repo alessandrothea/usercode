@@ -40,9 +40,9 @@ def query_yes_no(question, default="yes"):
                 "(or 'y' or 'n').\n")
 
 #-------------------------------------------------------------------------------
-def srmList( sitePath, srmPath ):
+def srmList( siteRoot, srmPath ):
 
-    srmls = subprocess.Popen(['srmls',sitePath+srmPath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    srmls = subprocess.Popen(['srmls',siteRoot+srmPath],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 #     srmls.wait()
     (out,err) = srmls.communicate()
 #     print out
@@ -73,10 +73,10 @@ def sortByType( entries ):
     return (dirs,files)
     
 #-------------------------------------------------------------------------------
-def recursiveList(sitePath, relPath ):
+def recursiveList(siteRoot, relPath ):
     allFiles = []
     allDirs = []
-    (header,entries) = srmList(sitePath, relPath)
+    (header,entries) = srmList(siteRoot, relPath)
 
     (dirs,files) = sortByType(entries)
     if len(dirs) is not 0:
@@ -86,28 +86,29 @@ def recursiveList(sitePath, relPath ):
 
     for d in dirs:
         print '- Listing',d
-        (subDirs,subFiles) = recursiveList(sitePath, d )
+        (subDirs,subFiles) = recursiveList(siteRoot, d )
         allDirs.extend(subDirs)
         allFiles.extend(subFiles)
 
     # add the files and directories at the end
     allFiles.extend(files)
-    allDirs.extend(dirs)
+    allDirs.append(relPath)
+#     allDirs.extend(dirs)
 
     return (allDirs,allFiles)
 
 #-------------------------------------------------------------------------------
-def performDelete(sitePath,dirs,files):
+def performDelete(siteRoot,dirs,files):
     for file in files:
         print 'Removing',file
-        srmrm = subprocess.Popen(['srmrm','-2',sitePath+file],stdout=subprocess.PIPE)
+        srmrm = subprocess.Popen(['srmrm','-2',siteRoot+file],stdout=subprocess.PIPE)
 #         srmrm.wait()
         (out,err) = srmrm.communicate()
         print out
 
     for dir in dirs:
         print 'Removing',dir
-        srmrmdir = subprocess.Popen(['srmrmdir',sitePath+dir],stdout=subprocess.PIPE)
+        srmrmdir = subprocess.Popen(['srmrmdir',siteRoot+dir],stdout=subprocess.PIPE)
 #         srmrmdir.wait()
         (out,err) = srmrmdir.communicate()
         print out
@@ -131,17 +132,17 @@ def main():
 
 
     if opt.site == 't3psi':
-        sitePath = 'srm://t3se01.psi.ch:8443/srm/managerv2?SFN='
+        siteRoot = 'srm://t3se01.psi.ch:8443/srm/managerv2?SFN='
         srmPath = '/pnfs/psi.ch/cms/trivcat'+dir
     elif opt.site == 't2cscs':
-        sitePath = 'srm://storage01.lcg.cscs.ch:8443/srm/managerv2?SFN='
+        siteRoot = 'srm://storage01.lcg.cscs.ch:8443/srm/managerv2?SFN='
         srmPath = "/pnfs/lcg.cscs.ch/cms/trivcat"+dir
     else:
         parser.error('site can be either t3psi or t2cscs')
-    print 'sitePath \''+sitePath+'\''
+    print 'siteRoot \''+siteRoot+'\''
 
     print 'srmPath =',srmPath
-    (dirs,files) = recursiveList(sitePath,srmPath)
+    (dirs,files) = recursiveList(siteRoot,srmPath)
     if len(dirs) is not 0:
         print 'Directories found:'
         print string.join(dirs,'\n')
@@ -150,7 +151,7 @@ def main():
         print string.join(files,'\n')
 
     if query_yes_no('Do you want to proceed?','no'):
-        performDelete(sitePath,dirs,files)
+        performDelete(siteRoot,dirs,files)
     else:
         print 'Removal aborted'
 #     (header,entries) = srmList(srmPath)

@@ -9,7 +9,7 @@ def main():
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--site', dest='site', help='Site where files are located. Can be [t3psi,t2cscs]')
+    parser.add_option('--site', '-s', dest='site', help='Site where files are located. Can be [t3psi,t2cscs]')
 
     (opt, args) = parser.parse_args()
 
