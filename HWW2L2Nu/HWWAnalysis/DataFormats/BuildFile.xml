@@ -1,0 +1,6 @@
+<use name="DataFormats/Common"/>
+<use name="root"/>
+<flags rootmap="1"/>
+<export>
+  <lib name="1"/>
+</export>
