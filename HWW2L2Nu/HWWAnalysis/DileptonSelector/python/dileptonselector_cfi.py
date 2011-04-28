@@ -3,7 +3,7 @@ from HWWAnalysis.DileptonSelector.electronIdWp_cfi import *
 from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import *
 
 
-diLepSel = cms.EDAnalyzer('DileptonSelector',
+DileptonSelector = cms.EDAnalyzer('DileptonSelector',
         debugLevel = cms.untracked.int32(0),
         elWorkingPointsFile = cms.untracked.string('data/elWorkingPoints.txt'),
         pileupFactors = cms.vdouble(puFactors[:]),
