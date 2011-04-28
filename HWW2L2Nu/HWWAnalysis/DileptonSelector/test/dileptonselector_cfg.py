@@ -37,7 +37,7 @@ process.maxEvents = cms.untracked.PSet(
             )
 
 process.load('HWWAnalysis.DileptonSelector.dileptonselector_cfi')
-process.diLepSel.debugLevel = cms.untracked.int32(options.debugLevel)
+process.DileptonSelector.debugLevel = cms.untracked.int32(options.debugLevel)
 
 process.TFileService = cms.Service("TFileService", 
         fileName = cms.string(options.outputFile),
@@ -53,4 +53,4 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1000)
 # process.MessageLogger.cerr.INFO = cms.untracked.PSet(
 #             limit = cms.untracked.int32(-1)
 #             )
-process.p = cms.Path(process.diLepSel)
+process.p = cms.Path(process.DileptonSelector)
