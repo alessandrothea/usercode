@@ -1,0 +1,6 @@
+<use name="root" />
+<use name="HWWAnalysis/DataFormats" />
+<flags cxxflags="-g -ggdb" />
+<export>
+    <lib name="1"/>
+</export>

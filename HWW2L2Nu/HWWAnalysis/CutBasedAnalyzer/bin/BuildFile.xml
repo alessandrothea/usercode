@@ -1,0 +1,4 @@
+<bin file="runHWW.cc" name="runHWW.exe">
+    <use name="HWWAnalysis/CutBasedAnalyzer"/>
+    <use name="root"/>
+</bin>
