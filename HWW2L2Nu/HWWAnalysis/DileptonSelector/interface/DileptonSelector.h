@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Apr 14 12:29:55 CEST 2011
-// $Id$
+// $Id: DileptonSelector.h,v 1.1 2011/04/27 15:34:22 thea Exp $
 //
 //
 // system include files
@@ -118,7 +118,7 @@ class DileptonSelector : public edm::EDAnalyzer {
       virtual void cleanJets();
       virtual void clear();
       virtual bool selectAndClean();
-      virtual void assembleNtuple();
+      virtual void assembleEvent();
       virtual bool checkExtraLeptons();
 
       
@@ -145,12 +145,13 @@ class DileptonSelector : public edm::EDAnalyzer {
 
       std::vector<TH1F*> _electronHistograms;
       std::vector<TH1F*> _muonHistograms;
+      TH1F* _jetBTagProbTkCntHighEff;
       
       // ----------member data ---------------------------
-      static const float _etaMaxEB;
-      static const float _etaMinEE;
-      static const float _etaMaxEE;
-      static const float _etaMaxMu;
+      static const double _etaMaxEB;
+      static const double _etaMinEE;
+      static const double _etaMaxEE;
+      static const double _etaMaxMu;
       
       int _debugLvl; 
       std::vector< WorkingPoint > _elWorkingPoints;
@@ -158,36 +159,36 @@ class DileptonSelector : public edm::EDAnalyzer {
       std::string _wpFile;
 
       // vrtx
-      float _vrtxCut_nDof;
-      float _vrtxCut_rho;
-      float _vrtxCut_z;
+      double _vrtxCut_nDof;
+      double _vrtxCut_rho;
+      double _vrtxCut_z;
 
         // lep common
-      float _lepCut_leadingPt;
-      float _lepCut_trailingPt;
-      float _lepCut_D0PV;
-      float _lepCut_DzPV;
+      double _lepCut_leadingPt;
+      double _lepCut_trailingPt;
+      double _lepCut_D0PV;
+      double _lepCut_DzPV;
 
       int   _elCut_TightWorkingPoint;
       int   _elCut_LooseWorkingPoint;
-      float _elCut_EtaSCEbEe;
+      double _elCut_EtaSCEbEe;
 
       int   _muCut_NMuHist;
       int   _muCut_NMuMatches;
       int   _muCut_NTrackerHits;
       int   _muCut_NPixelHits;
       int   _muCut_NChi2;
-      float _muCut_relPtRes;
-      float _muCut_combIsoOverPt;
+      double _muCut_relPtRes;
+      double _muCut_combIsoOverPt;
 
-      float _muSoftCut_Pt;
-      float _muSoftCut_HighPt;
-      float _muSoftCut_NotIso;
+      double _muSoftCut_Pt;
+      double _muSoftCut_HighPt;
+      double _muSoftCut_NotIso;
 
-      float _jetCut_Pt;
-      float _jetCut_Dr;
-      float _jetCut_Eta;
-      float _jetCut_BtagProb;
+      double _jetCut_Pt;
+      double _jetCut_Dr;
+      double _jetCut_Eta;
+      double _jetCut_BtagProb;
 
       double _nEvents;
       double _nSelectedEvents;

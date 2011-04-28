@@ -17,10 +17,10 @@
 #include <vector>
 #include <fstream>
 
-const float DileptonSelector::_etaMaxEB=1.4442;
-const float DileptonSelector::_etaMinEE=1.5660;
-const float DileptonSelector::_etaMaxEE=2.5000;
-const float DileptonSelector::_etaMaxMu=2.4000;
+const double DileptonSelector::_etaMaxEB=1.4442;
+const double DileptonSelector::_etaMinEE=1.5660;
+const double DileptonSelector::_etaMaxEE=2.5000;
+const double DileptonSelector::_etaMaxMu=2.4000;
 
 
 //_____________________________________________________________________________
@@ -94,10 +94,16 @@ DileptonSelector::DileptonSelector(const edm::ParameterSet& iConfig) : _nEvents(
     _muSoftCut_NotIso	= muSoftCuts.getParameter<double>("NotIso");
 
     const edm::ParameterSet& jetCuts = iConfig.getParameterSet("jetCuts");
-    _jetCut_Pt	    	= jetCuts.getParameter<double>("Dr");
-    _jetCut_Dr	    	= jetCuts.getParameter<double>("Pt");
+    _jetCut_Pt	    	= jetCuts.getParameter<double>("Pt");
+    _jetCut_Dr	    	= jetCuts.getParameter<double>("Dr");
     _jetCut_Eta	    	= jetCuts.getParameter<double>("Eta");
     _jetCut_BtagProb	= jetCuts.getParameter<double>("BtagProb");
+
+    Debug(0) << "- lepCuts " << lepCuts.toString() << std::endl;
+    Debug(0) << "- elCuts " << elCuts.toString() << std::endl;
+    Debug(0) << "- muCuts " << muCuts.toString() << std::endl;
+    Debug(0) << "- softMuCuts " << muSoftCuts.toString() << std::endl;
+    Debug(0) << "- jetCuts " << jetCuts.toString() << std::endl;
 
     const edm::ParameterSet& hltPaths = iConfig.getParameterSet("hltPaths");
     std::vector<std::string> elhlt = hltPaths.getParameter<std::vector<std::string> >("el"); 
@@ -146,7 +152,7 @@ DileptonSelector::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     _nEvents += _eventWeight;
 
     if ( !selectAndClean() ) return;
-    assembleNtuple();
+    assembleEvent();
 
 //     _nSelectedEvents++;
     _nSelectedEvents += _eventWeight;
@@ -310,15 +316,9 @@ DileptonSelector::loadWorkingPoints( const std::vector<edm::ParameterSet>& point
 
 // ----------- code shared starts here
 
-//FIXME, and FIXME quickly
-#define HWWSelectorB DileptonSelector
-#define ETHZEvent EventProxy
-#define Book book
-
-
 // ----------- FIXME limited changes from the standalone version
 //_____________________________________________________________________________
-void HWWSelectorB::Book() {
+void DileptonSelector::book() {
 
 	Debug(0) << "Adding the selected objects" << std::endl;
     edm::Service<TFileService> fs;
@@ -374,13 +374,17 @@ void HWWSelectorB::Book() {
 
     TFileDirectory puDir = fs->mkdir("puInfo");
     unsigned int maxPu = 30;
-    _puNInteractions           = puDir.make<TH1F>("nInterations","# interactions",maxPu,0,maxPu);
-    _puNInteractionsUnweighted = puDir.make<TH1F>("nInterationsUnweighted","# interactions",maxPu,0,maxPu);
+    _puNInteractions           = puDir.make<TH1F>("nPuInterations","# interactions",maxPu,0,maxPu);
+    _puNInteractionsUnweighted = puDir.make<TH1F>("nPuInterationsUnweighted","# interactions",maxPu,0,maxPu);
     _puNVertexes               = puDir.make<TH1F>("nVertexes","# vertex",maxPu,0,maxPu);
 
     TFileDirectory elVarsDir = fs->mkdir("electronVars");
     makeElectronHistograms( &elVarsDir, _electronHistograms);
     TFileDirectory muVarsDir = fs->mkdir("muonVars");
+    TFileDirectory jetVarsDir = fs->mkdir("jetsVars");
+
+    _jetBTagProbTkCntHighEff = jetVarsDir.make<TH1F>("jetBTagProbTkCntHighEff","B-tag prob above jet cut",100,0, 10);
+
 
 
 }
@@ -403,7 +407,7 @@ void DileptonSelector::makeElectronHistograms( TFileDirectory* fd, std::vector<T
 }
 
 //_____________________________________________________________________________
-TH1F* HWWSelectorB::makeLabelHistogram( TFileDirectory* fd, const std::string& name, const std::string& title, std::map<int,std::string> labels) {
+TH1F* DileptonSelector::makeLabelHistogram( TFileDirectory* fd, const std::string& name, const std::string& title, std::map<int,std::string> labels) {
 	int xmin = labels.begin()->first;
 	int xmax = labels.begin()->first;
 
@@ -437,7 +441,7 @@ std::ostream& DileptonSelector::Debug(int level) {
 
 
 //_____________________________________________________________________________
-void HWWSelectorB::readWorkingPoints( const std::string& path ) {
+void DileptonSelector::readWorkingPoints( const std::string& path ) {
 
 	std::cout << "Reading Working points from file " << path << std::endl;
 
@@ -499,7 +503,7 @@ void HWWSelectorB::readWorkingPoints( const std::string& path ) {
 }
 
 //_____________________________________________________________________________
-HWWSelectorB::WorkingPoint HWWSelectorB::getWorkingPoint(unsigned short part, int eff) {
+DileptonSelector::WorkingPoint DileptonSelector::getWorkingPoint(unsigned short part, int eff) {
 	std::vector<WorkingPoint>::iterator it;
 	for ( it=_elWorkingPoints.begin(); it != _elWorkingPoints.end(); ++it) {
 		if ( (*it).partition == part && (*it).efficiency == eff)
@@ -513,7 +517,7 @@ HWWSelectorB::WorkingPoint HWWSelectorB::getWorkingPoint(unsigned short part, in
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::clear() {
+void DileptonSelector::clear() {
 
 	_muTagged.clear();
 	_elTagged.clear();
@@ -524,7 +528,6 @@ void HWWSelectorB::clear() {
 	_selectedMus.clear();
 	_softMus.clear();
 
-//	_selectedJets.clear();
 	_selectedPFJets.clear();
 
 	_btaggedJets.clear();
@@ -532,7 +535,7 @@ void HWWSelectorB::clear() {
 }
 
 //_____________________________________________________________________________
-bool HWWSelectorB::selectAndClean() {
+bool DileptonSelector::selectAndClean() {
 	//
 	// loop over electrons and mus.
 	// proceed only if there are 2 leptons (both tight and loose)
@@ -572,7 +575,7 @@ bool HWWSelectorB::selectAndClean() {
 }
 
 //_____________________________________________________________________________
-bool HWWSelectorB::matchDataHLT() {
+bool DileptonSelector::matchDataHLT() {
 
     _llCounters->Fill(kLLBinAll, _eventWeight );
     _eeCounters->Fill(kLLBinAll, _eventWeight );
@@ -598,12 +601,12 @@ bool HWWSelectorB::matchDataHLT() {
 }
 
 //_____________________________________________________________________________
-bool HWWSelectorB::hasGoodVertex() {
+bool DileptonSelector::hasGoodVertex() {
 	//TODO move to config file
 
 //	std::cout << "vrtxGood: " << PrimVtxGood << "\n"
 //			<< "vrtxFake: " << PrimVtxIsFake << std::endl;
-	ETHZEvent* ev = getEvent();
+	EventProxy* ev = getEvent();
 	bool goodVrtx = (ev->getPrimVtxNdof() >= _vrtxCut_nDof ) &&
 	(ev->getPrimVtxGood() == 0 ) &&
 	(ev->getPrimVtxIsFake() != 1) &&
@@ -624,10 +627,10 @@ bool HWWSelectorB::hasGoodVertex() {
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::electronIsoId( LepCandidate::elBitSet& tags, int idx, int eff ) {
+void DileptonSelector::electronIsoId( LepCandidate::elBitSet& tags, int idx, int eff ) {
 	// identify tight electron
 
-	ETHZEvent* ev = getEvent();
+	EventProxy* ev = getEvent();
 	float scEta = ev->getElSCEta(idx);
 
 	// apply the correction for the endcaps
@@ -687,9 +690,9 @@ void HWWSelectorB::electronIsoId( LepCandidate::elBitSet& tags, int idx, int eff
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::tagElectrons() {
+void DileptonSelector::tagElectrons() {
 
-	ETHZEvent* ev = getEvent();
+	EventProxy* ev = getEvent();
 	_elTagged.clear();
 
 	//loop over els
@@ -749,7 +752,7 @@ void HWWSelectorB::tagElectrons() {
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::tagMuons() {
+void DileptonSelector::tagMuons() {
 	// muon id cuts
 	// isolation = (ev->getMuIso03SumPt(i) + ev->getMuIso03EmEt(i) + ev->getMuIso03HadEt(i) ) / ev->getMuPt(i) < 0.15
 	// isGlobalMu
@@ -757,7 +760,7 @@ void HWWSelectorB::tagMuons() {
 	// ev->getMuNMuHits(i) > 0
 	// ev->getMuNTkHits(i) > 10
 
-	ETHZEvent* ev = getEvent();
+	EventProxy* ev = getEvent();
 	_muTagged.clear();
 	// loop on mus
 	for (int i=0; i < ev->getNMus(); ++i) {
@@ -817,21 +820,22 @@ void HWWSelectorB::tagMuons() {
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::findSoftMus() {
+void DileptonSelector::findSoftMus() {
 
 	_softMus.clear();
 
 	std::set<unsigned int> softs;
 	std::vector<MuCandidate>::iterator itMu;
 	for( itMu = _muTagged.begin(); itMu != _muTagged.end(); ++itMu)
-		softs.insert(itMu->idx);
+        if ( itMu->isSoft() )
+            softs.insert(itMu->idx);
 
 	std::ostream_iterator< unsigned int > output( Debug(3), " " );
 	Debug(3) << "- softs mus    '" ;
 	std::copy( softs.begin(), softs.end(), output );
 	Debug(3) << "'" << std::endl;
 	Debug(3) << "- selected mus '" ;
-	std::copy( softs.begin(), softs.end(), output );
+	std::copy( _selectedMus.begin(), _selectedMus.end(), output );
 	Debug(3) << "'" << std::endl;
 	// remove those who are muons
 	std::set_difference(softs.begin(), softs.end(),_selectedMus.begin(),_selectedMus.end(), std::inserter(_softMus,_softMus.end()));
@@ -841,7 +845,7 @@ void HWWSelectorB::findSoftMus() {
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::fillCtrlHistograms() {
+void DileptonSelector::fillCtrlHistograms() {
 	std::vector<ElCandicate>::iterator itEl;
 	for( itEl = _elTagged.begin(); itEl!=_elTagged.end(); ++itEl) {
 		_elTightCtrl->Fill(kLepTagAll, _eventWeight);
@@ -947,7 +951,7 @@ void HWWSelectorB::fillCtrlHistograms() {
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::countPairs() {
+void DileptonSelector::countPairs() {
 
 	_selectedPairs.clear();
 	_selectedEls.clear();
@@ -1090,7 +1094,7 @@ void HWWSelectorB::countPairs() {
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::fillCounts( TH1F* h, const std::vector<unsigned int>& counts) {
+void DileptonSelector::fillCounts( TH1F* h, const std::vector<unsigned int>& counts) {
 
 	if ( counts[kLLBinDilepton] != 0 ) h->Fill(kLLBinDilepton, _eventWeight);
 	if ( counts[kLLBinEtaPt] != 0 )    h->Fill(kLLBinEtaPt, _eventWeight);
@@ -1102,7 +1106,7 @@ void HWWSelectorB::fillCounts( TH1F* h, const std::vector<unsigned int>& counts)
 }
 
 //_____________________________________________________________________________
-bool HWWSelectorB::checkExtraLeptons() {
+bool DileptonSelector::checkExtraLeptons() {
 
 	// no pairs, no fun
 	if( _selectedPairs.size() != 1 ) return false;
@@ -1187,9 +1191,9 @@ bool HWWSelectorB::checkExtraLeptons() {
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::assembleNtuple() {
+void DileptonSelector::assembleEvent() {
 
-	ETHZEvent* ev = getEvent();
+	EventProxy* ev = getEvent();
 
 	// clear the ntuple
 	_diLepEvent->Clear();
@@ -1198,6 +1202,7 @@ void HWWSelectorB::assembleNtuple() {
 	_diLepEvent->Run          = ev->getRun();
 	_diLepEvent->Event        = ev->getEvent();
 	_diLepEvent->LumiSection  = ev->getLumiSection();
+	_diLepEvent->Weight       = _eventWeight;
 
     // primary vertexes
 	_diLepEvent->PrimVtxGood  = ev->getPrimVtxGood();
@@ -1280,6 +1285,7 @@ void HWWSelectorB::assembleNtuple() {
 		pfj.ChEmfrac        = ev->getPFJChEmfrac(k);
 		pfj.NeuEmfrac       = ev->getPFJNeuEmfrac(k);
 		pfj.NConstituents   = ev->getPFJNConstituents(k);
+        pfj.BTagProbTkCntHighEff = ev->getPFJbTagProbTkCntHighEff(k);
 
 		++itPFJ;
 	}
@@ -1290,15 +1296,14 @@ void HWWSelectorB::assembleNtuple() {
 }
 
 //_____________________________________________________________________________
-void HWWSelectorB::cleanJets() {
+void DileptonSelector::cleanJets() {
 	// so far so good, let's clean the jets up
 
-	ETHZEvent* ev = getEvent();
+	EventProxy* ev = getEvent();
 
 	_selectedPFJets.clear();
 	// loop on pf jets now
 	for ( int i=0; i<ev->getPFNJets(); ++i) {
-
 
 		TVector3 pPFJet( ev->getPFJPx(i), ev->getPFJPy(i), ev->getPFJPz(i));
 		std::set<unsigned int>::iterator it;
@@ -1308,7 +1313,6 @@ void HWWSelectorB::cleanJets() {
 		for( it=_selectedEls.begin();
 				it != _selectedEls.end(); ++it) {
 			TVector3 pEl(ev->getElPx(*it), ev->getElPy(*it), ev->getElPz(*it));
-			//what is the 0.3 cut?
 			match |= ( TMath::Abs(pPFJet.DeltaR(pEl)) < _jetCut_Dr );
 		}
 
@@ -1316,17 +1320,20 @@ void HWWSelectorB::cleanJets() {
 				it != _selectedMus.end(); ++it) {
 			TVector3 pMu(ev->getMuPx(*it), ev->getMuPy(*it), ev->getMuPz(*it));
 
-			//what is the 0.3 cut?
 			match |= ( TMath::Abs(pPFJet.DeltaR(pMu)) < _jetCut_Dr );
 		}
 
 		if ( match ) continue;
-
+        
 		// jet ptcut
-		if ( ev->getPFJPt(i) > _jetCut_Pt  && ev->getPFJEta(i) < _jetCut_Eta )
+		if ( ev->getPFJPt(i) > _jetCut_Pt  && ev->getPFJEta(i) < _jetCut_Eta ) {
 			_selectedPFJets.insert(i);
+        }
+        
+        _jetBTagProbTkCntHighEff->Fill(ev->getPFJbTagProbTkCntHighEff(i), _eventWeight);
+
 		// or check for btagged jets
-		else if ( ev->getPFJbTagProbTkCntHighEff(i) > _jetCut_BtagProb )
+		if ( ev->getPFJbTagProbTkCntHighEff(i) > _jetCut_BtagProb )
 			_btaggedJets.insert(i);
 
 	}

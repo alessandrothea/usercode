@@ -124,7 +124,7 @@ Double_t EventProxy::getPFJChEmfrac(int i) { return (*_jets)[i].chargedEmEnergyF
 Double_t EventProxy::getPFJChHadfrac(int i) { return (*_jets)[i].chargedHadronEnergyFraction();}
 Double_t EventProxy::getPFJE(int i) { return (*_jets)[i].energy();}
 Double_t EventProxy::getPFJEta(int i) { return (*_jets)[i].eta();}
-Int_t EventProxy::getPFJNConstituents(int i) { return (*_jets)[i].numberOfDaughters();}
+   Int_t EventProxy::getPFJNConstituents(int i) { return (*_jets)[i].numberOfDaughters();}
 Double_t EventProxy::getPFJNeuEmfrac(int i) { return (*_jets)[i].neutralEmEnergyFraction();}
 Double_t EventProxy::getPFJNeuHadfrac(int i) { return (*_jets)[i].neutralHadronEnergyFraction()+(*_jets)[i].correctedJet("Uncorrected").HFHadronEnergyFraction();}
 Double_t EventProxy::getPFJPt(int i) { return (*_jets)[i].pt();}

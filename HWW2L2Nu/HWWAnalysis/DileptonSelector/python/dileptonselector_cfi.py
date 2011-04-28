@@ -52,8 +52,8 @@ diLepSel = cms.EDAnalyzer('DileptonSelector',
             ),
         jetCuts = cms.PSet(
             Dr       = cms.double(0.3),
-            Pt       = cms.double(25),
-            Eta      = cms.double(5),
+            Pt       = cms.double(25.),
+            Eta      = cms.double(5.),
             BtagProb = cms.double(2.1),
             ),
 )
