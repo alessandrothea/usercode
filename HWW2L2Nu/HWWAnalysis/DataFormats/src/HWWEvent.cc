@@ -31,6 +31,7 @@ void HWWEvent::Clear( Option_t* option ){
 	Run            = 0;
 	Event          = 0;
 	LumiSection    = 0;
+    Weight         = 1;
 
 	PrimVtxGood    = 0;
 	PrimVtxx       = 0;

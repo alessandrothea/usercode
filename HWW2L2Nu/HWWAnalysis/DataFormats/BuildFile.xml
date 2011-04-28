@@ -1,6 +1,6 @@
 <use name="DataFormats/Common"/>
 <use name="root"/>
-<flags rootmap="1"/>
+<flags cxxflags="-g -ggdb"/>
 <export>
   <lib name="1"/>
 </export>

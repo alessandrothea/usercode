@@ -61,6 +61,7 @@ public:
 	Double_t        NeuEmfrac;
 	Double_t        TrkCountingHighEffBJet;
 	Int_t           NConstituents;
+    Double_t        BTagProbTkCntHighEff;
 
 	ClassDef(HWWPFJet,1)
 };
@@ -76,6 +77,7 @@ public:
 	Int_t    Run;
 	Int_t    Event;
 	Int_t    LumiSection;
+    Double_t Weight;
 
 	// Vertex
 	Int_t    PrimVtxGood;
