@@ -37,7 +37,7 @@ def main():
     parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-l', '--label', dest='sessionLabel', help='Label for the session')
-    parser.add_option('-g', '--groups', dest='sessionGroups', help='Comma separated list of groups')
+    parser.add_option('-g', '--groups', dest='sessionGroups', help='Column separated list of groups')
     
     parser.add_option('-m', '--mode', dest='sessionMode', help='Session mode [file,events]', default='file')
     parser.add_option('-i', '--inputFile', dest='inputFile', help='List of root files to process')
@@ -114,7 +114,7 @@ def main():
         filesPerJob = int(float(nFiles)/nJobs+0.5)
         fileList =  [rootFiles[i:i+filesPerJob] for i in range(0, len(rootFiles), filesPerJob)]
         nJobs = len(fileList)
-        eventsPerJob = 0
+        eventsPerJob = -1
         firstEvent = [0]*nJobs
 #        for subList in fileList:
 #            print getEntries(opt.treeName, subList) 
@@ -160,7 +160,7 @@ def main():
         m.insertNewSession(s)
     except ValueError as e:
         print '\nError: ',e,'\n'
-        return
+        return -1
 
     print '|  Creating',nJobs,'job(s)'
     for i in range(nJobs):
@@ -170,7 +170,7 @@ def main():
         # set nEvents to 0 (= all) for the last event
         job.nEvents    = i is not nJobs-1 and eventsPerJob or s.nTotEvents-job.firstEvent
         job.inputFile  = s.outputDir+'/input/'+job.name()+'.input'
-        job.outputFile = s.outputDir+'/root/'+job.name()+'.root'
+        job.outputFile = s.outputDir+'/res/'+job.name()+'.root'
         job.scriptPath = s.outputDir+'/scripts/'+job.name()+'.sh'
         job.stdOutPath = s.outputDir+'/log/'+job.name()+'.out'
         job.stdErrPath = s.outputDir+'/log/'+job.name()+'.err'
@@ -191,5 +191,5 @@ def main():
     m.disconnect()
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
 

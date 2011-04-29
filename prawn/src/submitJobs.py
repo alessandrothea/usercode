@@ -16,6 +16,7 @@ def main():
     parser.add_option('-n', '--dryRun', dest='dry', help='Dry run, produces the files but doesn\'t submit', action='store_true')
     parser.add_option('-r', '--resubmit', dest='resubmit', help='Resubmit jobs', action='store_true')
     parser.add_option('-j', '--jobs', dest='jobs',help='Jobs to process',default='')
+    parser.add_option('-c', '--clean', dest='clean',help='Remove all the files in the output directory. Use with care')
     (opt, args) = parser.parse_args()
 
     if opt.sessionName is None and opt.sessionGroups is None:
@@ -29,7 +30,6 @@ def main():
     m = jobtools.Manager(opt.database)
     m.connect()
 
-#<<<<<<<<<<<<
     try:
         ses = m.getListOfSessions(opt.sessionName, opt.sessionGroups)
     except:
@@ -52,28 +52,9 @@ def main():
 
         updated = submitSession(s,jobs,opt,numbers)
         
-        m.updateJobCodes(s.name, updated)
-        m.setSessionStatus(s.name, jobtools.kSubmitted) 
-
-#---
-#    try: 
-#        s = m.getSession( opt.sessionName )
-#        jobs = m.getJobs( opt.sessionName )
-#    except ValueError as e:
-#        print '\n  Error : '+str(e)+'\n'
-#        return
-#
-#    if s.status is not jobtools.kCreated and not opt.resubmit:
-#        parser.error('The session is already submitted. Use -r to resubmit.')
-#    #print 'Session',s
-#    #print s.outputDir
-#    
-#    updated = submitSession(s,jobs,opt,numbers)
-#
-#    m.updateJobCodes(s.name, updated)
-#    m.setSessionStatus(s.name, jobtools.kSubmitted)
-#
-#>>>>>>>>>>> 
+        if not opt.dry:
+            m.updateJobCodes(s.name, updated)
+            m.setSessionStatus(s.name, jobtools.kSubmitted) 
 
     m.disconnect()
     
@@ -95,6 +76,7 @@ def submitSession( session, jobs, opt, jNums=[] ):
             continue
         
 #        print '| ',job.name(),'...',
+        job.cleanFiles()
         # makes destination directories
         job.mkDirs()
         # dump the script into the destination folder

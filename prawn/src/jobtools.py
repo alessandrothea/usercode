@@ -74,7 +74,16 @@ class Session:
 
     def __str__(self):
         return str(self.__dict__)
-
+    
+    def clean(self):
+        top = self.outputDir
+        if top == '/':
+            raise ValueError('trying to delete "/"?!? Are you out of your mind?!?')
+        for root, dirs, files in os.walk(top, topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                os.rmdir(os.path.join(root, name))
 
 class Job:
     
@@ -134,6 +143,7 @@ class Job:
                self.stdOutPath,
                self.stdErrPath,
                self.exitPath]
+        
         for file in files:
             if os.path.exists(file):
                 os.remove(file)
@@ -222,21 +232,34 @@ class Manager:
         s.update(row)
         return s
 
-    def getListOfSessions(self, session=None, group=None ):
+    def getListOfSessions(self, session=None, groups=None ):
         
         #if session not defined, take all
         if not session:
             session = '%'
+        
+        gQuery = ''
+        pars = (session,)
 
-        #if session not defined, take all, otherwise filter on the name    
-        if not group:
-            group = '%'
-        else:
-            group = '%'+group+'%'
+        if groups is not None:
+            tags = []
+            for group in groups.split(':'):
+                if group == '':
+                    continue
+                tags.append(group)
+
+            if len(tags) != 0:
+                gQuery = ' '.join(['AND groups LIKE ?']*len(tags))
+                dummy = [session]
+                dummy.extend([ '%'+t+'%' for t in tags])
+                pars = tuple(dummy) 
+
+        
+        query = 'SELECT * FROM session WHERE name LIKE ? '+gQuery+' ORDER BY name'
         
         c = self.connection.cursor()
             
-        c.execute('SELECT * FROM session WHERE name LIKE ? AND groups LIKE ? ORDER BY name',(session,group))
+        c.execute(query, pars)
         
         sessions=[ Session().update(row) for row in c.fetchall()]
         return sessions    
