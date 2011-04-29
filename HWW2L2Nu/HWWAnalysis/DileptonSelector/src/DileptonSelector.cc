@@ -1253,12 +1253,13 @@ void DileptonSelector::cleanJets() {
 		// jet ptcut
 		if ( ev->getPFJPt(i) > _jetCut_Pt  && ev->getPFJEta(i) < _jetCut_Eta ) {
 			_selectedPFJets.insert(i);
+            continue;
         }
         
         _jetBTagProbTkCntHighEff->Fill(ev->getPFJbTagProbTkCntHighEff(i), _eventWeight);
 
 		// or check for btagged jets
-		if ( TMath::Abs(ev->getPFJbTagProbTkCntHighEff(i)) > _jetCut_BtagProb )
+		if ( ev->getPFJbTagProbTkCntHighEff(i) > _jetCut_BtagProb )
 			_btaggedJets.insert(i);
 
 	}
