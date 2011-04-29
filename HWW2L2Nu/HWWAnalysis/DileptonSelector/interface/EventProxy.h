@@ -61,7 +61,6 @@ class EventProxy {
         Double_t getElDeltaEtaSuperClusterAtVtx( int i );
         Double_t getElDeltaPhiSuperClusterAtVtx( int i );
         Double_t getElPt( int i );
-        Double_t getElSCEta( int i );
         Double_t getElCaloEnergy( int i );
         Int_t    getElCharge( int i );
         Double_t getElConvPartnerTrkDCot( int i );
@@ -84,6 +83,7 @@ class EventProxy {
         Double_t getElSigmaIetaIeta( int i );
         Double_t getElRho( int i );
           Bool_t getElIsEb(int i);
+          Bool_t getElIsEe(int i);
 
         Int_t    getNMus();
         Int_t    getMuCharge( int i );

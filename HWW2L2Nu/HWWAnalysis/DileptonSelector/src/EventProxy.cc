@@ -57,7 +57,6 @@ Int_t EventProxy::getNEles() { return _electrons->size();}
 Double_t EventProxy::getElDeltaEtaSuperClusterAtVtx(int i) { return (*_electrons)[i].deltaEtaSuperClusterTrackAtVtx();}
 Double_t EventProxy::getElDeltaPhiSuperClusterAtVtx(int i) { return (*_electrons)[i].deltaPhiSuperClusterTrackAtVtx();}
 Double_t EventProxy::getElPt(int i) { return (*_electrons)[i].pt();}
-Double_t EventProxy::getElSCEta(int i) { return (*_electrons)[i].isEB() ? 0.1 : 1.5;} //FIXME horrible hack not to change the code downstream
 Double_t EventProxy::getElCaloEnergy(int i) { return (*_electrons)[i].caloEnergy();}
    Int_t EventProxy::getElCharge(int i) { return (*_electrons)[i].charge();}
 Double_t EventProxy::getElDR03EcalRecHitSumEt(int i) { return (*_electrons)[i].dr03EcalRecHitSumEt();}
@@ -84,6 +83,7 @@ Double_t EventProxy::getElSigmaIetaIeta(int i) { return (*_electrons)[i].sigmaIe
 
 Double_t EventProxy::getElRho(int i) { return (*_electrons)[i].userFloat("rhoEl");}
   Bool_t EventProxy::getElIsEb(int i) { return (*_electrons)[i].isEB(); }
+  Bool_t EventProxy::getElIsEe(int i) { return (*_electrons)[i].isEE(); }
 
 
 

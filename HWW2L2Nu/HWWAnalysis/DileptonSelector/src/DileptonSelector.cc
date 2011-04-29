@@ -77,7 +77,6 @@ DileptonSelector::DileptonSelector(const edm::ParameterSet& iConfig) : _nEvents(
     const edm::ParameterSet& elCuts = iConfig.getParameterSet("elCuts");
     _elCut_TightWorkingPoint = elCuts.getParameter<int>( "tightWorkingPoint");
     _elCut_LooseWorkingPoint = elCuts.getParameter<int>( "looseWorkingPoint");
-    _elCut_EtaSCEbEe         = elCuts.getParameter<double>("etaSCEbEe"); // 1.479
 
     const edm::ParameterSet& muCuts = iConfig.getParameterSet("muCuts");
     _muCut_NMuHist		 = muCuts.getParameter<int>("nMuHits");
@@ -147,7 +146,7 @@ DileptonSelector::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     clear();
 
     // pileup info and set eventWeights
-    checkPileUp( iEvent );
+    setWeight( iEvent );
 
     _nEvents += _eventWeight;
 
@@ -227,17 +226,16 @@ DileptonSelector::fillDescriptions(edm::ConfigurationDescriptions& descriptions)
 
 //______________________________________________________________________________
 void
-DileptonSelector::checkPileUp( const edm::Event& iEvent ) {
-    bool found = false;
-    try {
-        edm::Handle<std::vector<PileupSummaryInfo> > puInfo;
-        iEvent.getByLabel("addPileupInfo", puInfo);
+DileptonSelector::setWeight( const edm::Event& iEvent ) {
 
+    edm::Handle<std::vector<PileupSummaryInfo> > puInfo;
+    iEvent.getByLabel("addPileupInfo", puInfo);
+
+    if ( puInfo.isValid() ) {
+        bool found = false;
         std::vector<PileupSummaryInfo>::const_iterator puIt;
         // search for in-time pu and to the weight
         for(puIt = puInfo->begin(); puIt != puInfo->end(); ++puIt) {
-
-            //        std::cout << " Pileup Information: bunchXing, nvtx: " << puIt->getBunchCrossing() << " " << puIt->getPU_NumInteractions() << std::endl;
             // in time pu
             if ( puIt->getBunchCrossing() == 0 ) {
                 if ( (size_t)puIt->getPU_NumInteractions() > _puFactors.size() )
@@ -250,15 +248,11 @@ DileptonSelector::checkPileUp( const edm::Event& iEvent ) {
             } 
         }
 
-    } catch ( cms::Exception &e ) {
-        std::cout << "Pu not found: DATA!" << std::endl;
+        if ( !found ) 
+            THROW_RUNTIME("-- Event " <<  getEvent()->getEvent() << " didn't find the in time pileup info");
+    } else {
         _eventWeight = 1;
-    }
-
-    if ( !found ) THROW_RUNTIME(
-            "Event " <<  getEvent()->getEvent() << " didn't find the in time pileup info"
-            );
-
+    } 
     // fill some additional histograms
     _puNVertexes->Fill( getEvent()->getNVrtx(), _eventWeight );
 }
@@ -298,9 +292,6 @@ DileptonSelector::loadWorkingPoints( const std::vector<edm::ParameterSet>& point
         p.dPhi       = iP->getParameter<double>("dphi");
         p.dEta       = iP->getParameter<double>("deta");
         p.HoE        = iP->getParameter<double>("hoe");
-//         p.tkIso      = iP->getParameter<double>("tkIso");
-//         p.ecalIso    = iP->getParameter<double>("ecalIso");
-//         p.hcalIso    = iP->getParameter<double>("hcalIso");
         p.combIso    = iP->getParameter<double>("combIso");
         p.missHits   = iP->getParameter<double>("hits");
         p.dist       = iP->getParameter<double>("dist");
@@ -383,7 +374,7 @@ void DileptonSelector::book() {
     TFileDirectory muVarsDir = fs->mkdir("muonVars");
     TFileDirectory jetVarsDir = fs->mkdir("jetsVars");
 
-    _jetBTagProbTkCntHighEff = jetVarsDir.make<TH1F>("jetBTagProbTkCntHighEff","B-tag prob above jet cut",100,0, 10);
+    _jetBTagProbTkCntHighEff = jetVarsDir.make<TH1F>("jetBTagProbTkCntHighEff","B-tag prob above jet cut",100,-10, 10);
 
 
 
@@ -437,69 +428,6 @@ std::ostream& DileptonSelector::Debug(int level) {
 	static std::ostream rc(std::clog.rdbuf());
 	rc.rdbuf(level <= _debugLvl ? std::clog.rdbuf() : 0);
 	return rc;
-}
-
-
-//_____________________________________________________________________________
-void DileptonSelector::readWorkingPoints( const std::string& path ) {
-
-	std::cout << "Reading Working points from file " << path << std::endl;
-
-	ifstream wpFile(path.c_str(), ifstream::in);
-	if ( !wpFile.is_open() ) {
-		THROW_RUNTIME(std::string("File ") + path + " not found");
-	}
-
-	std::string line;
-	while( wpFile.good() ) {
-		getline(wpFile, line);
-		// remove trailing and leading spaces
-
-		std::stringstream ss(line);
-		std::string dummy;
-
-		ss >> dummy;
-		if ( dummy.empty() || dummy[0]=='#') continue;
-
-		if ( dummy.length() != 1 )
-			THROW_RUNTIME("Corrupted wp file: " + dummy + " is supposed to be 1 char long.");
-
-		WorkingPoint p;
-		switch (dummy[0]) {
-		case 'B':
-		case 'b':
-			// Barrel
-			p.partition = kBarrel;
-			break;
-		case 'E':
-		case 'e':
-			// Endcaps
-			p.partition = kEndcap;
-			break;
-		default:
-			std::cout << "Corrupted line\n" << line<< std::endl;
-			continue;
-		}
-
-//         ss >> p.efficiency >> p.See >> p.dPhi >> p.dEta>>p.HoE >> p.tkIso >> p.ecalIso >> p.hcalIso >> p.combIso>> p.missHits>> p.dist>> p.cot;
-		ss >> 
-            p.efficiency >> 
-            p.See >> 
-            p.dPhi >> 
-            p.dEta>>
-            p.HoE >> 
-//             p.tkIso >> 
-//             p.ecalIso >> 
-//             p.hcalIso >> 
-            p.combIso >>
-            p.missHits >> 
-            p.dist >> 
-            p.cot;
-
-		p.print();
-
-		_elWorkingPoints.push_back(p);
-	}
 }
 
 //_____________________________________________________________________________
@@ -583,10 +511,6 @@ bool DileptonSelector::matchDataHLT() {
     _meCounters->Fill(kLLBinAll, _eventWeight );
     _mmCounters->Fill(kLLBinAll, _eventWeight );
 
-    // GenMET is -1000 if it's a data file
-//     bool isData = ( getEvent()->getGenMET()  < -999.);
-//     bool match = !isData || _hlt.match( getEvent()->getHLTResults() );
-//
     bool match = true;
 
 	if ( match ) {
@@ -604,8 +528,6 @@ bool DileptonSelector::matchDataHLT() {
 bool DileptonSelector::hasGoodVertex() {
 	//TODO move to config file
 
-//	std::cout << "vrtxGood: " << PrimVtxGood << "\n"
-//			<< "vrtxFake: " << PrimVtxIsFake << std::endl;
 	EventProxy* ev = getEvent();
 	bool goodVrtx = (ev->getPrimVtxNdof() >= _vrtxCut_nDof ) &&
 	(ev->getPrimVtxGood() == 0 ) &&
@@ -631,7 +553,6 @@ void DileptonSelector::electronIsoId( LepCandidate::elBitSet& tags, int idx, int
 	// identify tight electron
 
 	EventProxy* ev = getEvent();
-	float scEta = ev->getElSCEta(idx);
 
 	// apply the correction for the endcaps
 	float dPhi = ev->getElDeltaPhiSuperClusterAtVtx(idx);
@@ -650,18 +571,22 @@ void DileptonSelector::electronIsoId( LepCandidate::elBitSet& tags, int idx, int
 	float combIso   = 0;
 
 	unsigned short p;
-	if ( TMath::Abs(scEta) <= _elCut_EtaSCEbEe ) {
+//     if ( TMath::Abs(scEta) <= _elCut_EtaSCEbEe ) {
+    if ( ev->getElIsEb( idx ) ) {
 		// barrel
 		p = kBarrel;
 		combIso = combIso_B;
-	} else if ( TMath::Abs(scEta) > _elCut_EtaSCEbEe ) {
-		p = kEndcap;
-		combIso = combIso_E;
-	} else {
-		//std::cout << "Candidate out of acceptance region" << std::endl;
-		//return kOutOfAcc;
-		return;
-	}
+//     } else if ( TMath::Abs(scEta) > _elCut_EtaSCEbEe ) {
+//     } else if ( ev->getElIsEe() ) {
+    } else {
+        p = kEndcap;
+        combIso = combIso_E;
+    }
+//     } else {
+//         //std::cout << "Candidate out of acceptance region" << std::endl;
+//         //return kOutOfAcc;
+//         return;
+//     }
 
 //     Debug(3) << "scEta " << TMath::Abs(scEta) << " combIso " << combIso << " isEb " << ev->getElIsEb(idx) << std::endl;
 
@@ -1333,7 +1258,7 @@ void DileptonSelector::cleanJets() {
         _jetBTagProbTkCntHighEff->Fill(ev->getPFJbTagProbTkCntHighEff(i), _eventWeight);
 
 		// or check for btagged jets
-		if ( ev->getPFJbTagProbTkCntHighEff(i) > _jetCut_BtagProb )
+		if ( TMath::Abs(ev->getPFJbTagProbTkCntHighEff(i)) > _jetCut_BtagProb )
 			_btaggedJets.insert(i);
 
 	}

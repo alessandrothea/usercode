@@ -34,7 +34,6 @@ DileptonSelector = cms.EDAnalyzer('DileptonSelector',
         elCuts = cms.PSet(
             tightWorkingPoint = cms.int32(80),
             looseWorkingPoint = cms.int32(80),
-            etaSCEbEe = cms.double(1.479)
             ),
         muCuts = cms.PSet(
             nMuHits         = cms.int32(0),

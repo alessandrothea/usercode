@@ -7,12 +7,6 @@
 #include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
 #include <TClonesArray.h>
 
-ClassImp(HWWEvent)
-ClassImp(HWWElectron)
-ClassImp(HWWMuon)
-//ClassImp(HWWJet)
-ClassImp(HWWPFJet)
-
 //______________________________________________________________________________
 HWWEvent::HWWEvent() : NEles(0), NMus(0), PFNJets(0) {
 	// TODO Auto-generated constructor stub

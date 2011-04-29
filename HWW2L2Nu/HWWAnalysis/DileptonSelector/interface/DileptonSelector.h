@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Apr 14 12:29:55 CEST 2011
-// $Id: DileptonSelector.h,v 1.1 2011/04/27 15:34:22 thea Exp $
+// $Id: DileptonSelector.h,v 1.2 2011/04/28 09:23:11 thea Exp $
 //
 //
 // system include files
@@ -101,7 +101,6 @@ class DileptonSelector : public edm::EDAnalyzer {
       virtual EventProxy* getEvent() { return _eventProxy; }
 
       WorkingPoint getWorkingPoint(unsigned short part, int eff);
-      virtual void readWorkingPoints( const std::string& path );
       virtual void loadWorkingPoints( const std::vector<edm::ParameterSet>& points );      
       void makeElectronHistograms( TFileDirectory* fd, std::vector<TH1F*>& histograms );
       TH1F* makeLabelHistogram( TFileDirectory* fd, const std::string& name, const std::string& title, std::map<int,std::string> labels);
@@ -141,7 +140,7 @@ class DileptonSelector : public edm::EDAnalyzer {
       TH1F* _puNInteractionsUnweighted;
       TH1F* _puNInteractions;
       TH1F* _puNVertexes;
-      void checkPileUp( const edm::Event& iEvent );
+      void setWeight( const edm::Event& iEvent );
 
       std::vector<TH1F*> _electronHistograms;
       std::vector<TH1F*> _muonHistograms;
