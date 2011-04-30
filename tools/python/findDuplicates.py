@@ -238,7 +238,7 @@ def findDuplicates():
 #                     nUnsafeDuplicates += 1
             
             #if we are happy with the filesize
-            dups = sorted(files, key = lambda file: file[2])
+            dups = sorted(files, key = lambda file: file[1])
             # don't the one with the highest retry
             dups.pop(-1)
             filesToDelete.extend(dups)
