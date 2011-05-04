@@ -5,8 +5,9 @@
 // 
 
 #include <HWWAnalysis/DileptonSelector/interface/DileptonSelector.h>
-#include <HWWAnalysis/DileptonSelector/interface/HWWCandidates.h>
 #include <HWWAnalysis/DileptonSelector/interface/EventProxy.h>
+#include <HWWAnalysis/DileptonSelector/interface/HWWCandidates.h>
+#include <HWWAnalysis/DileptonSelector/interface/HltObjMatcher.h>
 #include <HWWAnalysis/DileptonSelector/interface/Tools.h>
 #include <CommonTools/UtilAlgos/interface/TFileService.h>
 #include <DataFormats/PatCandidates/interface/Electron.h>
@@ -17,6 +18,7 @@
 #include <vector>
 #include <fstream>
 
+const double DileptonSelector::_etaMaxTrk=2.4000;
 const double DileptonSelector::_etaMaxEB=1.4442;
 const double DileptonSelector::_etaMinEE=1.5660;
 const double DileptonSelector::_etaMaxEE=2.5000;
@@ -24,7 +26,7 @@ const double DileptonSelector::_etaMaxMu=2.4000;
 
 
 //_____________________________________________________________________________
-void DileptonSelector::WorkingPoint::print() {
+void DileptonSelector::VBTFWorkingPoint::print() {
     char p(0);
     switch( partition ) {
         case kBarrel:
@@ -40,9 +42,6 @@ void DileptonSelector::WorkingPoint::print() {
         << dPhi << "   "
         << dEta << '\t'
         << HoE << '\t'
-//         << tkIso << '\t'
-//         << ecalIso << '\t'
-//         << hcalIso << '\t'
         << combIso << '\t'
         << missHits << '\t'
         << dist << '\t'
@@ -50,6 +49,29 @@ void DileptonSelector::WorkingPoint::print() {
         << std::endl;
 }
 
+//_____________________________________________________________________________
+void DileptonSelector::LHWorkingPoint::print() {
+    char p(0);
+    switch( partition ) {
+        case kBarrel:
+            p = 'B';
+            break;
+        case kEndcap:
+            p='E';
+            break;
+    }
+    std::cout << p << "("
+        << efficiency << ")" << '\t'
+        << lh0brem << '\t'
+        << lh1brem << "   "
+        << combIso << '\t'
+        << missHits << '\t'
+        << dist << '\t'
+        << cot << '\t'
+        << std::endl;
+}
+
+//______________________________________________________________________________
 //
 // constructors and destructor
 //
@@ -59,7 +81,6 @@ DileptonSelector::DileptonSelector(const edm::ParameterSet& iConfig) : _nEvents(
     //now do what ever initialization is needed
     // configuration
     _debugLvl = iConfig.getUntrackedParameter<int>("debugLevel");
-    _wpFile = iConfig.getUntrackedParameter<std::string>("elWorkingPointsFile");
     _puFactors = iConfig.getParameter<std::vector<double> >("pileupFactors");
 
     const edm::ParameterSet& vrtxCuts = iConfig.getParameterSet("vrtxCuts");
@@ -71,21 +92,24 @@ DileptonSelector::DileptonSelector(const edm::ParameterSet& iConfig) : _nEvents(
     const edm::ParameterSet& lepCuts = iConfig.getParameterSet("lepCuts");
     _lepCut_leadingPt   = lepCuts.getParameter<double>("leadingPt");
     _lepCut_trailingPt  = lepCuts.getParameter<double>("trailingPt");
-    _lepCut_D0PV        = lepCuts.getParameter<double>("d0PrimaryVertex");
-    _lepCut_DzPV        = lepCuts.getParameter<double>("dZPrimaryVertex") ;
+//     _lepCut_D0PV        = lepCuts.getParameter<double>("d0PrimaryVertex");
+//     _lepCut_DzPV        = lepCuts.getParameter<double>("dZPrimaryVertex") ;
 
     const edm::ParameterSet& elCuts = iConfig.getParameterSet("elCuts");
     _elCut_TightWorkingPoint = elCuts.getParameter<int>( "tightWorkingPoint");
     _elCut_LooseWorkingPoint = elCuts.getParameter<int>( "looseWorkingPoint");
+    _elCut_ip3D              = elCuts.getParameter<double>( "ip3D" );
 
     const edm::ParameterSet& muCuts = iConfig.getParameterSet("muCuts");
-    _muCut_NMuHist		 = muCuts.getParameter<int>("nMuHits");
-    _muCut_NMuMatches	 = muCuts.getParameter<int>("nMuMatches");
-    _muCut_NTrackerHits	 = muCuts.getParameter<int>("nTrackerHits");
-    _muCut_NPixelHits	 = muCuts.getParameter<int>("nPixelHits");
-    _muCut_NChi2		 = muCuts.getParameter<double>("nChi2");
-    _muCut_relPtRes		 = muCuts.getParameter<double>("relPtResolution");
-    _muCut_combIsoOverPt = muCuts.getParameter<double>("combIso");
+    _muCut_NMuHist		     = muCuts.getParameter<int>("nMuHits");
+    _muCut_NMuMatches	     = muCuts.getParameter<int>("nMuMatches");
+    _muCut_NTrackerHits	     = muCuts.getParameter<int>("nTrackerHits");
+    _muCut_NPixelHits	     = muCuts.getParameter<int>("nPixelHits");
+    _muCut_NChi2		     = muCuts.getParameter<double>("nChi2");
+    _muCut_relPtRes		     = muCuts.getParameter<double>("relPtResolution");
+    _muCut_combIsoOverPt     = muCuts.getParameter<double>("combIso");
+    _muCut_ip2D              = muCuts.getParameter<double>( "ip2D" );
+    _muCut_dZPrimaryVertex   = muCuts.getParameter<double>( "dZPrimaryVertex" );
 
     const edm::ParameterSet& muSoftCuts = iConfig.getParameterSet("muSoftCuts");
     _muSoftCut_Pt		= muSoftCuts.getParameter<double>("Pt");
@@ -98,17 +122,29 @@ DileptonSelector::DileptonSelector(const edm::ParameterSet& iConfig) : _nEvents(
     _jetCut_Eta	    	= jetCuts.getParameter<double>("Eta");
     _jetCut_BtagProb	= jetCuts.getParameter<double>("BtagProb");
 
+    _jetCut_neutralEmFrac  =  jetCuts.getParameter<double>("neutralEmFrac");
+    _jetCut_neutralHadFrac =  jetCuts.getParameter<double>("neutralHadFrac");
+    _jetCut_multiplicity   =  jetCuts.getParameter<int>("multiplicity");
+    _jetCut_chargedEmFrac  =  jetCuts.getParameter<double>("chargedEmFrac");
+    _jetCut_chargedHadFrac =  jetCuts.getParameter<double>("chargedHadFrac");
+    _jetCut_chargedMulti   =  jetCuts.getParameter<int>("chargedMulti");
+
     Debug(0) << "- lepCuts " << lepCuts.toString() << std::endl;
     Debug(0) << "- elCuts " << elCuts.toString() << std::endl;
     Debug(0) << "- muCuts " << muCuts.toString() << std::endl;
     Debug(0) << "- softMuCuts " << muSoftCuts.toString() << std::endl;
     Debug(0) << "- jetCuts " << jetCuts.toString() << std::endl;
 
-    const edm::ParameterSet& hltPaths = iConfig.getParameterSet("hltPaths");
-    std::vector<std::string> elhlt = hltPaths.getParameter<std::vector<std::string> >("el"); 
-    std::vector<std::string> muhlt = hltPaths.getParameter<std::vector<std::string> >("mu"); 
+    std::string dataType = iConfig.getParameter<std::string>("dataType");
+    _hltMatcher = new HltObjMatcher(dataType);
+    Debug(0) << "Data type is " << _hltMatcher->dataLabel() << " isData " << _hltMatcher->isData() << std::endl;
+    
+//     const edm::ParameterSet& hltPaths = iConfig.getParameterSet("hltPaths");
+//     std::vector<std::string> hltSingleEl = hltPaths.getParameter<std::vector<std::string> >("singleEl"); 
+//     std::vector<std::string> hltSingleMu = hltPaths.getParameter<std::vector<std::string> >("singleMu"); 
 
-    loadWorkingPoints( iConfig.getParameter<edm::VParameterSet>("elWorkingPoints") );
+    loadVBFTId( iConfig.getParameter<edm::VParameterSet>("elCutBasedId") );
+    loadLikelihoodId( iConfig.getParameter<edm::VParameterSet>("elLikelihood") );
     book();
 
     // tmp check
@@ -135,8 +171,6 @@ DileptonSelector::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 {
     using namespace edm;
 
-
-
     //    _nEvents++;
     EventProxy proxy(iEvent, iSetup);
     _eventProxy = &proxy;
@@ -146,7 +180,9 @@ DileptonSelector::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     clear();
 
     // pileup info and set eventWeights
-    setWeight( iEvent );
+    calculateWeight( iEvent );
+
+    _hltMatcher->setTriggerResults( iEvent );
 
     _nEvents += _eventWeight;
 
@@ -226,7 +262,16 @@ DileptonSelector::fillDescriptions(edm::ConfigurationDescriptions& descriptions)
 
 //______________________________________________________________________________
 void
-DileptonSelector::setWeight( const edm::Event& iEvent ) {
+DileptonSelector::calculateWeight( const edm::Event& iEvent ) {
+    // FIXME: should it know whether it's data or not?
+
+
+    if ( iEvent.isRealData() ) {
+        _eventWeight = 1.;
+        // fill some additional histograms
+        _puNVertexes->Fill( getEvent()->getNVrtx(), _eventWeight );
+        return;
+    }
 
     edm::Handle<std::vector<PileupSummaryInfo> > puInfo;
     iEvent.getByLabel("addPileupInfo", puInfo);
@@ -260,9 +305,9 @@ DileptonSelector::setWeight( const edm::Event& iEvent ) {
 
 //______________________________________________________________________________
 void
-DileptonSelector::loadWorkingPoints( const std::vector<edm::ParameterSet>& points ) {
+DileptonSelector::loadLikelihoodId( const std::vector<edm::ParameterSet>& points ) {
 
-	Debug(0) << "Reading Working points " << std::endl;
+	Debug(0) << "Reading Likelihood Working points " << std::endl;
 
     std::vector<edm::ParameterSet>::const_iterator iP;
     for( iP = points.begin(); iP != points.end(); ++iP ) {
@@ -271,7 +316,7 @@ DileptonSelector::loadWorkingPoints( const std::vector<edm::ParameterSet>& point
 		if ( dummy.length() != 1 )
 			THROW_RUNTIME("Corrupted working point: " + dummy + " is supposed to be 1 char long.");
 
-		WorkingPoint p;
+		LHWorkingPoint p;
 		switch (dummy[0]) {
 		case 'B':
 		case 'b':
@@ -287,7 +332,51 @@ DileptonSelector::loadWorkingPoints( const std::vector<edm::ParameterSet>& point
 			THROW_RUNTIME("Corrupted entry\n" << iP->dump());
 		}
 
-        p.efficiency = iP->getParameter<double>("eff");
+        p.efficiency = iP->getParameter<int>("eff");
+        p.lh0brem    = iP->getParameter<double>("likelihood0");
+        p.lh1brem    = iP->getParameter<double>("likelihood1");
+        p.combIso    = iP->getParameter<double>("combIso");
+        p.missHits   = iP->getParameter<double>("hits");
+        p.dist       = iP->getParameter<double>("dist");
+        p.cot        = iP->getParameter<double>("cot");
+
+		p.print();
+
+		_elLHWorkingPoints.push_back(p);
+    }
+
+}
+    
+//______________________________________________________________________________
+void
+DileptonSelector::loadVBFTId( const std::vector<edm::ParameterSet>& points ) {
+
+	Debug(0) << "Reading LikelihoodID Working points " << std::endl;
+
+    std::vector<edm::ParameterSet>::const_iterator iP;
+    for( iP = points.begin(); iP != points.end(); ++iP ) {
+        std::string dummy = iP->getParameter<std::string>("partition");
+
+		if ( dummy.length() != 1 )
+			THROW_RUNTIME("Corrupted working point: " + dummy + " is supposed to be 1 char long.");
+
+		VBTFWorkingPoint p;
+		switch (dummy[0]) {
+		case 'B':
+		case 'b':
+			// Barrel
+			p.partition = kBarrel;
+			break;
+		case 'E':
+		case 'e':
+			// Endcaps
+			p.partition = kEndcap;
+			break;
+		default:
+			THROW_RUNTIME("Corrupted entry\n" << iP->dump());
+		}
+
+        p.efficiency = iP->getParameter<int>("eff");
         p.See        = iP->getParameter<double>("see");
         p.dPhi       = iP->getParameter<double>("dphi");
         p.dEta       = iP->getParameter<double>("deta");
@@ -299,7 +388,7 @@ DileptonSelector::loadWorkingPoints( const std::vector<edm::ParameterSet>& point
 
 		p.print();
 
-		_elWorkingPoints.push_back(p);
+		_elVBTFWorkingPoints.push_back(p);
     }
 
     
@@ -327,16 +416,17 @@ void DileptonSelector::book() {
 	std::map<int,std::string> labels;
 
 
-	labels[kLLBinAll]	   = "All events";
-	labels[kLLBinHLT]      = "HLT";
-	labels[kLLBinVertex]   = "Good Vertex";
-	labels[kLLBinDilepton] = "l^{+}l^{-}";
-	labels[kLLBinEtaPt]    = "EtaPt";
-	labels[kLLBinIp]   	   = "Impact Parameter";
-	labels[kLLBinIso]      = "Isolation";
-	labels[kLLBinId]       = "Id";
-	labels[kLLBinNoConv]   = "No Conversion";
-	labels[kLLBinExtraLep] = "Extra lepton";
+	labels[kLLBinAll]	    = "All events";
+//     labels[kLLBinVertex]   = "Good Vertex";
+	labels[kLLBinDilepton]  = "l^{+}l^{-}";
+	labels[kLLBinEtaPt]     = "EtaPt";
+	labels[kLLBinIp]   	    = "Impact Parameter";
+	labels[kLLBinIso]       = "Isolation";
+	labels[kLLBinId]        = "Id";
+	labels[kLLBinNoConv]    = "No Conversion";
+	labels[kLLBinExtraLep]  = "Extra lepton";
+	labels[kLLBinHltBits]   = "HLT Bits";
+	labels[kLLBinHltObject] = "HLT Objects";
 
 	_llCounters = makeLabelHistogram(here,"llCounters","HWW selection",labels);
 	_eeCounters = makeLabelHistogram(here,"eeCounters","HWW selection - ee",labels);
@@ -348,10 +438,9 @@ void DileptonSelector::book() {
 	ctrlLabels[kLepTagAll]		 = "All";
 	ctrlLabels[kLepTagEta]       = "Eta";
 	ctrlLabels[kLepTagPt]        = "Pt";
-	ctrlLabels[kLepTagD0]        = "d0";
-	ctrlLabels[kLepTagDz]        = "dz";
 	ctrlLabels[kLepTagIsolation] = "Iso";
 	ctrlLabels[kLepTagId]        = "Id";
+	ctrlLabels[kLepTagIp]        = "Ip";
 	ctrlLabels[kLepTagNoConv]    = "Conversion Veto";
 
 
@@ -384,17 +473,20 @@ void DileptonSelector::book() {
 //______________________________________________________________________________
 void DileptonSelector::makeElectronHistograms( TFileDirectory* fd, std::vector<TH1F*>& histograms ) {
 
-    histograms.assign(kElCutsSize,0x0);
+    histograms.assign(kElTagSize,0x0);
 
 
-    histograms[kElPt]       = fd->make<TH1F>("pt",     "p_{T}",200, 0, 200);
-    histograms[kElEta]      = fd->make<TH1F>("eta",    "#eta",100, 0, 5);
-    histograms[kElD0]       = fd->make<TH1F>("d0",     "d0", 100,-0.05,0.05);
-    histograms[kElDz]       = fd->make<TH1F>("dz",     "dz", 100,-2,2);
-    histograms[kElSee]      = fd->make<TH1F>("see",    "Sigma #eta#eta",100, 0, 0.1);
-    histograms[kElDeta]     = fd->make<TH1F>("dEta",   "#Delta#eta",100, 0, 0.2);
-    histograms[kElDphi]     = fd->make<TH1F>("dPhi",   "#Delta#phi",100, -0.02, 0.02);
-    histograms[kElCombIso]  = fd->make<TH1F>("combIso","Combined relative iso",100, 0, 2);
+    histograms[kElTagLeadingPt]     = fd->make<TH1F>("pt",     "p_{T}",200, 0, 200);
+    histograms[kElTagEta]           = fd->make<TH1F>("eta",    "#eta",100, 0, 5);
+    histograms[kElTagIp3D]          = fd->make<TH1F>("ip3D",   "ip3D", 100,-0.05,0.05);
+    histograms[kElTagSee]           = fd->make<TH1F>("see",    "Sigma #eta#eta",100, 0, 0.1);
+    histograms[kElTagDeta]          = fd->make<TH1F>("dEta",   "#Delta#eta",100, 0, 0.2);
+    histograms[kElTagDphi]          = fd->make<TH1F>("dPhi",   "#Delta#phi",100, -0.02, 0.02);
+    histograms[kElTagCombIso]       = fd->make<TH1F>("combIso","Combined relative iso (VBTF)",100, 0, 2);
+    histograms[kElTagCot]           = fd->make<TH1F>("cot","cotg", 100, 0, 0.05);
+    histograms[kElTagDist]          = fd->make<TH1F>("dist","dist", 100, 0, 0.05);
+    histograms[kElTagHits]          = fd->make<TH1F>("hits","hits", 10,0,10);
+    histograms[kElTagLH_Likelihood] = fd->make<TH1F>("likelihood","Likelihood",100,-5,5);
 }
 
 //_____________________________________________________________________________
@@ -431,9 +523,23 @@ std::ostream& DileptonSelector::Debug(int level) {
 }
 
 //_____________________________________________________________________________
-DileptonSelector::WorkingPoint DileptonSelector::getWorkingPoint(unsigned short part, int eff) {
-	std::vector<WorkingPoint>::iterator it;
-	for ( it=_elWorkingPoints.begin(); it != _elWorkingPoints.end(); ++it) {
+DileptonSelector::VBTFWorkingPoint DileptonSelector::getVBTFWorkingPoint(unsigned short part, int eff) {
+	std::vector<VBTFWorkingPoint>::iterator it;
+	for ( it=_elVBTFWorkingPoints.begin(); it != _elVBTFWorkingPoints.end(); ++it) {
+		if ( (*it).partition == part && (*it).efficiency == eff)
+			return *it;
+	}
+
+	std::stringstream msg;
+	msg << "Working point " << part << "(" << eff << ") not found";
+	THROW_RUNTIME(msg.str());
+
+}
+
+//_____________________________________________________________________________
+DileptonSelector::LHWorkingPoint DileptonSelector::getLHWorkingPoint(unsigned short part, int eff) {
+	std::vector<LHWorkingPoint>::iterator it;
+	for ( it=_elLHWorkingPoints.begin(); it != _elLHWorkingPoints.end(); ++it) {
 		if ( (*it).partition == part && (*it).efficiency == eff)
 			return *it;
 	}
@@ -475,11 +581,15 @@ bool DileptonSelector::selectAndClean() {
 			<< "  NtupleElectrons: " <<getEvent()->getNEles() << std::endl;
 
 //     _hlt.updateIds( getEvent()->getRun());
+    // move this somewhere else
+    _llCounters->Fill(kLLBinAll, _eventWeight );
+    _eeCounters->Fill(kLLBinAll, _eventWeight );
+    _emCounters->Fill(kLLBinAll, _eventWeight );
+    _meCounters->Fill(kLLBinAll, _eventWeight );
+    _mmCounters->Fill(kLLBinAll, _eventWeight );
 
 	// check the HLT flags
-	if ( !matchDataHLT() ) return false;
-
-	if ( !hasGoodVertex() ) return false;
+//     if ( !pasGoodVertex() ) return false;
 
 	// select electrons
 	tagElectrons();
@@ -495,6 +605,9 @@ bool DileptonSelector::selectAndClean() {
 	if ( !checkExtraLeptons() )
 		return false;
 
+    if ( !matchHLT() ) return false;
+
+
 	findSoftMus();
 
 	// then clean the jets up
@@ -503,113 +616,153 @@ bool DileptonSelector::selectAndClean() {
 }
 
 //_____________________________________________________________________________
-bool DileptonSelector::matchDataHLT() {
+bool DileptonSelector::matchHLT() {
 
-    _llCounters->Fill(kLLBinAll, _eventWeight );
-    _eeCounters->Fill(kLLBinAll, _eventWeight );
-    _emCounters->Fill(kLLBinAll, _eventWeight );
-    _meCounters->Fill(kLLBinAll, _eventWeight );
-    _mmCounters->Fill(kLLBinAll, _eventWeight );
 
-    bool match = true;
+    LepPair& pair = _selectedPairs.front();
+    bool match  = false;
+    match = _hltMatcher->matchesBits(pair); 
 
-	if ( match ) {
-	    _llCounters->Fill(kLLBinHLT, _eventWeight );
-	    _eeCounters->Fill(kLLBinHLT, _eventWeight );
-	    _emCounters->Fill(kLLBinHLT, _eventWeight );
-	    _meCounters->Fill(kLLBinHLT, _eventWeight );
-	    _mmCounters->Fill(kLLBinHLT, _eventWeight );
-	}
-//	return (trigger || !isData);
-	return match;
+    if ( !match ) return false;
+
+    _llCounters->Fill(kLLBinHltBits, _eventWeight );
+
+    switch( pair.finalState() ) {
+        case LepPair::kEE_t:
+            _eeCounters->Fill(kLLBinHltBits, _eventWeight );
+            break;
+        case LepPair::kEM_t:
+            _emCounters->Fill(kLLBinHltBits, _eventWeight );
+            break;
+        case LepPair::kME_t:
+            _meCounters->Fill(kLLBinHltBits, _eventWeight );
+            break;
+        case LepPair::kMM_t:
+            _mmCounters->Fill(kLLBinHltBits, _eventWeight );
+            break;
+    }
+
+    match = _hltMatcher->matchesObject(pair);
+
+    if ( !match ) return false;
+
+    _llCounters->Fill(kLLBinHltObject, _eventWeight );
+
+    switch( pair.finalState() ) {
+        case LepPair::kEE_t:
+            _eeCounters->Fill(kLLBinHltObject, _eventWeight );
+            break;
+        case LepPair::kEM_t:
+            _emCounters->Fill(kLLBinHltObject, _eventWeight );
+            break;
+        case LepPair::kME_t:
+            _meCounters->Fill(kLLBinHltObject, _eventWeight );
+            break;
+        case LepPair::kMM_t:
+            _mmCounters->Fill(kLLBinHltObject, _eventWeight );
+            break;
+    }
+
+    return match;
 }
 
 //_____________________________________________________________________________
-bool DileptonSelector::hasGoodVertex() {
+// bool DileptonSelector::hasGoodVertex() {
 	//TODO move to config file
 
-	EventProxy* ev = getEvent();
-	bool goodVrtx = (ev->getPrimVtxNdof() >= _vrtxCut_nDof ) &&
-	(ev->getPrimVtxGood() == 0 ) &&
-	(ev->getPrimVtxIsFake() != 1) &&
-	(TMath::Abs(ev->getPrimVtxRho() < _vrtxCut_rho )) &&
-	(TMath::Abs(ev->getPrimVtxz()) < _vrtxCut_z );
+//     EventProxy* ev = getEvent();
+//     bool goodVrtx = (ev->getPrimVtxNdof() >= _vrtxCut_nDof ) &&
+//     (ev->getPrimVtxGood() == 0 ) &&
+//     (ev->getPrimVtxIsFake() != 1) &&
+//     (TMath::Abs(ev->getPrimVtxRho() < _vrtxCut_rho )) &&
+//     (TMath::Abs(ev->getPrimVtxz()) < _vrtxCut_z );
 
-    //FIXME
-    goodVrtx = true;
-	if ( goodVrtx ) {
-		_llCounters->Fill(kLLBinVertex, _eventWeight );
-		_eeCounters->Fill(kLLBinVertex, _eventWeight );
-		_emCounters->Fill(kLLBinVertex, _eventWeight );
-		_meCounters->Fill(kLLBinVertex, _eventWeight );
-		_mmCounters->Fill(kLLBinVertex, _eventWeight );
-	}
+//     //FIXME
+//     goodVrtx = true;
+//     if ( goodVrtx ) {
+//         _llCounters->Fill(kLLBinVertex, _eventWeight );
+//         _eeCounters->Fill(kLLBinVertex, _eventWeight );
+//         _emCounters->Fill(kLLBinVertex, _eventWeight );
+//         _meCounters->Fill(kLLBinVertex, _eventWeight );
+//         _mmCounters->Fill(kLLBinVertex, _eventWeight );
+//     }
 
-	return goodVrtx;
-}
+//     return goodVrtx;
+// }
 
 //_____________________________________________________________________________
-void DileptonSelector::electronIsoId( LepCandidate::elBitSet& tags, int idx, int eff ) {
+void DileptonSelector::electronIsoId( ElCandicate &theEl, LepCandidate::elBitSet& tags, int eff ) {
 	// identify tight electron
 
+    unsigned int i = theEl.idx;
 	EventProxy* ev = getEvent();
 
-	// apply the correction for the endcaps
-	float dPhi = ev->getElDeltaPhiSuperClusterAtVtx(idx);
-	float dEta = ev->getElDeltaEtaSuperClusterAtVtx(idx);
 
-	float See       = ev->getElSigmaIetaIeta(idx);
-	float HoE       = ev->getElHcalOverEcal(idx);
-	float trkIso    = ev->getElDR03TkSumPt(idx);
-	float ecalIso   = ev->getElDR03EcalRecHitSumEt(idx);
-    float hcalIso   = ev->getElDR03HcalTowerSumEt(idx);
-//     float hcalIso   = ev->getElDR03HcalFull(idx);
-	float rho       = ev->getElRho(idx);
+
+	// apply the correction for the endcaps
+	float dPhi = ev->getElDeltaPhiSuperClusterAtVtx(i);
+	float dEta = ev->getElDeltaEtaSuperClusterAtVtx(i);
+
+	float See       = ev->getElSigmaIetaIeta(i);
+	float HoE       = ev->getElHcalOverEcal(i);
+	float trkIso    = ev->getElDR03TkSumPt(i);
+	float ecalIso   = ev->getElDR03EcalRecHitSumEt(i);
+//     float hcalIso   = ev->getElDR03HcalTowerSumEt(i);
+    float hcalIso   = ev->getElDR03HcalFull(i);
+	float rho       = ev->getElRho(i);
     float puCorr    = rho*TMath::Pi()*0.3*0.3;
-	float combIso_B = (trkIso + TMath::Max(0., ecalIso - 1.) + hcalIso - puCorr) / ev->getElPt(idx);
-	float combIso_E = (trkIso + ecalIso + hcalIso - puCorr ) / ev->getElPt(idx);
+	float combIso_B = (trkIso + TMath::Max(0., ecalIso - 1.) + hcalIso - puCorr) / ev->getElPt(i);
+	float combIso_E = (trkIso + ecalIso + hcalIso - puCorr ) / ev->getElPt(i);
 	float combIso   = 0;
 
 	unsigned short p;
-//     if ( TMath::Abs(scEta) <= _elCut_EtaSCEbEe ) {
-    if ( ev->getElIsEb( idx ) ) {
+    if ( theEl.el()->isEB() ) {
 		// barrel
 		p = kBarrel;
 		combIso = combIso_B;
-//     } else if ( TMath::Abs(scEta) > _elCut_EtaSCEbEe ) {
-//     } else if ( ev->getElIsEe() ) {
     } else {
         p = kEndcap;
         combIso = combIso_E;
     }
-//     } else {
-//         //std::cout << "Candidate out of acceptance region" << std::endl;
-//         //return kOutOfAcc;
-//         return;
-//     }
 
-//     Debug(3) << "scEta " << TMath::Abs(scEta) << " combIso " << combIso << " isEb " << ev->getElIsEb(idx) << std::endl;
-
-	WorkingPoint wp = getWorkingPoint(p, eff );
+	VBTFWorkingPoint vbtfWp = getVBTFWorkingPoint(p, eff );
+	LHWorkingPoint lhWp = getLHWorkingPoint(p, eff );
 
     // conversion: the electron is a conversion
 	// if |dist| < distCut and |delta cot(theta)| < cotCut
 	// or
 	// missingHist > hitsCut
-	tags[kElTagDist] = (TMath::Abs(ev->getElConvPartnerTrkDist(idx)) < wp.dist);
-	tags[kElTagCot]  = (TMath::Abs(ev->getElConvPartnerTrkDCot(idx)) < wp.cot);
-	tags[kElTagHits] = (ev->getElNumberOfMissingInnerHits(idx) > wp.missHits);
+	tags[kElTagDist] = (TMath::Abs(ev->getElConvPartnerTrkDist(i)) > vbtfWp.dist);
+	tags[kElTagCot]  = (TMath::Abs(ev->getElConvPartnerTrkDCot(i)) > vbtfWp.cot);
+	tags[kElTagHits] = (ev->getElNumberOfMissingInnerHits(i) == vbtfWp.missHits);
 
-	tags[kElTagSee]     = ( See < wp.See);
-	tags[kElTagDphi]    = ( TMath::Abs(dPhi) < wp.dPhi);
-	tags[kElTagDeta]    = ( TMath::Abs(dEta) < wp.dEta);
-	tags[kElTagHoE]     = ( HoE  < wp.HoE);
-	tags[kElTagCombIso] = ( combIso < wp.combIso);
+	tags[kElTagSee]     = ( See < vbtfWp.See);
+	tags[kElTagDphi]    = ( TMath::Abs(dPhi) < vbtfWp.dPhi);
+	tags[kElTagDeta]    = ( TMath::Abs(dEta) < vbtfWp.dEta);
+	tags[kElTagHoE]     = ( HoE  < vbtfWp.HoE);
+	tags[kElTagCombIso] = ( combIso < vbtfWp.combIso);
+    
+    
+    double likelihood = theEl.el()->electronID("egammaIDLikelihood");
+    // likelihood id
+    tags[kElTagLH_Likelihood] =   
+        ( theEl.el()->numberOfBrems() == 0 && likelihood > lhWp.lh0brem ) 
+        || ( theEl.el()->numberOfBrems() > 0 && likelihood > lhWp.lh1brem );
+	tags[kElTagLH_CombIso] = ( combIso < lhWp.combIso);
 
-    _electronHistograms[kElSee]->Fill( See, _eventWeight );
-    _electronHistograms[kElDeta]->Fill( dEta, _eventWeight );
-    _electronHistograms[kElDphi]->Fill( dPhi, _eventWeight );
-    _electronHistograms[kElCombIso]->Fill( combIso, _eventWeight );
+	tags[kElTagLH_Dist] = (TMath::Abs(ev->getElConvPartnerTrkDist(i)) > lhWp.dist);
+	tags[kElTagLH_Cot]  = (TMath::Abs(ev->getElConvPartnerTrkDCot(i)) > lhWp.cot);
+	tags[kElTagLH_Hits] = (ev->getElNumberOfMissingInnerHits(i) == lhWp.missHits);
+
+    _electronHistograms[kElTagSee]->Fill( See, _eventWeight );
+    _electronHistograms[kElTagDeta]->Fill( dEta, _eventWeight );
+    _electronHistograms[kElTagDphi]->Fill( dPhi, _eventWeight );
+    _electronHistograms[kElTagCombIso]->Fill( combIso, _eventWeight );
+    _electronHistograms[kElTagDist]->Fill( ev->getElConvPartnerTrkDist(i), _eventWeight );
+    _electronHistograms[kElTagCot]->Fill( ev->getElConvPartnerTrkDCot(i), _eventWeight );
+    _electronHistograms[kElTagHits]->Fill( ev->getElNumberOfMissingInnerHits(i), _eventWeight );
+    _electronHistograms[kElTagLH_Likelihood]->Fill( likelihood, _eventWeight );
+
 	return;
 
 }
@@ -624,39 +777,37 @@ void DileptonSelector::tagElectrons() {
 	for( int i(0);i < ev->getNEles(); ++i) {
 
 		ElCandicate theEl(i);
-		theEl.charge = ev->getElCharge(i);
-		theEl.pt     = ev->getElPt(i);
+        theEl.candidate = &(ev->getElectrons()[i]);
 
-        _electronHistograms[kElEta]->Fill( ev->getElEta(i), _eventWeight );
-        _electronHistograms[kElPt]->Fill( ev->getElPt(i), _eventWeight );
-        _electronHistograms[kElD0]->Fill( ev->getElD0PV(i), _eventWeight );
-        _electronHistograms[kElDz]->Fill( ev->getElDzPV(i), _eventWeight );
+        double ip3D = theEl.el()->userFloat("ip2");
+
+        _electronHistograms[kElTagEta]->Fill( ev->getElEta(i), _eventWeight );
+        _electronHistograms[kElTagLeadingPt]->Fill( ev->getElPt(i), _eventWeight );
+        _electronHistograms[kElTagIp3D]->Fill( TMath::Abs(ip3D), _eventWeight );
 
 		// first tag the tight word
 		theEl.tightTags[kElTagEta] = (TMath::Abs( ev->getElEta(i) ) < _etaMaxEE);
 
 		// interaction point
-		theEl.tightTags[kElTagD0PV] = ( TMath::Abs(ev->getElD0PV(i)) < _lepCut_D0PV);
-		theEl.tightTags[kElTagDzPV] = ( TMath::Abs(ev->getElDzPV(i)) < _lepCut_DzPV);
+        theEl.tightTags[kElTagIp3D] = ( TMath::Abs(ip3D) < _elCut_ip3D);
 
 		// drop electrons with pT < _leptonPtCut
 		theEl.tightTags[kElTagLeadingPt] = ( ev->getElPt(i) > _lepCut_leadingPt );
 		theEl.tightTags[kElTagTrailingPt] = ( ev->getElPt(i) > _lepCut_trailingPt );
 
-		electronIsoId(theEl.tightTags, theEl.idx, _elCut_TightWorkingPoint );
+		electronIsoId(theEl, theEl.tightTags, _elCut_TightWorkingPoint );
 
 		// it's duplicate, I know
 		theEl.looseTags[kElTagEta] = (TMath::Abs( ev->getElEta(i) ) < _etaMaxEE);
 
 		// interaction point
-		theEl.looseTags[kElTagD0PV] = ( TMath::Abs(ev->getElD0PV(i)) < _lepCut_D0PV);
-		theEl.looseTags[kElTagDzPV] = ( TMath::Abs(ev->getElDzPV(i)) < _lepCut_DzPV);
+        theEl.looseTags[kElTagIp3D] = ( TMath::Abs(ip3D) < _elCut_ip3D);
 
 		// drop electrons with pT < _leptonPtCut
 		theEl.looseTags[kElTagLeadingPt] = ( ev->getElPt(i) > _lepCut_leadingPt );
 		theEl.looseTags[kElTagTrailingPt] = ( ev->getElPt(i) > _lepCut_trailingPt );
 
-		electronIsoId(theEl.looseTags, theEl.idx, _elCut_LooseWorkingPoint );
+		electronIsoId(theEl, theEl.looseTags, _elCut_LooseWorkingPoint );
 
 		_elTagged.push_back(theEl);
 
@@ -670,8 +821,10 @@ void DileptonSelector::tagElectrons() {
 			float combIso_B = (trkIso + TMath::Max(0., ecalIso - 1.) + hcalIso) / ev->getElPt(i);
 			float combIso_E = (trkIso + ecalIso + hcalIso) / ev->getElPt(i);
 			THROW_RUNTIME("something fishy cIso: eta:" << ev->getElEta(i) << " b:" << combIso_B << " e:" << combIso_E
-                    << " tightW: " << theEl.tightTags.to_string() << " - looseW: " <<  theEl.looseTags.to_string() );
+                    << "\n - tightW: " << theEl.tightTags.to_string() << "\n - looseW: " <<  theEl.looseTags.to_string() );
 		}
+
+        // fill some histograms
 
 	}
 }
@@ -693,8 +846,12 @@ void DileptonSelector::tagMuons() {
 		// and pT < 10 GeV
 
 		MuCandidate theMu(i);
-		theMu.charge = ev->getMuCharge(i);
-		theMu.pt     = ev->getMuPt(i);
+//         theMu.charge = ev->getMuCharge(i);
+//         theMu.pt     = ev->getMuPt(i);
+		theMu.candidate = &(ev->getMuons()[i]);
+
+        double ip2D = theMu.mu()->userFloat("tip2");
+        double dzPV = theMu.mu()->userFloat("dzPV");
 
 		LepCandidate::muBitSet& tags = theMu.tags;
 
@@ -708,8 +865,10 @@ void DileptonSelector::tagMuons() {
 		tags[kMuTagTrailingPt] = ( ev->getMuPt(i) > _lepCut_trailingPt );
 
 		// interaction point
-		tags[kMuTagD0PV] = ( TMath::Abs(ev->getMuD0PV(i)) < _lepCut_D0PV);
-		tags[kMuTagDzPV] = ( TMath::Abs(ev->getMuDzPV(i)) < _lepCut_DzPV);
+//         tags[kMuTagD0PV] = ( TMath::Abs(ev->getMuD0PV(i)) < _lepCut_D0PV);
+//         tags[kMuTagDzPV] = ( TMath::Abs(ev->getMuDzPV(i)) < _lepCut_DzPV);
+        tags[kMuTagIp2D] = ( TMath::Abs(ip2D) < _muCut_ip2D);
+        tags[kMuTagDzPV] = ( TMath::Abs(dzPV) < _muCut_dZPrimaryVertex);
 
 		// isolation, where does it come from?
         float rho       = ev->getMuRho(i);
@@ -721,15 +880,25 @@ void DileptonSelector::tagMuons() {
 		// number of valid muon-detector hits used in the global fit > 0
 		// Number of hits in the tracker track, Nhits, > 10.
 
-		tags[kMuTagIsGlobal] = ( ev->getMuIsGlobalMuon(i)==1 );
-		tags[kMuTagIsTracker]= ( ev->getMuIsTrackerMuon(i)==1 );
-		tags[kMuTagNMuHits]  = ( ev->getMuNMuHits(i) > _muCut_NMuHist);
-		tags[kMuTagNMatches] = ( ev->getMuNMatches(i) > _muCut_NMuMatches);
-		tags[kMuTagNTkHits]  = ( ev->getMuNTkHits(i) > _muCut_NTrackerHits);
-		tags[kMuTagNPxHits]  = ( ev->getMuNPxHits(i) > _muCut_NPixelHits);
-		tags[kMuTagNChi2]    = ( ev->getMuNChi2(i) < _muCut_NChi2);
-		tags[kMuTagRelPtRes] = ( TMath::Abs(ev->getMuPtE(i)/ev->getMuPt(i)) < _muCut_relPtRes);
-		tags[kMuTagCombIso]  = ( combIso < _muCut_combIsoOverPt );
+//         tags[kMuTagIsGlobal] = ( theMu.mu()->isGlobal() );
+//         tags[kMuTagNChi2]    = ( theMu.mu()->globalTrack()->normalizedChi2() < _muCut_NChi2);
+//         tags[kMuTagNMuHits]  = ( theMu.mu()->hitPattern()->nymberOfValidMuonHits() > _muCut_NMuHist);
+//         tags[kMuTagNMatches] = ( theMu.mu()->numberOfMatches() > _muCut_NMuMatches);
+//         tags[kMuTagIsTracker]= ( theMu.mu()->isTracker() );
+//         tags[kMuTagNTkHits]  = ( theMu.mu()->innerTrack()->found() > _muCut_NTrackerHits);
+//         tags[kMuTagNPxHits]  = ( theMu.mu()->innerTrack()->hitPattern().numberOfValidPixelHits() > _muCut_NPixelHits);
+//         tags[kMuTagRelPtRes] = ( TMath::Abs(theMu.mu()->innerTrack()->ptError()/theMu.mu()->pt()) < _muCut_relPtRes);
+//         tags[kMuTagCombIso]  = ( combIso < _muCut_combIsoOverPt );
+
+        tags[kMuTagIsGlobal] = ( ev->getMuIsGlobalMuon(i)==1 );
+        tags[kMuTagIsTracker]= ( ev->getMuIsTrackerMuon(i)==1 );
+        tags[kMuTagNMuHits]  = ( ev->getMuNMuHits(i) > _muCut_NMuHist);
+        tags[kMuTagNMatches] = ( ev->getMuNMatches(i) > _muCut_NMuMatches);
+        tags[kMuTagNTkHits]  = ( ev->getMuNTkHits(i) > _muCut_NTrackerHits);
+        tags[kMuTagNPxHits]  = ( ev->getMuNPxHits(i) > _muCut_NPixelHits);
+        tags[kMuTagNChi2]    = ( ev->getMuNChi2(i) < _muCut_NChi2);
+        tags[kMuTagRelPtRes] = ( TMath::Abs(ev->getMuPtE(i)/ev->getMuPt(i)) < _muCut_relPtRes);
+        tags[kMuTagCombIso]  = ( combIso < _muCut_combIsoOverPt );
 
 
 		// additional soft muon tags
@@ -762,12 +931,35 @@ void DileptonSelector::findSoftMus() {
 	Debug(3) << "- selected mus '" ;
 	std::copy( _selectedMus.begin(), _selectedMus.end(), output );
 	Debug(3) << "'" << std::endl;
-	// remove those who are muons
+	// remove those which are muons
 	std::set_difference(softs.begin(), softs.end(),_selectedMus.begin(),_selectedMus.end(), std::inserter(_softMus,_softMus.end()));
 	Debug(3) << "- softs clean  '" ;
 	std::copy( _softMus.begin(), _softMus.end(), output );
 	Debug(3) << "'" << std::endl;
 }
+
+//______________________________________________________________________________
+bool DileptonSelector::jetLooseId( const pat::Jet& jet ) {
+
+    int multiplicity = jet.neutralMultiplicity () + jet.chargedMultiplicity ();
+
+    bool looseId = false;
+
+    looseId =
+        jet.neutralEmEnergyFraction() < _jetCut_neutralEmFrac 
+        && jet.neutralHadronEnergyFraction() < _jetCut_neutralHadFrac
+        && multiplicity > _jetCut_multiplicity;
+
+    if ( TMath::Abs(jet.eta()) < _etaMaxTrk ) {
+        looseId &= 
+            jet.chargedHadronEnergyFraction() > _jetCut_chargedHadFrac 
+            && jet.chargedMultiplicity() > _jetCut_chargedMulti
+            && jet.chargedEmEnergyFraction() < _jetCut_chargedEmFrac;
+    }
+
+    return looseId;
+}
+
 
 //_____________________________________________________________________________
 void DileptonSelector::fillCtrlHistograms() {
@@ -781,17 +973,20 @@ void DileptonSelector::fillCtrlHistograms() {
 		if ( !itEl->tightTags[kElTagLeadingPt] ) continue;
 		_elTightCtrl->Fill(kLepTagPt, _eventWeight);
 
-		if ( !itEl->tightTags[kElTagD0PV] ) continue;
-		_elTightCtrl->Fill(kLepTagD0, _eventWeight);
-
-		if ( !itEl->tightTags[kElTagDzPV] ) continue;
-		_elTightCtrl->Fill(kLepTagDz, _eventWeight);
-
 		if ( !itEl->isIso() ) continue;
 		_elTightCtrl->Fill(kLepTagIsolation, _eventWeight);
 
 		if ( !itEl->isId() ) continue;
 		_elTightCtrl->Fill(kLepTagId, _eventWeight);
+
+        if ( !itEl->tightTags[kElTagIp3D] ) continue;
+        _elTightCtrl->Fill(kLepTagIp, _eventWeight);
+
+//         if ( !itEl->tightTags[kElTagD0PV] ) continue;
+//         _elTightCtrl->Fill(kLepTagIp2D, _eventWeight);
+
+//         if ( !itEl->tightTags[kElTagDzPV] ) continue;
+//         _elTightCtrl->Fill(kLepTagDz, _eventWeight);
 
 		if ( !itEl->isNoConv() ) continue;
 		_elTightCtrl->Fill(kLepTagNoConv, _eventWeight);
@@ -807,17 +1002,19 @@ void DileptonSelector::fillCtrlHistograms() {
 		if ( !itEl->looseTags[kElTagLeadingPt] ) continue;
 		_elLooseCtrl->Fill(kLepTagPt, _eventWeight);
 
-		if ( !itEl->looseTags[kElTagD0PV] ) continue;
-		_elLooseCtrl->Fill(kLepTagD0, _eventWeight);
-
-		if ( !itEl->looseTags[kElTagDzPV] ) continue;
-		_elLooseCtrl->Fill(kLepTagDz, _eventWeight);
-
 		if ( !itEl->isLooseIso() ) continue;
 		_elLooseCtrl->Fill(kLepTagIsolation, _eventWeight);
 
 		if ( !itEl->isLooseId() ) continue;
 		_elLooseCtrl->Fill(kLepTagId, _eventWeight);
+
+        if ( !itEl->looseTags[kElTagIp3D] ) continue;
+        _elLooseCtrl->Fill(kLepTagIp, _eventWeight);
+//         if ( !itEl->looseTags[kElTagD0PV] ) continue;
+//         _elLooseCtrl->Fill(kLepTagIp2D, _eventWeight);
+
+//         if ( !itEl->looseTags[kElTagDzPV] ) continue;
+//         _elLooseCtrl->Fill(kLepTagDz, _eventWeight);
 
 		if ( !itEl->isLooseNoConv() ) continue;
 		_elLooseCtrl->Fill(kLepTagNoConv, _eventWeight);
@@ -833,17 +1030,14 @@ void DileptonSelector::fillCtrlHistograms() {
 		if ( !itMu->tags[kMuTagLeadingPt]  ) continue;
 		_muGoodCtrl->Fill(kLepTagPt, _eventWeight);
 
-		if ( !itMu->tags[kMuTagD0PV]  ) continue;
-		_muGoodCtrl->Fill(kLepTagD0, _eventWeight);
-
-		if ( !itMu->tags[kMuTagDzPV]  ) continue;
-		_muGoodCtrl->Fill(kLepTagDz, _eventWeight);
-
 		if ( !itMu->isIso() ) continue;
 		_muGoodCtrl->Fill(kLepTagIsolation, _eventWeight);
 
 		if ( !itMu->isId()  ) continue;
 		_muGoodCtrl->Fill(kLepTagId, _eventWeight);
+
+		if ( !itMu->tags[kMuTagIp2D] ||  !itMu->tags[kMuTagDzPV] ) continue;
+		_muGoodCtrl->Fill(kLepTagIp, _eventWeight);
 
 		if ( !itMu->isNoConv() ) continue;
 		_muGoodCtrl->Fill(kLepTagNoConv, _eventWeight);
@@ -858,17 +1052,14 @@ void DileptonSelector::fillCtrlHistograms() {
 		if ( !itMu->tags[kMuTagTrailingPt]  ) continue;
 		_muExtraCtrl->Fill(kLepTagPt, _eventWeight);
 
-		if ( !itMu->tags[kMuTagD0PV]  ) continue;
-		_muExtraCtrl->Fill(kLepTagD0, _eventWeight);
-
-		if ( !itMu->tags[kMuTagDzPV]  ) continue;
-		_muExtraCtrl->Fill(kLepTagDz, _eventWeight);
-
 		if ( !itMu->isIso() ) continue;
 		_muExtraCtrl->Fill(kLepTagIsolation, _eventWeight);
 
 		if ( !itMu->isId()  ) continue;
 		_muExtraCtrl->Fill(kLepTagId, _eventWeight);
+
+		if ( !itMu->tags[kMuTagIp2D] || !itMu->tags[kMuTagDzPV]   ) continue;
+		_muExtraCtrl->Fill(kLepTagIp, _eventWeight);
 
 		if ( !itMu->isNoConv() ) continue;
 		_muExtraCtrl->Fill(kLepTagNoConv, _eventWeight);
@@ -965,7 +1156,7 @@ void DileptonSelector::countPairs() {
 		if ( !iP->isNoConv() ) continue;
 		(*counts)[kLLBinNoConv]++;
 
-		if ( !iP->isVertex() ) continue;
+		if ( !iP->isIp() ) continue;
 		(*counts)[kLLBinIp]++;
 
 		// mark the leptons to be saved
@@ -1023,10 +1214,10 @@ void DileptonSelector::fillCounts( TH1F* h, const std::vector<unsigned int>& cou
 
 	if ( counts[kLLBinDilepton] != 0 ) h->Fill(kLLBinDilepton, _eventWeight);
 	if ( counts[kLLBinEtaPt] != 0 )    h->Fill(kLLBinEtaPt, _eventWeight);
-	if ( counts[kLLBinIp] != 0 )	   h->Fill(kLLBinIp, _eventWeight);
 	if ( counts[kLLBinIso] != 0 )      h->Fill(kLLBinIso, _eventWeight);
 	if ( counts[kLLBinId] != 0 )       h->Fill(kLLBinId, _eventWeight);
 	if ( counts[kLLBinNoConv] != 0 )   h->Fill(kLLBinNoConv, _eventWeight);
+	if ( counts[kLLBinIp] != 0 )	   h->Fill(kLLBinIp, _eventWeight);
 
 }
 
@@ -1140,6 +1331,8 @@ void DileptonSelector::assembleEvent() {
 	_diLepEvent->TCMETphi     = ev->getTCMETphi();
 	_diLepEvent->PFMET        = ev->getPFMET();
 	_diLepEvent->PFMETphi     = ev->getPFMETphi();
+	_diLepEvent->ChargedMET    = ev->getChargedMET();
+	_diLepEvent->ChargedMETphi = ev->getChargedMETphi();
 
 	_diLepEvent->HasSoftMus   = _softMus.size() > 0;
 	_diLepEvent->HasBTaggedJets = _btaggedJets.size() > 0;
@@ -1250,17 +1443,26 @@ void DileptonSelector::cleanJets() {
 
 		if ( match ) continue;
         
-		// jet ptcut
-		if ( ev->getPFJPt(i) > _jetCut_Pt  && ev->getPFJEta(i) < _jetCut_Eta ) {
-			_selectedPFJets.insert(i);
+        
+        const pat::Jet& jet = ev->getPFJets()[i];
+
+        double btagProb = jet.bDiscriminator("trackCountingHighEffBJetTags");
+//         _selectedPFJets.insert(i);
+        
+        // the jets must be identified
+        if ( !jetLooseId( jet ) ) continue;
+
+        // jet ptcut
+        if ( jet.pt() > _jetCut_Pt  && TMath::Abs(jet.eta()) < _jetCut_Eta ) {
+            _selectedPFJets.insert(i);
             continue;
         }
         
-        _jetBTagProbTkCntHighEff->Fill(ev->getPFJbTagProbTkCntHighEff(i), _eventWeight);
+        _jetBTagProbTkCntHighEff->Fill( btagProb, _eventWeight);
 
-		// or check for btagged jets
-		if ( ev->getPFJbTagProbTkCntHighEff(i) > _jetCut_BtagProb )
-			_btaggedJets.insert(i);
+        // or check for btagged jets
+        if ( btagProb > _jetCut_BtagProb )
+            _btaggedJets.insert(i);
 
 	}
 

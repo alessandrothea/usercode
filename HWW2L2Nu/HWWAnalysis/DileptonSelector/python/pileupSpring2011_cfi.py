@@ -1,7 +1,16 @@
 import FWCore.ParameterSet.Config as cms
 
+# ______      _    _      _       _     _       
+# | ___ \    | |  | |    (_)     | |   | |      
+# | |_/ /   _| |  | | ___ _  __ _| |__ | |_ ___ 
+# |  __/ | | | |/\| |/ _ \ |/ _` | '_ \| __/ __|
+# | |  | |_| \  /\  /  __/ | (_| | | | | |_\__ \
+# \_|   \__,_|\/  \/ \___|_|\__, |_| |_|\__|___/
+#                            __/ |              
+#                           |___/             
+
 # spring 2011 montecarlo
-weightsSpring2011 = [
+norm_Spring2011 = [
         0.069286816,  
         0.069286816,
         0.069286816,
@@ -29,7 +38,7 @@ weightsSpring2011 = [
         1.25406E-05,
         ]
 # calculated using Cert_160404-162917_7TeV_PromptReco_Collisions11_JSON.txt
-weights160404_162917 = [
+norm_160404_162917 = [
         0.0034946613158383091,
         0.0035779730990497345,
         0.0084115883059061175,
@@ -57,20 +66,51 @@ weights160404_162917 = [
         0.0,
         ]
 
+# calculated using pu_Cert_160404-163369_7TeV_PromptReco_Collisions11_JSON.txt
+norm_160404_163369 = [
+    0.0234797085185,
+    0.0327800386411,
+    0.0722990332539,
+    0.114909830995,
+    0.143772989445,
+    0.150186134348,
+    0.136069379843,
+    0.109868674492,
+    0.0807008094314,
+    0.0547879793321,
+    0.0348135856955,
+    0.0209119190436,
+    0.0119681714132,
+    0.00656599404119,
+    0.00346896693568,
+    0.00177075445001,
+    0.000875425279841,
+    0.000419793321986,
+    0.000195462447966,
+    8.84200065543e-05,
+    3.88713000353e-05,
+    1.66116291327e-05,
+    6.90151895293e-06,
+    2.78816029949e-06,
+    1.0954845922e-06,
+]
 
 # set a default for 2011
-weightsData = weights160404_162917
-weightsMC   = weightsSpring2011
+norm_Data = norm_160404_163369
+norm_MC   = norm_Spring2011
 
-if len(weightsData) != len(weightsMC):
+# if needed for mc studies
+puFlatWeights = [1]*25
+
+if len(norm_Data) != len(norm_MC):
     raise ValueError('Weights: Data and MC have different lengths')
 
-size = len(weightsData)
+size = len(norm_Data)
 
-puFactors = [0]*size
+puWeights = [0]*size
 for i in range(size):
-    puFactors[i] = weightsData[i]/weightsMC[i]
+    puWeights[i] = norm_Data[i]/norm_MC[i]
 
-puFactors = [1]*25
-# print puFactors
+# puWeights = [1]*25
+print ' - Loaded Pilup Weights\n',' '.join([ str(w) for w in puWeights])
 

@@ -30,15 +30,16 @@ public:
 	double dZB;
 
 	double mll;
+
 	double pfMet;
-	double muMet;
 	double tcMet;
+	double chargedMet;
 	double pfMetDphi;
-	double muMetDphi;
 	double tcMetDphi;
+	double chargedMetDphi;
 	double projPfMet;
-	double projMuMet;
 	double projTcMet;
+	double projChargedMet;
 	double dPhi;
 	int    nPfJets;
 	int    nJets;

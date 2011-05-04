@@ -9,9 +9,12 @@
 #define HWWANALYZER_H_
 
 #include "HWWAnalysis/CutBasedAnalyzer/interface/UserAnalyzer.h"
+#include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
 #include <bitset>
+#include <set>
 
 class HWWEvent;
+class HWWPFJet;
 class HWWNtuple;
 class TTree;
 class TH1F;
@@ -44,6 +47,7 @@ protected:
 		void print();
 	};
 
+    // enumerators
 	enum Lep_t {
 		kEl_t,
 		kMu_t
@@ -56,6 +60,7 @@ protected:
 		kMuMu_t = kMu_t*11
 	};
 
+    // yeild histogram enum
 	enum HCuts_t {
 		kDileptons = 1,
 		kMinMet,
@@ -72,26 +77,32 @@ protected:
 		kNumCuts
 	};
 
+    // constants
 	const static unsigned short _wordLen = 32;
+	static const double _Z0Mass;
 
 	typedef std::bitset<_wordLen> higgsBitWord;
 
-	static const double _Z0Mass;
 
 	higgsBitWord _theMask;
 	std::vector< higgsBitWord > _nthMask;
 
-	void bookCutHistograms(std::vector<TH1F*>&, const std::string& nPrefix, const std::string& lPrefix);
-
+    // interface with cfg files
 	void readHiggsCutSet( const std::string& path );
 	HiggsCutSet getHiggsCutSet(int mass);
-//	HiggsCutSet getHiggsCutSet(int mass, int ll);
+
+    // histogram helper methods
+	void bookCutHistograms(std::vector<TH1F*>&, const std::string& nPrefix, const std::string& lPrefix);
 	TH2F* makeNjetsNvrtx( const std::string& name, const std::string& prefix = "");
 	TH1F* makeLabelHistogram( const std::string& name, const std::string& title, std::map<int,std::string> labels);
 	TH1F* glueCounters(TH1F* h);
 
-	std::string _analysisTreeName;
+    double getWeight() { return _event->Weight; }
 
+    // helper methods for the analysis
+//     int sortJets();
+
+    // cuts
 	int   _higgsMass;
 
 	float _maxD0;
@@ -103,11 +114,19 @@ protected:
 	float _minProjMetEM;
 	float _minProjMetLL;
 
+//     int   _jetVeto_n; 
+//     float _jetVeto_pt;       
+//     float _jetVeto_eta;
+//     float _topVeto_bTagProb;
+    // end cuts
+
 	std::vector<std::string> _histLabels;
 	std::map<std::string,TH1F*> _hists;
 
 	HiggsCutSet _theCuts;
 
+
+    // histograms
 	TH1F* _hEntries;
 
 	TH1F* _eeCounters;
@@ -123,8 +142,10 @@ protected:
 	TH1F* _jetEta;
 	TH1F* _diLep_PfMet;
 	TH1F* _diLep_TcMet;
+	TH1F* _diLep_ChargedMet;
 	TH1F* _diLep_projPfMet;
 	TH1F* _diLep_projTcMet;
+	TH1F* _diLep_projChargedMet;
 	TH1F* _diLep_ptLeadLep;
 	TH1F* _diLep_ptTrailLep;
 	TH1F* _diLep_mll;
@@ -151,11 +172,17 @@ protected:
 	std::vector<TH1F*> _mePostCutHist;//TODO
 	std::vector<TH1F*> _mmPreCutHist;
 	std::vector<TH1F*> _mmPostCutHist;
+    // end histograms
+
+
+//     std::set<HWWPFJet*> _selectedJets;
+//     std::set<HWWPFJet*> _btaggedJets;
 
 	std::string _cutFile;
 
 	std::vector<HiggsCutSet> _cutVector;
 
+	std::string _analysisTreeName;
 	TTree* _analysisTree;
 
 	HWWEvent* _event;

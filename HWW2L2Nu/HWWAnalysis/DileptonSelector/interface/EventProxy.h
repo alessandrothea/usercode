@@ -21,6 +21,7 @@
 
 #include "FWCore/Framework/interface/Event.h"
 #include <DataFormats/Common/interface/Handle.h>
+#include <DataFormats/Common/interface/ValueMap.h>
 #include <DataFormats/PatCandidates/interface/Electron.h>
 #include <DataFormats/PatCandidates/interface/Muon.h>
 #include <DataFormats/PatCandidates/interface/Jet.h>
@@ -45,6 +46,8 @@ class EventProxy {
         Double_t getTCMETphi();
         Double_t getPFMET();
         Double_t getPFMETphi();
+        Double_t getChargedMET();
+        Double_t getChargedMETphi();
 
         Double_t getNVrtx();
         Int_t    getPrimVtxIsFake();
@@ -57,6 +60,7 @@ class EventProxy {
 
         //  apply the correction for the endcaps
 
+        const std::vector<pat::Electron>& getElectrons() { return *_electrons; }
         Int_t    getNEles();
         Double_t getElDeltaEtaSuperClusterAtVtx( int i );
         Double_t getElDeltaPhiSuperClusterAtVtx( int i );
@@ -85,6 +89,7 @@ class EventProxy {
           Bool_t getElIsEb(int i);
           Bool_t getElIsEe(int i);
 
+        const std::vector<pat::Muon>& getMuons() { return *_muons; }
         Int_t    getNMus();
         Int_t    getMuCharge( int i );
         Double_t getMuD0PV( int i );
@@ -109,6 +114,7 @@ class EventProxy {
         Double_t getMuPz( int i );
         Double_t getMuRho( int i );
 
+        const std::vector<pat::Jet>& getPFJets() { return *_jets; }
         Double_t getPFNJets();
         Double_t getPFJChEmfrac( int i );
         Double_t getPFJChHadfrac( int i );
@@ -132,6 +138,7 @@ class EventProxy {
         edm::Handle<std::vector<pat::Jet> >      _jets;
         edm::Handle<std::vector<reco::MET> >     _tcMet;
         edm::Handle<std::vector<reco::PFMET> >   _pfMet;
+        edm::Handle<edm::ValueMap<reco::PFMET> >   _chargedMet;
 };
 
 #endif /* EVENTPROXY_H_ */

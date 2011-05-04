@@ -10,7 +10,7 @@
 
 //_____________________________________________________________________________
 LepPair::LepPair( LepCandidate* l1, LepCandidate* l2) {
-	if ( l1->pt >= l2->pt ) {
+	if ( l1->candidate->pt() >= l2->candidate->pt() ) {
 		_lA = l1;
 		_lB = l2;
 	} else {
@@ -30,6 +30,17 @@ LepCandidate* LepPair::operator [](unsigned int i){
 		THROW_RUNTIME("index out of bound i="<< i)
 	}
 }
+
+/*
+ ___  ___                      
+ |  \/  |                      
+ | .  . |_   _  ___  _ __  ___ 
+ | |\/| | | | |/ _ \| '_ \/ __|
+ | |  | | |_| | (_) | | | \__ \
+ \_|  |_/\__,_|\___/|_| |_|___/
+
+ */                               
+
 //_____________________________________________________________________________
 bool MuCandidate::isPtEtaLeading(){
 	return (tags[kMuTagLeadingPt] && tags[kMuTagEta]);
@@ -41,21 +52,31 @@ bool MuCandidate::isPtEtaTrailing(){
 }
 
 //_____________________________________________________________________________
-bool MuCandidate::isVertex() {
-	return (tags[kMuTagD0PV] && tags[kMuTagDzPV] );
+bool MuCandidate::isIp() {
+	return (tags[kMuTagIp2D] && tags[kMuTagDzPV] );
 }
 
 //_____________________________________________________________________________
 bool MuCandidate::isId() {
-	return ( tags[kMuTagIsGlobal] &&
-				tags[kMuTagIsTracker] &&
-				tags[kMuTagNMuHits] &&
-				tags[kMuTagNMatches] &&
-				tags[kMuTagNTkHits] &&
-				tags[kMuTagNPxHits] &&
-				tags[kMuTagNChi2] &&
-				tags[kMuTagRelPtRes]
-			);
+    return  ( ( tags[kMuTagIsGlobal] 
+                && tags[kMuTagNChi2]
+                && tags[kMuTagNMuHits]
+                && tags[kMuTagNMatches] )
+            || ( tags[kMuTagIsTracker]
+                && tags[kMuTagIsTMLastStationAngTight] )
+            && ( tags[kMuTagNTkHits]
+                && tags[kMuTagNPxHits]
+                && tags[kMuTagRelPtRes] )
+            );
+//     return ( tags[kMuTagIsGlobal] &&
+//                 tags[kMuTagIsTracker] &&
+//                 tags[kMuTagNMuHits] &&
+//                 tags[kMuTagNMatches] &&
+//                 tags[kMuTagNTkHits] &&
+//                 tags[kMuTagNPxHits] &&
+//                 tags[kMuTagNChi2] &&
+//                 tags[kMuTagRelPtRes]
+//             );
 }
 
 //_____________________________________________________________________________
@@ -66,7 +87,7 @@ bool MuCandidate::isIso() {
 //_____________________________________________________________________________
 bool MuCandidate::isExtra() {
 	return (tags[kMuTagEta] && tags[kMuTagTrailingPt])
-		&& this->isVertex()
+		&& this->isIp()
 		&& this->isId()
 		&& this->isIso();
 }
@@ -74,7 +95,7 @@ bool MuCandidate::isExtra() {
 //_____________________________________________________________________________
 bool MuCandidate::isGood() {
 	return this->isPtEtaLeading()
-		&& this->isVertex()
+		&& this->isIp()
 		&& this->isId()
 		&& this->isIso();
 }
@@ -86,11 +107,21 @@ bool MuCandidate::isSoft() {
 			tags[kMuTagIsTracker] &&
 			tags[kMuTagIsTMLastStationAngTight] &&
 			tags[kMuTagNTkHits] &&
-			tags[kMuTagD0PV] &&
+			tags[kMuTagIp2D] &&
 			( !tags[kMuTagSoftHighPt] || (tags[kMuTagSoftHighPt] && tags[kMuTagNotIso]) )
 		);
 
 }
+
+/*
+ _____ _           _                       
+|  ___| |         | |                      
+| |__ | | ___  ___| |_ _ __ ___  _ __  ___ 
+|  __|| |/ _ \/ __| __| '__/ _ \| '_ \/ __|
+| |___| |  __/ (__| |_| | | (_) | | | \__ \
+\____/|_|\___|\___|\__|_|  \___/|_| |_|___/
+
+*/
 
 //_____________________________________________________________________________
 bool ElCandicate::isPtEtaLeading() {
@@ -103,27 +134,101 @@ bool ElCandicate::isPtEtaTrailing() {
 }
 
 //_____________________________________________________________________________
-bool ElCandicate::isVertex() {
-	return (tightTags[kElTagD0PV] && tightTags[kElTagDzPV] );
+bool ElCandicate::isIp() {
+//     return (tightTags[kElTagD0PV] && tightTags[kElTagDzPV] );
+	return (tightTags[kElTagIp3D] );
+}
+
+//______________________________________________________________________________
+bool ElCandicate::isIso() {
+    return isIsoLH();
+}
+
+//______________________________________________________________________________
+bool ElCandicate::isId() {
+    return isIdLH();
+}
+
+//______________________________________________________________________________
+bool ElCandicate::isNoConv() {
+    return isNoConvLH();
 }
 
 //_____________________________________________________________________________
-bool ElCandicate::isIso() {
+bool ElCandicate::isGood() {
+	return this->isPtEtaLeading()
+		&& this->isIp()
+		&& this->isIso()
+		&& this->isId()
+		&& this->isNoConv();
+}
+
+//_____________________________________________________________________________
+bool ElCandicate::isExtra() {
+	return
+			// ptEta
+			(tightTags[kElTagTrailingPt] && tightTags[kElTagEta])
+			// vertex
+			&& tightTags[kElTagIp3D]
+			// iso
+			&& isIso()
+			// id
+            && isId()
+            // no conversion
+            && isNoConv();
+}
+// //_____________________________________________________________________________
+// bool ElCandicate::isExtra() {
+//     return
+//             // ptEta
+//             (looseTags[kElTagTrailingPt] && looseTags[kElTagEta])
+//             // vertex
+// //             && (looseTags[kElTagD0PV] && looseTags[kElTagDzPV] )
+//             && looseTags[kElTagIp3D]
+//             // iso
+//             && isLooseIso()
+//             // id
+//             && isLooseId()
+//             // no conversion
+//             && isLooseNoConv();
+// }
+
+// likelikood specific
+//______________________________________________________________________________
+bool ElCandicate::isIsoLH() {
+    return tightTags[kElTagLH_CombIso];
+}
+
+//______________________________________________________________________________
+bool ElCandicate::isIdLH() {
+    return tightTags[kElTagLH_Likelihood];
+}
+
+//_____________________________________________________________________________
+bool ElCandicate::isNoConvLH() {
+	// !conversion
+	return  ( tightTags[kElTagLH_Dist] || tightTags[kElTagLH_Cot] ) && tightTags[kElTagLH_Hits];
+}
+
+// vbtf specific
+//_____________________________________________________________________________
+bool ElCandicate::isIsoVBTF() {
 	return tightTags[kElTagCombIso];
 }
 
 //_____________________________________________________________________________
-bool ElCandicate::isId() {
+bool ElCandicate::isIdVBTF() {
 //FIXME     return tightTags[kElTagSee] && tightTags[kElTagDphi] && tightTags[kElTagDeta] && tightTags[kElTagHoE];
 	return tightTags[kElTagSee] && tightTags[kElTagDphi] && tightTags[kElTagDeta];
 }
 
 //_____________________________________________________________________________
-bool ElCandicate::isNoConv() {
+bool ElCandicate::isNoConvVBTF() {
 	// !conversion
 	return !( ( tightTags[kElTagDist] && tightTags[kElTagCot] ) || tightTags[kElTagHits]);
 }
 
+// loose id (discontinued?)
 //_____________________________________________________________________________
 bool ElCandicate::isLooseIso() {
 	return looseTags[kElTagCombIso];
@@ -138,29 +243,6 @@ bool ElCandicate::isLooseId() {
 //_____________________________________________________________________________
 bool ElCandicate::isLooseNoConv() {
 	// !conversion
-	return !( ( looseTags[kElTagDist] && looseTags[kElTagCot] ) || looseTags[kElTagHits]);
+	return  ( looseTags[kElTagDist] || looseTags[kElTagCot] ) && looseTags[kElTagHits];
 }
 
-//_____________________________________________________________________________
-bool ElCandicate::isGood() {
-	return this->isPtEtaLeading()
-		&& this->isVertex()
-		&& this->isIso()
-		&& this->isId()
-		&& this->isNoConv();
-}
-
-//_____________________________________________________________________________
-bool ElCandicate::isExtra() {
-	return
-			// ptEta
-			(looseTags[kElTagTrailingPt] && looseTags[kElTagEta])
-			// vertex
-			&& (looseTags[kElTagD0PV] && looseTags[kElTagDzPV] )
-			// iso
-			&& isLooseIso()
-			// id
-            && isLooseId()
-            // no conversion
-            && isLooseNoConv();
-}

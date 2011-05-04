@@ -35,6 +35,10 @@ void HWWEvent::Clear( Option_t* option ){
 
 	PFMET          = 0;
 	PFMETphi       = 0;
+	TCMET          = 0;
+	TCMETphi       = 0;
+	ChargedMET     = 0;
+	ChargedMETphi  = 0;
 
 	HasSoftMus     = kFALSE;
 	HasBTaggedJets = kFALSE;

@@ -25,6 +25,7 @@ EventProxy::EventProxy( const edm::Event& event , const edm::EventSetup& setup )
     _event.getByLabel("slimPatJetsTriggerMatch", _jets);
     _event.getByLabel("tcMet", _tcMet);
     _event.getByLabel("pfMet", _pfMet);
+    _event.getByLabel("chargedMetProducer", _chargedMet);
 
 
 }
@@ -40,6 +41,8 @@ Double_t EventProxy::getTCMET() { return (*_tcMet)[0].pt();}
 Double_t EventProxy::getTCMETphi() { return (*_tcMet)[0].phi();}
 Double_t EventProxy::getPFMET() { return (*_pfMet)[0].pt();}
 Double_t EventProxy::getPFMETphi() { return (*_pfMet)[0].phi();}
+Double_t EventProxy::getChargedMET() { return (*_chargedMet).get(0).pt();}
+Double_t EventProxy::getChargedMETphi() { return (*_chargedMet).get(0).phi();}
 
 Double_t EventProxy::getNVrtx() { return _vertexes->size();}
    Int_t EventProxy::getPrimVtxGood() { return 0; }

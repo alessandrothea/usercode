@@ -32,9 +32,14 @@ void HWWNtuple::Clear( Option_t* option ){
 
 	mll = 0;
 	pfMet = 0;
-	muMet = 0;
+	tcMet = 0;
+	chargedMet = 0;
+	pfMetDphi = 0;
+	tcMetDphi = 0;
+	chargedMetDphi = 0;
 	projPfMet = 0;
-	projMuMet = 0;
+	projTcMet = 0;
+	projChargedMet = 0;
 	dPhi = 0;
 	nPfJets = 0;
 	nJets = 0;

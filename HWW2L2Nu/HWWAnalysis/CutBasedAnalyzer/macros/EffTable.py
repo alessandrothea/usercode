@@ -14,11 +14,11 @@ if len(args) is not 2:
     print '   Usage: %prog <path>'
     sys.exit(0)
 
-ROOT.gSystem.Load('lib/libHWWNtuple.so')
+# ROOT.gSystem.Load('lib/libHWWNtuple.so')
 
 f = ROOT.TFile(args[1])
 
-fStates = ['ll','ee','me','em','mm']
+fStates = ['ll','mm','me','em','ee']
 
 prefix='fullSelection/'
 # prefix='diLepSel/'

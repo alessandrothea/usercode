@@ -5,7 +5,7 @@
 <use name="CommonTools/UtilAlgos"/>
 <use name="HWWAnalysis/DataFormats"/>
 <use name="root"/>
-<use   name="DataFormats/PatCandidates"/>
+<use name="DataFormats/PatCandidates"/>
 <flags CXXFLAGS="-g -ggdb"/>
 <flags EDM_PLUGIN="1"/>
 <export>

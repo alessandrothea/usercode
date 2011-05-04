@@ -91,6 +91,8 @@ public:
 	Double_t TCMETphi;
 	Double_t PFMET;
 	Double_t PFMETphi;
+    Double_t ChargedMET;
+    Double_t ChargedMETphi;
 
 	Bool_t   HasSoftMus;
 	Bool_t	 HasBTaggedJets;

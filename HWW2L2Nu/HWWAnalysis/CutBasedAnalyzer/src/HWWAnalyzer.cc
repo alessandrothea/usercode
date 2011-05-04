@@ -49,6 +49,12 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
 	_minProjMetEM     = _config.getValue<float>("HWWAnalyzer.minProjMetEM");
 	_minProjMetLL     = _config.getValue<float>("HWWAnalyzer.minProjMetLL");
 
+//     _jetVeto_n        = _config.getValue<int>("HWWAnalyzer.jetVeto.n");// = 0.
+//     _jetVeto_pt       = _config.getValue<float>("HWWAnalyzer.jetVeto.pt"); // = 25.
+//     _jetVeto_eta      = _config.getValue<float>("HWWAnalyzer.jetVeto.eta");// = 5.
+//     _topVeto_bTagProb = _config.getValue<float>("HWWAnalyzer.topVeto.bTagProb");// = 2.1
+
+
 	_histLabels = _config.getVector<std::string>("HWWAnalyzer.copyHistograms");
 
 	//std::copy(_histLabels.begin(), _histLabels.end(), output);
@@ -114,14 +120,16 @@ void HWWAnalyzer::Book() {
 	_jetEta    = new TH1F("jetEta",  "Jet Eta (pre-veto)",  100, -5, 5);
 
 	_output->mkdir("alldileptons")->cd();
-	_diLep_PfMet  	  = new TH1F("pfMet", "PfMET", 200, 0, 200);
-	_diLep_TcMet  	  = new TH1F("tcMet",  "TcMET", 200, 0, 200);
-	_diLep_projPfMet  = new TH1F("projPfMet", "Projected PfMET", 200, 0, 200);
-	_diLep_projTcMet  = new TH1F("projTcMet", "Projected TcMET", 200, 0, 200);
-	_diLep_ptLeadLep  = new TH1F("leadingPt",  "p^{lead}", 200, 0, 200);
-	_diLep_ptTrailLep = new TH1F("trailingPt",  "p^{trail}", 200, 0, 200);
-	_diLep_mll        = new TH1F("mll",     "m^{ll}",   300, 0,  300);
-	_diLep_deltaPhi   = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, TMath::Pi());
+	_diLep_PfMet  	      = new TH1F("pfMet", "PfMET", 200, 0, 200);
+	_diLep_TcMet  	      = new TH1F("tcMet",  "TcMET", 200, 0, 200);
+	_diLep_ChargedMet     = new TH1F("chargedMet",  "ChargedMET", 200, 0, 200);
+	_diLep_projPfMet      = new TH1F("projPfMet", "Projected PfMET", 200, 0, 200);
+	_diLep_projTcMet      = new TH1F("projTcMet", "Projected TcMET", 200, 0, 200);
+	_diLep_projChargedMet = new TH1F("projChargedMet", "Projected ChargedMET", 200, 0, 200);
+	_diLep_ptLeadLep      = new TH1F("leadingPt",  "p^{lead}", 200, 0, 200);
+	_diLep_ptTrailLep     = new TH1F("trailingPt",  "p^{trail}", 200, 0, 200);
+	_diLep_mll            = new TH1F("mll",     "m^{ll}",   300, 0,  300);
+	_diLep_deltaPhi       = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, TMath::Pi());
 
 
 	_output->mkdir("pileUp")->cd();
@@ -290,14 +298,30 @@ HWWAnalyzer::HiggsCutSet HWWAnalyzer::getHiggsCutSet(int mass) {
 
 }
 
+//______________________________________________________________________________
+// int HWWAnalyzer::sortJets() {
+//     
+
+//     std::vector<HWWPFJet>::iterator jt;
+//     for( jt = _event->PFJets.begin(); jt != _event->PFJets.end(); ++jt ) {
+//         if ( jt->P.Pt() > _jetVeto_pt && jt->P.Eta() < _jetVeto_eta ) {
+//             _selectedJets.insert(&(*jt));
+//         } else if ( jt->BTagProbTkCntHighEff > _topVeto_bTagProb ) {
+//             _btaggedJets.insert(&(*jt));
+//         } // nothing else
+//     }
+
+//     return _selectedJets.size();
+// }
+
 //_____________________________________________________________________________
 void HWWAnalyzer::calcNtuple(){
 
 	TLorentzVector pA, pB;
-	Int_t cA, cB;
-	double d0A, d0B;
-	double dZA, dZB;
-	double maxProjMet;
+	Int_t cA(0), cB(0);
+	double d0A(0), d0B(0);
+	double dZA(0), dZB(0);
+	double maxProjMet(0);
 	TH1F* counters;
 	unsigned short type = 0;
 
@@ -388,40 +412,45 @@ void HWWAnalyzer::calcNtuple(){
 
     // 4a pfMet
 	double pfMet = _event->PFMET;
-	// 4b - muMet
-//	double muMet = _event->MuCorrMET;
-	// 4c - tcMet
+	// 4b - tcMet
 	double tcMet = _event->TCMET;
+	// 4b - tcMet
+	double chargedMet = _event->ChargedMET;
 
 	// 5 - projected MeT
 	// 5a - projPfMet
-
-
 	TLorentzVector pfMetV;
 	pfMetV.SetPtEtaPhiE(_event->PFMET, 0, _event->PFMETphi,0);
 
 	double pfMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(pfMetV)), TMath::Abs(pB.DeltaPhi(pfMetV)));
 	double projPfMet = pfMetDphi < TMath::PiOver2() ? pfMet*TMath::Sin(pfMetDphi) : pfMet;
 
+	// 5b - projTcMet
 	TLorentzVector tcMetV;
 	tcMetV.SetPtEtaPhiE(_event->TCMET, 0, _event->TCMETphi,0);
 
 	double tcMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(tcMetV)), TMath::Abs(pB.DeltaPhi(tcMetV)));
 	double projTcMet = tcMetDphi < TMath::PiOver2() ? tcMet*TMath::Sin(tcMetDphi) : tcMet;
 
-    	// 6 - dPhiEE
+	// 5c - projChargedMet
+	TLorentzVector chargedMetV;
+	chargedMetV.SetPtEtaPhiE(_event->ChargedMET, 0, _event->ChargedMETphi,0);
+
+	double chargedMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(chargedMetV)), TMath::Abs(pB.DeltaPhi(chargedMetV)));
+	double projChargedMet = chargedMetDphi < TMath::PiOver2() ? chargedMet*TMath::Sin(chargedMetDphi) : chargedMet;
+
+    // 6 - dPhiEE
 	double dPhiLL = TMath::Abs(pA.DeltaPhi(pB));
 
 	// 7 - jet veto
-	// 7a - pf jets
-	int nPfJets = _event->PFNJets;
-	// 7b - calo jets
-//	int nJets   = _event->NJets;
+    int nPfJets = _event->PFNJets;
+//     int nPfJets = _selectedJets.size();
 
 	// 8 soft  muon
 	bool softMu = _event->HasSoftMus;
 
     bool bJets  = _event->HasBTaggedJets;
+//     bool bJets  = _btaggedJets.size() > 0;
 
 	_ntuple->type = type;
 
@@ -437,17 +466,20 @@ void HWWAnalyzer::calcNtuple(){
     _ntuple->dZA = dZA;
     _ntuple->dZB = dZB;
 
-	_ntuple->mll        = mll;
-	_ntuple->pfMet      = pfMet;
-	_ntuple->tcMet		= tcMet;
-	_ntuple->pfMetDphi  = pfMetDphi;
-	_ntuple->tcMetDphi	= tcMetDphi;
-	_ntuple->projPfMet  = projPfMet;
-	_ntuple->projTcMet  = projTcMet;
-	_ntuple->dPhi       = dPhiLL;
-	_ntuple->nPfJets	= nPfJets;
-	_ntuple->softMus    = softMu;
-	_ntuple->bJets      = bJets;
+	_ntuple->mll           = mll;
+	_ntuple->pfMet         = pfMet;
+	_ntuple->tcMet		   = tcMet;
+	_ntuple->chargedMet    = chargedMet;
+	_ntuple->pfMetDphi     = pfMetDphi;
+	_ntuple->tcMetDphi	   = tcMetDphi;
+	_ntuple->chargedMetDphi	= chargedMetDphi;
+	_ntuple->projPfMet     = projPfMet;
+	_ntuple->projTcMet     = projTcMet;
+	_ntuple->projChargedMet  = projChargedMet;
+	_ntuple->dPhi          = dPhiLL;
+	_ntuple->nPfJets	   = nPfJets;
+	_ntuple->softMus       = softMu;
+	_ntuple->bJets         = bJets;
 
 	_analysisTree->Fill();
 
@@ -458,10 +490,13 @@ void HWWAnalyzer::cutAndFill() {
 
 	higgsBitWord word;
 
-	double met = _ntuple->tcMet;
-	double projMet = _ntuple->projTcMet;
-//	double met = _ntuple->pfMet;
-//	double projMet = _ntuple->projPfMet;
+//     double met = _ntuple->tcMet;
+//     double projMet = _ntuple->projTcMet;
+//     double met = _ntuple->pfMet;
+//     double projMet = _ntuple->projPfMet;
+    
+    double met = _ntuple->pfMet;
+    double projMet = TMath::Abs(_ntuple->projPfMet, _ntuple->projChargedMet);
 
 	word[kMinMet]    = ( met > _minMet );
 
@@ -528,125 +563,130 @@ void HWWAnalyzer::cutAndFill() {
 	};
 
 	if ( (word & _nthMask[kMinMet]) == _nthMask[kMinMet] )
-		nm1->at(kMinMet)->Fill(_ntuple->pfMet);
+		nm1->at(kMinMet)->Fill(_ntuple->pfMet, getWeight() );
 
 	if ( (word & _nthMask[kMinMll]) == _nthMask[kMinMll] )
-		nm1->at(kMinMll)->Fill(_ntuple->mll);
+		nm1->at(kMinMll)->Fill(_ntuple->mll, getWeight() );
 
 	if ( (word & _nthMask[kZveto]) == _nthMask[kZveto] )
-		nm1->at(kZveto)->Fill(_ntuple->mll);
+		nm1->at(kZveto)->Fill(_ntuple->mll, getWeight() );
 
 	if ( (word & _nthMask[kProjMet]) == _nthMask[kProjMet] )
-		nm1->at(kProjMet)->Fill( projMet );
+		nm1->at(kProjMet)->Fill( projMet , getWeight() );
 
 	if ( (word & _nthMask[kJetVeto]) == _nthMask[kJetVeto] )
-		nm1->at(kJetVeto)->Fill(_ntuple->nPfJets);
+		nm1->at(kJetVeto)->Fill(_ntuple->nPfJets, getWeight() );
 
 	if ( (word & _nthMask[kSoftMuon]) == _nthMask[kSoftMuon] )
-		nm1->at(kSoftMuon)->Fill(_ntuple->softMus);
+		nm1->at(kSoftMuon)->Fill(_ntuple->softMus, getWeight() );
 
 	if ( (word & _nthMask[kTopVeto]) == _nthMask[kTopVeto] )
-		nm1->at(kTopVeto)->Fill(_ntuple->bJets);
+		nm1->at(kTopVeto)->Fill(_ntuple->bJets, getWeight() );
 
 	if ( (word & _nthMask[kHardPtMin]) == _nthMask[kHardPtMin] )
-		nm1->at(kHardPtMin)->Fill(_ntuple->pA.Pt());
+		nm1->at(kHardPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
 
 	if ( (word & _nthMask[kSoftPtMin]) == _nthMask[kSoftPtMin] )
-		nm1->at(kSoftPtMin)->Fill(_ntuple->pB.Pt());
+		nm1->at(kSoftPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
 
 	if ( (word & _nthMask[kMaxMll]) == _nthMask[kMaxMll] )
-		nm1->at(kMaxMll)->Fill(_ntuple->mll);
+		nm1->at(kMaxMll)->Fill(_ntuple->mll, getWeight() );
 
 	if ( (word & _nthMask[kDeltaPhi]) == _nthMask[kDeltaPhi] )
-		nm1->at(kDeltaPhi)->Fill(_ntuple->dPhi);
+		nm1->at(kDeltaPhi)->Fill(_ntuple->dPhi, getWeight() );
 
 
 
-	_nVrtx->Fill(_event->NVrtx);
-	_diLep_PfMet->Fill(_ntuple->pfMet);
-	_diLep_TcMet->Fill(_ntuple->tcMet);
-	_diLep_projPfMet->Fill(_ntuple->projPfMet);
-	_diLep_projTcMet->Fill(_ntuple->projTcMet);
-	_diLep_ptLeadLep->Fill(_ntuple->pA.Pt());
-	_diLep_ptTrailLep->Fill(_ntuple->pB.Pt());
-	_diLep_mll->Fill(_ntuple->mll);
-	_diLep_deltaPhi->Fill(_ntuple->dPhi);
+	_nVrtx->Fill(_event->NVrtx, getWeight() );
 
-	counters->Fill(kDileptons);
+	_diLep_PfMet->Fill(_ntuple->pfMet, getWeight() );
+	_diLep_TcMet->Fill(_ntuple->tcMet, getWeight() );
+	_diLep_ChargedMet->Fill(_ntuple->tcMet, getWeight() );
+
+	_diLep_projPfMet->Fill(_ntuple->projPfMet, getWeight() );
+	_diLep_projTcMet->Fill(_ntuple->projTcMet, getWeight() );
+	_diLep_projChargedMet->Fill(_ntuple->projTcMet, getWeight() );
+
+	_diLep_ptLeadLep->Fill(_ntuple->pA.Pt(), getWeight() );
+	_diLep_ptTrailLep->Fill(_ntuple->pB.Pt(), getWeight() );
+	_diLep_mll->Fill(_ntuple->mll, getWeight() );
+	_diLep_deltaPhi->Fill(_ntuple->dPhi, getWeight() );
+
+	counters->Fill(kDileptons, getWeight() );
 	// min missing Et
-	preCuts->at(kMinMet)->Fill(met);
+	preCuts->at(kMinMet)->Fill(met, getWeight() );
 	if ( !word[kMinMet] ) return;
-	counters->Fill(kMinMet);
-	postCuts->at(kMinMet)->Fill(met);
+	counters->Fill(kMinMet, getWeight() );
+	postCuts->at(kMinMet)->Fill(met, getWeight() );
 
 	// min invariant mass
-	preCuts->at(kMinMll)->Fill(_ntuple->mll);
+	preCuts->at(kMinMll)->Fill(_ntuple->mll, getWeight() );
 	if ( !word[kMinMll] ) return;
-	counters->Fill(kMinMll);
-	postCuts->at(kMinMll)->Fill(_ntuple->mll);
+	counters->Fill(kMinMll, getWeight() );
+	postCuts->at(kMinMll)->Fill(_ntuple->mll, getWeight() );
 
 	// Z veto (m_ll-m_Z < 15 GeV)
-	preCuts->at(kZveto)->Fill(_ntuple->mll);
+	preCuts->at(kZveto)->Fill(_ntuple->mll, getWeight() );
 	if ( !word[kZveto] ) return;
-	counters->Fill(kZveto);
-	postCuts->at(kZveto)->Fill(_ntuple->mll);
+	counters->Fill(kZveto, getWeight() );
+	postCuts->at(kZveto)->Fill(_ntuple->mll, getWeight() );
 
 	// proj Met (20 GeV for ee)
-	preCuts->at(kProjMet)->Fill(projMet);
+	preCuts->at(kProjMet)->Fill(projMet, getWeight() );
 	if ( !word[kProjMet] ) return;
-	counters->Fill(kProjMet);
-	postCuts->at(kProjMet)->Fill(projMet);
+	counters->Fill(kProjMet, getWeight() );
+	postCuts->at(kProjMet)->Fill(projMet, getWeight() );
 
 	// pause here for jet pt and eta
-	_jetN->Fill(_event->PFJets.size());
+	_jetN->Fill(_event->PFJets.size(), getWeight() );
 	for ( unsigned int i(0); i<_event->PFJets.size(); ++i) {
-		_jetPt->Fill(_event->PFJets[i].P.Pt());
-		_jetEta->Fill(_event->PFJets[i].P.Eta());
+		_jetPt->Fill(_event->PFJets[i].P.Pt(), getWeight() );
+		_jetEta->Fill(_event->PFJets[i].P.Eta(), getWeight() );
 	}
 
-	nJnV->Fill(_event->NVrtx, _event->PFJets.size());
+	nJnV->Fill(_event->NVrtx, _event->PFJets.size(), getWeight() );
 
 	// njets == 0
-	preCuts->at(kJetVeto)->Fill(_ntuple->nPfJets);
+	preCuts->at(kJetVeto)->Fill(_ntuple->nPfJets, getWeight() );
 	if ( !word[kJetVeto] ) return;
-	counters->Fill(kJetVeto);
-	postCuts->at(kJetVeto)->Fill(_ntuple->nPfJets);
+	counters->Fill(kJetVeto, getWeight() );
+	postCuts->at(kJetVeto)->Fill(_ntuple->nPfJets, getWeight() );
 
 	// soft muon
-	preCuts->at(kSoftMuon)->Fill(_ntuple->softMus);
+	preCuts->at(kSoftMuon)->Fill(_ntuple->softMus, getWeight() );
 	if ( !word[kSoftMuon] ) return;
-	counters->Fill(kSoftMuon);
-	postCuts->at(kSoftMuon)->Fill(_ntuple->softMus);
+	counters->Fill(kSoftMuon, getWeight() );
+	postCuts->at(kSoftMuon)->Fill(_ntuple->softMus, getWeight() );
 
 	// soft muon
-	preCuts->at(kTopVeto)->Fill(_ntuple->bJets);
+	preCuts->at(kTopVeto)->Fill(_ntuple->bJets, getWeight() );
 	if ( !word[kTopVeto] ) return;
-	counters->Fill(kTopVeto);
-	postCuts->at(kTopVeto)->Fill(_ntuple->bJets);
+	counters->Fill(kTopVeto, getWeight() );
+	postCuts->at(kTopVeto)->Fill(_ntuple->bJets, getWeight() );
 
 	// hard pt cut
-	preCuts->at(kHardPtMin)->Fill(_ntuple->pA.Pt());
+	preCuts->at(kHardPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
 	if ( !word[kHardPtMin] ) return;
-	counters->Fill(kHardPtMin);
-	postCuts->at(kHardPtMin)->Fill(_ntuple->pA.Pt());
+	counters->Fill(kHardPtMin, getWeight() );
+	postCuts->at(kHardPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
 
 	// soft pt cut
-	preCuts->at(kSoftPtMin)->Fill(_ntuple->pB.Pt());
+	preCuts->at(kSoftPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
 	if ( !word[kSoftPtMin] ) return;
-	counters->Fill(kSoftPtMin);
-	postCuts->at(kSoftPtMin)->Fill(_ntuple->pB.Pt());
+	counters->Fill(kSoftPtMin, getWeight() );
+	postCuts->at(kSoftPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
 
-	preCuts->at(kMaxMll)->Fill(_ntuple->mll);
+	preCuts->at(kMaxMll)->Fill(_ntuple->mll, getWeight() );
 	// Mll_max
 	if ( !word[kMaxMll] ) return;
-	counters->Fill(kMaxMll);
-	postCuts->at(kMaxMll)->Fill(_ntuple->mll);
+	counters->Fill(kMaxMll, getWeight() );
+	postCuts->at(kMaxMll)->Fill(_ntuple->mll, getWeight() );
 
 	// delta phi
-	preCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi);
+	preCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi, getWeight() );
 	if ( !word[kDeltaPhi] ) return;
-	counters->Fill(kDeltaPhi);
-	postCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi);
+	counters->Fill(kDeltaPhi, getWeight() );
+	postCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi, getWeight() );
 
 
 
@@ -658,6 +698,10 @@ void HWWAnalyzer::Process( Long64_t iEvent ) {
 	_chain->GetEntry(iEvent);
 
 	_ntuple->Clear();
+//     _btaggedJets.clear();
+//     _selectedJets.clear();
+
+//     sortJets();
 
 	if ( _event->NEles + _event->NMus != 2 )
 		THROW_RUNTIME("Wrong number of leptons in the event: NEles = " << _event->NEles << " NMus = " << _event->NMus  );
@@ -760,63 +804,72 @@ TH1F* HWWAnalyzer::makeLabelHistogram( const std::string& name, const std::strin
 
 }
 //_____________________________________________________________________________
-TH1F* HWWAnalyzer::glueCounters(TH1F* c) {
+TH1F* HWWAnalyzer::glueCounters(TH1F* counters) {
 
-	std::string name = c->GetName();
+	std::string name = counters->GetName();
 	std::map<std::string,TH1F*>::iterator it = _hists.find(name);
 	if ( it == _hists.end() ) return 0x0;
-	TH1F* cPreCounters = it->second;
+	TH1F* cntPreSel = it->second;
 
-	bool add = TDirectory::AddDirectoryStatus();
+
+    // make a copy
+	std::string clone_name = counters->GetName();
+    clone_name += "_copy";
+    bool add = TDirectory::AddDirectoryStatus();
 	TDirectory::AddDirectory(kFALSE);
-	TH1F* cClone = dynamic_cast<TH1F*>(c->Clone("cClone"));
+	TH1F* cntCopy = dynamic_cast<TH1F*>(counters->Clone( clone_name.c_str() ));
 	TDirectory::AddDirectory(add);
 
-	int nBins    = cClone->GetNbinsX();
-	int nBinsPre = cPreCounters->GetNbinsX();
+	int nBins    = cntCopy->GetNbinsX();
+	int nBinsPre = cntPreSel->GetNbinsX();
 
 	// check bin content
-	if ( cPreCounters->GetBinContent(nBinsPre) != cClone->GetBinContent(1) )
-		THROW_RUNTIME("Bin mismatch: Wrong histogram? " << cPreCounters->GetName() << '(' << nBins << ')' << cClone->GetName() << '(' << nBinsPre << ')' );
+    double preSelectedEntries = cntPreSel->GetBinContent(nBinsPre);
+    double processedEntries = cntCopy->GetBinContent(1);
+    // define mismtch ad the ratio bewtween the difference and the preselected entries
+    double mismatch =TMath::Abs( (preSelectedEntries- processedEntries)/preSelectedEntries );
 
-	cClone->Fill(1,cClone->GetBinContent(1)*-1);
+    std::cout << "mismatch = " << mismatch << std::endl;
+	if ( TMath::Abs(mismatch) > 1E-6 )
+        THROW_RUNTIME("Bin Content Mismatch: Wrong histogram?\n"
+                << cntPreSel->GetName() << " (" << nBinsPre << ") : " << cntPreSel->GetXaxis()->GetBinLabel(nBinsPre) << "=" << preSelectedEntries << "\n"
+                << cntCopy->GetName() << " (" << nBins << ") : " << cntCopy->GetXaxis()->GetBinLabel(1) << "="<< processedEntries);
+
+    // what is this?
+	cntCopy->Fill(1,cntCopy->GetBinContent(1)*-1);
 
 	// matching possible, build labels
 	THashList labels;
-	labels.AddAll(cPreCounters->GetXaxis()->GetLabels());
-	labels.AddAll(cClone->GetXaxis()->GetLabels());
+	labels.AddAll(cntPreSel->GetXaxis()->GetLabels());
+	labels.AddAll(cntCopy->GetXaxis()->GetLabels());
 	labels.RemoveAt(nBinsPre);
-
-//	TIter iter(&labels);
-//	while( TObjString* str = (TObjString*)iter.Next() )
-//		std::cout << str->GetName() << std::endl;
 
 	int nBinsNew = nBinsPre+nBins-1;
 
-	float xmin = cPreCounters->GetXaxis()->GetXmin();
+	float xmin = cntPreSel->GetXaxis()->GetXmin();
 	float xmax = xmin+nBinsNew;
-	TH1F* hNew = new TH1F(cPreCounters->GetName(),cPreCounters->GetTitle(),nBinsNew,xmin,xmax);
+	TH1F* hNew = new TH1F(cntPreSel->GetName(),cntPreSel->GetTitle(),nBinsNew,xmin,xmax);
 
 	TAxis* ax = hNew->GetXaxis();
 	for( int i(0); i<labels.GetEntries(); ++i)
 		ax->SetBinLabel(i+1,labels.At(i)->GetName());
 
 	THashList histograms;
-	histograms.Add(cPreCounters);
-	histograms.Add(cClone);
+	histograms.Add(cntPreSel);
+	histograms.Add(cntCopy);
 
 	hNew->Merge(&histograms);
 	if ( hNew->GetNbinsX() != nBinsNew )
 		THROW_RUNTIME("Merge screwed it up! "<< hNew->GetNbinsX() << "  " << nBinsNew );
 
-	for( int i(1);i<=cPreCounters->GetNbinsX(); ++i)
-		if( hNew->GetBinContent(i) != cPreCounters->GetBinContent(i))
-			THROW_RUNTIME("Failed HA check:" << i << ":"<< hNew->GetBinContent(i) << "  "<< cPreCounters->GetBinContent(i))
-	for( int i(2);i<=cClone->GetNbinsX(); ++i)
-		if( hNew->GetBinContent(i+cPreCounters->GetNbinsX()-1) != cClone->GetBinContent(i))
-			THROW_RUNTIME("Failed HB check:" << i << ":"<< hNew->GetBinContent(i+cPreCounters->GetNbinsX()-1) << "  "<< cClone->GetBinContent(i))
+	for( int i(1);i<=cntPreSel->GetNbinsX(); ++i)
+		if( hNew->GetBinContent(i) != cntPreSel->GetBinContent(i))
+			THROW_RUNTIME("Failed HA check:" << i << ":"<< hNew->GetBinContent(i) << "  "<< cntPreSel->GetBinContent(i))
+	for( int i(2);i<=cntCopy->GetNbinsX(); ++i)
+		if( hNew->GetBinContent(i+cntPreSel->GetNbinsX()-1) != cntCopy->GetBinContent(i))
+			THROW_RUNTIME("Failed HB check:" << i << ":"<< hNew->GetBinContent(i+cntPreSel->GetNbinsX()-1) << "  "<< cntCopy->GetBinContent(i))
 
-	delete cClone;
+	delete cntCopy;
 
 	//being a counter histogram, set the number of entries to the first bin:
 	hNew->SetEntries(hNew->GetBinContent(1));

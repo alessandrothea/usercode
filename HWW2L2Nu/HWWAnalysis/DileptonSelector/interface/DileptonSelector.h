@@ -13,10 +13,14 @@
 //
 // Original Author:  
 //         Created:  Thu Apr 14 12:29:55 CEST 2011
-// $Id: DileptonSelector.h,v 1.2 2011/04/28 09:23:11 thea Exp $
+// $Id: DileptonSelector.h,v 1.3 2011/04/29 11:57:00 thea Exp $
 //
 //
 // system include files
+
+#ifndef HWWAnalysisDileptonSelector_DileptonSelector_h
+#define HWWAnalysisDileptonSelector_DileptonSelector_h
+
 #include <memory>
 
 // user include files
@@ -35,6 +39,9 @@
 #include <TH1F.h>
 #include <bitset>
 #include <fstream>
+
+
+class HltObjMatcher;
 
 //
 // class declaration
@@ -58,22 +65,31 @@ class DileptonSelector : public edm::EDAnalyzer {
       virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
       virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
 
-    // container for the working point cuts
-      struct WorkingPoint {
+      // container for the working point cuts
+      struct VBTFWorkingPoint {
           char partition;
           int efficiency;
           float See;
           float dPhi;
           float dEta;
           float HoE;
-//           float tkIso;
-//           float ecalIso;
-//           float hcalIso;
           float combIso;
           int   missHits;
           float dist;
           float cot;
           void print();
+      };
+
+      struct LHWorkingPoint {
+          char  partition;
+          int   efficiency;
+          float lh0brem; 
+          float lh1brem; 
+          float combIso;
+          int   missHits;
+          float dist;
+          float cot;
+          void  print();
       };
 
 
@@ -84,8 +100,7 @@ class DileptonSelector : public edm::EDAnalyzer {
 
       enum LlBins {
           kLLBinAll,
-          kLLBinHLT,
-          kLLBinVertex,
+//           kLLBinVertex,
           kLLBinDilepton,
           kLLBinEtaPt,
           kLLBinId,
@@ -93,6 +108,8 @@ class DileptonSelector : public edm::EDAnalyzer {
           kLLBinNoConv,
           kLLBinIp,
           kLLBinExtraLep,
+          kLLBinHltBits,
+          kLLBinHltObject,
           kLLBinLast
       };
 
@@ -100,14 +117,16 @@ class DileptonSelector : public edm::EDAnalyzer {
     
       virtual EventProxy* getEvent() { return _eventProxy; }
 
-      WorkingPoint getWorkingPoint(unsigned short part, int eff);
-      virtual void loadWorkingPoints( const std::vector<edm::ParameterSet>& points );      
+      VBTFWorkingPoint getVBTFWorkingPoint(unsigned short part, int eff);
+      LHWorkingPoint getLHWorkingPoint(unsigned short part, int eff);
+      virtual void loadVBFTId( const std::vector<edm::ParameterSet>& points );      
+      virtual void loadLikelihoodId( const std::vector<edm::ParameterSet>& points );      
       void makeElectronHistograms( TFileDirectory* fd, std::vector<TH1F*>& histograms );
       TH1F* makeLabelHistogram( TFileDirectory* fd, const std::string& name, const std::string& title, std::map<int,std::string> labels);
       virtual void book();
-      virtual bool matchDataHLT();
-      virtual bool hasGoodVertex();
-      virtual void electronIsoId( LepCandidate::elBitSet& tags, int idx, int eff );
+      virtual bool matchHLT();
+//       virtual bool hasGoodVertex();
+      virtual void electronIsoId( ElCandicate&, LepCandidate::elBitSet& tags, int eff );
       virtual void tagElectrons();
       virtual void tagMuons();
       virtual void countPairs();
@@ -126,34 +145,38 @@ class DileptonSelector : public edm::EDAnalyzer {
       double _eventWeight;
 
       enum ElCuts { 
-          kElEta,
-          kElPt,
-          kElD0,
-          kElDz,
-          kElSee,
-          kElDeta,
-          kElDphi,
-          kElCombIso,
-          kElCutsSize
+          kElBinEta,
+          kElBinPt,
+          kElBinIp3D,
+          kElBinSee,
+          kElBinDeta,
+          kElBinDphi,
+          kElBinCombIso,
+          kElBinSize
       };
 
       TH1F* _puNInteractionsUnweighted;
       TH1F* _puNInteractions;
       TH1F* _puNVertexes;
-      void setWeight( const edm::Event& iEvent );
+      void calculateWeight( const edm::Event& iEvent );
+      bool jetLooseId( const pat::Jet& jet );
 
       std::vector<TH1F*> _electronHistograms;
       std::vector<TH1F*> _muonHistograms;
       TH1F* _jetBTagProbTkCntHighEff;
+
+      HltObjMatcher* _hltMatcher;
       
       // ----------member data ---------------------------
+      static const double _etaMaxTrk;
       static const double _etaMaxEB;
       static const double _etaMinEE;
       static const double _etaMaxEE;
       static const double _etaMaxMu;
       
       int _debugLvl; 
-      std::vector< WorkingPoint > _elWorkingPoints;
+      std::vector< VBTFWorkingPoint > _elVBTFWorkingPoints;
+      std::vector< LHWorkingPoint > _elLHWorkingPoints;
 
       std::string _wpFile;
 
@@ -165,18 +188,18 @@ class DileptonSelector : public edm::EDAnalyzer {
         // lep common
       double _lepCut_leadingPt;
       double _lepCut_trailingPt;
-      double _lepCut_D0PV;
-      double _lepCut_DzPV;
 
-      int   _elCut_TightWorkingPoint;
-      int   _elCut_LooseWorkingPoint;
-      double _elCut_EtaSCEbEe;
+      int    _elCut_TightWorkingPoint;
+      int    _elCut_LooseWorkingPoint;
+      double _elCut_ip3D;
 
-      int   _muCut_NMuHist;
-      int   _muCut_NMuMatches;
-      int   _muCut_NTrackerHits;
-      int   _muCut_NPixelHits;
-      int   _muCut_NChi2;
+      double _muCut_ip2D;
+      double _muCut_dZPrimaryVertex;
+      int    _muCut_NMuHist;
+      int    _muCut_NMuMatches;
+      int    _muCut_NTrackerHits;
+      int    _muCut_NPixelHits;
+      int    _muCut_NChi2;
       double _muCut_relPtRes;
       double _muCut_combIsoOverPt;
 
@@ -188,6 +211,12 @@ class DileptonSelector : public edm::EDAnalyzer {
       double _jetCut_Dr;
       double _jetCut_Eta;
       double _jetCut_BtagProb;
+      double _jetCut_neutralEmFrac;
+      double _jetCut_neutralHadFrac;
+      int    _jetCut_multiplicity;
+      double _jetCut_chargedEmFrac;
+      double _jetCut_chargedHadFrac;
+      int    _jetCut_chargedMulti;
 
       double _nEvents;
       double _nSelectedEvents;
@@ -218,7 +247,6 @@ class DileptonSelector : public edm::EDAnalyzer {
       std::set< unsigned int > _selectedMus;
 
       std::set< unsigned int > _softMus;
-      std::set< unsigned int > _selectedJets;
       std::set< unsigned int > _selectedPFJets;
       std::set< unsigned int > _btaggedJets;
 
@@ -234,3 +262,4 @@ class DileptonSelector : public edm::EDAnalyzer {
 //
 
 
+#endif // HWWAnalysisDileptonSelector_DileptonSelector_h
