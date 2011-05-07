@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Apr 14 12:29:55 CEST 2011
-// $Id: DileptonSelector.h,v 1.3 2011/04/29 11:57:00 thea Exp $
+// $Id: DileptonSelector.h,v 1.4 2011/05/04 01:14:30 thea Exp $
 //
 //
 // system include files
@@ -143,6 +143,7 @@ class DileptonSelector : public edm::EDAnalyzer {
       // ----------new stuff -----------------------------
       std::vector<double> _puFactors;
       double _eventWeight;
+      unsigned int _nPileUp;
 
       enum ElCuts { 
           kElBinEta,
@@ -160,6 +161,7 @@ class DileptonSelector : public edm::EDAnalyzer {
       TH1F* _puNVertexes;
       void calculateWeight( const edm::Event& iEvent );
       bool jetLooseId( const pat::Jet& jet );
+      double weight() { return _eventWeight; }
 
       std::vector<TH1F*> _electronHistograms;
       std::vector<TH1F*> _muonHistograms;
@@ -195,7 +197,7 @@ class DileptonSelector : public edm::EDAnalyzer {
 
       double _muCut_ip2D;
       double _muCut_dZPrimaryVertex;
-      int    _muCut_NMuHist;
+      int    _nuCut_NMuHits;
       int    _muCut_NMuMatches;
       int    _muCut_NTrackerHits;
       int    _muCut_NPixelHits;

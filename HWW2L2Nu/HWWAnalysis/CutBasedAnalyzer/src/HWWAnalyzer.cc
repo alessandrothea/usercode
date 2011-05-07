@@ -42,18 +42,12 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
 	_higgsMass        = _config.getValue<int>("HWWAnalyzer.higgsMass");
 
 	_cutFile          = _config.getValue<std::string>("HWWAnalyzer.cutFile");
-	_minMet           = _config.getValue<float>("HWWAnalyzer.minMet");
-	_minMll           = _config.getValue<float>("HWWAnalyzer.minMll");
-	_zVetoWidth       = _config.getValue<float>("HWWAnalyzer.zVetoWidth");
+	_minMet           = _config.getValue<double>("HWWAnalyzer.minMet");
+	_minMll           = _config.getValue<double>("HWWAnalyzer.minMll");
+	_zVetoWidth       = _config.getValue<double>("HWWAnalyzer.zVetoWidth");
 
-	_minProjMetEM     = _config.getValue<float>("HWWAnalyzer.minProjMetEM");
-	_minProjMetLL     = _config.getValue<float>("HWWAnalyzer.minProjMetLL");
-
-//     _jetVeto_n        = _config.getValue<int>("HWWAnalyzer.jetVeto.n");// = 0.
-//     _jetVeto_pt       = _config.getValue<float>("HWWAnalyzer.jetVeto.pt"); // = 25.
-//     _jetVeto_eta      = _config.getValue<float>("HWWAnalyzer.jetVeto.eta");// = 5.
-//     _topVeto_bTagProb = _config.getValue<float>("HWWAnalyzer.topVeto.bTagProb");// = 2.1
-
+	_minProjMetEM     = _config.getValue<double>("HWWAnalyzer.minProjMetEM");
+	_minProjMetLL     = _config.getValue<double>("HWWAnalyzer.minProjMetLL");
 
 	_histLabels = _config.getVector<std::string>("HWWAnalyzer.copyHistograms");
 
@@ -94,16 +88,16 @@ void HWWAnalyzer::Book() {
 	std::map<int,std::string> labels;
 
 	labels[kDileptons] = "N_{l^{+}l^{-}}";
-	labels[kMinMet]    = "Met_{min}";
+	labels[kMinMet]    = "min #slash E_{T}";
 	labels[kMinMll]    = "m^{ll}_{min}";
 	labels[kZveto]     = "Z veto";
-	labels[kProjMet]   = "ProjMet";
+	labels[kProjMet]   = "Proj#slash E_{T}";
 	labels[kJetVeto]   = "n_{jets} == 0";
 	labels[kSoftMuon]  = "No Soft #mu";
 	labels[kTopVeto]   = "Top Veto";
 	labels[kMaxMll]    = "m^{ll}_{max}";
-	labels[kHardPtMin] = "p^{hard}_{min}";
-	labels[kSoftPtMin] = "p^{soft}_{min}";
+	labels[kLeadPtMin] = "p^{lead}_{min}";
+	labels[kTrailPtMin] = "p^{trail}_{min}";
 	labels[kDeltaPhi]  = "#Delta#Phi_{ll}";
 
 
@@ -129,7 +123,8 @@ void HWWAnalyzer::Book() {
 	_diLep_ptLeadLep      = new TH1F("leadingPt",  "p^{lead}", 200, 0, 200);
 	_diLep_ptTrailLep     = new TH1F("trailingPt",  "p^{trail}", 200, 0, 200);
 	_diLep_mll            = new TH1F("mll",     "m^{ll}",   300, 0,  300);
-	_diLep_deltaPhi       = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, TMath::Pi());
+//     _diLep_deltaPhi       = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, TMath::Pi());
+    _diLep_deltaPhi       = new TH1F("deltaPhi","#Delta#Phi_{ll}", 100, 0, 180.);
 
 
 	_output->mkdir("pileUp")->cd();
@@ -238,17 +233,18 @@ void HWWAnalyzer::bookCutHistograms( std::vector<TH1F*>& histograms , const std:
 	// all numbers to 0, just to be sure;
 	histograms.assign(kNumCuts,0x0);
 
-	histograms[kMinMet]		= new TH1F(("01_"+nPrefix+"MinMet").c_str(),     (lPrefix+"Met_{min}").c_str(),	      100, 0, 100);
+	histograms[kMinMet]		= new TH1F(("01_"+nPrefix+"MinMet").c_str(),     (lPrefix+"min #slash E_{T}").c_str(),	      100, 0, 100);
 	histograms[kMinMll]		= new TH1F(("02_"+nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(),    300, 0, 300);
 	histograms[kZveto]		= new TH1F(("03_"+nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(), 		  300, 0, 300);
-	histograms[kProjMet]	= new TH1F(("04_"+nPrefix+"MinProjMet").c_str(), (lPrefix+"Projected MET").c_str(),   100, 0, 100);
+	histograms[kProjMet]	= new TH1F(("04_"+nPrefix+"MinProjMet").c_str(), (lPrefix+"Proj #slash E_{T}").c_str(),   100, 0, 100);
 	histograms[kJetVeto]	= new TH1F(("05_"+nPrefix+"JetVeto").c_str(),    (lPrefix+"n_{jets} = 0").c_str(),     15, 0, 15);
 	histograms[kSoftMuon]	= new TH1F(("06_"+nPrefix+"SoftMuon").c_str(),   (lPrefix+"No Soft #mu").c_str(),       2, 0, 2);
 	histograms[kTopVeto]	= new TH1F(("07_"+nPrefix+"TopVeto").c_str(),    (lPrefix+"Top Veto").c_str(),          2, 0, 2);
-	histograms[kHardPtMin]	= new TH1F(("08_"+nPrefix+"MinHardPt").c_str(),  (lPrefix+"p^{hard}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtHard);
-	histograms[kSoftPtMin]	= new TH1F(("09_"+nPrefix+"MinSoftPt").c_str(),  (lPrefix+"p^{soft}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtSoft);
 	histograms[kMaxMll]		= new TH1F(("10_"+nPrefix+"MaxMll").c_str(),     (lPrefix+"m^{ll}_{max}").c_str(),    300, 0,  300);
-	histograms[kDeltaPhi]	= new TH1F(("11_"+nPrefix+"DeltaPhi").c_str(),   (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
+	histograms[kLeadPtMin]	= new TH1F(("08_"+nPrefix+"MinLeadPt").c_str(),  (lPrefix+"p^{lead}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtHard);
+	histograms[kTrailPtMin]	= new TH1F(("09_"+nPrefix+"MinTrailPt").c_str(),  (lPrefix+"p^{trail}_{min}").c_str(),  100, 0, 3.*_theCuts.minPtSoft);
+//     histograms[kDeltaPhi]	= new TH1F(("11_"+nPrefix+"DeltaPhi").c_str(),   (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, TMath::Pi());
+	histograms[kDeltaPhi]	= new TH1F(("11_"+nPrefix+"DeltaPhi").c_str(),   (lPrefix+"#Delta#Phi_{ll}").c_str(), 100, 0, 180.);
 
 }
 
@@ -315,7 +311,7 @@ HWWAnalyzer::HiggsCutSet HWWAnalyzer::getHiggsCutSet(int mass) {
 // }
 
 //_____________________________________________________________________________
-void HWWAnalyzer::calcNtuple(){
+void HWWAnalyzer::fillNtuple(){
 
 	TLorentzVector pA, pB;
 	Int_t cA(0), cB(0);
@@ -410,34 +406,55 @@ void HWWAnalyzer::calcNtuple(){
     // 3 - invariant mass
     double mll = (pA+pB).Mag();
 
+    TLorentzVector& pfMet4 = _event->PFMet;
+    TLorentzVector& tcMet4 = _event->TCMet;
+    TLorentzVector& chargedMet4 = _event->ChargedMet;
+
     // 4a pfMet
-	double pfMet = _event->PFMET;
+	double pfMet = pfMet4.Pt();
 	// 4b - tcMet
-	double tcMet = _event->TCMET;
-	// 4b - tcMet
-	double chargedMet = _event->ChargedMET;
+	double tcMet = tcMet4.Pt();
+	// 4c - chargedMet
+	double chargedMet = chargedMet4.Pt();
 
 	// 5 - projected MeT
 	// 5a - projPfMet
-	TLorentzVector pfMetV;
-	pfMetV.SetPtEtaPhiE(_event->PFMET, 0, _event->PFMETphi,0);
+//     TLorentzVector pfMetV;
+//     pfMetV.SetPtEtaPhiE(_event->PFMET, 0, _event->PFMETphi,0);
 
-	double pfMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(pfMetV)), TMath::Abs(pB.DeltaPhi(pfMetV)));
-	double projPfMet = pfMetDphi < TMath::PiOver2() ? pfMet*TMath::Sin(pfMetDphi) : pfMet;
+    double pfMetDphi = TMath::Min(
+            TMath::Abs(pfMet4.DeltaPhi( pA )),
+            TMath::Abs(pfMet4.DeltaPhi( pB ))
+            );
+
+	double projPfMet = pfMet*(pfMetDphi < TMath::PiOver2() ? TMath::Sin(pfMetDphi) : 1.);
 
 	// 5b - projTcMet
-	TLorentzVector tcMetV;
-	tcMetV.SetPtEtaPhiE(_event->TCMET, 0, _event->TCMETphi,0);
+//     TLorentzVector tcMetV;
+//     tcMetV.SetPtEtaPhiE(_event->TCMET, 0, _event->TCMETphi,0);
 
-	double tcMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(tcMetV)), TMath::Abs(pB.DeltaPhi(tcMetV)));
-	double projTcMet = tcMetDphi < TMath::PiOver2() ? tcMet*TMath::Sin(tcMetDphi) : tcMet;
+    double tcMetDphi = TMath::Min(
+            TMath::Abs(tcMet4.DeltaPhi( pA )),
+            TMath::Abs(tcMet4.DeltaPhi( pB ))
+            );
+
+	double projTcMet = tcMet*(tcMetDphi < TMath::PiOver2() ? TMath::Sin(tcMetDphi) : 1.);
+
+//     double tcMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(tcMetV)), TMath::Abs(pB.DeltaPhi(tcMetV)));
+//     double projTcMet = tcMetDphi < TMath::PiOver2() ? tcMet*TMath::Sin(tcMetDphi) : tcMet;
 
 	// 5c - projChargedMet
-	TLorentzVector chargedMetV;
-	chargedMetV.SetPtEtaPhiE(_event->ChargedMET, 0, _event->ChargedMETphi,0);
+//     TLorentzVector chargedMetV;
+//     chargedMetV.SetPtEtaPhiE(_event->ChargedMET, 0, _event->ChargedMETphi,0);
+    double chargedMetDphi = TMath::Min(
+            TMath::Abs(chargedMet4.DeltaPhi( pA )),
+            TMath::Abs(chargedMet4.DeltaPhi( pB ))
+            );
 
-	double chargedMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(chargedMetV)), TMath::Abs(pB.DeltaPhi(chargedMetV)));
-	double projChargedMet = chargedMetDphi < TMath::PiOver2() ? chargedMet*TMath::Sin(chargedMetDphi) : chargedMet;
+	double projChargedMet = chargedMet*(chargedMetDphi < TMath::PiOver2() ? TMath::Sin(chargedMetDphi) : 1.);
+
+//     double chargedMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(chargedMetV)), TMath::Abs(pB.DeltaPhi(chargedMetV)));
+//     double projChargedMet = chargedMetDphi < TMath::PiOver2() ? chargedMet*TMath::Sin(chargedMetDphi) : chargedMet;
 
     // 6 - dPhiEE
 	double dPhiLL = TMath::Abs(pA.DeltaPhi(pB));
@@ -454,6 +471,14 @@ void HWWAnalyzer::calcNtuple(){
 
 	_ntuple->type = type;
 
+    _ntuple->run = _event->Run;
+    _ntuple->lumiSection = _event->LumiSection;
+    _ntuple->event = _event->Event;
+    _ntuple->weight = _event->Weight;
+
+    _ntuple->nVrtx = _event->NVrtx;
+    _ntuple->nPileUp = _event->NPileUp;
+
     _ntuple->cA = cA;
     _ntuple->cB = cB;
 
@@ -467,12 +492,15 @@ void HWWAnalyzer::calcNtuple(){
     _ntuple->dZB = dZB;
 
 	_ntuple->mll           = mll;
+
 	_ntuple->pfMet         = pfMet;
 	_ntuple->tcMet		   = tcMet;
 	_ntuple->chargedMet    = chargedMet;
+
 	_ntuple->pfMetDphi     = pfMetDphi;
 	_ntuple->tcMetDphi	   = tcMetDphi;
 	_ntuple->chargedMetDphi	= chargedMetDphi;
+
 	_ntuple->projPfMet     = projPfMet;
 	_ntuple->projTcMet     = projTcMet;
 	_ntuple->projChargedMet  = projChargedMet;
@@ -481,7 +509,6 @@ void HWWAnalyzer::calcNtuple(){
 	_ntuple->softMus       = softMu;
 	_ntuple->bJets         = bJets;
 
-	_analysisTree->Fill();
 
 }
 
@@ -496,15 +523,17 @@ void HWWAnalyzer::cutAndFill() {
 //     double projMet = _ntuple->projPfMet;
     
     double met = _ntuple->pfMet;
-    double projMet = TMath::Abs(_ntuple->projPfMet, _ntuple->projChargedMet);
+    double projMet = _ntuple->pfMet < _ntuple->tcMet ? _ntuple->projPfMet : _ntuple->projTcMet;
+
+    bool isMixedFlavour = _ntuple->type == kElMu_t || _ntuple->type == kMuEl_t;
 
 	word[kMinMet]    = ( met > _minMet );
 
 	word[kMinMll]    = ( _ntuple->mll > _minMll);
 
-	word[kZveto]     = ( _ntuple->type == 1 || TMath::Abs(_ntuple->mll - _Z0Mass) > _zVetoWidth );
+	word[kZveto]     = ( isMixedFlavour || TMath::Abs(_ntuple->mll - _Z0Mass) > _zVetoWidth );
 
-	float minProjMet = _ntuple->type == 1 ? _minProjMetEM : _minProjMetLL;
+	float minProjMet = isMixedFlavour ? _minProjMetEM : _minProjMetLL;
 	word[kProjMet]   = ( projMet > minProjMet);
 
 	word[kJetVeto]   = ( _ntuple->nPfJets == 0);
@@ -513,9 +542,9 @@ void HWWAnalyzer::cutAndFill() {
 
 	word[kTopVeto]   = (!_ntuple->bJets);
 
-	word[kHardPtMin] = ( _ntuple->pA.Pt() > _theCuts.minPtHard);
+	word[kLeadPtMin] = ( _ntuple->pA.Pt() > _theCuts.minPtHard);
 
-	word[kSoftPtMin] = ( _ntuple->pB.Pt() > _theCuts.minPtSoft);
+	word[kTrailPtMin] = ( _ntuple->pB.Pt() > _theCuts.minPtSoft);
 
 	//TODO check if maxMll applies to all the combinations
 	word.set(kMaxMll, _ntuple->mll < _theCuts.maxMll);
@@ -545,10 +574,10 @@ void HWWAnalyzer::cutAndFill() {
 		break;
 	case kMuEl_t:
 		counters = _meCounters;
-        nm1 	 = &_emNm1Hist;
-        preCuts  = &_emPreCutHist;
-        postCuts = &_emPostCutHist;
-        nJnV 	 = _emJetNVsNvrtx;
+        nm1 	 = &_meNm1Hist;
+        preCuts  = &_mePreCutHist;
+        postCuts = &_mePostCutHist;
+        nJnV 	 = _meJetNVsNvrtx;
 		break;
 
 	case kMuMu_t:
@@ -583,17 +612,17 @@ void HWWAnalyzer::cutAndFill() {
 	if ( (word & _nthMask[kTopVeto]) == _nthMask[kTopVeto] )
 		nm1->at(kTopVeto)->Fill(_ntuple->bJets, getWeight() );
 
-	if ( (word & _nthMask[kHardPtMin]) == _nthMask[kHardPtMin] )
-		nm1->at(kHardPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
+	if ( (word & _nthMask[kLeadPtMin]) == _nthMask[kLeadPtMin] )
+		nm1->at(kLeadPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
 
-	if ( (word & _nthMask[kSoftPtMin]) == _nthMask[kSoftPtMin] )
-		nm1->at(kSoftPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
+	if ( (word & _nthMask[kTrailPtMin]) == _nthMask[kTrailPtMin] )
+		nm1->at(kTrailPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
 
 	if ( (word & _nthMask[kMaxMll]) == _nthMask[kMaxMll] )
 		nm1->at(kMaxMll)->Fill(_ntuple->mll, getWeight() );
 
 	if ( (word & _nthMask[kDeltaPhi]) == _nthMask[kDeltaPhi] )
-		nm1->at(kDeltaPhi)->Fill(_ntuple->dPhi, getWeight() );
+		nm1->at(kDeltaPhi)->Fill(TMath::RadToDeg()*_ntuple->dPhi, getWeight() );
 
 
 
@@ -610,7 +639,7 @@ void HWWAnalyzer::cutAndFill() {
 	_diLep_ptLeadLep->Fill(_ntuple->pA.Pt(), getWeight() );
 	_diLep_ptTrailLep->Fill(_ntuple->pB.Pt(), getWeight() );
 	_diLep_mll->Fill(_ntuple->mll, getWeight() );
-	_diLep_deltaPhi->Fill(_ntuple->dPhi, getWeight() );
+	_diLep_deltaPhi->Fill(TMath::RadToDeg()*_ntuple->dPhi, getWeight() );
 
 	counters->Fill(kDileptons, getWeight() );
 	// min missing Et
@@ -633,7 +662,7 @@ void HWWAnalyzer::cutAndFill() {
 
 	// proj Met (20 GeV for ee)
 	preCuts->at(kProjMet)->Fill(projMet, getWeight() );
-	if ( !word[kProjMet] ) return;
+    if ( !word[kProjMet] ) return;
 	counters->Fill(kProjMet, getWeight() );
 	postCuts->at(kProjMet)->Fill(projMet, getWeight() );
 
@@ -664,30 +693,31 @@ void HWWAnalyzer::cutAndFill() {
 	counters->Fill(kTopVeto, getWeight() );
 	postCuts->at(kTopVeto)->Fill(_ntuple->bJets, getWeight() );
 
-	// hard pt cut
-	preCuts->at(kHardPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
-	if ( !word[kHardPtMin] ) return;
-	counters->Fill(kHardPtMin, getWeight() );
-	postCuts->at(kHardPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
-
-	// soft pt cut
-	preCuts->at(kSoftPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
-	if ( !word[kSoftPtMin] ) return;
-	counters->Fill(kSoftPtMin, getWeight() );
-	postCuts->at(kSoftPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
-
-	preCuts->at(kMaxMll)->Fill(_ntuple->mll, getWeight() );
 	// Mll_max
+	preCuts->at(kMaxMll)->Fill(_ntuple->mll, getWeight() );
 	if ( !word[kMaxMll] ) return;
 	counters->Fill(kMaxMll, getWeight() );
 	postCuts->at(kMaxMll)->Fill(_ntuple->mll, getWeight() );
 
+	// hard pt cut
+	preCuts->at(kLeadPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
+	if ( !word[kLeadPtMin] ) return;
+	counters->Fill(kLeadPtMin, getWeight() );
+	postCuts->at(kLeadPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
+
+	// soft pt cut
+	preCuts->at(kTrailPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
+	if ( !word[kTrailPtMin] ) return;
+	counters->Fill(kTrailPtMin, getWeight() );
+	postCuts->at(kTrailPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
+
 	// delta phi
-	preCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi, getWeight() );
+	preCuts->at(kDeltaPhi)->Fill(TMath::RadToDeg()*_ntuple->dPhi, getWeight() );
 	if ( !word[kDeltaPhi] ) return;
 	counters->Fill(kDeltaPhi, getWeight() );
-	postCuts->at(kDeltaPhi)->Fill(_ntuple->dPhi, getWeight() );
+	postCuts->at(kDeltaPhi)->Fill(TMath::RadToDeg()*_ntuple->dPhi, getWeight() );
 
+    _ntuple->selected = true;
 
 
 }
@@ -706,9 +736,10 @@ void HWWAnalyzer::Process( Long64_t iEvent ) {
 	if ( _event->NEles + _event->NMus != 2 )
 		THROW_RUNTIME("Wrong number of leptons in the event: NEles = " << _event->NEles << " NMus = " << _event->NMus  );
 
-	calcNtuple();
+	fillNtuple();
 	cutAndFill();
 
+	_analysisTree->Fill();
 }
 
 //_____________________________________________________________________________
@@ -823,17 +854,17 @@ TH1F* HWWAnalyzer::glueCounters(TH1F* counters) {
 	int nBins    = cntCopy->GetNbinsX();
 	int nBinsPre = cntPreSel->GetNbinsX();
 
-	// check bin content
+    // check bin content
     double preSelectedEntries = cntPreSel->GetBinContent(nBinsPre);
     double processedEntries = cntCopy->GetBinContent(1);
     // define mismtch ad the ratio bewtween the difference and the preselected entries
-    double mismatch =TMath::Abs( (preSelectedEntries- processedEntries)/preSelectedEntries );
+    double mismatch =TMath::Abs( (preSelectedEntries- processedEntries) );
 
-    std::cout << "mismatch = " << mismatch << std::endl;
-	if ( TMath::Abs(mismatch) > 1E-6 )
-        THROW_RUNTIME("Bin Content Mismatch: Wrong histogram?\n"
-                << cntPreSel->GetName() << " (" << nBinsPre << ") : " << cntPreSel->GetXaxis()->GetBinLabel(nBinsPre) << "=" << preSelectedEntries << "\n"
-                << cntCopy->GetName() << " (" << nBins << ") : " << cntCopy->GetXaxis()->GetBinLabel(1) << "="<< processedEntries);
+    std::cout << "Mismatch (" << name << ") = " << mismatch << " over " << preSelectedEntries << std::endl;
+//     if ( TMath::Abs(mismatch) > 1E-6 )
+//         THROW_RUNTIME("Bin Content Mismatch: Wrong histogram?\n"
+//                 << cntPreSel->GetName() << " (" << nBinsPre << ") : " << cntPreSel->GetXaxis()->GetBinLabel(nBinsPre) << "=" << preSelectedEntries << "\n"
+//                 << cntCopy->GetName() << " (" << nBins << ") : " << cntCopy->GetXaxis()->GetBinLabel(1) << "="<< processedEntries);
 
     // what is this?
 	cntCopy->Fill(1,cntCopy->GetBinContent(1)*-1);

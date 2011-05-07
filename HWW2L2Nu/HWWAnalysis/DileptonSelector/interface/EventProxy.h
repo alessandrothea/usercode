@@ -28,6 +28,8 @@
 #include <DataFormats/VertexReco/interface/Vertex.h>
 #include <DataFormats/METReco/interface/MET.h>
 #include <DataFormats/METReco/interface/PFMET.h>
+#include <SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h>
+#include <Math/VectorUtil.h>
 
 
 class EventProxy {
@@ -39,17 +41,20 @@ class EventProxy {
            Int_t* getHLTResults();
          */
 
-        Double_t getRun();
-        Double_t getEvent();
-        Double_t getLumiSection();
-        Double_t getTCMET();
-        Double_t getTCMETphi();
-        Double_t getPFMET();
-        Double_t getPFMETphi();
-        Double_t getChargedMET();
-        Double_t getChargedMETphi();
+        Bool_t isRealData() { return _event.isRealData(); }
+        UInt_t getRun();
+        UInt_t getEvent();
+        UInt_t getLumiSection();
 
-        Double_t getNVrtx();
+//         Double_t getTCMETphi();
+//         Double_t getPFMETphi();
+//         Double_t getChargedMETphi();
+        const reco::MET& getTCMET();
+        const reco::PFMET& getPFMET();
+        const reco::PFMET& getChargedMET();
+
+        Int_t    getNVrtx();
+        Int_t    getNPileUp();
         Int_t    getPrimVtxIsFake();
         Int_t    getPrimVtxGood();
         Double_t getPrimVtxNdof();
@@ -96,9 +101,9 @@ class EventProxy {
         Double_t getMuDzPV( int i );
         Double_t getMuE( int i );  
         Double_t getMuEta( int i );
-        Int_t    getMuIsGlobalMuon( int i );
-        Int_t    getMuIsTMLastStationAngTight( int i );
-        Int_t    getMuIsTrackerMuon( int i );
+        Bool_t   getMuIsGlobalMuon( int i );
+        Bool_t   getMuIsTMLastStationAngTight( int i );
+        Bool_t   getMuIsTrackerMuon( int i );
         Double_t getMuIso03EmEt( int i );
         Double_t getMuIso03HadEt( int i );
         Double_t getMuIso03SumPt( int i );
@@ -132,6 +137,7 @@ class EventProxy {
         const edm::Event& _event;
         const edm::EventSetup& _setup;
 
+        edm::Handle<std::vector<PileupSummaryInfo> > _puInfo;
         edm::Handle<std::vector<reco::Vertex> >  _vertexes;
         edm::Handle<std::vector<pat::Electron> > _electrons;
         edm::Handle<std::vector<pat::Muon> >     _muons;

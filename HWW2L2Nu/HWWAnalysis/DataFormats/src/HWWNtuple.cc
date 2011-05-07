@@ -21,6 +21,12 @@ void HWWNtuple::Clear( Option_t* option ){
 
 	type = -1;
 
+    run = 0;
+    lumiSection = 0;
+    event = 0;
+    selected = false;
+    weight = 1.,
+
 	pA = TLorentzVector();
 	pB = TLorentzVector();
 	cA = 0;
@@ -30,6 +36,8 @@ void HWWNtuple::Clear( Option_t* option ){
 	dZA = 0;
 	dZB = 0;
 
+    nVrtx = 0;
+    nPileUp = 0;
 	mll = 0;
 	pfMet = 0;
 	tcMet = 0;

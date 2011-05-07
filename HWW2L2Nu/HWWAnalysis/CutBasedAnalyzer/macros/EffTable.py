@@ -46,7 +46,7 @@ for s in fStates:
         else:
             relEff = 100.*theBin/prevBin
         
-        print '  %s = %d - %.3f%% (%.3f%%)' % (labelAbs.ljust(15), theBin,absEff, relEff)
+        print '  %s = %d - %.3f%% (%.3f%%)' % (labelAbs.ljust(20), theBin,absEff, relEff)
         
 
 #if __name__ == '__main__':

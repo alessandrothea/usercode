@@ -16,9 +16,11 @@
  * =====================================================================================
  */
 #include <HWWAnalysis/DileptonSelector/interface/EventProxy.h>
+#include <HWWAnalysis/DileptonSelector/interface/Tools.h>
 
 EventProxy::EventProxy( const edm::Event& event , const edm::EventSetup& setup ) : _event(event), _setup(setup) {
 
+    _event.getByLabel("addPileupInfo", _puInfo);
     _event.getByLabel("offlinePrimaryVertices", _vertexes);
     _event.getByLabel("boostedElectrons", _electrons);
     _event.getByLabel("boostedMuons", _muons);
@@ -29,22 +31,52 @@ EventProxy::EventProxy( const edm::Event& event , const edm::EventSetup& setup )
 
 
 }
+
+
+Int_t EventProxy::getNPileUp() {
+    int nPileUp = -1;
+    if ( isRealData() ) return nPileUp;
+
+    std::vector<PileupSummaryInfo>::const_iterator puIt;
+    // search for in-time pu and to the weight
+    for(puIt = _puInfo->begin(); puIt != _puInfo->end(); ++puIt)
+        // in time pu
+        if ( puIt->getBunchCrossing() == 0 ) 
+           break;
+    
+    
+    if ( puIt == _puInfo->end() ) 
+        THROW_RUNTIME("-- Event " << getEvent() << " didn't find the in time pileup info");
+
+    nPileUp = puIt->getPU_NumInteractions();
+    return nPileUp;
+}
 /*
 Double_t EventProxy::getGenMET() { return _reader->GenMET;}
 Int_t* EventProxy::getHLTResults() { return _reader->HLTResults;}
 */
 
-Double_t EventProxy::getRun() { return _event.id().run();}
-Double_t EventProxy::getEvent() { return _event.id().event();}
-Double_t EventProxy::getLumiSection() { return _event.luminosityBlock();}
-Double_t EventProxy::getTCMET() { return (*_tcMet)[0].pt();}
-Double_t EventProxy::getTCMETphi() { return (*_tcMet)[0].phi();}
-Double_t EventProxy::getPFMET() { return (*_pfMet)[0].pt();}
-Double_t EventProxy::getPFMETphi() { return (*_pfMet)[0].phi();}
-Double_t EventProxy::getChargedMET() { return (*_chargedMet).get(0).pt();}
-Double_t EventProxy::getChargedMETphi() { return (*_chargedMet).get(0).phi();}
+UInt_t   EventProxy::getRun() { return _event.id().run();}
+UInt_t   EventProxy::getEvent() { return _event.id().event();}
+UInt_t   EventProxy::getLumiSection() { return _event.luminosityBlock();}
 
-Double_t EventProxy::getNVrtx() { return _vertexes->size();}
+const reco::MET& EventProxy::getTCMET() { return (*_tcMet)[0]; }
+const reco::PFMET& EventProxy::getPFMET() { return (*_pfMet)[0]; }
+const reco::PFMET& EventProxy::getChargedMET() { return (*_chargedMet).get(0); }
+
+// Double_t EventProxy::getTCMETphi() { return (*_tcMet)[0].phi();}
+// Double_t EventProxy::getPFMETphi() { return (*_pfMet)[0].phi();}
+// Double_t EventProxy::getChargedMETphi() { return (*_chargedMet).get(0).phi();}
+
+
+// math::XYZTLorentzVector EventProxy::getTCVector4() { return (*_tcMet)[0].p4(); }
+
+// math::XYZTLorentzVector EventProxy::getPFVector4() { return (*_pfMet)[0].p4(); }
+
+// math::XYZTLorentzVector EventProxy::getChargedVector4() { return (*_chargedMet).get(0).p4(); }
+
+
+   Int_t EventProxy::getNVrtx() { return _vertexes->size();}
    Int_t EventProxy::getPrimVtxGood() { return 0; }
    Int_t EventProxy::getPrimVtxIsFake() { return (*_vertexes)[0].isFake(); }
 Double_t EventProxy::getPrimVtxNdof() { return (*_vertexes)[0].ndof(); }
@@ -102,22 +134,23 @@ Double_t EventProxy::getMuIso03HadEt(int i) { return (*_muons)[i].isolationR03()
 Double_t EventProxy::getMuIso03SumPt(int i) { return (*_muons)[i].isolationR03().sumPt;}
 
 // global mu id
-   Int_t EventProxy::getMuIsGlobalMuon(int i) { return (*_muons)[i].isGlobalMuon() ? 1 : 0;}
+  Bool_t EventProxy::getMuIsGlobalMuon(int i) { return (*_muons)[i].isGlobalMuon();  }
    Int_t EventProxy::getMuNMatches(int i) { return (*_muons)[i].numberOfMatches();}
-Double_t EventProxy::getMuNChi2(int i) { return (*_muons)[i].isGlobalMuon() ? (*_muons)[i].globalTrack()->normalizedChi2() : 0;}
-   Int_t EventProxy::getMuNMuHits(int i) { return (*_muons)[i].isGlobalMuon() ? (*_muons)[i].globalTrack()->hitPattern().numberOfValidMuonHits() : 0;}
+Double_t EventProxy::getMuNChi2(int i) { return (*_muons)[i].isGlobalMuon() ? (*_muons)[i].globalTrack()->normalizedChi2() : 1000.;}
+   Int_t EventProxy::getMuNMuHits(int i) { return (*_muons)[i].isGlobalMuon() ? (*_muons)[i].globalTrack()->hitPattern().numberOfValidMuonHits() : 0.;}
 
    // trk mu id
-   Int_t EventProxy::getMuIsTrackerMuon(int i) { return (*_muons)[i].isTrackerMuon() ? 1 : 0;}
-   Int_t EventProxy::getMuIsTMLastStationAngTight(int i) { return (*_muons)[i].muonID("TMLastStationAngTight") ? 1:0;}
+  Bool_t EventProxy::getMuIsTrackerMuon(int i) { return  (*_muons)[i].isTrackerMuon(); }
+
+  Bool_t EventProxy::getMuIsTMLastStationAngTight(int i) { return (*_muons)[i].muonID("TMLastStationTight");}
    Int_t EventProxy::getMuNPxHits(int i) { return (*_muons)[i].innerTrack()->hitPattern().numberOfValidPixelHits();}
    Int_t EventProxy::getMuNTkHits(int i) { return (*_muons)[i].innerTrack()->found();}
 
-Double_t EventProxy::getMuPt(int i) { return (*_muons)[i].pt();}
+Double_t EventProxy::getMuPt(int i)  { return (*_muons)[i].pt();}
 Double_t EventProxy::getMuPtE(int i) { return (*_muons)[i].track()->ptError();}          
-Double_t EventProxy::getMuPx(int i) { return (*_muons)[i].px();}
-Double_t EventProxy::getMuPy(int i) { return (*_muons)[i].py();}
-Double_t EventProxy::getMuPz(int i) { return (*_muons)[i].pz();}
+Double_t EventProxy::getMuPx(int i)  { return (*_muons)[i].px();}
+Double_t EventProxy::getMuPy(int i)  { return (*_muons)[i].py();}
+Double_t EventProxy::getMuPz(int i)  { return (*_muons)[i].pz();}
 Double_t EventProxy::getMuRho(int i) { return (*_muons)[i].userFloat("rhoMu");}
 
 // PFJets

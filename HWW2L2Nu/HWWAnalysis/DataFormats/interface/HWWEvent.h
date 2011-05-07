@@ -9,7 +9,6 @@
 
 #include <TObject.h>
 #include <TLorentzVector.h>
-#include <TClonesArray.h>
 
 class HWWElectron : public TObject {
 public:
@@ -54,7 +53,7 @@ public:
 
 class HWWPFJet : public TObject {
 public:
-	TLorentzVector  P;
+	TLorentzVector P;
 	Double_t        ChHadfrac;
 	Double_t        NeuHadfrac;
 	Double_t        ChEmfrac;
@@ -74,25 +73,29 @@ public:
 	void Clear( Option_t* option="" );
 
 	// Run
-	Int_t    Run;
-	Int_t    Event;
-	Int_t    LumiSection;
-    Double_t Weight;
+	UInt_t    Run;
+	UInt_t    Event;
+	UInt_t    LumiSection;
+    Double_t  Weight;
 
 	// Vertex
 	Int_t    PrimVtxGood;
 	Double_t PrimVtxx;
 	Double_t PrimVtxy;
 	Double_t PrimVtxz;
-	Int_t    NVrtx;
+	UInt_t   NVrtx;
+	UInt_t   NPileUp;
 
 	// Met
-	Double_t TCMET;
-	Double_t TCMETphi;
-	Double_t PFMET;
-	Double_t PFMETphi;
-    Double_t ChargedMET;
-    Double_t ChargedMETphi;
+    TLorentzVector TCMet;
+    TLorentzVector PFMet;
+    TLorentzVector ChargedMet;
+//     Double_t TCMET;
+//     Double_t TCMETphi;
+//     Double_t PFMET;
+//     Double_t PFMETphi;
+//     Double_t ChargedMET;
+//     Double_t ChargedMETphi;
 
 	Bool_t   HasSoftMus;
 	Bool_t	 HasBTaggedJets;

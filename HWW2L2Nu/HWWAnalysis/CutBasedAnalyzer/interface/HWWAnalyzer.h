@@ -31,7 +31,7 @@ public:
 	virtual void Book();
 	virtual void BeginJob();
 	virtual void Process( Long64_t iEvent );
-	virtual void calcNtuple();
+	virtual void fillNtuple();
 	virtual void cutAndFill();
 	virtual void EndJob();
 
@@ -70,9 +70,9 @@ protected:
 		kJetVeto,
 		kSoftMuon,
 		kTopVeto,
-		kHardPtMin,
-		kSoftPtMin,
 		kMaxMll,
+		kLeadPtMin,
+		kTrailPtMin,
 		kDeltaPhi,
 		kNumCuts
 	};
@@ -105,14 +105,14 @@ protected:
     // cuts
 	int   _higgsMass;
 
-	float _maxD0;
-	float _maxDz;
-	float _minMet;
-	float _minMll;
-	float _zVetoWidth;
+	double _maxD0;
+	double _maxDz;
+	double _minMet;
+	double _minMll;
+	double _zVetoWidth;
 
-	float _minProjMetEM;
-	float _minProjMetLL;
+	double _minProjMetEM;
+	double _minProjMetLL;
 
 //     int   _jetVeto_n; 
 //     float _jetVeto_pt;       

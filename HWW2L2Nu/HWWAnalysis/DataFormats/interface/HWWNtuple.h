@@ -20,6 +20,12 @@ public:
 
 	char type;
 
+    UInt_t run;
+    UInt_t lumiSection;
+    UInt_t event;
+    Bool_t selected;
+    Double_t weight;
+
 	TLorentzVector pA;
 	TLorentzVector pB;
 	Int_t cA;
@@ -31,6 +37,8 @@ public:
 
 	double mll;
 
+    unsigned int    nVrtx;
+    unsigned int    nPileUp;
 	double pfMet;
 	double tcMet;
 	double chargedMet;

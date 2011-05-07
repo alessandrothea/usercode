@@ -37,13 +37,16 @@ DileptonSelector = cms.EDAnalyzer('DileptonSelector',
             ip3D              = cms.double(0.03),
             ),
         muCuts = cms.PSet(
+            nChi2           = cms.double(10),
             nMuHits         = cms.int32(0),
             nMuMatches      = cms.int32(1),
+
             nTrackerHits    = cms.int32(10),
             nPixelHits      = cms.int32(0),
-            nChi2           = cms.double(10),
             relPtResolution = cms.double(0.1),
+
             combIso         = cms.double(0.15),
+
             ip2D            = cms.double(0.01),
             dZPrimaryVertex = cms.double(0.05),
             ),

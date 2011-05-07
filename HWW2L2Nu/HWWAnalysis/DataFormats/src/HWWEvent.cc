@@ -5,7 +5,6 @@
  *      Author: ale
  */
 #include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
-#include <TClonesArray.h>
 
 //______________________________________________________________________________
 HWWEvent::HWWEvent() : NEles(0), NMus(0), PFNJets(0) {
@@ -32,13 +31,17 @@ void HWWEvent::Clear( Option_t* option ){
 	PrimVtxy       = 0;
 	PrimVtxz       = 0;
 	NVrtx          = 0;
+	NPileUp        = 0;
 
-	PFMET          = 0;
-	PFMETphi       = 0;
-	TCMET          = 0;
-	TCMETphi       = 0;
-	ChargedMET     = 0;
-	ChargedMETphi  = 0;
+    TCMet        = TLorentzVector();
+    PFMet        = TLorentzVector();
+    ChargedMet   = TLorentzVector();
+//     PFMET          = 0;
+//     PFMETphi       = 0;
+//     TCMET          = 0;
+//     TCMETphi       = 0;
+//     ChargedMET     = 0;
+//     ChargedMETphi  = 0;
 
 	HasSoftMus     = kFALSE;
 	HasBTaggedJets = kFALSE;

@@ -7,6 +7,7 @@ import string
 import re
 import shlex
 import csv
+import os.path
 
 class TH1AddDirSentry:
     def __init__(self):
@@ -48,7 +49,7 @@ class sampleEntry:
         self.entries = 0
         self.sum = "no"
         self.xSec = 0.
-        self.kFact = 1
+        self.sFact = 1
         self.fillColor = ROOT.kBlack
         self.lineColor = ROOT.kBlack
         self.lineWidth = 1
@@ -64,7 +65,41 @@ class Plotter:
         self.virSamples = []
         self.luminosity = 0
         self.baseDir = ""
+        self.outFile = None
+
+    def __del__(self):
+        if self.outFile:
+            self.outFile.Write()
+            self.outFile.Close()
     
+    def getTDir(self,path):
+        if path == '':
+            return self.outFile
+        else:
+            return self.outFile.Get(path)
+
+    def openFile(self,filename):
+        self.outFile = ROOT.TFile.Open(filename,'recreate')
+        
+        dirSet = set()
+        for name in self.plots.iterkeys():
+            path = os.path.dirname(name);
+            subDirs = path.split('/')
+            dir=''
+            for p in subDirs:
+                dir += p+'/'
+                dirSet.add(dir[:-1])
+
+        copyDirs = sorted(dirSet, key=lambda d: len(d))
+        for d in copyDirs:
+            parent = os.path.dirname(d)
+            child = os.path.basename(d)
+            
+            self.getTDir(parent).mkdir(child)
+
+        self.outFile.cd()
+        
+
     def readPlots(self,file):
         f = BlankCommentFile(open(file,'r'))
         rows = [shlex.split(line) for line in f]
@@ -102,7 +137,7 @@ class Plotter:
             type        = r[1]
             e.sum       = r[2]
             e.xSec      = float(r[3])
-            e.kFact     = float(r[4])
+            e.sFact     = float(r[4])
             e.fillColor = eval(r[5])
             e.lineColor = eval(r[6])
             e.lineWidth = int(r[7])
@@ -128,33 +163,28 @@ class Plotter:
             entries = e.file.Get('entries')
             #print entries
             e.entries = entries.GetBinContent(1)
-#            print e.path,e.entries
             
         for e in self.mcSamples:
             fullPath = self.baseDir+'/'+e.path
             e.file = ROOT.TFile(fullPath)
             if not e.file.IsOpen():
                 raise NameError('file '+e.path+' not found')
-#            e.file.ls()
             entries = e.file.Get('entries')
-#            print entries
             e.entries = entries.GetBinContent(1)
 
     def getHistograms(self,samples,name,prefix):
                 
-#        print self.plots
         plot = self.plots[name]
         if ( plot is None ):
             raise NameValue('Plot '+name+' not found');
         
-#        ROOT.TH1.AddDirectory(False)
         sentry = TH1AddDirSentry()
 
         histograms = []
         for s in samples:
             h = s.file.Get(plot.name)
             if not h.__nonzero__():
-                raise NameError('histogram '+plot.name+' not found in '+e.path)
+                raise NameError('histogram '+plot.name+' not found in '+s.path)
             hClone = h.Clone(prefix+'_'+plot.name)
             hClone.UseCurrentStyle()
             hClone.SetFillColor(s.fillColor)
@@ -175,20 +205,18 @@ class Plotter:
 
         for (h,s) in histograms:
 
-            N = s.xSec*self.luminosity
-            fact = N / s.entries
+#             N = s.xSec*self.luminosity
+#             fact = N / s.entries
+            fact = s.sFact*self.luminosity/1000.
             h.Sumw2()
             h.Scale(fact)
-            print '%f\t%d\t%f\t%s'%(s.xSec, N, fact, s.path)
+            print '%f\t%f\t%s'%(s.sFact, fact, s.path)
     
     def sum(self, histograms):#, samples):
-#        if len(histograms) != len(samples):
-#            raise ValueError('Trying to normalize apples and carrots')
         sentry = TH1AddDirSentry()
 
         summed = []
         sumList = {}
-#        for i in range(len(histograms)):
         # make a map and remove the histograms not to sum
         
         for (h,s) in histograms:
@@ -209,7 +237,6 @@ class Plotter:
             vs = self.virSamples[i]
             h0 = hists[0].Clone(name)
             h0.Reset()
-#            h0.Sumw2()
             for h in hists:
                 h0.Add(h)
             h0.SetFillColor(vs.fillColor)
@@ -220,7 +247,6 @@ class Plotter:
             
         # re-sort the array on the file's order
         sumsorted = sorted( summed, key=lambda pair: pair[1].order)
-#        print [(h.GetName(), s.path) for (h,s) in sumsorted]
         # return histograms;
         return sumsorted
     
@@ -255,6 +281,15 @@ class Plotter:
         return legend
     
     def makeDataMCPlot(self,name):
+
+        # save the old dir
+        oldDir = ROOT.gDirectory
+        #and go to the new one
+        path = os.path.dirname(name)
+        self.getTDir(path).cd()
+
+        # but don't write the plots
+        sentry = TH1AddDirSentry()
         pl = self.plots[name]
         data = self.getDataHistograms(name)
         mc   = self.getMCHistograms(name)
@@ -263,7 +298,8 @@ class Plotter:
         
         mc   = self.sum(mc) #,self.mcSamples)
         (data0, sample0) = data[0]
-        stack = ROOT.THStack('mcstack_'+name,data0.GetTitle())
+        baseName = os.path.basename(name)
+        stack = ROOT.THStack('mcstack_'+baseName,data0.GetTitle())
             
         if pl.rebin != 1:
             data0.Rebin(pl.rebin)
@@ -274,8 +310,9 @@ class Plotter:
             mcMinima.append(h.GetMinimum())
             stack.Add(h,'hist')
             
+#         cName = 'c_'+name.replace('/','_')
 
-        cName = 'c_'+name.replace('/','_')
+        cName = 'c_'+baseName
         c = ROOT.TCanvas(cName)
         c.SetTicks();
         print '- logx =', pl.logX, ': logy =',pl.logY
@@ -285,10 +322,11 @@ class Plotter:
         if pl.logX is 1:
             c.SetLogx()
             
-        if pl.logY is 1:
+        if pl.logY is 1 and not (maxY == minY == 0):
             c.SetLogy()
             if minY==0.:
                 minY = 0.1
+            print maxY,minY
             maxY *= ROOT.TMath.Power(maxY/minY,0.1)
             minY /= ROOT.TMath.Power(maxY/minY,0.1)
         else:
@@ -316,7 +354,9 @@ class Plotter:
 
         legend = self.makeLegend(data,mc)
         legend.Draw()
+
         c.Write()
+        oldDir.cd()
         
     def makeMCStackPlot(self,name,nostack):
         raise ValueError('I\'m broken')
@@ -391,17 +431,18 @@ def main():
     ROOT.gStyle.SetLabelFont(42,"xyz")
     ROOT.gStyle.SetTextFont(42)   
     
-    out = ROOT.TFile.Open(opt.outputFile,'recreate')
-    
     p = Plotter()
     try:
         p.readPlots(opt.plotList)
         p.readSamples(opt.sampleList)
         p.connect()
+        p.openFile(opt.outputFile)
+#         sys.exit(0)
         #name = 'fullSelection/llCounters'
-        out.cd()
+#         out.cd()
         if opt.mode=='data':
-            for name in p.plots.iterkeys():
+            for name in sorted(p.plots.iterkeys()):
+                print 'Making',name
                 p.makeDataMCPlot(name)
         elif opt.mode=='mc':
             for name in p.plots.iterkeys():
@@ -412,8 +453,8 @@ def main():
         print 'ValueError',e
     except NameError as e:
         print 'NameError',e
-    out.Write()
-    out.Close()
+#     out.Write()
+#     out.Close()
     print 'lumi =',p.luminosity
 #    print len(p.samples)
 #    print len(p.mcSamples)

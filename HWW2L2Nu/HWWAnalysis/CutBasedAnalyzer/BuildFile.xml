@@ -1,4 +1,5 @@
 <use name="root" />
+<use name="rootmath"/>
 <use name="HWWAnalysis/DataFormats" />
 <flags cxxflags="-g -ggdb" />
 <export>

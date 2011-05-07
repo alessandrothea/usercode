@@ -37,15 +37,19 @@ enum muTags {
 	kMuTagTrailingPt,               // 2
 	kMuTagIp2D,                     // 3
 	kMuTagDzPV,                     // 4
+
 	kMuTagIsGlobal,                 // 5
 	kMuTagNChi2,                    // 6
 	kMuTagNMuHits,                  // 7
 	kMuTagNMatches,                 // 8
+
 	kMuTagIsTracker,                // 9
 	kMuTagIsTMLastStationAngTight,  // 0
+
 	kMuTagNTkHits,                  // 1
 	kMuTagNPxHits,                  // 2
 	kMuTagRelPtRes,                 // 3
+
 	kMuTagCombIso,                  // 4
                                     
 	kMuTagSoftPt,                   // 5

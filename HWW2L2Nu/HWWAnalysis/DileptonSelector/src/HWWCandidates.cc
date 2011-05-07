@@ -58,26 +58,13 @@ bool MuCandidate::isIp() {
 
 //_____________________________________________________________________________
 bool MuCandidate::isId() {
-    return  ( ( tags[kMuTagIsGlobal] 
-                && tags[kMuTagNChi2]
-                && tags[kMuTagNMuHits]
-                && tags[kMuTagNMatches] )
-            || ( tags[kMuTagIsTracker]
-                && tags[kMuTagIsTMLastStationAngTight] )
-            && ( tags[kMuTagNTkHits]
-                && tags[kMuTagNPxHits]
-                && tags[kMuTagRelPtRes] )
+    return  (
+            ( ( tags[kMuTagIsGlobal] && tags[kMuTagNChi2] && tags[kMuTagNMuHits] && tags[kMuTagNMatches] )
+              || ( tags[kMuTagIsTracker] && tags[kMuTagIsTMLastStationAngTight] ) )
+            && tags[kMuTagNTkHits] && tags[kMuTagNPxHits] && tags[kMuTagRelPtRes] 
             );
-//     return ( tags[kMuTagIsGlobal] &&
-//                 tags[kMuTagIsTracker] &&
-//                 tags[kMuTagNMuHits] &&
-//                 tags[kMuTagNMatches] &&
-//                 tags[kMuTagNTkHits] &&
-//                 tags[kMuTagNPxHits] &&
-//                 tags[kMuTagNChi2] &&
-//                 tags[kMuTagRelPtRes]
-//             );
 }
+
 
 //_____________________________________________________________________________
 bool MuCandidate::isIso() {
@@ -177,21 +164,6 @@ bool ElCandicate::isExtra() {
             // no conversion
             && isNoConv();
 }
-// //_____________________________________________________________________________
-// bool ElCandicate::isExtra() {
-//     return
-//             // ptEta
-//             (looseTags[kElTagTrailingPt] && looseTags[kElTagEta])
-//             // vertex
-// //             && (looseTags[kElTagD0PV] && looseTags[kElTagDzPV] )
-//             && looseTags[kElTagIp3D]
-//             // iso
-//             && isLooseIso()
-//             // id
-//             && isLooseId()
-//             // no conversion
-//             && isLooseNoConv();
-// }
 
 // likelikood specific
 //______________________________________________________________________________
