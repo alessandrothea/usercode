@@ -10,9 +10,14 @@
 #include "HWWAnalysis/CutBasedAnalyzer/interface/HWWAnalyzer.h"
 #include "HWWAnalysis/CutBasedAnalyzer/interface/CommandLine.h"
 #include "HWWAnalysis/CutBasedAnalyzer/interface/Tools.h"
+#include "FWCore/FWLite/interface/AutoLibraryLoader.h"
+#include <TSystem.h>
 
 int main( int argc, char **argv ) {
 
+    // load framework libraries
+    gSystem->Load( "libFWCoreFWLite" );
+    AutoLibraryLoader::enable();
 	try {
 		HWWAnalyzer analyzer(argc,argv);
 		analyzer.Analyze();

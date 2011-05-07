@@ -1,5 +1,7 @@
+<use name="DataFormats/Common"/>
 <use name="root"/>
-<flags cxxflags="-g -ggdb"/>
+<use name="rootrflx"/>
+<flags rootmap="yes"/>
 <export>
   <lib name="1"/>
 </export>
