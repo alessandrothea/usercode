@@ -33,13 +33,14 @@ class Dataset:
 #         return '[%(id)s] %(nick)s %(ver)s %(name)d' % self.__dict__
 
 class ThreadTransfer( threading.Thread ):
-    def __init__(self, ds, site, blacklist):
+    def __init__(self, ds, site, blacklist, whitelist):
         threading.Thread.__init__(self)
         self.dataset = ds
         self.site = site
         self.kill = False
         self.code = None
         self.blacklist = blacklist
+        self.whitelist = whitelist
         self.t1 = 0.
         self.t2 = 0.
 
@@ -59,7 +60,9 @@ class ThreadTransfer( threading.Thread ):
                 os.mkdir(wd)
             cmd = ['dbs_transferRegister.py','--to-site=%s' % self.site,self.dataset.name]
             if self.blacklist is not None:
-                cmd.append('--bl-sites=%s' % self.blacklist) 
+                cmd.append('--blacklist=%s' % self.blacklist) 
+            if self.whitelist is not None:
+                cmd.append('--whitelist=%s' % self.whitelist) 
             print 'CMD =',' '.join(cmd)
             logFile = open(wd+'/grab.log','w')
             dbsTransfer = subprocess.Popen(cmd, cwd=wd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -102,8 +105,9 @@ class Grabber:
         self.destination = destination
         self.threads = []
         self.blacklist = None
+        self.whitelist = None
         
-    def configure(self):
+    def configure(self, forceVersion=None):
         reader = csv.reader(open(self.csvFile,'rb'),delimiter=',')
         header = reader.next()
         l = len(header)
@@ -115,7 +119,16 @@ class Grabber:
         for row in reader:
             if len(row) != l:
                 continue
-            d = Dataset(row[cols['ID']],row[cols['Nickname']],row[cols['Skim Version']],row[cols['Output Dataset']])
+            idCol = cols['ID']
+            nickCol = cols['Nickname']
+            odsCol = cols['Output Dataset']
+            if not forceVersion:
+                verCol = cols['Skim Version']
+                version = row[verCol]
+            else:
+                version = forceVersion
+            cleanDS = row[odsCol].strip()
+            d = Dataset(row[idCol],row[nickCol],version,cleanDS)
             self.datasets.append(d);
 
             if d.ver == '':
@@ -145,7 +158,7 @@ class Grabber:
     def start(self):
         for ds in self.datasets:
             if ds.transfer:
-                t = ThreadTransfer(ds,self.destination, self.blacklist)
+                t = ThreadTransfer(ds,self.destination, self.blacklist, self.whitelist)
                 self.threads.append(t)
                 t.start()
 
@@ -203,7 +216,9 @@ if __name__ == '__main__':
     parser = optparse.OptionParser(usage)
     parser.add_option('--site', '-s', dest='site', help='Destination. Can be [t3psi,t2cscs]')
     parser.add_option('--ids',  '-i', dest='ids',  help='Dataset ids to be grabbed from the spreadsheet', default='')
-    parser.add_option('--bl-sites', '-b', dest='blSites', help='Blacklisted sites')
+    parser.add_option('--blacklist',  dest='blacklist', help='Blacklisted sites, comma separated')
+    parser.add_option('--whitelist',  dest='whitelist', help='Whitelisted sites, comma separated')
+    parser.add_option('--version',    dest='skimVersion', help='Grab samples of this version')
 
     (opt,args) = parser.parse_args()
 
@@ -225,8 +240,9 @@ if __name__ == '__main__':
 
     try:
         g = Grabber(csvFile, site, ids)
-        g.blacklist = opt.blSites
-        g.configure()
+        g.blacklist = opt.blacklist
+        g.whitelist = opt.whitelist
+        g.configure( opt.skimVersion )
         g.start()
     except ValueError as v:
         print v

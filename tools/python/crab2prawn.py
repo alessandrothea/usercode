@@ -41,6 +41,8 @@ def c2p( args ):
                '-j',str(opt.nJobs),
                opt.template
               ]
+        if opt.optArgs is not None:
+            cmd.extend(['-a',opt.optArgs])
         print ' - Executing',' '.join(cmd)
         create = subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         (stdout,stderr) = create.communicate()
@@ -66,6 +68,7 @@ if __name__ == '__main__':
     parser.add_option('-o', '--outputDir', dest='outputDir', help='Output directory', default='.')
     parser.add_option('-g', '--groups', dest='groups', help='Column separated list of groups') 
     parser.add_option('-j', '--nJobs', type='int', dest='nJobs', help='Number of jobs')
+    parser.add_option('-a', '--optArgs', dest='optArgs', help='optional arguments', default='')
     parser.add_option('-t', '--template', dest='template', help='Script template')
     parser.add_option('-c', '--csv', dest='csvFile', help='CSV source file')
     

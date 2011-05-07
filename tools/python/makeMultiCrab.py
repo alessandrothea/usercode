@@ -56,13 +56,15 @@ class MultiCrabConfigurator:
         l = len(header)
         #         print 'header len',l
 
+        header = [ h.lower() for h in header]
+
         cols = dict(zip(header,range(len(header))))
         print cols
         for row in reader:
             if len(row) != l:
                 continue
 
-            d = Dataset(row[cols['ID']],row[cols['Nickname']],row[cols['Skim Version']],row[cols['Output Dataset']])
+            d = Dataset(row[cols['id']],row[cols['nickname']],row[cols['skim version']],row[cols['output dataset']])
 
             numId = int(re.search('[0-9]+',d.id).group(0))
             if len(self.ids) != 0 and not numId in self.ids:
