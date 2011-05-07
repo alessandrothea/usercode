@@ -610,7 +610,7 @@ bool DileptonSelector::matchHLT() {
     bool match  = false;
     match = _hltMatcher->matchesBits(pair); 
 
-//LATINOS_V2     if ( !match ) return false;
+    if ( !match ) return false; //LATINOS_V2
 
     _llCounters->Fill(kLLBinHltBits, this->weight() );
 
@@ -631,7 +631,7 @@ bool DileptonSelector::matchHLT() {
 
     match = _hltMatcher->matchesObject(pair);
 
-//LATINOS_V2     if ( !match ) return false;
+    if ( !match ) return false; //LATINOS_V2     
 
     _llCounters->Fill(kLLBinHltObject, this->weight() );
 

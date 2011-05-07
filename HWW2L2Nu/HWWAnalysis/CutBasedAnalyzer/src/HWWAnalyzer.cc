@@ -510,8 +510,8 @@ void HWWAnalyzer::cutAndFill() {
 //     double met = _ntuple->pfMet;
     
     double met = _ntuple->pfMet;
-//LATINOS_V2     double projMet = _ntuple->pfMet < _ntuple->tcMet ? _ntuple->projPfMet : _ntuple->projTcMet;
-    double projMet = _ntuple->projPfMet;
+    double projMet = _ntuple->pfMet < _ntuple->tcMet ? _ntuple->projPfMet : _ntuple->projTcMet; //LATINOS_V2    
+    //double projMet = _ntuple->projPfMet; // LATINOS_V2
 
     bool isMixedFlavour = _ntuple->type == kElMu_t || _ntuple->type == kMuEl_t;
 
