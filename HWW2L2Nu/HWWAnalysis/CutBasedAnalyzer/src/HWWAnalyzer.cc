@@ -419,8 +419,6 @@ void HWWAnalyzer::fillNtuple(){
 
 	// 5 - projected MeT
 	// 5a - projPfMet
-//     TLorentzVector pfMetV;
-//     pfMetV.SetPtEtaPhiE(_event->PFMET, 0, _event->PFMETphi,0);
 
     double pfMetDphi = TMath::Min(
             TMath::Abs(pfMet4.DeltaPhi( pA )),
@@ -430,8 +428,6 @@ void HWWAnalyzer::fillNtuple(){
 	double projPfMet = pfMet*(pfMetDphi < TMath::PiOver2() ? TMath::Sin(pfMetDphi) : 1.);
 
 	// 5b - projTcMet
-//     TLorentzVector tcMetV;
-//     tcMetV.SetPtEtaPhiE(_event->TCMET, 0, _event->TCMETphi,0);
 
     double tcMetDphi = TMath::Min(
             TMath::Abs(tcMet4.DeltaPhi( pA )),
@@ -440,21 +436,13 @@ void HWWAnalyzer::fillNtuple(){
 
 	double projTcMet = tcMet*(tcMetDphi < TMath::PiOver2() ? TMath::Sin(tcMetDphi) : 1.);
 
-//     double tcMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(tcMetV)), TMath::Abs(pB.DeltaPhi(tcMetV)));
-//     double projTcMet = tcMetDphi < TMath::PiOver2() ? tcMet*TMath::Sin(tcMetDphi) : tcMet;
-
 	// 5c - projChargedMet
-//     TLorentzVector chargedMetV;
-//     chargedMetV.SetPtEtaPhiE(_event->ChargedMET, 0, _event->ChargedMETphi,0);
     double chargedMetDphi = TMath::Min(
             TMath::Abs(chargedMet4.DeltaPhi( pA )),
             TMath::Abs(chargedMet4.DeltaPhi( pB ))
             );
 
 	double projChargedMet = chargedMet*(chargedMetDphi < TMath::PiOver2() ? TMath::Sin(chargedMetDphi) : 1.);
-
-//     double chargedMetDphi = TMath::Min(TMath::Abs(pA.DeltaPhi(chargedMetV)), TMath::Abs(pB.DeltaPhi(chargedMetV)));
-//     double projChargedMet = chargedMetDphi < TMath::PiOver2() ? chargedMet*TMath::Sin(chargedMetDphi) : chargedMet;
 
     // 6 - dPhiEE
 	double dPhiLL = TMath::Abs(pA.DeltaPhi(pB));
@@ -520,10 +508,10 @@ void HWWAnalyzer::cutAndFill() {
 //     double met = _ntuple->tcMet;
 //     double projMet = _ntuple->projTcMet;
 //     double met = _ntuple->pfMet;
-//     double projMet = _ntuple->projPfMet;
     
     double met = _ntuple->pfMet;
-    double projMet = _ntuple->pfMet < _ntuple->tcMet ? _ntuple->projPfMet : _ntuple->projTcMet;
+//LATINOS_V2     double projMet = _ntuple->pfMet < _ntuple->tcMet ? _ntuple->projPfMet : _ntuple->projTcMet;
+    double projMet = _ntuple->projPfMet;
 
     bool isMixedFlavour = _ntuple->type == kElMu_t || _ntuple->type == kMuEl_t;
 
