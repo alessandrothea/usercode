@@ -73,7 +73,7 @@ def findDuplicates():
     parser.add_option('--site', dest='site', help='Site where files are located. Can be [t2cscs,t3psi]')
     parser.add_option('--moveTo', dest='moveTo', help='Destination for the duplicates')
     parser.add_option('--refresh', dest='refresh', help='Refresh the list of files', action='store_true')
-    parser.add_option('--tryDelete', dest='tryDelete', help='Attempts to delete the duplicates with the same size', action='store_true')
+    parser.add_option('--tryDelete', dest='tryDelete', help='Attempts to delete the duplicates: Keeps the bigger file for each job', action='store_true')
     parser.add_option('--deleteAll', dest='deleteAll', help='Delete all the duplicates', action='store_true')
     parser.add_option('--dcap', dest='dcap', help='Print the list of files in dcap format', action='store_true')
 #     parser.add_option('--tag', dest='tag', default='MC', help='tag to match the files [MC,data]')
@@ -82,11 +82,11 @@ def findDuplicates():
 
     if not opt.site:
         parser.error('No site selected')
-    if opt.site == 't3psi':
+    if opt.site == 't3psi' || opt.site == 'T3_CH_PSI':
         srmSite = "srm://t3se01.psi.ch:8443/srm/managerv2?SFN="
         rootpath = srmSite+'/pnfs/psi.ch/cms/trivcat'
         dcapPrefix= 'dcap://t3se01.psi.ch:22125'
-    elif opt.site == 't2cscs':
+    elif opt.site == 't2cscs' || opt.site == 'T2_CH_CSCS':
         srmSite = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2?SFN="
         rootpath = srmSite+"/pnfs/lcg.cscs.ch/cms/trivcat"
         dcapPrefix= ''
@@ -119,10 +119,6 @@ def findDuplicates():
         sys.stdout.flush()
 
         refreshFileList(rootpath+path,tmpFile)
-#         dump = open(tmpFile,'w')
-#         srmls = subprocess.Popen(['srmls',rootpath+path],stdout=dump)
-#         srmls.wait()
-#         dump.close()
         print 'Done'
     else:
         print 'Using',tmpFile,'as source'

@@ -79,8 +79,15 @@ def getDataSets( csvFile, ids ):
     for row in reader:
         if len(row) != l:
             continue
-
-        d = Dataset(row[cols['ID']],row[cols['Nickname']],row[cols['Skim Version']],row[cols['Output Dataset']])
+        colId   = cols['ID']
+        colNick = cols['Nickname']
+        colOD   = cols['Output Dataset']
+        try:
+            colSkim = cols['Skim Version']
+            version = row[verCol]
+        except KeyError:
+            version=''
+        d = Dataset(row[colId],row[colNick],version,row[colOD].strip())
 
         numId = int(re.search('[0-9]+',d.id).group(0))
         if len(ids) != 0 and not numId in ids:
@@ -89,7 +96,7 @@ def getDataSets( csvFile, ids ):
         datasets.append(d);
 
         if d.ver == '':
-            print 'Dataset',d.nick,'doesn\'t have a version number'
+            print 'Dataset',d.nick,'doesn\'t have a version '
             continue
 
     return datasets
