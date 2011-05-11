@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import checkpython
 import optparse
-import jobtools
+import PrawnTools
 import os, sys, subprocess
 import console
 
@@ -9,7 +9,7 @@ def main():
     usage = 'Usage: %prog [options]'
     parser = optparse.OptionParser(usage)
     
-    parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
+    parser.add_option('--dbpath', dest='database', help='Database path', default=PrawnTools.jmDBPath())
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-g', '--groups', dest='sessionGroups', help='Comma separated list of groups')
     parser.add_option('-a', '--all', dest='all', help='Selects all jobs', action='store_true')
@@ -23,11 +23,11 @@ def main():
         parser.error('Please define either the session or the group')
     
     try:
-        numbers = jobtools.strToNumbers(opt.jobs)
+        numbers = PrawnTools.strToNumbers(opt.jobs)
     except ValueError as e:
         parser.error('Error: '+str(e))
 
-    m = jobtools.Manager(opt.database)
+    m = PrawnTools.Manager(opt.database)
     m.connect()
 
     try:
@@ -38,7 +38,7 @@ def main():
         
     # preliminary loop: check the session status
     for s in ses:
-        if s.status is not jobtools.kCreated and not opt.resubmit:
+        if s.status is not PrawnTools.kCreated and not opt.resubmit:
             parser.error('The session is already submitted. Use -r to resubmit.')
 
     # main loop
@@ -54,7 +54,7 @@ def main():
         
         if not opt.dry:
             m.updateJobCodes(s.name, updated)
-            m.setSessionStatus(s.name, jobtools.kSubmitted) 
+            m.setSessionStatus(s.name, PrawnTools.kSubmitted) 
 
     m.disconnect()
     
@@ -102,15 +102,17 @@ def submitSession( session, jobs, opt, jNums=[] ):
             continue
 
         if not opt.dry:
-            if job.status is not jobtools.kCreated and not opt.resubmit:
+            if job.status is not PrawnTools.kCreated and not opt.resubmit:
                 raise Exception('The job '+job.name()+' is already submitted. Use -r to resubmit.')
-            qsub = subprocess.Popen(['qsub',job.scriptPath,'-o',job.stdOutPath,'-e',job.stdErrPath],
+            qsubCmd = ['qsub',job.scriptPath,'-q',session.queue,'-o',job.stdOutPath,'-e',job.stdErrPath]
+#            print ' '.join(qsubCmd)
+            qsub = subprocess.Popen(qsubCmd,
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             qsub.communicate()
             if qsub.returncode is not 0:
                 print 'Warning: qsub returned',qsub.returncode
             
-            job.status = jobtools.kSubmitted
+            job.status = PrawnTools.kSubmitted
             job.exitCode = None
             updated.append(job)
         print job.name(),

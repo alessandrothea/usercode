@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import checkpython
 import optparse
-import jobtools
+import PrawnTools
 import re
 
 def plainStr( theStr ):
@@ -13,43 +13,50 @@ def main():
     usage = 'Usage: %prog [options] session'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('-d', '--database', dest='database', help='Database path', default=jobtools.jmDBPath())
+    parser.add_option('-d', '--database', dest='database', help='Database path', default=PrawnTools.jmDBPath())
     parser.add_option('-g', '--group', dest='sessionGroup', help='Comma separated list of groups')
-    parser.add_option('-v', '--verbose', dest='verbose', help='Verbose output',  action='store_true')
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
+    parser.add_option('-v', dest='verbosity', help='Verbose output',  action='count')
 
     (opt, args) = parser.parse_args()
 
-    m = jobtools.Manager(opt.database)
+    m = PrawnTools.Manager(opt.database)
     m.connect()
 
     sessions = m.getListOfSessions(opt.sessionName,opt.sessionGroup)
     
-    if opt.verbose or opt.sessionName is not None:
-        printDetails(sessions)
-    else:
+    if opt.verbosity is None and opt.sessionName is None:
         printSummary(sessions)
+    else:
+        printDetails(sessions, opt.verbosity)
         
     
     
-def printDetails( sessions ):
+def printDetails( sessions, verbosity ):
+    if verbosity is None:
+        verbosity = 0
     hline = '-'*80
     for s in sessions:
         print hline
-        print '|  Session:',s.name,'-',s.label,jobtools.colState(s.status)
+        print '|  Session:',s.name,'-',s.label,PrawnTools.colState(s.status)
         print hline
         print '|  Groups:',s.groups
         print '|  Mode:',s.mode,'Njobs:',s.nJobs
+        print '|  Queue: ',s.queue
         print '|  Nevents:',s.nTotEvents
         print '|  Output dir:',s.outputDir
         print '|  Working dir:',s.workingDir
+        print '|  Opt Args:',s.optArgs
         print hline
         print '|  Command Line:'
         print s.cmdLine
         print hline
-        print '|  File list:'
-        print s.allFiles
-        print hline
+        if verbosity > 1:
+            print '|  File list:'
+            print s.allFiles
+            print hline
+            print '|  Template:'
+            print s.template
     
 def printSummary( sessions ):
     hline = '-'*80
@@ -57,7 +64,7 @@ def printSummary( sessions ):
     padding = 0
     table.append(['name','status','label','groups','nJobs'])
     for s in sessions:
-        table.append([s.name,jobtools.colState(s.status),s.label,s.groups,str(s.nJobs)])
+        table.append([s.name,PrawnTools.colState(s.status),s.label,s.groups,str(s.nJobs)])
  
     
     widths = [0]*len(table[0])

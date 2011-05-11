@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 import checkpython
 import optparse
-import jobtools
+import PrawnTools
 import os
 import console
-from jobtools import Job
 
 def main():
     usage = 'Usage: %prog [options] session jobs'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
+    parser.add_option('--dbpath', dest='database', help='Database path', default=PrawnTools.jmDBPath())
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-a', '--all', dest='all', help='Selects all jobs', action='store_true')
     parser.add_option('-v', '--verbose', dest='verbose', help='Verbose output', action='store_true')
@@ -24,11 +23,11 @@ def main():
     dbPath     = os.path.abspath(os.path.expanduser(opt.database))
 
     try:
-        numbers = jobtools.strToNumbers(opt.jobs)
+        numbers = PrawnTools.strToNumbers(opt.jobs)
     except ValueError as e:
         parser.error('Error: '+str(e))
 
-    m = jobtools.Manager(dbPath)
+    m = PrawnTools.Manager(dbPath)
     
     m.connect()
     try:
@@ -50,8 +49,8 @@ def main():
     for job in jobs:
         if len(numbers) != 0 and job.jid not in numbers:
             continue
-#        colStatus = jobtools.JobColors[job.status]+jobtools.JobLabel[job.status]+console.codes['reset']
-        print '| ',job.jid,job.name(),'('+jobtools.colState(job.status)+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
+#        colStatus = PrawnTools.JobColors[job.status]+PrawnTools.JobLabel[job.status]+console.codes['reset']
+        print '| ',job.jid,job.name(),'('+PrawnTools.colState(job.status)+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
 #        print '| ',job.jid,job.name(),'('+str(job.status)+','+str(job.exitCode)+')',job.firstEvent,job.nEvents,job.scriptPath,job.outputFile,job.stdOutPath
         if opt.verbose: 
             print hline

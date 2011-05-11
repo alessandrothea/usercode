@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import checkpython
 import optparse
-import jobtools
+import PrawnTools
 import string
 import os,sys
 import ROOT
@@ -34,7 +34,7 @@ def main():
     usage = 'usage: %prog [options] <template file>'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
+    parser.add_option('--dbpath', dest='database', help='Database path', default=PrawnTools.jmDBPath())
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-l', '--label', dest='sessionLabel', help='Label for the session')
     parser.add_option('-g', '--groups', dest='sessionGroups', help='Column separated list of groups')
@@ -46,7 +46,8 @@ def main():
     parser.add_option('-o', '--outputDir', dest='outputDir', help='Output directory', default='.')
     parser.add_option('-t', '--treeName', dest='treeName', help='ROOT Tree name')
     parser.add_option('-j', '--nJobs', type='int', dest='nJobs', help='Number of jobs')
-
+    parser.add_option('-a', '--optArgs', dest='optArgs', help='optional arguments', default='')
+    
     (opt, args) = parser.parse_args()
     
 
@@ -134,12 +135,12 @@ def main():
     # fill the new session
     label = opt.sessionLabel is None and opt.sessionName or opt.sessionLabel
         
-    s = jobtools.Session(opt.sessionName, label, opt.sessionGroups, cmdLine, opt.sessionMode, inputFiles,
-        nJobs, nTotEvents, eventsPerJob, opt.queue, workingDir, outputDir)
+    s = PrawnTools.Session(opt.sessionName, label, opt.sessionGroups, cmdLine, opt.sessionMode, inputFiles,
+        nJobs, nTotEvents, eventsPerJob, opt.optArgs, opt.queue, workingDir, outputDir)
     s.template = theTemplate
 
     # open the db
-    m = jobtools.Manager(dbPath)
+    m = PrawnTools.Manager(dbPath)
 
     # read template
     tmpl = string.Template(theTemplate)
@@ -186,7 +187,7 @@ def main():
         eventStr = s.mode is 'file' and 'all events' or str(job.nEvents)+'events (firstEvent ='+str(job.firstEvent)+')'
         print '|  Job \''+job.name()+'\' added to session',s.name,'with',len(fileList[i]),'files and',eventStr
     
-    m.setSessionStatus(s.name, jobtools.kCreated)
+    m.setSessionStatus(s.name, PrawnTools.kCreated)
     print hline
     m.disconnect()
 

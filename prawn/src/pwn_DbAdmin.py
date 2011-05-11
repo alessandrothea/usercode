@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import checkpython
-import jobtools
+import PrawnTools
 import optparse
 import os
 
@@ -8,7 +8,7 @@ def main():
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
+    parser.add_option('--dbpath', dest='database', help='Database path', default=PrawnTools.jmDBPath())
     parser.add_option('-c', '--create', dest='create', help='Create a new db', action='store_true')
     parser.add_option('-d', '--drop', dest='drop', help='Drop the db', action='store_true')
     (opt, args) = parser.parse_args()
@@ -26,7 +26,7 @@ def main():
             os.makedirs( dbDir )
             print 'Directory',dbDir,'created'
 
-        m = jobtools.Manager(dbPath)
+        m = PrawnTools.Manager(dbPath)
         m.create()
         print 'Database',dbPath,'created'
 

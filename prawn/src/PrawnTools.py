@@ -1,6 +1,8 @@
 import sqlite3
 import os
 import console
+import string
+import ROOT
  
 kCreated   = 0
 kSubmitted = 1
@@ -41,10 +43,24 @@ def strToNumbers( numString ):
 
     return set(numbers)
 
+#-----------------------------------------------------------------------
+def getEntries( treeName, rootFiles ):
+
+    ROOT.gROOT.SetBatch()
+    chain = ROOT.TChain(treeName)
+    print '|  Counting the number entries'
+    for root in rootFiles:
+        if not root:
+            continue
+
+        chain.Add(root)
+
+    print '|  ',chain.GetEntries(),'entries found'
+    return chain.GetEntries()
 
 class Session:
     def __init__(self, name=None, label=None, groups=None, cmdLine=None, mode=None, allFiles=None, nJobs=None, 
-        nTotEvents=None, eventsPerJob=None, queue=None, workingDir=None, 
+        nTotEvents=None, eventsPerJob=None, optArgs='', queue=None, workingDir=None, 
         outputDir=None, softLimit=None, hardLimit=None, template=None):
         self.name       = name
         self.label      = label
@@ -56,6 +72,7 @@ class Session:
         self.nJobs        = nJobs
         self.nTotEvents   = nTotEvents
         self.eventsPerJob = eventsPerJob
+        self.optArgs      = optArgs
         
         self.queue        = queue
         self.workingDir   = workingDir
@@ -87,7 +104,7 @@ class Session:
 
 class Job:
     
-    def __init__(self, sessionName, jid, script=None, firstEvent=0, nEvents=0, 
+    def __init__(self, sessionName, jid, script=None, firstEvent=0, nEvents=0,
                  inputFile=None, outputFile=None,
                  fileList=None, scriptPath=None, stdOutPath=None, exitPath=None,
                  stdErrPath=None):
@@ -96,6 +113,7 @@ class Job:
         self.script      = script
         self.firstEvent  = firstEvent
         self.nEvents     = nEvents
+
         self.fileList    = fileList
         self.inputFile   = inputFile
         self.outputFile  = outputFile
@@ -171,6 +189,7 @@ class Manager:
             nJobs INTEGER DEFAULT 1 NOT NULL,
             nTotEvents INTEGER DEFAULT 0,
             eventsPerJob INTEGER DEFAULT 0,
+            optArgs TEXT DEFAULT '',
             queue TEXT,
             workingDir TEXT,
             outputDir TEXT,
@@ -215,12 +234,20 @@ class Manager:
         if len(c.fetchall()) is not 0:
             raise ValueError('Session '+s.name+' already exists!')
         c.execute('INSERT INTO session(\
-                  name, label, groups, cmdLine, mode, allFiles, nJobs, nTotEvents, eventsPerJob, queue, workingDir, outputDir, softLimit, hardLimit, template) \
+                  name, label, groups, cmdLine, mode, allFiles, nJobs, nTotEvents, eventsPerJob, optArgs, queue, workingDir, outputDir, softLimit, hardLimit, template) \
                   VALUES (\
-                  :name,:label,:groups,:cmdLine,:mode,:allFiles,:nJobs,:nTotEvents,:eventsPerJob,:queue,:workingDir,:outputDir,:softLimit,:hardLimit,:template)',
+                  :name,:label,:groups,:cmdLine,:mode,:allFiles,:nJobs,:nTotEvents,:eventsPerJob,:optArgs,:queue,:workingDir,:outputDir,:softLimit,:hardLimit,:template)',
                   s.__dict__)
         self.connection.commit()
-
+    
+    def updateSession(self,s):
+        c = self.connection.cursor()
+        c.execute('UPDATE OR ROLLBACK session SET\
+        label = :label, groups = :groups, cmdLine = :cmdLine, mode = :mode, allFiles = :allFiles, nJobs = :nJobs, \
+        nTotEvents = :nTotEvents, eventsPerJob = :eventsPerJob, optArgs = :optArgs, queue = :queue, \
+        workingDir = :workingDir, outputDir = :outputDir, softLimit = :softLimit, hardLimit = :hardLimit, template = :template \
+        WHERE name = :name',s.__dict__)
+        self.connection.commit()
 
     def getSession(self, name):
         c = self.connection.cursor()
@@ -265,13 +292,15 @@ class Manager:
         return sessions    
     
     def removeSession(self,name):
+        
+        self.removeAllJobs(name)
         c = self.connection.cursor()
         t = (name,)
-        if len(c.execute('SELECT jid FROM job WHERE sessionName = ?',t).fetchall()):
-            c.execute('DELETE FROM job WHERE sessionName=?',t)
-            print ' Jobs belonging to session ['+name+'] removed'
-        else:
-            print ' No job belonging to session ['+name+']  was found'
+#        if len(c.execute('SELECT jid FROM job WHERE sessionName = ?',t).fetchall()):
+#            c.execute('DELETE FROM job WHERE sessionName=?',t)
+#            print ' Jobs belonging to session ['+name+'] removed'
+#        else:
+#            print ' No job belonging to session ['+name+']  was found'
 
         if len(c.execute('SELECT name FROM session WHERE name = ?',t).fetchall()):
             c.execute('DELETE FROM session WHERE name=?',t)
@@ -281,6 +310,16 @@ class Manager:
 
         self.connection.commit()
         
+    def removeAllJobs(self,sessionName):
+        c= self.connection.cursor()
+        t = (sessionName,)
+        if len(c.execute('SELECT jid FROM job WHERE sessionName = ?',t).fetchall()):
+            c.execute('DELETE FROM job WHERE sessionName=?',t)
+            print ' Jobs belonging to session ['+sessionName+'] removed'
+        else:
+            print ' No job belonging to session ['+sessionName+']  was found'
+        self.connection.commit()
+            
     def setSessionStatus(self,sessionName, status):
         c = self.connection.cursor()
         c.execute('UPDATE session SET status = ? WHERE name = ?',(status, sessionName))
@@ -407,5 +446,85 @@ class Manager:
             
         print hline 
         
+    def generateJobs(self, session):
+        hline = '-'*80
+        # get the session
+        # test creation?
+        # remove old jobs
+#        for (key,val) in session.__dict__.iteritems():
+#            print key,val
+        
+        rootFiles = session.allFiles.split()
+        nFiles = len(rootFiles)
+        # prepare the parameters according to the mode
+        fileList = None
+        nJobs = None
+        eventsPerJob = None
+        nTotEvents = 0
+    
+        if session.mode == 'file':
+            nJobs = int(session.nJobs)
+#            print 'nJobs',nJobs
+            if nJobs > nFiles:
+                print '| Less jobs than files: nJobs set to',nFiles
+                filesPerJob = 1
+                nJobs = nFiles        
+            filesPerJob = int(float(nFiles)/nJobs+0.5)
+            fileList =  [rootFiles[i:i+filesPerJob] for i in range(0, len(rootFiles), filesPerJob)]
+            nJobs = len(fileList)
+            eventsPerJob = -1
+            firstEvent = [0]*nJobs
+        elif session.mode == 'events':
+            nJobs = int(session.nJobs)
+            filesPerJob = 0 # all
+            fileList = [rootFiles]*nJobs
+            nTotEvents = getEntries(session.treeName, rootFiles) 
+            eventsPerJob = int(nTotEvents/nJobs)
+            firstEvent = range(0,nTotEvents,eventsPerJob)
+            firstEvent[-1]=nTotEvents-eventsPerJob*(nJobs-1)
+        else:
+            pass
+            
+        print hline
+        print '|  label:',session.label
+        print '|  groups:',session.groups
+        print '|  nJobs:',session.nJobs
+        print '|  mode:',session.mode
+        print '|  nTotEvents:',session.nTotEvents
+        print '|  queue: ',session.queue
+        print '|  optArgs: ',session.optArgs
+        print hline
+        
+        self.removeAllJobs(session.name)
+ 
+        tmpl = string.Template(session.template)
+        print '|  Creating',nJobs,'job(s)'
+        for i in range(nJobs):
+            job = self.makeNextJob(session.name)
+            job.fileList  = '\n'.join(fileList[i])
+#            print job.fileList
+            job.firstEvent = firstEvent[i]
+            # set nEvents to 0 (= all) for the last event
+            job.nEvents    = i is not nJobs-1 and eventsPerJob or session.nTotEvents-job.firstEvent
+            job.inputFile  = session.outputDir+'/input/'+job.name()+'.input'
+            job.outputFile = session.outputDir+'/res/'+job.name()+'.root'
+            job.scriptPath = session.outputDir+'/scripts/'+job.name()+'.sh'
+            job.stdOutPath = session.outputDir+'/log/'+job.name()+'.out'
+            job.stdErrPath = session.outputDir+'/log/'+job.name()+'.err'
+            job.exitPath   = session.outputDir+'/tmp/'+job.name()+'.status'
+    
+    
+            jDict = session.__dict__
+            jDict.update(job.__dict__)
+            jDict['jobName'] = job.name()
+            job.script = tmpl.safe_substitute(jDict)
+            job.script += '\n'+'echo $? > '+job.exitPath
+            self.insertNewJob(job)
+            eventStr = session.mode is 'file' and 'all events' or str(job.nEvents)+' events (firstEvent = '+str(job.firstEvent)+')'
+            print '|  Job \''+job.name()+'\' added to session',session.name,'with',len(fileList[i]),'files and',eventStr
+    
+        self.setSessionStatus(session.name, kCreated)
+        print hline
 
+    
 

@@ -6,14 +6,14 @@ Created on Dec 3, 2010
 '''
 import checkpython
 import optparse
-import jobtools
+import PrawnTools
 import os
 
 def main():
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--dbpath', dest='database', help='Database path', default=jobtools.jmDBPath())
+    parser.add_option('--dbpath', dest='database', help='Database path', default=PrawnTools.jmDBPath())
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-g', '--group', dest='sessionGroup', help='Comma separated list of groups')
 
@@ -23,7 +23,7 @@ def main():
         parser.error('The session name is undefined')
         
     dbPath     = os.path.abspath(os.path.expanduser(opt.database))
-    m = jobtools.Manager(dbPath)
+    m = PrawnTools.Manager(dbPath)
     m.connect()
 
     sessions = m.getListOfSessions(opt.sessionName,opt.sessionGroup)
