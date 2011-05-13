@@ -107,7 +107,7 @@ class Grabber:
         self.blacklist = None
         self.whitelist = None
         
-    def configure(self, forceVersion=None):
+    def configure(self, version=None, forceTransfer=False):
         reader = csv.reader(open(self.csvFile,'rb'),delimiter=',')
         header = reader.next()
         l = len(header)
@@ -122,13 +122,13 @@ class Grabber:
             idCol = cols['ID']
             nickCol = cols['Nickname']
             odsCol = cols['Output Dataset']
-            if not forceVersion:
+            if not version:
                 verCol = cols['Skim Version']
-                version = row[verCol]
+                ver = row[verCol]
             else:
-                version = forceVersion
+                ver = version
             cleanDS = row[odsCol].strip()
-            d = Dataset(row[idCol],row[nickCol],version,cleanDS)
+            d = Dataset(row[idCol],row[nickCol],ver,cleanDS)
             self.datasets.append(d);
 
             if d.ver == '':
@@ -140,8 +140,9 @@ class Grabber:
             self.versions.add(d.ver)
 
 #         print self.versions
-        for v in self.versions:
-            self.existingDatasets.extend( getExistingDatasets(v, self.destination) )
+        if not forceTransfer:
+            for v in self.versions:
+                self.existingDatasets.extend( getExistingDatasets(v, self.destination) )
 
 #         print  self.existingDatasets
 
@@ -219,6 +220,7 @@ if __name__ == '__main__':
     parser.add_option('--blacklist',  dest='blacklist', help='Blacklisted sites, comma separated')
     parser.add_option('--whitelist',  dest='whitelist', help='Whitelisted sites, comma separated')
     parser.add_option('--version',    dest='skimVersion', help='Grab samples of this version')
+    parser.add_option('--forceTransfer', dest='forceTransfer', action='store_true', help='don\'t check if the dataset is already available at destination')
 
     (opt,args) = parser.parse_args()
 
@@ -242,7 +244,7 @@ if __name__ == '__main__':
         g = Grabber(csvFile, site, ids)
         g.blacklist = opt.blacklist
         g.whitelist = opt.whitelist
-        g.configure( opt.skimVersion )
+        g.configure( opt.skimVersion, opt.forceTransfer )
         g.start()
     except ValueError as v:
         print v
