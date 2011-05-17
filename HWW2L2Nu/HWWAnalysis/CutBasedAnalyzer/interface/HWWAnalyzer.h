@@ -17,8 +17,8 @@ class HWWEvent;
 class HWWPFJet;
 class HWWNtuple;
 class TTree;
-class TH1F;
-class TH2F;
+class TH1D;
+class TH2D;
 class TParticlePDG;
 
 
@@ -44,8 +44,20 @@ protected:
 		float minPtSoft;
 		float maxMll;
 		float maxDphi;
+		float minR;
+		float maxR;
 		void print();
 	};
+
+    struct HistogramSet { 
+        TH1D* counters;
+        TH2D* jetNVsNvrtx;
+        std::vector<TH1D*> dileptons;
+        std::vector<TH1D*> preCuts;
+        std::vector<TH1D*> postCuts;
+        std::vector<TH1D*> extra;
+        std::vector<std::vector<TH1D*> > cutByCut;
+    };
 
     // enumerators
 	enum Lep_t {
@@ -60,9 +72,46 @@ protected:
 		kMuMu_t = kMu_t*11
 	};
 
+    // dilepton enum
+    enum allDi {
+        kDiPfMet,
+        kDiTcMet,
+        kDiChargedMet,
+        kDiProjPfMet,
+        kDiProjTcMet,
+        kDiProjChargedMet,
+        kDiLeadPt,
+        kDiTrailPt,
+        kDiMll,
+        kDiDeltaPhi,
+        kDiGammaMRStar,
+        kDiSize
+    };
+
+    //
+    enum extraHist {
+        kExtraDeltaPhi,
+        kExtraSize
+    };
+
+    // logged variables
+    enum LoggedVars_t {
+        kLogNJets,
+        kLogNSoftMus,
+        kLogNBjets,
+        kLogMet,
+        kLogProjMet,
+        kLogMll,
+        kLogPtLead,
+        kLogPtTrail,
+        kLogDphi,
+        kLogRazor,
+        kLogSize
+    };
+
     // yeild histogram enum
 	enum HCuts_t {
-		kDileptons = 1,
+		kSkimmed = 1,
 		kMinMet,
 		kMinMll,
 		kZveto,
@@ -74,8 +123,11 @@ protected:
 		kLeadPtMin,
 		kTrailPtMin,
 		kDeltaPhi,
-		kNumCuts
+        kRazor,
+		kCutsSize
 	};
+
+    // 
 
     // constants
 	const static unsigned short _wordLen = 32;
@@ -91,17 +143,28 @@ protected:
 	void readHiggsCutSet( const std::string& path );
 	HiggsCutSet getHiggsCutSet(int mass);
 
-    // histogram helper methods
-	void bookCutHistograms(std::vector<TH1F*>&, const std::string& nPrefix, const std::string& lPrefix);
-	TH2F* makeNjetsNvrtx( const std::string& name, const std::string& prefix = "");
-	TH1F* makeLabelHistogram( const std::string& name, const std::string& title, std::map<int,std::string> labels);
-	TH1F* glueCounters(TH1F* h);
+    // histogram maker helper methods
+    void bookHistogramSet( HistogramSet& set, const std::string& name );
+	void bookCutHistograms(std::vector<TH1D*>&, const std::string& nPrefix, const std::string& lPrefix);
+	void bookDiHistograms(std::vector<TH1D*>&, const std::string& nPrefix, const std::string& lPrefix);
+	void bookExtraHistograms(std::vector<TH1D*>&, const std::string& nPrefix, const std::string& lPrefix);
+
+	TH2D* makeNjetsNvrtx( const std::string& name, const std::string& prefix = "");
+    TH1D* makeVarHistogram( int code, const std::string& name, const std::string& title );
+
+	TH1D* makeLabelHistogram( const std::string& name, const std::string& title, std::map<int,std::string> labels);
+	TH1D* glueCounters(TH1D* h);
 
     double getWeight() { return _event->Weight; }
+    
 
     // helper methods for the analysis
-//     int sortJets();
+//     int countJets( double ptmin );
 
+    void fillDiLeptons(std::vector<TH1D*>& histograms );
+    void fillExtra(std::vector<TH1D*>& histograms );
+    void fillVariables( HistogramSet* histograms, HCuts_t cutCode );
+    
     // cuts
 	int   _higgsMass;
 
@@ -114,64 +177,70 @@ protected:
 	double _minProjMetEM;
 	double _minProjMetLL;
 
-//     int   _jetVeto_n; 
-//     float _jetVeto_pt;       
-//     float _jetVeto_eta;
-//     float _topVeto_bTagProb;
     // end cuts
 
 	std::vector<std::string> _histLabels;
-	std::map<std::string,TH1F*> _hists;
+	std::map<std::string,TH1D*> _hists;
 
 	HiggsCutSet _theCuts;
 
 
     // histograms
-	TH1F* _hEntries;
+	TH1D* _hEntries;
 
-	TH1F* _eeCounters;
-	TH1F* _emCounters;
-	TH1F* _meCounters;//TODO
-	TH1F* _mmCounters;
+//     TH1D* _eeCounters;
+//     TH1D* _emCounters;
+//     TH1D* _meCounters;
+//     TH1D* _mmCounters;
 
-	TH1F* _llCounters;
+//     TH1D* _llCounters;
 
-	TH1F* _nVrtx;
-	TH1F* _jetN;
-	TH1F* _jetPt;
-	TH1F* _jetEta;
-	TH1F* _diLep_PfMet;
-	TH1F* _diLep_TcMet;
-	TH1F* _diLep_ChargedMet;
-	TH1F* _diLep_projPfMet;
-	TH1F* _diLep_projTcMet;
-	TH1F* _diLep_projChargedMet;
-	TH1F* _diLep_ptLeadLep;
-	TH1F* _diLep_ptTrailLep;
-	TH1F* _diLep_mll;
-	TH1F* _diLep_deltaPhi;
+	TH1D* _nVrtx;
+	TH1D* _jetN;
+	TH1D* _jetPt;
+	TH1D* _jetEta;
 
-	TH2F* _llJetNVsNvrtx;
-	TH2F* _eeJetNVsNvrtx;
-	TH2F* _emJetNVsNvrtx;
-	TH2F* _meJetNVsNvrtx; //TODO
-	TH2F* _mmJetNVsNvrtx;
+	TH2D* _llJetNVsNvrtx;
+	TH2D* _eeJetNVsNvrtx;
+	TH2D* _emJetNVsNvrtx;
+	TH2D* _meJetNVsNvrtx; //TODO
+	TH2D* _mmJetNVsNvrtx;
 
-	std::vector<TH1F*> _llNm1Hist;
-	std::vector<TH1F*> _eeNm1Hist;
-	std::vector<TH1F*> _emNm1Hist;
-	std::vector<TH1F*> _meNm1Hist; //TODO
-	std::vector<TH1F*> _mmNm1Hist;
-	std::vector<TH1F*> _llPreCutHist;
-	std::vector<TH1F*> _llPostCutHist;
-	std::vector<TH1F*> _eePreCutHist;
-	std::vector<TH1F*> _eePostCutHist;
-	std::vector<TH1F*> _emPreCutHist;
-	std::vector<TH1F*> _emPostCutHist;
-	std::vector<TH1F*> _mePreCutHist;//TODO
-	std::vector<TH1F*> _mePostCutHist;//TODO
-	std::vector<TH1F*> _mmPreCutHist;
-	std::vector<TH1F*> _mmPostCutHist;
+    HistogramSet    _llHistograms;
+    HistogramSet    _eeHistograms;
+    HistogramSet    _emHistograms;
+    HistogramSet    _meHistograms;
+    HistogramSet    _mmHistograms;
+
+//     std::vector<TH1D*> _llDiHist;
+//     std::vector<TH1D*> _eeDiHist;
+//     std::vector<TH1D*> _emDiHist;
+//     std::vector<TH1D*> _meDiHist; //TODO
+//     std::vector<TH1D*> _mmDiHist;
+
+//     std::vector<TH1D*> _llNm1Hist;
+//     std::vector<TH1D*> _eeNm1Hist;
+//     std::vector<TH1D*> _emNm1Hist;
+//     std::vector<TH1D*> _meNm1Hist; //TODO
+//     std::vector<TH1D*> _mmNm1Hist;
+
+//     std::vector<TH1D*> _llPreCutHist;
+//     std::vector<TH1D*> _llPostCutHist;
+//     std::vector<TH1D*> _eePreCutHist;
+//     std::vector<TH1D*> _eePostCutHist;
+//     std::vector<TH1D*> _emPreCutHist;
+//     std::vector<TH1D*> _emPostCutHist;
+//     std::vector<TH1D*> _mePreCutHist;//TODO
+//     std::vector<TH1D*> _mePostCutHist;//TODO
+//     std::vector<TH1D*> _mmPreCutHist;
+//     std::vector<TH1D*> _mmPostCutHist;
+
+//     
+//     std::vector<TH1D*> _llExtraHist;
+//     std::vector<TH1D*> _eeExtraHist;
+//     std::vector<TH1D*> _emExtraHist;
+//     std::vector<TH1D*> _meExtraHist; //TODO
+//     std::vector<TH1D*> _mmExtraHist;
     // end histograms
 
 

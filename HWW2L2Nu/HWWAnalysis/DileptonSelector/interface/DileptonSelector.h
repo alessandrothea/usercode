@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Apr 14 12:29:55 CEST 2011
-// $Id: DileptonSelector.h,v 1.4 2011/05/04 01:14:30 thea Exp $
+// $Id: DileptonSelector.h,v 1.5 2011/05/07 08:32:18 thea Exp $
 //
 //
 // system include files
@@ -36,7 +36,7 @@
 #include <HWWAnalysis/DileptonSelector/interface/HWWCandidates.h>
 #include <HWWAnalysis/DileptonSelector/interface/EventProxy.h>
 #include <TTree.h>
-#include <TH1F.h>
+#include <TH1D.h>
 #include <bitset>
 #include <fstream>
 
@@ -121,16 +121,16 @@ class DileptonSelector : public edm::EDAnalyzer {
       LHWorkingPoint getLHWorkingPoint(unsigned short part, int eff);
       virtual void loadVBFTId( const std::vector<edm::ParameterSet>& points );      
       virtual void loadLikelihoodId( const std::vector<edm::ParameterSet>& points );      
-      void makeElectronHistograms( TFileDirectory* fd, std::vector<TH1F*>& histograms );
-      TH1F* makeLabelHistogram( TFileDirectory* fd, const std::string& name, const std::string& title, std::map<int,std::string> labels);
+      void makeElectronHistograms( TFileDirectory* fd, std::vector<TH1D*>& histograms );
+      TH1D* makeLabelHistogram( TFileDirectory* fd, const std::string& name, const std::string& title, std::map<int,std::string> labels);
       virtual void book();
-      virtual bool matchHLT();
+      virtual bool matchHlt();
 //       virtual bool hasGoodVertex();
       virtual void electronIsoId( ElCandicate&, LepCandidate::elBitSet& tags, int eff );
       virtual void tagElectrons();
       virtual void tagMuons();
       virtual void countPairs();
-      virtual void fillCounts( TH1F* h, const std::vector<unsigned int>& counts);
+      virtual void fillCounts( TH1D* h, const std::vector<unsigned int>& counts);
       virtual void fillCtrlHistograms();
       virtual void findSoftMus();
       virtual void cleanJets();
@@ -156,18 +156,23 @@ class DileptonSelector : public edm::EDAnalyzer {
           kElBinSize
       };
 
-      TH1F* _puNInteractionsUnweighted;
-      TH1F* _puNInteractions;
-      TH1F* _puNVertexes;
+      TH1D* _puNInteractionsUnweighted;
+      TH1D* _puNInteractions;
+      TH1D* _puNVertexes;
       void calculateWeight( const edm::Event& iEvent );
       bool jetLooseId( const pat::Jet& jet );
       double weight() { return _eventWeight; }
 
-      std::vector<TH1F*> _electronHistograms;
-      std::vector<TH1F*> _muonHistograms;
-      TH1F* _jetBTagProbTkCntHighEff;
+      std::vector<TH1D*> _electronHistograms;
+      std::vector<TH1D*> _muonHistograms;
+      TH1D* _jetBTagProbTkCntHighEff;
 
       HltObjMatcher* _hltMatcher;
+
+      edm::InputTag _ptWeightTag;
+      edm::InputTag _electronsTag;
+      edm::InputTag _muonsTag;
+      edm::InputTag _jetsTag;
       
       // ----------member data ---------------------------
       static const double _etaMaxTrk;
@@ -180,7 +185,7 @@ class DileptonSelector : public edm::EDAnalyzer {
       std::vector< VBTFWorkingPoint > _elVBTFWorkingPoints;
       std::vector< LHWorkingPoint > _elLHWorkingPoints;
 
-      std::string _wpFile;
+//       std::string _wpFile;
 
       // vrtx
       double _vrtxCut_nDof;
@@ -188,16 +193,20 @@ class DileptonSelector : public edm::EDAnalyzer {
       double _vrtxCut_z;
 
         // lep common
-      double _lepCut_leadingPt;
-      double _lepCut_trailingPt;
+      double _lepCut_extraPt;
 
       int    _elCut_TightWorkingPoint;
       int    _elCut_LooseWorkingPoint;
+
+      double _elCut_leadingPt;
+      double _elCut_trailingPt;
       double _elCut_ip3D;
 
+      double _muCut_leadingPt;
+      double _muCut_trailingPt;
       double _muCut_ip2D;
       double _muCut_dZPrimaryVertex;
-      int    _nuCut_NMuHits;
+      int    _muCut_NMuHits;
       int    _muCut_NMuMatches;
       int    _muCut_NTrackerHits;
       int    _muCut_NPixelHits;
@@ -227,18 +236,18 @@ class DileptonSelector : public edm::EDAnalyzer {
       HWWEvent* _diLepEvent;
       EventProxy* _eventProxy;
 
-      TH1F*     _hEntries;
+      TH1D*     _hEntries;
 
-      TH1F* _llCounters;
-      TH1F* _eeCounters;
-      TH1F* _emCounters;
-      TH1F* _meCounters;
-      TH1F* _mmCounters;
+      TH1D* _llCounters;
+      TH1D* _eeCounters;
+      TH1D* _emCounters;
+      TH1D* _meCounters;
+      TH1D* _mmCounters;
 
-      TH1F* _elTightCtrl;
-      TH1F* _elLooseCtrl;
-      TH1F* _muGoodCtrl;
-      TH1F* _muExtraCtrl;
+      TH1D* _elTightCtrl;
+      TH1D* _elLooseCtrl;
+      TH1D* _muGoodCtrl;
+      TH1D* _muExtraCtrl;
 
       std::vector<ElCandicate> _elTagged;
       std::vector<MuCandidate> _muTagged;

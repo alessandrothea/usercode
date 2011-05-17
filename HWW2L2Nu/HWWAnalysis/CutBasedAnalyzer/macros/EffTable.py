@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import sys
 import optparse
+import math
+import odict
 
 
 args = sys.argv[:]
@@ -18,11 +20,13 @@ if len(args) is not 2:
 
 f = ROOT.TFile(args[1])
 
-fStates = ['ll','mm','me','em','ee']
+fStates = ['mm','me','em','ee','ll']
 
+d = {}
 prefix='fullSelection/'
 # prefix='diLepSel/'
 for s in fStates:
+    d[s] = odict.OrderedDict()
     print '\n-',s+'Counters'
     name = prefix+s+'Counters'
     counters = f.Get(name)
@@ -46,8 +50,13 @@ for s in fStates:
         else:
             relEff = 100.*theBin/prevBin
         
+        d[s][labelAbs] = '%.1f+-%.1f' % ( theBin, math.sqrt(theBin) )
         print '  %s = %d - %.3f%% (%.3f%%)' % (labelAbs.ljust(20), theBin,absEff, relEff)
         
+print '+ Cut'.ljust(34),' | '.join([ s.ljust(20) for s in fStates ])
+
+for lab in d['ll'].iterkeys():
+    print '-',lab.ljust(30),'=',' | '.join( [ d[s][lab].ljust(20) for s in fStates ]) 
 
 #if __name__ == '__main__':
 #    

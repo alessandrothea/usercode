@@ -31,6 +31,44 @@ LepCandidate* LepPair::operator [](unsigned int i){
 	}
 }
 
+
+//_____________________________________________________________________________
+bool LepPair::isOpposite() {
+    return (_lA->candidate->charge() * _lB->candidate->charge() < 0 );
+}
+
+//_____________________________________________________________________________
+bool LepPair::isPtEta()    {
+    return this->isOpposite() && (_lA->isPtEtaLeading() &&  _lB->isPtEtaTrailing() ); 
+}
+
+//_____________________________________________________________________________
+bool LepPair::isIp()       {
+    return this->isOpposite() && (_lA->isIp() && _lB->isIp()); 
+}
+
+//_____________________________________________________________________________
+bool LepPair::isIso()      {
+    return this->isOpposite() && (_lA->isIso() && _lB->isIso()); 
+}
+
+//_____________________________________________________________________________
+bool LepPair::isId()       {
+    return this->isOpposite() && (_lA->isId() && _lB->isId()); 
+}
+
+//_____________________________________________________________________________
+bool LepPair::isNoConv()   {
+    return this->isOpposite() && (_lA->isNoConv() && _lB->isNoConv()); 
+}
+
+//_____________________________________________________________________________
+bool LepPair::isGood()     {
+    return this->isOpposite() && (_lA->isGood() && _lB->isGood()); 
+}
+
+
+
 /*
  ___  ___                      
  |  \/  |                      
@@ -73,7 +111,7 @@ bool MuCandidate::isIso() {
 
 //_____________________________________________________________________________
 bool MuCandidate::isExtra() {
-	return (tags[kMuTagEta] && tags[kMuTagTrailingPt])
+	return (tags[kMuTagEta] && tags[kMuTagExtraPt])
 		&& this->isIp()
 		&& this->isId()
 		&& this->isIso();
@@ -154,7 +192,7 @@ bool ElCandicate::isGood() {
 bool ElCandicate::isExtra() {
 	return
 			// ptEta
-			(tightTags[kElTagTrailingPt] && tightTags[kElTagEta])
+			(tightTags[kElTagExtraPt] && tightTags[kElTagEta])
 			// vertex
 			&& tightTags[kElTagIp3D]
 			// iso

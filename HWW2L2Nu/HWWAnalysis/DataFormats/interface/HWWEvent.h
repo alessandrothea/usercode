@@ -90,15 +90,9 @@ public:
     TLorentzVector TCMet;
     TLorentzVector PFMet;
     TLorentzVector ChargedMet;
-//     Double_t TCMET;
-//     Double_t TCMETphi;
-//     Double_t PFMET;
-//     Double_t PFMETphi;
-//     Double_t ChargedMET;
-//     Double_t ChargedMETphi;
 
-	Bool_t   HasSoftMus;
-	Bool_t	 HasBTaggedJets;
+	Bool_t   NSoftMus;
+	Bool_t	 NBTaggedJets;
 	Int_t	 NEles;   // Electrons
 	Int_t 	 NMus;    // Mus
 	Int_t    PFNJets; // Particle flow

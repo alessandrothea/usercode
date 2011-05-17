@@ -88,6 +88,14 @@ void HltObjMatcher::setTriggerResults( const edm::EventBase& event ) {
 }
 
 //______________________________________________________________________________
+// std::vector<unsigned int> matchBits(const std::string& pattern ) {
+//  find all the matches to the pattern    
+//    std::vector<unsigned int> indexes;
+
+//     for ( size_t i(0); i< 
+// }
+
+//______________________________________________________________________________
 bool HltObjMatcher::matchesBits( LepPair& pair ) {
     // useful for mc only
     // the trigger names in the data are different
@@ -99,17 +107,17 @@ bool HltObjMatcher::matchesBits( LepPair& pair ) {
 
     // get all the indexes
     unsigned int iSingleMu  = _hltTriggerNames.triggerIndex("HLT_Mu21_v1");
-    unsigned int iDoubleMu  = _hltTriggerNames.triggerIndex("HLT_DoubleMu5_v");
+    unsigned int iDoubleMu  = _hltTriggerNames.triggerIndex("HLT_DoubleMu5_v5");
     unsigned int iDoubleEl  = _hltTriggerNames.triggerIndex("HLT_Ele17_SW_TightCaloEleId_Ele8HE_L1R_v2");
     unsigned int iCrossElMu = _hltTriggerNames.triggerIndex("HLT_Mu5_Ele17_v2");
     unsigned int iCrossMuEl = _hltTriggerNames.triggerIndex("HLT_Mu11_Ele8_v1");
 
     // check the bits
-    bool bSingleMu  = (iSingleMu  != _hltTriggerNames.size()) && _hltTrgResults->accept( iSingleMu);
-    bool bDoubleMu  = (iDoubleMu  != _hltTriggerNames.size()) && _hltTrgResults->accept( iDoubleMu);
-    bool bDoubleEl  = (iDoubleEl  != _hltTriggerNames.size()) && _hltTrgResults->accept( iDoubleEl);
-    bool bCrossMuEl = (iCrossMuEl != _hltTriggerNames.size()) && _hltTrgResults->accept( iCrossMuEl);
-    bool bCrossElMu = (iCrossElMu != _hltTriggerNames.size()) && _hltTrgResults->accept( iCrossElMu);
+    bool bSingleMu  = (iSingleMu  != _hltTriggerNames.size()) && _hltTrgResults->accept( iSingleMu );
+    bool bDoubleMu  = (iDoubleMu  != _hltTriggerNames.size()) && _hltTrgResults->accept( iDoubleMu );
+    bool bDoubleEl  = (iDoubleEl  != _hltTriggerNames.size()) && _hltTrgResults->accept( iDoubleEl );
+    bool bCrossMuEl = (iCrossMuEl != _hltTriggerNames.size()) && _hltTrgResults->accept( iCrossMuEl );
+    bool bCrossElMu = (iCrossElMu != _hltTriggerNames.size()) && _hltTrgResults->accept( iCrossElMu );
 
     switch( pair.finalState() ) {
         case LepPair::kMM_t: 

@@ -11,23 +11,24 @@
 enum elTags {
 	kElTagEta,              // 0
 	kElTagLeadingPt,        // 1
-	kElTagTrailingPt,       // 1
-	kElTagIp3D,             // 2
+	kElTagTrailingPt,       // 2
+	kElTagExtraPt,          // 3
+	kElTagIp3D,             // 4
     // VBTF flags
-	kElTagSee,              // 3
-	kElTagDeta,             // 4
-	kElTagDphi,             // 5
-	kElTagHoE,              // 6
-	kElTagCombIso,          // 7
-	kElTagHits,             // 8
-	kElTagDist,             // 9
-	kElTagCot,              // 0
+	kElTagSee,              // 5
+	kElTagDeta,             // 6
+	kElTagDphi,             // 7
+	kElTagHoE,              // 8
+	kElTagCombIso,          // 9
+	kElTagHits,             // 0
+	kElTagDist,             // 1
+	kElTagCot,              // 2
     // LH Flags
-    kElTagLH_Likelihood,    // 1
-    kElTagLH_CombIso,       // 2
-    kElTagLH_Hits,          // 3
-	kElTagLH_Dist,          // 4
-	kElTagLH_Cot,           // 5 
+    kElTagLH_Likelihood,    // 3
+    kElTagLH_CombIso,       // 4
+    kElTagLH_Hits,          // 5
+	kElTagLH_Dist,          // 6
+	kElTagLH_Cot,           // 7 
     kElTagSize
 };
 
@@ -35,26 +36,27 @@ enum muTags {
 	kMuTagEta,                      // 0
 	kMuTagLeadingPt,                // 1
 	kMuTagTrailingPt,               // 2
-	kMuTagIp2D,                     // 3
-	kMuTagDzPV,                     // 4
+	kMuTagExtraPt,                  // 3
+	kMuTagIp2D,                     // 4
+	kMuTagDzPV,                     // 5
 
-	kMuTagIsGlobal,                 // 5
-	kMuTagNChi2,                    // 6
-	kMuTagNMuHits,                  // 7
-	kMuTagNMatches,                 // 8
+	kMuTagIsGlobal,                 // 6
+	kMuTagNChi2,                    // 7
+	kMuTagNMuHits,                  // 8
+	kMuTagNMatches,                 // 9
 
-	kMuTagIsTracker,                // 9
-	kMuTagIsTMLastStationAngTight,  // 0
+	kMuTagIsTracker,                // 0
+	kMuTagIsTMLastStationAngTight,  // 1
 
-	kMuTagNTkHits,                  // 1
-	kMuTagNPxHits,                  // 2
-	kMuTagRelPtRes,                 // 3
+	kMuTagNTkHits,                  // 2
+	kMuTagNPxHits,                  // 3
+	kMuTagRelPtRes,                 // 4
 
-	kMuTagCombIso,                  // 4
+	kMuTagCombIso,                  // 5
                                     
-	kMuTagSoftPt,                   // 5
-	kMuTagSoftHighPt,               // 6
-	kMuTagNotIso,                   // 7
+	kMuTagSoftPt,                   // 6
+	kMuTagSoftHighPt,               // 7
+	kMuTagNotIso,                   // 8
     kMuTagSize
 };
 
@@ -106,20 +108,20 @@ public:
 	LepCandidate* _lA;
 	LepCandidate* _lB;
 
-	static const char kEE_t = LepCandidate::kEl_t*11;
-	static const char kEM_t = LepCandidate::kEl_t*10+LepCandidate::kMu_t;
-	static const char kME_t = LepCandidate::kMu_t*10+LepCandidate::kEl_t;
-	static const char kMM_t = LepCandidate::kMu_t*11;
+	static const unsigned short kEE_t = LepCandidate::kEl_t*11;
+	static const unsigned short kEM_t = LepCandidate::kEl_t*10+LepCandidate::kMu_t;
+	static const unsigned short kME_t = LepCandidate::kMu_t*10+LepCandidate::kEl_t;
+	static const unsigned short kMM_t = LepCandidate::kMu_t*11;
 
-	virtual bool isOpposite() { return (_lA->candidate->charge() * _lB->candidate->charge() < 0 );}
-	virtual bool isPtEta()  { return this->isOpposite() && (_lA->isPtEtaLeading() && _lB->isPtEtaTrailing()); }
-	virtual bool isIp() { return this->isOpposite() && (_lA->isIp() && _lB->isIp()); }
-	virtual bool isIso()    { return this->isOpposite() && (_lA->isIso() && _lB->isIso()); }
-	virtual bool isId()     { return this->isOpposite() && (_lA->isId() && _lB->isId()); }
-	virtual bool isNoConv() { return this->isOpposite() && (_lA->isNoConv() && _lB->isNoConv()); }
-	virtual bool isGood()   { return this->isOpposite() && (_lA->isGood() && _lB->isGood()); }
+	virtual bool isOpposite();
+	virtual bool isPtEta();
+	virtual bool isIp();
+	virtual bool isIso();
+	virtual bool isId();
+	virtual bool isNoConv();
+	virtual bool isGood();
 
-	virtual int  finalState() { return _lA->type*10 + _lB->type; }
+	virtual unsigned short  finalState() { return _lA->type*10 + _lB->type; }
     LepCandidate* leading() { return _lA; }
     LepCandidate* trailing() { return _lB; }
 

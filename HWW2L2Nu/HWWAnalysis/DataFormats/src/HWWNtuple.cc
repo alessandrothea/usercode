@@ -27,6 +27,8 @@ void HWWNtuple::Clear( Option_t* option ){
     selected = false;
     weight = 1.,
 
+    tags = 0;
+
 	pA = TLorentzVector();
 	pB = TLorentzVector();
 	cA = 0;
@@ -38,19 +40,29 @@ void HWWNtuple::Clear( Option_t* option ){
 
     nVrtx = 0;
     nPileUp = 0;
-	mll = 0;
+
+    met = 0;
+    projMet = 0;
+
 	pfMet = 0;
 	tcMet = 0;
 	chargedMet = 0;
+
 	pfMetDphi = 0;
 	tcMetDphi = 0;
 	chargedMetDphi = 0;
+
 	projPfMet = 0;
 	projTcMet = 0;
 	projChargedMet = 0;
+    minProjMet = 0;
+
+	mll = 0;
 	dPhi = 0;
+    mrStar = 0;
+    gammaMRstar = 0;
+    razor = 0;
 	nPfJets = 0;
-	nJets = 0;
-	softMus = false;
-	bJets  = false;
+	nSoftMus = 0;
+	nBJets  = 0;
 }

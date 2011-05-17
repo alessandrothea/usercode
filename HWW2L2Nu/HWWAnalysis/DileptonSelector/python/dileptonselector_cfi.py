@@ -4,23 +4,17 @@ from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import *
 
 
 DileptonSelector = cms.EDAnalyzer('DileptonSelector',
-        debugLevel = cms.untracked.int32(0),
-        elWorkingPointsFile = cms.untracked.string('data/elWorkingPoints.txt'),
+        debugLevel  = cms.untracked.int32(0),
+
+        ptWeightSrc = cms.InputTag(''),
+        pileupSrc   = cms.InputTag(''),
+        electronSrc = cms.InputTag(''),
+        muonSrc     = cms.InputTag(''),
+        jetSrc      = cms.InputTag(''),
+
         pileupFactors = cms.vdouble(puWeights[:]),
         elCutBasedId = elVBTF2011,
         elLikelihood = elLH2011,
-        hltPaths = cms.PSet(
-            singleEl = cms.vstring( 
-                'HLT_Ele10_LW_L1R',
-                'HLT_Ele15_SW_L1R',
-                'HLT_Ele15_SW_CaloEleId_L1R',
-                'HLT_Ele17_SW_CaloEleId_L1R',
-                'HLT_Ele17_SW_TightEleId_L1R',
-                'HLT_Ele17_SW_TighterEleIdIsol_L1R_v2',
-                'HLT_Ele17_SW_TighterEleIdIsol_L1R_v3', 
-                ),
-            singleMu = cms.vstring( 'HLT_Mu9','HLT_Mu15_v1',),
-            ),
         hltMode = cms.string('all'),
         vrtxCuts = cms.PSet(
             nDof = cms.double(4.),
@@ -28,15 +22,18 @@ DileptonSelector = cms.EDAnalyzer('DileptonSelector',
             z    = cms.double(24.),
             ),
         lepCuts = cms.PSet(
-            leadingPt = cms.double(20),
-            trailingPt = cms.double(10),
+            extraPt = cms.double(10.),
             ),
         elCuts = cms.PSet(
+            leadingPt = cms.double(20.),
+            trailingPt = cms.double(15.),
             tightWorkingPoint = cms.int32(90),
             looseWorkingPoint = cms.int32(90),
             ip3D              = cms.double(0.03),
             ),
         muCuts = cms.PSet(
+            leadingPt = cms.double(20.),
+            trailingPt = cms.double(10.),
             nChi2           = cms.double(10),
             nMuHits         = cms.int32(0),
             nMuMatches      = cms.int32(1),

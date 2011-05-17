@@ -7,35 +7,48 @@ import PhysicsTools.PythonAnalysis.LumiList as LumiList
 #
 options = opts.VarParsing('analysis')
 
+options.register ('eventsToProcess',
+				  '',
+				  opts.VarParsing.multiplicity.list,
+				  opts.VarParsing.varType.string,
+				  "Events to process")
+
 options.register ('skipEvents',
-        0, # default value
-        opts.VarParsing.multiplicity.singleton, # singleton or list
-        opts.VarParsing.varType.int,          # string, int, or float
-        "Number of events to skip")
+                  0, # default value
+                  opts.VarParsing.multiplicity.singleton, # singleton or list
+                  opts.VarParsing.varType.int,          # string, int, or float
+                  "Number of events to skip")
 
 options.register ( 'dataType',
-        'mc',
-        opts.VarParsing.multiplicity.singleton,
-        opts.VarParsing.varType.string,
-        "Data type to be processed, default mc")
+                  'mc',
+                  opts.VarParsing.multiplicity.singleton,
+                  opts.VarParsing.varType.string,
+                  "Data type to be processed, default mc")
 
 options.register ('debugLevel',
-        0, # default value
-        opts.VarParsing.multiplicity.singleton, # singleton or list
-        opts.VarParsing.varType.int,          # string, int, or float
-        "Level of debug verbosity")
+                  0, # default value
+                  opts.VarParsing.multiplicity.singleton, # singleton or list
+                  opts.VarParsing.varType.int,          # string, int, or float
+                  "Level of debug verbosity")
 
 options.register ( 'useLumi',
-        None,
-        opts.VarParsing.multiplicity.singleton,
-        opts.VarParsing.varType.string,
-        "LumiSections to run on -json format - local runs only, don't use for crab")
+                  None,
+                  opts.VarParsing.multiplicity.singleton,
+                  opts.VarParsing.varType.string,
+                  "LumiSections to run on -json format - local runs only, don't use for crab")
 
 options.register ( 'flatWeights',
                   False,
                   opts.VarParsing.multiplicity.singleton,
                   opts.VarParsing.varType.bool,
                   "Set to true to force all the weights to 1")
+
+options.register ( 'higgsReweight',
+                  'none',
+                  opts.VarParsing.multiplicity.singleton,
+                  opts.VarParsing.varType.string,
+                  "if not none apply the pt weights for the corresponding higgs mass")
+
 
 #-------------------------------------------------------------------------------
 # defaults
@@ -53,6 +66,10 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring( options.inputFiles ),
     skipEvents = cms.untracked.uint32( options.skipEvents ),
 )
+
+if options.eventsToProcess:
+    process.source.eventsToProcess = cms.untracked.VEventRange (options.eventsToProcess)
+    print  process.source.eventsToProcess
 
 #-------------------------------------------------------------------------------
 # apply json mask if defined
@@ -85,6 +102,26 @@ if options.flatWeights:
     print ' - Forcing all the weights to 1.'
     process.DileptonSelector.pileupFactors = cms.vdouble(puFlatWeights[:])
 
+#  _   _                    _   ________         _                 
+# | | | |                  | | / /|  ___|       | |                
+# | |_| |_      ____      _| |/ / | |_ __ _  ___| |_ ___  _ __ ___ 
+# |  _  \ \ /\ / /\ \ /\ / /    \ |  _/ _` |/ __| __/ _ \| '__/ __|
+# | | | |\ V  V /  \ V  V /| |\  \| || (_| | (__| || (_) | |  \__ \
+# \_| |_/ \_/\_/    \_/\_/ \_| \_/\_| \__,_|\___|\__\___/|_|  |___/
+
+#-------------------------------------------------------------------------------
+
+if options.higgsReweight != 'none':
+    process.higgsPt = cms.EDProducer("HWWKFactorProducer",
+        inputFilename = cms.untracked.string("WWAnalysis/Misc/Scales/scalefactor.mh160.dat"),
+        ProcessID = cms.untracked.int32(10010),
+        Debug =cms.untracked.bool(False)
+    )
+    process.DileptonSelector.ptWeightSrc = cms.InputTag("higgsPt")
+    process.p = cms.Path(process.higgsPt * process.DileptonSelector)
+else:
+    process.p = cms.Path(process.DileptonSelector)
+
 #-------------------------------------------------------------------------------
 
 process.TFileService = cms.Service("TFileService", 
@@ -103,4 +140,4 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1000)
 # process.MessageLogger.cerr.INFO = cms.untracked.PSet(
 #             limit = cms.untracked.int32(-1)
 #             )
-process.p = cms.Path(process.DileptonSelector)
+# process.p = cms.Path(process.DileptonSelector)
