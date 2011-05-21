@@ -6,38 +6,40 @@ import re
 import ConfigParser
 import odict
 import os
+import psitools
 
-def strToNumbers( numString ):
-    numbers = []
-    if len(numString)==0:
-        return numbers;
 
-    items = numString.split(',')
-    for item in items:
-        nums = item.split('-')
-        if len(nums) == 1:
-            # single number
-            numbers.append(int(item))
-        elif len(nums) == 2:
-            i = int(nums[0])
-            j = int(nums[1])
-            if i > j:
-                raise ValueError('Invalid interval '+item)
-            numbers.extend(range(i,j+1))
-        else:
-            raise ValueError('Argument '+item+'is not valid')
+# def strToNumbers( numString ):
+#     numbers = []
+#     if len(numString)==0:
+#         return numbers;
 
-    return set(numbers)
+#     items = numString.split(',')
+#     for item in items:
+#         nums = item.split('-')
+#         if len(nums) == 1:
+#             single number
+#             numbers.append(int(item))
+#         elif len(nums) == 2:
+#             i = int(nums[0])
+#             j = int(nums[1])
+#             if i > j:
+#                 raise ValueError('Invalid interval '+item)
+#             numbers.extend(range(i,j+1))
+#         else:
+#             raise ValueError('Argument '+item+'is not valid')
 
-class Dataset:
-    def __init__(self, id, nick, ver, name):
-        self.id = id
-        self.nick = nick
-        self.ver  = ver
-        self.name = name
-        self.transfer = False
-        self.t0 = None
-        self.t1 = None
+#     return set(numbers)
+
+# class Dataset:
+#     def __init__(self, id, nick, ver, name):
+#         self.id = id
+#         self.nick = nick
+#         self.ver  = ver
+#         self.name = name
+#         self.transfer = False
+#         self.t0 = None
+#         self.t1 = None
 
 
 class MultiCrabConfigurator:
@@ -46,35 +48,34 @@ class MultiCrabConfigurator:
         self.crabcfg = crabcfg
         self.datatype = datatype
         self.ids = ids
-        self.datasets = []
-        self.configure()
+        self.datasets = psitools.getDataSets( self.csvFile, self.ids )
         self.parser = ConfigParser.ConfigParser( dict_type=odict.OrderedDict)
 
-    def configure(self):
-        reader = csv.reader(open(self.csvFile,'rb'),delimiter=',')
-        header = reader.next()
-        l = len(header)
-        #         print 'header len',l
+#     def configure(self):
+#         reader = csv.reader(open(self.csvFile,'rb'),delimiter=',')
+#         header = reader.next()
+#         l = len(header)
+#                 print 'header len',l
 
-        header = [ h.lower() for h in header]
+#         header = [ h.lower() for h in header]
 
-        cols = dict(zip(header,range(len(header))))
-        print cols
-        for row in reader:
-            if len(row) != l:
-                continue
+#         cols = dict(zip(header,range(len(header))))
+#         print cols
+#         for row in reader:
+#             if len(row) != l:
+#                 continue
 
-            d = Dataset(row[cols['id']],row[cols['nickname']],row[cols['skim version']],row[cols['output dataset']])
+#             d = Dataset(row[cols['id']],row[cols['nickname']],row[cols['skim version']],row[cols['output dataset']])
 
-            numId = int(re.search('[0-9]+',d.id).group(0))
-            if len(self.ids) != 0 and not numId in self.ids:
-                continue
+#             numId = int(re.search('[0-9]+',d.id).group(0))
+#             if len(self.ids) != 0 and not numId in self.ids:
+#                 continue
 
-            self.datasets.append(d);
+#             self.datasets.append(d);
 
-            if d.ver == '':
-                print 'Dataset',d.nick,'doesn\'t have a version number'
-                continue
+#             if d.ver == '':
+#                 print 'Dataset',d.nick,'doesn\'t have a version number'
+#                 continue
 
     def build(self):
 

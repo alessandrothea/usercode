@@ -25,14 +25,16 @@ def c2p( args ):
     print [d.nick for d in datasets]
 
     for d in datasets:
-        inputPath =d.nick+'.input' 
+        shortName = 'id'+d.id+'.'+d.nick
+        inputPath = shortName+'.input' 
         inputFile = open(inputPath,'w')
         allFiles =  psitools.dbsGetFileList( d )
         inputFile.write('\n'.join(allFiles))
         inputFile.close()
 
         groups = d.ver+':'+opt.groups if opt.groups is not None else d.ver 
-        cmd = ['createSession.py','-s',d.nick,
+        cmd = ['pwn_CreateSession.py','-n',
+               '-s',shortName,
                '-g',groups,
                '-l',d.name,
                '-i',inputPath,
@@ -68,7 +70,7 @@ if __name__ == '__main__':
     parser.add_option('-o', '--outputDir', dest='outputDir', help='Output directory', default='.')
     parser.add_option('-g', '--groups', dest='groups', help='Column separated list of groups') 
     parser.add_option('-j', '--nJobs', type='int', dest='nJobs', help='Number of jobs')
-    parser.add_option('-a', '--optArgs', dest='optArgs', help='optional arguments', default='')
+    parser.add_option('-a', '--optArgs', dest='optArgs', help='optional arguments')
     parser.add_option('-t', '--template', dest='template', help='Script template')
     parser.add_option('-c', '--csv', dest='csvFile', help='CSV source file')
     

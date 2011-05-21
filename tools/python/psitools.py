@@ -140,19 +140,6 @@ def dbsGetExistingDatasets(version, site):
 
     return outRows
 
-# def dbsGetFileList( dataset ):
-#     cmd=['dbs', 
-#          'lsf',
-#          '--url=http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet',
-#          '--path=%s' % (dataset.name,),
-#         ]
-#     print ' '.join(cmd)
-#     dbsQuery = subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#     (stdout,stderr) = dbsQuery.communicate()
-#     outRows = stdout.splitlines()
-
-#     print '\n'.join(outRows)
-
 def dbsGetFileList( dataset ):
     d = {}
     d['url']='http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet'
