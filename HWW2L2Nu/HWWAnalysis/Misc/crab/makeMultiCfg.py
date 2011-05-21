@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
         toReplace['RMMEMC'] = not d.isData
         toReplace['RMMEGlobalTag'] = d.gtag
-        toReplace['RMMEGlobalTag'] = d.nick+'.root'
+        toReplace['RMMEFN'] = d.nick+'.root'
         # create a new skim python file
         newpy = tmpPath+'/'+os.path.splitext(os.path.basename(pypath))[0]+'_'+d.nick+'.py'
         substitute(pypath, newpy, toReplace )

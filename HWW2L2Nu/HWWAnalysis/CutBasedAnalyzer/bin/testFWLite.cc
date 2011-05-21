@@ -20,6 +20,7 @@
 #include "FWCore/Utilities/interface/Parse.h"
 #include "FWCore/PythonParameterSet/interface/MakeParameterSets.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include <Reflex/Object.h>
 #include <TSystem.h>
 #include <TChain.h>
 
