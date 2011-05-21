@@ -10,6 +10,7 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <algorithm>
 
 #define THROW_RUNTIME(__STRING__) { \
 	std::stringstream ss; \
@@ -60,7 +61,19 @@ const char *const kUnderline = "\033[4m";
 const char *const kBlink     = "\033[5m";
 const char *const kBright    = "\033[1m";
 const char *const kDark      = "\033[2m";
+}
 
+template <class T>
+std::vector<T> minMax( const std::vector<T>& v ) {
+    std::vector<T> minMax;
+    if ( v.size() == 0 )
+        return minMax;
+    
+    minMax.resize(2);
+    // element 0 is max
+    minMax[0] = *std::max_element(v.begin(),v.end());
+    minMax[1] = *std::min_element(v.begin(),v.end());   
 
+    return minMax;
 }
 #endif /* TOOLS_H_ */

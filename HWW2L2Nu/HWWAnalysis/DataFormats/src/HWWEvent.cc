@@ -46,5 +46,13 @@ void HWWEvent::Clear( Option_t* option ){
 	Els.clear();
 	Mus.clear();
 	PFJets.clear();
+
+    BTaggers.CombSecVrtxMVA.clear();
+    BTaggers.SimpleSecVrtxHighEff.clear();
+    BTaggers.SimpleSecVrtxHighPur.clear();
+    BTaggers.JetBProb.clear();
+    BTaggers.JetProb.clear();
+    BTaggers.TkCntHighEff.clear();
+    BTaggers.TkCntHighPur.clear();
 }
 

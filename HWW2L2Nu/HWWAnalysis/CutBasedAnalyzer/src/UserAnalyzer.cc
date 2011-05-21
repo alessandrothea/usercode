@@ -8,10 +8,11 @@
 #include "HWWAnalysis/CutBasedAnalyzer/interface/UserAnalyzer.h"
 #include <TChain.h>
 #include <TFile.h>
+#include <TMath.h>
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
-#include "HWWAnalysis/CutBasedAnalyzer/interface/Tools.h"
+#include "HWWAnalysis/Misc/interface/Tools.h"
 
 //_____________________________________________________________________________
 UserAnalyzer::UserAnalyzer( int argc, char** argv ) : _chain(0x0), _output(0x0), _initialized(false) {
@@ -53,7 +54,7 @@ void UserAnalyzer::Analyze() {
 
 //_____________________________________________________________________________
 void UserAnalyzer::Start() {
-	std::cout << "--- " << TermColors::kLightBlue << "Start" << TermColors::kReset << " - " << TDatime().AsString() << std::endl;
+	std::cout << "--- " << TermColors::kLightBlue << "Start" << TermColors::kReset << " - [" << TDatime().AsString() << "]" << std::endl;
 	_benchmark.Start("main");
 	if (!_config.check() )
 		THROW_RUNTIME("Broken configuration")
@@ -134,13 +135,16 @@ void UserAnalyzer::Loop() {
 	}
 	TStopwatch watch;
 	for (Long64_t i=_firstEvent; i<lastEvent; ++i) {
-		if ( i%1000 == 0 ) {
+        if ( i==0 || ( TMath::FloorNint(i*100/(double)_nEvents) == TMath::CeilNint( (i-1)*100/(double)_nEvents) ) ) {
+//         if ( i%1000 == 0 ) {
 			watch.Stop();
-			std::cout << "i = " << i << " RealTime : " << watch.RealTime() << " Cpu : " << watch.CpuTime() << std::endl;
+            if ( i!=0 ) std::cout << '\r';
+			std::cout << "+ " << TMath::Nint(i*100/(double)_nEvents) << "% i = " << i << " RealTime : " << watch.RealTime() << " Cpu : " << watch.CpuTime() << std::flush;
 			watch.Continue();
 		}
 		Process( i );
 	}
+    std::cout << std::endl;
 }
 
 //_____________________________________________________________________________
@@ -148,6 +152,6 @@ void UserAnalyzer::Finish() {
 	EndJob();
 	_output->Write();
 	_output->Close();
-	std::cout << "--- " << TermColors::kLightBlue << "Finish" << TermColors::kReset << " - "<< TDatime().AsString() << std::endl;
+	std::cout << "--- " << TermColors::kLightBlue << "Finish" << TermColors::kReset << " - " << _nEvents << " Events Processed - [" << TDatime().AsString() << "]"  << std::endl;
 	_benchmark.Stop("main");
 }

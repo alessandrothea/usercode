@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include "HWWAnalysis/CutBasedAnalyzer/interface/HWWAnalyzer.h"
 #include "HWWAnalysis/CutBasedAnalyzer/interface/CommandLine.h"
-#include "HWWAnalysis/CutBasedAnalyzer/interface/Tools.h"
+#include "HWWAnalysis/Misc/interface/Tools.h"
 #include "FWCore/FWLite/interface/AutoLibraryLoader.h"
 #include <TSystem.h>
 

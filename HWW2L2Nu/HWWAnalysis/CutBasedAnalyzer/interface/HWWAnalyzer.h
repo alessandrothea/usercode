@@ -56,6 +56,7 @@ protected:
         std::vector<TH1D*> preCuts;
         std::vector<TH1D*> postCuts;
         std::vector<TH1D*> extra;
+        std::vector<TH1D*> nm1Cut;
         std::vector<std::vector<TH1D*> > cutByCut;
     };
 
@@ -164,7 +165,10 @@ protected:
     void fillDiLeptons(std::vector<TH1D*>& histograms );
     void fillExtra(std::vector<TH1D*>& histograms );
     void fillVariables( HistogramSet* histograms, HCuts_t cutCode );
-    
+    void fillNminus1(std::vector<TH1D*>& nm1, higgsBitWord word );
+    void fillBtaggers();
+
+ 
     // cuts
 	int   _higgsMass;
 
@@ -188,17 +192,19 @@ protected:
     // histograms
 	TH1D* _hEntries;
 
-//     TH1D* _eeCounters;
-//     TH1D* _emCounters;
-//     TH1D* _meCounters;
-//     TH1D* _mmCounters;
-
-//     TH1D* _llCounters;
-
 	TH1D* _nVrtx;
 	TH1D* _jetN;
 	TH1D* _jetPt;
 	TH1D* _jetEta;
+
+    TH1D* _btagCombinedSecondaryVertex;
+    TH1D* _btagCombinedSecondaryVertexMVA;
+    TH1D* _btagSimpleSecondaryVertexHighEff;
+    TH1D* _btagSimpleSecondaryVertexHighPur;
+    TH1D* _btagJetBProbability;
+    TH1D* _btagJetProbability;
+    TH1D* _btagTrackCountingHighEff;
+    TH1D* _btagTrackCountingHighPur;
 
 	TH2D* _llJetNVsNvrtx;
 	TH2D* _eeJetNVsNvrtx;
@@ -212,44 +218,10 @@ protected:
     HistogramSet    _meHistograms;
     HistogramSet    _mmHistograms;
 
-//     std::vector<TH1D*> _llDiHist;
-//     std::vector<TH1D*> _eeDiHist;
-//     std::vector<TH1D*> _emDiHist;
-//     std::vector<TH1D*> _meDiHist; //TODO
-//     std::vector<TH1D*> _mmDiHist;
-
-//     std::vector<TH1D*> _llNm1Hist;
-//     std::vector<TH1D*> _eeNm1Hist;
-//     std::vector<TH1D*> _emNm1Hist;
-//     std::vector<TH1D*> _meNm1Hist; //TODO
-//     std::vector<TH1D*> _mmNm1Hist;
-
-//     std::vector<TH1D*> _llPreCutHist;
-//     std::vector<TH1D*> _llPostCutHist;
-//     std::vector<TH1D*> _eePreCutHist;
-//     std::vector<TH1D*> _eePostCutHist;
-//     std::vector<TH1D*> _emPreCutHist;
-//     std::vector<TH1D*> _emPostCutHist;
-//     std::vector<TH1D*> _mePreCutHist;//TODO
-//     std::vector<TH1D*> _mePostCutHist;//TODO
-//     std::vector<TH1D*> _mmPreCutHist;
-//     std::vector<TH1D*> _mmPostCutHist;
-
-//     
-//     std::vector<TH1D*> _llExtraHist;
-//     std::vector<TH1D*> _eeExtraHist;
-//     std::vector<TH1D*> _emExtraHist;
-//     std::vector<TH1D*> _meExtraHist; //TODO
-//     std::vector<TH1D*> _mmExtraHist;
-    // end histograms
-
-
-//     std::set<HWWPFJet*> _selectedJets;
-//     std::set<HWWPFJet*> _btaggedJets;
-
 	std::string _cutFile;
 
 	std::vector<HiggsCutSet> _cutVector;
+
 
 	std::string _analysisTreeName;
 	TTree* _analysisTree;

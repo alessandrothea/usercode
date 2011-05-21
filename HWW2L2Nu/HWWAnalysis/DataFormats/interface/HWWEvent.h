@@ -10,7 +10,7 @@
 #include <TObject.h>
 #include <TLorentzVector.h>
 
-class HWWElectron : public TObject {
+class HWWElectron {
 public:
 	HWWElectron() {}
 	virtual ~HWWElectron() {}
@@ -27,10 +27,10 @@ public:
 	Double_t        D0PV;
 	Double_t        DzPV;
 
-	ClassDef(HWWElectron,1)
+//     ClassDef(HWWElectron,1)
 };
 
-class HWWMuon : public TObject {
+class HWWMuon {
 public:
 	HWWMuon() {}
 	virtual ~HWWMuon() {}
@@ -48,10 +48,10 @@ public:
 	Double_t        D0PV;
 	Double_t        DzPV;
 
-	ClassDef(HWWMuon, 1)
+//     ClassDef(HWWMuon, 1)
 };
 
-class HWWPFJet : public TObject {
+class HWWPFJet {
 public:
 	TLorentzVector P;
 	Double_t        ChHadfrac;
@@ -62,10 +62,26 @@ public:
 	Int_t           NConstituents;
     Double_t        BTagProbTkCntHighEff;
 
-	ClassDef(HWWPFJet,1)
+//     ClassDef(HWWPFJet,1)
 };
 
-class HWWEvent : public TObject {
+class HWWBTaggers {
+public:
+    // 2 elements vectors with btagger min and max for the event
+    // empty if no additional jet was found
+    std::vector<double> CombSecVrtx;
+    std::vector<double> CombSecVrtxMVA;
+    std::vector<double> SimpleSecVrtxHighEff;
+    std::vector<double> SimpleSecVrtxHighPur;
+    std::vector<double> JetBProb;
+    std::vector<double> JetProb;
+    std::vector<double> TkCntHighEff;
+    std::vector<double> TkCntHighPur;
+
+//     ClassDef(HWWBTaggers,1)
+};
+
+class HWWEvent {
 public:
 	HWWEvent();
 	virtual ~HWWEvent();
@@ -101,7 +117,8 @@ public:
 	std::vector<HWWMuon> 	 Mus;
 	std::vector<HWWPFJet>	 PFJets;
 
-	ClassDef(HWWEvent,1)
+    HWWBTaggers BTaggers;
+//     ClassDef(HWWEvent,1)
 };
 
 #define HWWEVENT_H_

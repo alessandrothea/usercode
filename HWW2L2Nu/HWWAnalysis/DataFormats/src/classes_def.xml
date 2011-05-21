@@ -3,6 +3,7 @@
   <class name="HWWElectron" />
   <class name="HWWMuon" />
   <class name="HWWPFJet" />
+  <class name="HWWBTaggers" />
   <class name="std::vector<HWWElectron>" />
   <class name="std::vector<HWWMuon>" />
   <class name="std::vector<HWWPFJet>"/>

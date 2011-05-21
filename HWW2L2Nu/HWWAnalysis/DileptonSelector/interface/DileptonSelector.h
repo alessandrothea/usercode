@@ -48,220 +48,230 @@ class HltObjMatcher;
 //
 
 class DileptonSelector : public edm::EDAnalyzer {
-   public:
-      explicit DileptonSelector(const edm::ParameterSet&);
-      ~DileptonSelector();
+    public:
+        explicit DileptonSelector(const edm::ParameterSet&);
+        ~DileptonSelector();
 
-      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
-
-   private:
-      virtual void beginJob() ;
-      virtual void analyze(const edm::Event&, const edm::EventSetup&);
-      virtual void endJob() ;
-
-      virtual void beginRun(edm::Run const&, edm::EventSetup const&);
-      virtual void endRun(edm::Run const&, edm::EventSetup const&);
-      virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
-      virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
-
-      // container for the working point cuts
-      struct VBTFWorkingPoint {
-          char partition;
-          int efficiency;
-          float See;
-          float dPhi;
-          float dEta;
-          float HoE;
-          float combIso;
-          int   missHits;
-          float dist;
-          float cot;
-          void print();
-      };
-
-      struct LHWorkingPoint {
-          char  partition;
-          int   efficiency;
-          float lh0brem; 
-          float lh1brem; 
-          float combIso;
-          int   missHits;
-          float dist;
-          float cot;
-          void  print();
-      };
+        static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 
-      enum WpPartition {
-          kBarrel,
-          kEndcap
-      };
+    private:
+        virtual void beginJob() ;
+        virtual void analyze(const edm::Event&, const edm::EventSetup&);
+        virtual void endJob() ;
 
-      enum LlBins {
-          kLLBinAll,
-//           kLLBinVertex,
-          kLLBinDilepton,
-          kLLBinEtaPt,
-          kLLBinId,
-          kLLBinIso,
-          kLLBinNoConv,
-          kLLBinIp,
-          kLLBinExtraLep,
-          kLLBinHltBits,
-          kLLBinHltObject,
-          kLLBinLast
-      };
+        virtual void beginRun(edm::Run const&, edm::EventSetup const&);
+        virtual void endRun(edm::Run const&, edm::EventSetup const&);
+        virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
+        virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
 
-      std::ostream& Debug(int level); 
-    
-      virtual EventProxy* getEvent() { return _eventProxy; }
+        // container for the working point cuts
+        struct VBTFWorkingPoint {
+            char partition;
+            int efficiency;
+            float See;
+            float dPhi;
+            float dEta;
+            float HoE;
+            float combIso;
+            int   missHits;
+            float dist;
+            float cot;
+            void print();
+        };
 
-      VBTFWorkingPoint getVBTFWorkingPoint(unsigned short part, int eff);
-      LHWorkingPoint getLHWorkingPoint(unsigned short part, int eff);
-      virtual void loadVBFTId( const std::vector<edm::ParameterSet>& points );      
-      virtual void loadLikelihoodId( const std::vector<edm::ParameterSet>& points );      
-      void makeElectronHistograms( TFileDirectory* fd, std::vector<TH1D*>& histograms );
-      TH1D* makeLabelHistogram( TFileDirectory* fd, const std::string& name, const std::string& title, std::map<int,std::string> labels);
-      virtual void book();
-      virtual bool matchHlt();
-//       virtual bool hasGoodVertex();
-      virtual void electronIsoId( ElCandicate&, LepCandidate::elBitSet& tags, int eff );
-      virtual void tagElectrons();
-      virtual void tagMuons();
-      virtual void countPairs();
-      virtual void fillCounts( TH1D* h, const std::vector<unsigned int>& counts);
-      virtual void fillCtrlHistograms();
-      virtual void findSoftMus();
-      virtual void cleanJets();
-      virtual void clear();
-      virtual bool selectAndClean();
-      virtual void assembleEvent();
-      virtual bool checkExtraLeptons();
+        struct LHWorkingPoint {
+            char  partition;
+            int   efficiency;
+            float lh0brem; 
+            float lh1brem; 
+            float combIso;
+            int   missHits;
+            float dist;
+            float cot;
+            void  print();
+        };
 
-      
-      // ----------new stuff -----------------------------
-      std::vector<double> _puFactors;
-      double _eventWeight;
-      unsigned int _nPileUp;
 
-      enum ElCuts { 
-          kElBinEta,
-          kElBinPt,
-          kElBinIp3D,
-          kElBinSee,
-          kElBinDeta,
-          kElBinDphi,
-          kElBinCombIso,
-          kElBinSize
-      };
+        enum WpPartition {
+            kBarrel,
+            kEndcap
+        };
 
-      TH1D* _puNInteractionsUnweighted;
-      TH1D* _puNInteractions;
-      TH1D* _puNVertexes;
-      void calculateWeight( const edm::Event& iEvent );
-      bool jetLooseId( const pat::Jet& jet );
-      double weight() { return _eventWeight; }
+        enum LlBins {
+            kLLBinAll,
+            //           kLLBinVertex,
+            kLLBinDilepton,
+            kLLBinEtaPt,
+            kLLBinId,
+            kLLBinIso,
+            kLLBinNoConv,
+            kLLBinIp,
+            kLLBinExtraLep,
+            kLLBinHltBits,
+            kLLBinHltObject,
+            kLLBinLast
+        };
 
-      std::vector<TH1D*> _electronHistograms;
-      std::vector<TH1D*> _muonHistograms;
-      TH1D* _jetBTagProbTkCntHighEff;
+        std::ostream& Debug(int level); 
 
-      HltObjMatcher* _hltMatcher;
+        virtual EventProxy* getEvent() { return _eventProxy; }
 
-      edm::InputTag _ptWeightTag;
-      edm::InputTag _electronsTag;
-      edm::InputTag _muonsTag;
-      edm::InputTag _jetsTag;
-      
-      // ----------member data ---------------------------
-      static const double _etaMaxTrk;
-      static const double _etaMaxEB;
-      static const double _etaMinEE;
-      static const double _etaMaxEE;
-      static const double _etaMaxMu;
-      
-      int _debugLvl; 
-      std::vector< VBTFWorkingPoint > _elVBTFWorkingPoints;
-      std::vector< LHWorkingPoint > _elLHWorkingPoints;
+        VBTFWorkingPoint getVBTFWorkingPoint(unsigned short part, int eff);
+        LHWorkingPoint getLHWorkingPoint(unsigned short part, int eff);
+        virtual void loadVBFTId( const std::vector<edm::ParameterSet>& points );      
+        virtual void loadLikelihoodId( const std::vector<edm::ParameterSet>& points );      
+        void makeElectronHistograms( TFileDirectory* fd, std::vector<TH1D*>& histograms );
+        TH1D* makeLabelHistogram( TFileDirectory* fd, const std::string& name, const std::string& title, std::map<int,std::string> labels);
+        virtual void book();
+        virtual bool matchHlt();
+        //       virtual bool hasGoodVertex();
+        virtual void electronIsoId( ElCandicate&, LepCandidate::elBitSet& tags, int eff );
+        virtual void tagElectrons();
+        virtual void tagMuons();
+        virtual void countPairs();
+        virtual void fillCounts( TH1D* h, const std::vector<unsigned int>& counts);
+        virtual void fillCtrlHistograms();
+        virtual void findSoftMus();
+        virtual void cleanJets();
+        virtual void clear();
+        virtual bool selectAndClean();
+        virtual void assembleEvent();
+        virtual bool checkExtraLeptons();
 
-//       std::string _wpFile;
 
-      // vrtx
-      double _vrtxCut_nDof;
-      double _vrtxCut_rho;
-      double _vrtxCut_z;
+        // ----------new stuff -----------------------------
+        std::vector<double> _puFactors;
+        double _eventWeight;
+        unsigned int _nPileUp;
+
+        enum ElCuts { 
+            kElBinEta,
+            kElBinPt,
+            kElBinIp3D,
+            kElBinSee,
+            kElBinDeta,
+            kElBinDphi,
+            kElBinCombIso,
+            kElBinSize
+        };
+
+        TH1D* _puNInteractionsUnweighted;
+        TH1D* _puNInteractions;
+        TH1D* _puNVertexes;
+        void calculateWeight( const edm::Event& iEvent );
+        bool jetLooseId( const pat::Jet& jet );
+        double weight() { return _eventWeight; }
+
+        std::vector<TH1D*> _electronHistograms;
+        std::vector<TH1D*> _muonHistograms;
+        TH1D* _jetBTagProbTkCntHighEff;
+
+        HltObjMatcher* _hltMatcher;
+
+        edm::InputTag _ptWeightTag;
+        edm::InputTag _electronsTag;
+        edm::InputTag _muonsTag;
+        edm::InputTag _jetsTag;
+
+        // ----------member data ---------------------------
+        static const double _etaMaxTrk;
+        static const double _etaMaxEB;
+        static const double _etaMinEE;
+        static const double _etaMaxEE;
+        static const double _etaMaxMu;
+
+        int _debugLvl; 
+        std::vector< VBTFWorkingPoint > _elVBTFWorkingPoints;
+        std::vector< LHWorkingPoint > _elLHWorkingPoints;
+
+        //       std::string _wpFile;
+
+        // vrtx
+        double _vrtxCut_nDof;
+        double _vrtxCut_rho;
+        double _vrtxCut_z;
 
         // lep common
-      double _lepCut_extraPt;
+        double _lepCut_extraPt;
 
-      int    _elCut_TightWorkingPoint;
-      int    _elCut_LooseWorkingPoint;
+        int    _elCut_TightWorkingPoint;
+        int    _elCut_LooseWorkingPoint;
 
-      double _elCut_leadingPt;
-      double _elCut_trailingPt;
-      double _elCut_ip3D;
+        double _elCut_leadingPt;
+        double _elCut_trailingPt;
+        double _elCut_ip3D;
 
-      double _muCut_leadingPt;
-      double _muCut_trailingPt;
-      double _muCut_ip2D;
-      double _muCut_dZPrimaryVertex;
-      int    _muCut_NMuHits;
-      int    _muCut_NMuMatches;
-      int    _muCut_NTrackerHits;
-      int    _muCut_NPixelHits;
-      int    _muCut_NChi2;
-      double _muCut_relPtRes;
-      double _muCut_combIsoOverPt;
+        double _muCut_leadingPt;
+        double _muCut_trailingPt;
+        double _muCut_ip2D;
+        double _muCut_dZPrimaryVertex;
+        int    _muCut_NMuHits;
+        int    _muCut_NMuMatches;
+        int    _muCut_NTrackerHits;
+        int    _muCut_NPixelHits;
+        int    _muCut_NChi2;
+        double _muCut_relPtRes;
+        double _muCut_combIsoOverPt;
 
-      double _muSoftCut_Pt;
-      double _muSoftCut_HighPt;
-      double _muSoftCut_NotIso;
+        double _muSoftCut_Pt;
+        double _muSoftCut_HighPt;
+        double _muSoftCut_NotIso;
 
-      double _jetCut_Pt;
-      double _jetCut_Dr;
-      double _jetCut_Eta;
-      double _jetCut_BtagProb;
-      double _jetCut_neutralEmFrac;
-      double _jetCut_neutralHadFrac;
-      int    _jetCut_multiplicity;
-      double _jetCut_chargedEmFrac;
-      double _jetCut_chargedHadFrac;
-      int    _jetCut_chargedMulti;
+        double _jetCut_Pt;
+        double _jetCut_Dr;
+        double _jetCut_Eta;
+        double _jetCut_BtagProb;
+        double _jetCut_neutralEmFrac;
+        double _jetCut_neutralHadFrac;
+        int    _jetCut_multiplicity;
+        double _jetCut_chargedEmFrac;
+        double _jetCut_chargedHadFrac;
+        int    _jetCut_chargedMulti;
 
-      double _nEvents;
-      double _nSelectedEvents;
+        double _nEvents;
+        double _nSelectedEvents;
 
-      TTree* _tree;
-      HWWEvent* _diLepEvent;
-      EventProxy* _eventProxy;
+        TTree* _tree;
+        HWWEvent* _diLepEvent;
+        EventProxy* _eventProxy;
 
-      TH1D*     _hEntries;
+        TH1D*     _hEntries;
 
-      TH1D* _llCounters;
-      TH1D* _eeCounters;
-      TH1D* _emCounters;
-      TH1D* _meCounters;
-      TH1D* _mmCounters;
+        TH1D* _llCounters;
+        TH1D* _eeCounters;
+        TH1D* _emCounters;
+        TH1D* _meCounters;
+        TH1D* _mmCounters;
 
-      TH1D* _elTightCtrl;
-      TH1D* _elLooseCtrl;
-      TH1D* _muGoodCtrl;
-      TH1D* _muExtraCtrl;
+        TH1D* _elTightCtrl;
+        TH1D* _elLooseCtrl;
+        TH1D* _muGoodCtrl;
+        TH1D* _muExtraCtrl;
 
-      std::vector<ElCandicate> _elTagged;
-      std::vector<MuCandidate> _muTagged;
+        std::vector<ElCandicate> _elTagged;
+        std::vector<MuCandidate> _muTagged;
 
-      std::vector<LepPair>     _selectedPairs;
+        std::vector<LepPair>     _selectedPairs;
 
-      std::set< unsigned int > _selectedEls;
-      std::set< unsigned int > _selectedMus;
+        std::set< unsigned int > _selectedEls;
+        std::set< unsigned int > _selectedMus;
 
-      std::set< unsigned int > _softMus;
-      std::set< unsigned int > _selectedPFJets;
-      std::set< unsigned int > _btaggedJets;
+        std::set< unsigned int > _softMus;
+        std::set< unsigned int > _selectedPFJets;
+        std::set< unsigned int > _btaggedJets;
 
-//       std::ofstream _debugFile;
+        std::vector<double>      _btag_combinedSecondaryVertex;
+        std::vector<double>      _btag_combinedSecondaryVertexMVA;
+        std::vector<double>      _btag_simpleSecondaryVertexHighEff;
+        std::vector<double>      _btag_simpleSecondaryVertexHighPur;
+        std::vector<double>      _btag_jetBProbability;
+        std::vector<double>      _btag_jetProbability;
+        std::vector<double>      _btag_trackCountingHighEff;
+        std::vector<double>      _btag_trackCountingHighPur;
+
+
+        //       std::ofstream _debugFile;
 };
 
 //

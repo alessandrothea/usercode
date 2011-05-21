@@ -3,3 +3,10 @@
     <use name="HWWAnalysis/DataFormats"/>
     <use name="root"/>
 </bin>
+<bin file="testFWLite.cc" name="fwLiteTest.exe">
+    <use name="HWWAnalysis/CutBasedAnalyzer"/>
+    <use name="HWWAnalysis/DataFormats"/>
+    <use name="FWCore/PythonParameterSet"/>
+    <use name="CommonTools/Utils"/>
+    <use name="root"/>
+</bin>

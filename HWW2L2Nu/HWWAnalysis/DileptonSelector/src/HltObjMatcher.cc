@@ -6,7 +6,7 @@
 // FIXME a _lot_ of stuff hardcoded here. All the trigger names
 
 #include <HWWAnalysis/DileptonSelector/interface/HltObjMatcher.h>
-#include <HWWAnalysis/DileptonSelector/interface/Tools.h>
+#include <HWWAnalysis/Misc/interface/Tools.h>
 #include <DataFormats/PatCandidates/interface/Electron.h>
 #include <DataFormats/PatCandidates/interface/Muon.h>
 #include <DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h>

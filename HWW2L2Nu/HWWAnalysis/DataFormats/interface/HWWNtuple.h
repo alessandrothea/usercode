@@ -11,7 +11,7 @@
 #include <TObject.h>
 #include <TLorentzVector.h>
 
-class HWWNtuple : public TObject {
+class HWWNtuple {//: public TObject {
 public:
 	HWWNtuple();
 	virtual ~HWWNtuple();

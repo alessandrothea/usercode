@@ -6,7 +6,6 @@ from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import *
 DileptonSelector = cms.EDAnalyzer('DileptonSelector',
         debugLevel  = cms.untracked.int32(0),
 
-        ptWeightSrc = cms.InputTag(''),
         pileupSrc   = cms.InputTag(''),
         electronSrc = cms.InputTag(''),
         muonSrc     = cms.InputTag(''),

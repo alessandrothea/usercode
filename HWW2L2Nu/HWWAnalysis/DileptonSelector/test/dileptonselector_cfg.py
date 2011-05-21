@@ -2,6 +2,7 @@ import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as opts
 
 from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import *
+from HWWAnalysis.DileptonSelector.higgsPtWeights_cfi import *
 #
 import PhysicsTools.PythonAnalysis.LumiList as LumiList
 #
@@ -43,7 +44,7 @@ options.register ( 'flatWeights',
                   opts.VarParsing.varType.bool,
                   "Set to true to force all the weights to 1")
 
-options.register ( 'higgsReweight',
+options.register ( 'higgsPtWeights',
                   'none',
                   opts.VarParsing.multiplicity.singleton,
                   opts.VarParsing.varType.string,
@@ -111,13 +112,16 @@ if options.flatWeights:
 
 #-------------------------------------------------------------------------------
 
-if options.higgsReweight != 'none':
-    process.higgsPt = cms.EDProducer("HWWKFactorProducer",
-        inputFilename = cms.untracked.string("WWAnalysis/Misc/Scales/scalefactor.mh160.dat"),
+if options.higgsPtWeights != 'none':
+    scaleFile = higgsPtFactorFile( options.higgsPtWeights )
+    process.higgsPt = cms.EDProducer('HWWKFactorProducer',
+        genParticlesTag = cms.InputTag('prunedGen'),
+        inputFilename = cms.untracked.string( scaleFile ),
         ProcessID = cms.untracked.int32(10010),
         Debug =cms.untracked.bool(False)
     )
-    process.DileptonSelector.ptWeightSrc = cms.InputTag("higgsPt")
+    print 'Rescaling pt for higgs mass '+options.higgsPtWeights+' using '+ scaleFile
+    process.DileptonSelector.ptWeightSrc = cms.InputTag('higgsPt')
     process.p = cms.Path(process.higgsPt * process.DileptonSelector)
 else:
     process.p = cms.Path(process.DileptonSelector)
@@ -133,6 +137,7 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 
 # initialize MessageLogger and output report
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
+process.MessageLogger.destinations = ['cout', 'cerr']
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1000)
 # process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 # process.MessageLogger.cerr.threshold = 'INFO'

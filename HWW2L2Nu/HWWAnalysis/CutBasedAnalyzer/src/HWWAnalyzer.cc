@@ -6,7 +6,7 @@
  */
 
 #include "HWWAnalysis/CutBasedAnalyzer/interface/HWWAnalyzer.h"
-#include "HWWAnalysis/CutBasedAnalyzer/interface/Tools.h"
+#include "HWWAnalysis/Misc/interface/Tools.h"
 #include "HWWAnalysis/CutBasedAnalyzer/interface/Razor.h"
 #include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
 #include "HWWAnalysis/DataFormats/interface/HWWNtuple.h"
@@ -15,6 +15,7 @@
 #include <TVector3.h>
 #include <TLorentzVector.h>
 #include <stdexcept>
+#include <algorithm>
 #include <fstream>
 #include <TH1D.h>
 #include <THashList.h>
@@ -96,100 +97,28 @@ void HWWAnalyzer::Book() {
     bookHistogramSet(_meHistograms, "me");
     bookHistogramSet(_mmHistograms, "mm");
 
-//     std::map<int,std::string> labels;
-
-//     labels[kSkimmed] = "N_{l^{+}l^{-}}";
-//     labels[kMinMet]    = "min #slash E_{T}";
-//     labels[kMinMll]    = "m^{ll}_{min}";
-//     labels[kZveto]     = "Z veto";
-//     labels[kProjMet]   = "Proj#slash E_{T}";
-//     labels[kJetVeto]   = "n_{jets} == 0";
-//     labels[kSoftMuon]  = "No Soft #mu";
-//     labels[kTopVeto]   = "Top Veto";
-//     labels[kMaxMll]    = "m^{ll}_{max}";
-//     labels[kLeadPtMin] = "p^{lead}_{min}";
-//     labels[kTrailPtMin] = "p^{trail}_{min}";
-//     labels[kDeltaPhi]  = "#Delta#Phi_{ll}";
-//     labels[kRazor]     = "2#gamma^{*} MR^{*}/M_{higgs}";
-
-
-//     _eeCounters = makeLabelHistogram("eeCounters","eeCounters",labels);
-//     _mmCounters = makeLabelHistogram("mmCounters","mmCounters",labels);
-//     _emCounters = makeLabelHistogram("emCounters","emCounters",labels);
-//     _meCounters = makeLabelHistogram("meCounters","meCounters",labels);//TODO
-//     _llCounters = makeLabelHistogram("llCounters","llCounters",labels);
-
-
     _output->mkdir("jetVeto")->cd();
     _jetN      = new TH1D("jetN",    "n_{jets} (pre-veto)", 20, 0, 20);
     _jetPt     = new TH1D("jetPt",   "Jet Pt (pre-veto)",   100, 0, 1000);
     _jetEta    = new TH1D("jetEta",  "Jet Eta (pre-veto)",  100, -5, 5);
 
-//     _llDir->mkdir("all")->cd();
-//     bookDiHistograms(_llDiHist, "ll", "ll - ");
-//     _eeDir->mkdir("all")->cd();
-//     bookDiHistograms(_eeDiHist, "ee", "ee - ");
-//     _meDir->mkdir("all")->cd();
-//     bookDiHistograms(_emDiHist, "em", "em - ");
-//     _emDir->mkdir("all")->cd();
-//     bookDiHistograms(_meDiHist, "me", "me - ");
-//     _mmDir->mkdir("all")->cd();
-//     bookDiHistograms(_mmDiHist, "mm", "mm - ");
+    _output->mkdir("bTags")->cd();
+    _btagCombinedSecondaryVertex        = new TH1D("combinedSecondaryVertex","combinedSecondaryVertex",2000,-10,10);
+    _btagCombinedSecondaryVertexMVA     = new TH1D("combinedSecondaryVertexMVA","combinedSecondaryVertexMVA",2000,-10,10);
+    _btagSimpleSecondaryVertexHighEff   = new TH1D("simpleSecondaryVertexHighEff","simpleSecondaryVertexHighEff",2000,-10,10);
+    _btagSimpleSecondaryVertexHighPur   = new TH1D("simpleSecondaryVertexHighPur","simpleSecondaryVertexHighPur",2000,-10,10);
+    _btagJetBProbability                = new TH1D("jetBProbability","jetBProbability",400,0,10);
+    _btagJetProbability                 = new TH1D("jetProbability","jetProbability",400,0,10);
+    _btagTrackCountingHighEff           = new TH1D("tkCountingHighEff","tkCountingHighEff",2000,-100,100);
+    _btagTrackCountingHighPur           = new TH1D("tkCountingHighPur","tkCountingHighPur",2000,-100,100);
 
     _output->mkdir("pileUp")->cd();
     _nVrtx     = new TH1D("nVrtx",   "n_{vrtx}", 20, 1, 21);
     _llJetNVsNvrtx = makeNjetsNvrtx("llNjetsNvrtx");
     _eeJetNVsNvrtx = makeNjetsNvrtx("eeNjetsNvrtx", "ee - ");
     _emJetNVsNvrtx = makeNjetsNvrtx("emNjetsNvrtx", "em - ");
-    _meJetNVsNvrtx = makeNjetsNvrtx("meNjetsNvrtx", "me - ");//TODO
+    _meJetNVsNvrtx = makeNjetsNvrtx("meNjetsNvrtx", "me - ");
     _mmJetNVsNvrtx = makeNjetsNvrtx("mmNjetsNvrtx", "mm - ");
-
-//     _output->mkdir("llNminus1")->cd();
-//     bookCutHistograms( _llNm1Hist, "llNm1", "ll N-1 Plot - " );
-
-//     _output->mkdir("eeNminus1")->cd();
-//     bookCutHistograms( _eeNm1Hist, "eeNm1", "ee N-1 Plot - " );
-
-//     _output->mkdir("emNminus1")->cd();
-//     bookCutHistograms( _emNm1Hist, "emNm1", "e#mu N-1 Plot - " );
-
-//     _output->mkdir("meNminus1")->cd(); //TODO
-//     bookCutHistograms( _meNm1Hist, "meNm1", "#mu e N-1 Plot - " );
-
-//     _output->mkdir("mmNminus1")->cd();
-//     bookCutHistograms( _mmNm1Hist, "mmNm1", "#mu#mu N-1 Plot - " );
-
-//     _llDir->mkdir("cuts")->cd();
-//     bookCutHistograms( _llPreCutHist,  "llPre",  "ll PreCut - ");
-//     bookCutHistograms( _llPostCutHist, "llPost", "ll PostCut - ");
-
-//     _eeDir->mkdir("cuts")->cd();
-//     bookCutHistograms( _eePreCutHist,  "eePre",  "ee PreCut - ");
-//     bookCutHistograms( _eePostCutHist, "eePost", "ee PostCut - ");
-
-//     _emDir->mkdir("cuts")->cd();
-//     bookCutHistograms( _emPreCutHist,  "emPre",  "em PreCut - ");
-//     bookCutHistograms( _emPostCutHist, "emPost", "em PostCut - ");
-
-//     _meDir->mkdir("cuts")->cd(); //TODO
-//     bookCutHistograms( _mePreCutHist,  "mePre",  "me PreCut - ");
-//     bookCutHistograms( _mePostCutHist, "mePost", "me PostCut - ");
-
-//     _mmDir->mkdir("cuts")->cd();
-//     bookCutHistograms( _mmPreCutHist,  "mmPre",  "mm PreCut - ");
-//     bookCutHistograms( _mmPostCutHist, "mmPost", "mm PostCut - ");
-
-//     
-//     _llDir->mkdir("extra")->cd();
-//     bookExtraHistograms( _llExtraHist, "llX", "llX - " );
-//     _eeDir->mkdir("extra")->cd();
-//     bookExtraHistograms( _eeExtraHist, "eeX", "eeX - " );
-//     _emDir->mkdir("extra")->cd();
-//     bookExtraHistograms( _emExtraHist, "emX", "emX - " );
-//     _meDir->mkdir("extra")->cd();
-//     bookExtraHistograms( _meExtraHist, "meX", "meX - " );
-//     _mmDir->mkdir("extra")->cd();
-//     bookExtraHistograms( _mmExtraHist, "mmX", "mmX - " );
 
     _output->cd();
 
@@ -334,6 +263,9 @@ void HWWAnalyzer::bookHistogramSet( HistogramSet& set, const std::string& name )
     dir->mkdir("extra")->cd();
     bookExtraHistograms( set.extra, name, name + " - " );
 
+    dir->mkdir("Nminus1")->cd();
+    bookCutHistograms( set.nm1Cut, name+"Nm1", name+" N-1 Plot - " );
+    
     // fill the matrix with null pointers
     set.cutByCut.resize(kLogSize);
     for ( size_t i(0); i <set.cutByCut.size(); ++i )
@@ -379,16 +311,8 @@ void HWWAnalyzer::bookHistogramSet( HistogramSet& set, const std::string& name )
     cuts[kRazor]      = "razor";
 
     for ( int k = kSkimmed; k<kCutsSize; ++k ) {
-//         std::cout << "vars " << vars.size() << " cuts " << cuts.size()<<  std::endl;
-//         for ( size_t i(0); i < vars.size(); ++i ){
-//             std::cout << vars[i] << std::endl;
-//         }
-//         
-//         char c;
-//         std::cin >> c;
         // list of variables starts from 0
         for ( size_t i(0); i < vars.size(); ++i ){
-//             std::cout << i << "  " <<  k << " / " << cuts[k] << " - " << vars[i] << " . " << set.cutByCut[i].size() << std::endl;
             dir->cd(vars[i].c_str());
             std::string name  = Form("%02d_%s_%s",k,vars[i].c_str(),cuts[k].c_str());
             std::string title = Form("%s after %s",vars[i].c_str(),cuts[k].c_str());
@@ -408,24 +332,29 @@ TH1D* HWWAnalyzer::makeVarHistogram( int code, const std::string& name, const st
         case kLogNSoftMus:
         case kLogNBjets:
             histogram = new TH1D(name.c_str(), title.c_str(),10,0,10);
+            histogram->SetXTitle("N");
             break;
 
         case kLogMet:
         case kLogProjMet:
             histogram = new TH1D(name.c_str(), title.c_str(),100,0,100);
+            histogram->SetXTitle("GeV");
             break;
 
         case kLogMll:
             histogram = new TH1D(name.c_str(), title.c_str(),300,0,300);
+            histogram->SetXTitle("GeV");
             break;
 
         case kLogPtLead:
         case kLogPtTrail:
             histogram = new TH1D(name.c_str(), title.c_str(),200,0,200);
+            histogram->SetXTitle("GeV");
             break;
 
         case kLogDphi:
             histogram = new TH1D(name.c_str(), title.c_str(),180,0,180);
+            histogram->SetXTitle("deg");
             break;
 
         case kLogRazor:
@@ -688,6 +617,48 @@ void HWWAnalyzer::fillDiLeptons(std::vector<TH1D*>& dilep ) {
     dilep[kDiGammaMRStar]->Fill(_ntuple->gammaMRstar,getWeight());
 
 }
+
+
+//______________________________________________________________________________
+void HWWAnalyzer::fillNminus1(std::vector<TH1D*>& nm1, higgsBitWord word ){
+
+    if ( (word & _nthMask[kMinMet]) == _nthMask[kMinMet] )
+        nm1[kMinMet]->Fill(_ntuple->met, getWeight() );
+
+    if ( (word & _nthMask[kMinMll]) == _nthMask[kMinMll] )
+        nm1[kMinMll]->Fill(_ntuple->mll, getWeight() );
+
+    if ( (word & _nthMask[kZveto]) == _nthMask[kZveto] )
+        nm1[kZveto]->Fill(_ntuple->mll, getWeight() );
+
+    if ( (word & _nthMask[kProjMet]) == _nthMask[kProjMet] )
+        nm1[kProjMet]->Fill( _ntuple->projMet , getWeight() );
+
+    if ( (word & _nthMask[kJetVeto]) == _nthMask[kJetVeto] )
+        nm1[kJetVeto]->Fill(_ntuple->nPfJets, getWeight() );
+
+    if ( (word & _nthMask[kSoftMuon]) == _nthMask[kSoftMuon] )
+        nm1[kSoftMuon]->Fill(_ntuple->nSoftMus, getWeight() );
+
+    if ( (word & _nthMask[kTopVeto]) == _nthMask[kTopVeto] )
+        nm1[kTopVeto]->Fill(_ntuple->nBJets, getWeight() );
+
+    if ( (word & _nthMask[kLeadPtMin]) == _nthMask[kLeadPtMin] )
+        nm1[kLeadPtMin]->Fill(_ntuple->pA.Pt(), getWeight() );
+
+    if ( (word & _nthMask[kTrailPtMin]) == _nthMask[kTrailPtMin] )
+        nm1[kTrailPtMin]->Fill(_ntuple->pB.Pt(), getWeight() );
+
+    if ( (word & _nthMask[kMaxMll]) == _nthMask[kMaxMll] )
+        nm1[kMaxMll]->Fill(_ntuple->mll, getWeight() );
+
+    if ( (word & _nthMask[kDeltaPhi]) == _nthMask[kDeltaPhi] )
+        nm1[kDeltaPhi]->Fill(TMath::RadToDeg()*_ntuple->dPhi, getWeight() );
+
+    if ( (word & _nthMask[kRazor]) == _nthMask[kRazor] )
+        nm1[kRazor]->Fill(_ntuple->razor, getWeight() );
+    
+}
     
 //______________________________________________________________________________
 void HWWAnalyzer::fillExtra(std::vector<TH1D*>& extra ) {
@@ -695,7 +666,7 @@ void HWWAnalyzer::fillExtra(std::vector<TH1D*>& extra ) {
     if ( _ntuple->mll < 12. || _ntuple->mll > 60. ) return;
     if ( _ntuple->nPfJets != 0 ) return;
     if ( _ntuple->pB.Pt() < 30. ) return;
-    if ( _ntuple->pfMet < 30. ) return;
+//     if ( _ntuple->pfMet < 30. ) return;
 
     extra[kExtraDeltaPhi]->Fill(_ntuple->dPhi*TMath::RadToDeg(), getWeight() );
 
@@ -724,6 +695,48 @@ void HWWAnalyzer::fillVariables( HistogramSet* histograms, HCuts_t cutCode ) {
 
     histograms->cutByCut[kLogRazor][cutCode]->Fill( _ntuple->razor, getWeight());
 
+}
+
+//______________________________________________________________________________
+void HWWAnalyzer::fillBtaggers() {
+    // cmbSecVrtx
+    std::vector<double>& cmbSecVrtx = _event->BTaggers.CombSecVrtx;
+    if ( cmbSecVrtx.size() != 0 )
+        _btagCombinedSecondaryVertex->Fill( *std::max_element(cmbSecVrtx.begin(),cmbSecVrtx.end()),getWeight() );
+
+    // cmbSecVrtx
+    std::vector<double>& cmbSecVrtxMVA = _event->BTaggers.CombSecVrtxMVA;
+    if ( cmbSecVrtxMVA.size() != 0 )
+        _btagCombinedSecondaryVertexMVA->Fill( *std::max_element(cmbSecVrtxMVA.begin(),cmbSecVrtxMVA.end()),getWeight() );
+
+    // simpleSecVrtxHEff
+    std::vector<double>& simpleSecVrtxHEff = _event->BTaggers.SimpleSecVrtxHighEff;
+    if ( simpleSecVrtxHEff.size() != 0 )
+        _btagSimpleSecondaryVertexHighEff->Fill( *std::max_element(simpleSecVrtxHEff.begin(),simpleSecVrtxHEff.end()),getWeight() );
+
+    // simpleSecVrtxHPur
+    std::vector<double>& simpleSecVrtxHPur = _event->BTaggers.SimpleSecVrtxHighPur;
+    if ( simpleSecVrtxHPur.size() != 0 )
+        _btagSimpleSecondaryVertexHighPur->Fill( *std::max_element(simpleSecVrtxHPur.begin(),simpleSecVrtxHPur.end()),getWeight() );
+
+    // jetBProbability
+    std::vector<double>& jetBProb = _event->BTaggers.JetBProb;
+    if ( jetBProb.size() != 0 )
+        _btagJetBProbability->Fill( *std::max_element(jetBProb.begin(),jetBProb.end()),getWeight() );
+
+    // jetProb
+    std::vector<double>& jetProb = _event->BTaggers.JetProb;
+    if ( jetProb.size() != 0 )
+        _btagJetProbability->Fill( *std::max_element(jetProb.begin(),jetProb.end()),getWeight() );
+
+    // TrackCountingHighEff
+    std::vector<double>& tkCntHEff = _event->BTaggers.TkCntHighEff;
+    if ( tkCntHEff.size() != 0 )
+        _btagTrackCountingHighEff->Fill( *std::max_element(tkCntHEff.begin(),tkCntHEff.end()),getWeight() );
+    // TrackCountingHighPur
+    std::vector<double>& tkCntHPur = _event->BTaggers.TkCntHighPur;
+    if ( tkCntHPur.size() != 0 )
+        _btagTrackCountingHighPur->Fill( *std::max_element(tkCntHPur.begin(),tkCntHPur.end()),getWeight() );
 }
 
 //_____________________________________________________________________________
@@ -766,101 +779,35 @@ void HWWAnalyzer::cutAndFill() {
 
     _ntuple->tags     = word.to_ulong();
 
-    // type-dependent settings
-//     TH1D* counters(0x0);
-//     std::vector<TH1D*>* dilep;
-//     std::vector<TH1D*>* nm1;
-//     std::vector<TH1D*>* preCuts;
-//     std::vector<TH1D*>* postCuts;
-//     std::vector<TH1D*>* extra;
 
     HistogramSet* histograms;
     TH2D* nJnV;
     switch ( _ntuple->type ) {
     case kElEl_t:
         histograms = &_eeHistograms;
-//         counters = _eeCounters;
-//         dilep    = &_eeDiHist;
-//         nm1      = &_eeNm1Hist;
-//         preCuts  = &_eePreCutHist;
-//         postCuts = &_eePostCutHist;
-//         extra    = &_eeExtraHist;
         nJnV     = _eeJetNVsNvrtx;
         break;
     case kElMu_t:
         histograms = &_emHistograms;
-//         counters = _emCounters;
-//         dilep    = &_emDiHist;
-//         nm1   = &_emNm1Hist;
-//         preCuts  = &_emPreCutHist;
-//         postCuts = &_emPostCutHist;
-//         extra    = &_emExtraHist;
         nJnV     = _emJetNVsNvrtx;
         break;
     case kMuEl_t:
         histograms = &_meHistograms;
-//         counters = _meCounters;
-//         dilep    = &_meDiHist;
-//         nm1   = &_meNm1Hist;
-//         preCuts  = &_mePreCutHist;
-//         postCuts = &_mePostCutHist;
-//         extra    = &_meExtraHist;
         nJnV     = _meJetNVsNvrtx;
         break;
 
     case kMuMu_t:
         histograms = &_mmHistograms;
-//         counters = _mmCounters;
-//         dilep    = &_mmDiHist;
-//         nm1   = &_mmNm1Hist;
-//         preCuts  = &_mmPreCutHist;
-//         postCuts = &_mmPostCutHist;
-//         extra    = &_mmExtraHist;
         nJnV     = _mmJetNVsNvrtx;
         break;
     default:
         THROW_RUNTIME("Wrong event type : " << _ntuple->type );
     };
 
-//     if ( (word & _nthMask[kMinMet]) == _nthMask[kMinMet] )
-//         nm1->at(kMinMet)->Fill(_ntuple->met, getWeight() );
-
-//     if ( (word & _nthMask[kMinMll]) == _nthMask[kMinMll] )
-//         nm1->at(kMinMll)->Fill(_ntuple->mll, getWeight() );
-
-//     if ( (word & _nthMask[kZveto]) == _nthMask[kZveto] )
-//         nm1->at(kZveto)->Fill(_ntuple->mll, getWeight() );
-
-//     if ( (word & _nthMask[kProjMet]) == _nthMask[kProjMet] )
-//         nm1->at(kProjMet)->Fill( _ntuple->projMet , getWeight() );
-
-//     if ( (word & _nthMask[kJetVeto]) == _nthMask[kJetVeto] )
-//         nm1->at(kJetVeto)->Fill(_ntuple->nPfJets, getWeight() );
-
-//     if ( (word & _nthMask[kSoftMuon]) == _nthMask[kSoftMuon] )
-//         nm1->at(kSoftMuon)->Fill(_ntuple->nSoftMus, getWeight() );
-
-//     if ( (word & _nthMask[kTopVeto]) == _nthMask[kTopVeto] )
-//         nm1->at(kTopVeto)->Fill(_ntuple->nBJets, getWeight() );
-
-//     if ( (word & _nthMask[kLeadPtMin]) == _nthMask[kLeadPtMin] )
-//         nm1->at(kLeadPtMin)->Fill(_ntuple->pA.Pt(), getWeight() );
-
-//     if ( (word & _nthMask[kTrailPtMin]) == _nthMask[kTrailPtMin] )
-//         nm1->at(kTrailPtMin)->Fill(_ntuple->pB.Pt(), getWeight() );
-
-//     if ( (word & _nthMask[kMaxMll]) == _nthMask[kMaxMll] )
-//         nm1->at(kMaxMll)->Fill(_ntuple->mll, getWeight() );
-
-//     if ( (word & _nthMask[kDeltaPhi]) == _nthMask[kDeltaPhi] )
-//         nm1->at(kDeltaPhi)->Fill(TMath::RadToDeg()*_ntuple->dPhi, getWeight() );
-
-//     if ( (word & _nthMask[kRazor]) == _nthMask[kRazor] )
-//         nm1->at(kRazor)->Fill(_ntuple->razor, getWeight() );
-
 
     fillDiLeptons( histograms->dileptons );
     fillExtra( histograms->extra );
+    fillNminus1( histograms->nm1Cut, word );
 
     _nVrtx->Fill(_event->NVrtx, getWeight() );
 
@@ -928,7 +875,9 @@ void HWWAnalyzer::cutAndFill() {
 
     fillVariables( histograms, kSoftMuon);
 
-    // soft muon
+    fillBtaggers();
+
+    // top veto
     histograms->preCuts[kTopVeto]->Fill(_ntuple->nBJets, getWeight() );
     if ( !word[kTopVeto] ) return;
     histograms->counters->Fill(kTopVeto, getWeight() );
@@ -1021,13 +970,6 @@ void HWWAnalyzer::EndJob() {
         _llHistograms.dileptons[k]->Add(_mmHistograms.dileptons[k]);
 
     }
-//     for ( unsigned int k(0); k<_llNm1Hist.size(); ++k) {
-//         if (!_llNm1Hist[k] ) continue;
-//         _llNm1Hist[k]->Add(_eeNm1Hist[k]);
-//         _llNm1Hist[k]->Add(_emNm1Hist[k]);
-//         _llNm1Hist[k]->Add(_meNm1Hist[k]);
-//         _llNm1Hist[k]->Add(_mmNm1Hist[k]);
-//     }
 
     // pre cuts
     for ( unsigned int k(0); k<_llHistograms.preCuts.size(); ++k ) {
@@ -1056,6 +998,15 @@ void HWWAnalyzer::EndJob() {
         _llHistograms.extra[k]->Add(_mmHistograms.extra[k]);
 
     }
+
+    for ( unsigned int k(0); k<_llHistograms.nm1Cut.size(); ++k) {
+        if (!_llHistograms.nm1Cut[k] ) continue;
+        _llHistograms.nm1Cut[k]->Add(_eeHistograms.nm1Cut[k]);
+        _llHistograms.nm1Cut[k]->Add(_emHistograms.nm1Cut[k]);
+        _llHistograms.nm1Cut[k]->Add(_meHistograms.nm1Cut[k]);
+        _llHistograms.nm1Cut[k]->Add(_mmHistograms.nm1Cut[k]);
+    }
+    
 
     // cutByCut
     for( size_t i(0); i<_llHistograms.cutByCut.size(); ++i)
@@ -1149,11 +1100,14 @@ TH1D* HWWAnalyzer::glueCounters(TH1D* counters) {
     // define mismtch ad the ratio bewtween the difference and the preselected entries
     double mismatch = TMath::Abs( (preSelectedEntries- processedEntries) );
 
-    std::cout << "Mismatch (" << name << ") = " << mismatch << " over " << preSelectedEntries << std::endl;
-//     if ( TMath::Abs(mismatch) > 1E-6 )
+    if ( TMath::Abs(mismatch/(double)preSelectedEntries) > 1E-6 )
+        std::cout << TermColors::kYellow << "Mismatch (" << name << ") = " << mismatch << " over " << preSelectedEntries << TermColors::kReset<< std::endl;
+//     if ( TMath::Abs(mismatch/) > 1E-6 )
 //         THROW_RUNTIME("Bin Content Mismatch: Wrong histogram?\n"
-//                 << cntPreSel->GetName() << " (" << nBinsPre << ") : " << cntPreSel->GetXaxis()->GetBinLabel(nBinsPre) << "=" << preSelectedEntries << "\n"
-//                 << cntCopy->GetName() << " (" << nBins << ") : " << cntCopy->GetXaxis()->GetBinLabel(1) << "="<< processedEntries);
+//                 << cntPreSel->GetName() << " (" << nBinsPre << ") : " 
+//                 << cntPreSel->GetXaxis()->GetBinLabel(nBinsPre) << "=" << preSelectedEntries << "\n"
+//                 << cntCopy->GetName() << " (" << nBins << ") : " 
+//                 << cntCopy->GetXaxis()->GetBinLabel(1) << "="<< processedEntries);
 
     // what is this?
     cntCopy->Fill(1,cntCopy->GetBinContent(1)*-1);

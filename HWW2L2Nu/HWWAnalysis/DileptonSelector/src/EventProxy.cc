@@ -16,7 +16,7 @@
  * =====================================================================================
  */
 #include <HWWAnalysis/DileptonSelector/interface/EventProxy.h>
-#include <HWWAnalysis/DileptonSelector/interface/Tools.h>
+#include <HWWAnalysis/Misc/interface/Tools.h>
 
 EventProxy::EventProxy( const edm::Event& event , const edm::EventSetup& setup ) : _event(event), _setup(setup) {
 

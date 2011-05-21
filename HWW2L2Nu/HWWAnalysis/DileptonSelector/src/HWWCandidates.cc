@@ -6,7 +6,7 @@
  */
 
 #include "HWWAnalysis/DileptonSelector/interface/HWWCandidates.h"
-#include "HWWAnalysis/DileptonSelector/interface/Tools.h"
+#include "HWWAnalysis/Misc/interface/Tools.h"
 
 //_____________________________________________________________________________
 LepPair::LepPair( LepCandidate* l1, LepCandidate* l2) {

@@ -8,7 +8,7 @@
 #include <HWWAnalysis/DileptonSelector/interface/EventProxy.h>
 #include <HWWAnalysis/DileptonSelector/interface/HWWCandidates.h>
 #include <HWWAnalysis/DileptonSelector/interface/HltObjMatcher.h>
-#include <HWWAnalysis/DileptonSelector/interface/Tools.h>
+#include <HWWAnalysis/Misc/interface/Tools.h>
 #include <CommonTools/UtilAlgos/interface/TFileService.h>
 #include <DataFormats/PatCandidates/interface/Electron.h>
 #include <DataFormats/PatCandidates/interface/Muon.h>
@@ -83,8 +83,10 @@ DileptonSelector::DileptonSelector(const edm::ParameterSet& iConfig) : _nEvents(
     // configuration
     _debugLvl       = iConfig.getUntrackedParameter<int>("debugLevel");
     _puFactors      = iConfig.getParameter<std::vector<double> >("pileupFactors");
-    _ptWeightTag    = iConfig.getParameter<edm::InputTag>("ptWeightSrc");
-
+    if( iConfig.existsAs<edm::InputTag>("ptWeightSrc") ) {
+        _ptWeightTag = iConfig.getParameter<edm::InputTag> ("ptWeightSrc");
+    }
+    
     const edm::ParameterSet& vrtxCuts = iConfig.getParameterSet("vrtxCuts");
     _vrtxCut_nDof = vrtxCuts.getParameter<double>("nDof"); // 4.
     _vrtxCut_rho  = vrtxCuts.getParameter<double>("rho"); // 2.
@@ -268,24 +270,34 @@ void
 DileptonSelector::calculateWeight( const edm::Event& iEvent ) {
     // FIXME: should it know whether it's data or not?
 
+    
 
     if ( iEvent.isRealData() ) {
         _eventWeight = 1.;
         // fill some additional histograms
         _puNVertexes->Fill( getEvent()->getNVrtx(), this->weight() );
-        return;
+    } else {
+
+        int nPU = getEvent()->getNPileUp();
+        if ( nPU < 0 )
+            THROW_RUNTIME(" nPU = " << nPU << " what's going on?!?");
+        if ( nPU > (int)_puFactors.size() )
+            THROW_RUNTIME("Simulated Pu [" << nPU <<"] larger than available puFactors");
+
+        _eventWeight = _puFactors[ nPU ];
+        _puNInteractions->Fill( nPU, this->weight() );
+        _puNInteractionsUnweighted->Fill( nPU );
+        _puNVertexes->Fill( getEvent()->getNVrtx(), this->weight() );
     }
 
-    int nPU = getEvent()->getNPileUp();
-    if ( nPU < 0 )
-        THROW_RUNTIME(" nPU = " << nPU << " what's going on?!?");
-    if ( nPU > (int)_puFactors.size() )
-        THROW_RUNTIME("Simulated Pu [" << nPU <<"] larger than available puFactors");
-
-    _eventWeight = _puFactors[ nPU ];
-    _puNInteractions->Fill( nPU, this->weight() );
-    _puNInteractionsUnweighted->Fill( nPU );
-    _puNVertexes->Fill( getEvent()->getNVrtx(), this->weight() );
+    if ( !(_ptWeightTag == edm::InputTag()) ) {
+        edm::Handle<double> ptWeightHandle;
+        iEvent.getByLabel(_ptWeightTag, ptWeightHandle);
+        
+        _eventWeight *= *ptWeightHandle;
+        
+    }
+        
 
 }
 
@@ -555,6 +567,15 @@ void DileptonSelector::clear() {
 
     _eventWeight = 1.;
     _nPileUp     = 0;
+
+    _btag_combinedSecondaryVertex.clear();
+    _btag_combinedSecondaryVertexMVA.clear();
+    _btag_simpleSecondaryVertexHighEff.clear();
+    _btag_simpleSecondaryVertexHighPur.clear();
+    _btag_jetBProbability.clear();
+    _btag_jetProbability.clear();
+    _btag_trackCountingHighEff.clear();
+    _btag_trackCountingHighPur.clear();
 }
 
 //_____________________________________________________________________________
@@ -1429,7 +1450,14 @@ void DileptonSelector::assembleEvent() {
 	if ( itPFJ != _selectedPFJets.end() )
 		THROW_RUNTIME("Not all pfJets were copied?");
 
-
+    _diLepEvent->BTaggers.CombSecVrtx           = minMax(_btag_combinedSecondaryVertex);
+    _diLepEvent->BTaggers.CombSecVrtxMVA        = minMax(_btag_combinedSecondaryVertexMVA);
+    _diLepEvent->BTaggers.SimpleSecVrtxHighEff  = minMax(_btag_simpleSecondaryVertexHighEff);
+    _diLepEvent->BTaggers.SimpleSecVrtxHighPur  = minMax(_btag_simpleSecondaryVertexHighPur);
+    _diLepEvent->BTaggers.JetBProb              = minMax(_btag_jetBProbability);
+    _diLepEvent->BTaggers.JetProb               = minMax(_btag_jetProbability);
+    _diLepEvent->BTaggers.TkCntHighEff          = minMax(_btag_trackCountingHighEff);
+    _diLepEvent->BTaggers.TkCntHighPur          = minMax(_btag_trackCountingHighPur);
 }
 
 //_____________________________________________________________________________
@@ -1439,10 +1467,17 @@ void DileptonSelector::cleanJets() {
 	EventProxy* ev = getEvent();
 
 	_selectedPFJets.clear();
+    _btag_combinedSecondaryVertex.clear();
+    _btag_combinedSecondaryVertexMVA.clear();
+    _btag_simpleSecondaryVertexHighEff.clear();
+    _btag_simpleSecondaryVertexHighPur.clear();
+    _btag_jetBProbability.clear();
+    _btag_jetProbability.clear();
+    _btag_trackCountingHighEff.clear();
+    _btag_trackCountingHighPur.clear();
 	// loop on pf jets now
 	for ( int i=0; i<ev->getPFNJets(); ++i) {
 
-//         TVector3 pPFJet( ev->getPFJPx(i), ev->getPFJPy(i), ev->getPFJPz(i));
         const math::XYZTLorentzVector& pJet = ev->getPFJets()[i].p4();
 		std::set<unsigned int>::iterator it;
 
@@ -1453,18 +1488,12 @@ void DileptonSelector::cleanJets() {
 
             const math::XYZTLorentzVector& pEl = ev->getElectrons()[*it].p4();
             match |= ( TMath::Abs(ROOT::Math::VectorUtil::DeltaR(pJet,pEl)) < _jetCut_Dr );
-            //             TVector3 pEl(ev->getElPx(*it), ev->getElPy(*it), ev->getElPz(*it));
-            //             match |= ( TMath::Abs(pPFJet.DeltaR(pEl)) < _jetCut_Dr );
 		}
 
 		for( it=_selectedMus.begin();
 				it != _selectedMus.end(); ++it) {
             const math::XYZTLorentzVector& pMu = ev->getMuons()[*it].p4();
             match |= ( TMath::Abs(ROOT::Math::VectorUtil::DeltaR(pJet,pMu)) < _jetCut_Dr );
-
-//             TVector3 pMu(ev->getMuPx(*it), ev->getMuPy(*it), ev->getMuPz(*it));
-
-//             match |= ( TMath::Abs(pPFJet.DeltaR(pMu)) < _jetCut_Dr );
 		}
 
 		if ( match ) continue;
@@ -1473,7 +1502,6 @@ void DileptonSelector::cleanJets() {
         const pat::Jet& jet = ev->getPFJets()[i];
 
         double btagProb = jet.bDiscriminator("trackCountingHighEffBJetTags");
-//         _selectedPFJets.insert(i);
         
         // the jets must be identified
         if ( !jetLooseId( jet ) ) continue;
@@ -1485,6 +1513,16 @@ void DileptonSelector::cleanJets() {
         }
         
         _jetBTagProbTkCntHighEff->Fill( btagProb, this->weight());
+
+        // store the btag probability
+        _btag_combinedSecondaryVertex.push_back(jet.bDiscriminator("combinedSecondaryVertexBJetTags"));
+        _btag_combinedSecondaryVertexMVA.push_back(jet.bDiscriminator("combinedSecondaryVertexMVABJetTags"));
+        _btag_simpleSecondaryVertexHighEff.push_back(jet.bDiscriminator("simpleSecondaryVertexHighEffBJetTags"));
+        _btag_simpleSecondaryVertexHighPur.push_back(jet.bDiscriminator("simpleSecondaryVertexHighPurBJetTags"));
+        _btag_jetBProbability.push_back(jet.bDiscriminator("jetBProbabilityBJetTags"));
+        _btag_jetProbability.push_back(jet.bDiscriminator("jetProbabilityBJetTags"));
+        _btag_trackCountingHighEff.push_back(jet.bDiscriminator("trackCountingHighEffBJetTags"));
+        _btag_trackCountingHighPur.push_back(jet.bDiscriminator("trackCountingHighPurBJetTags"));
 
         // or check for btagged jets
         if ( btagProb > _jetCut_BtagProb )
