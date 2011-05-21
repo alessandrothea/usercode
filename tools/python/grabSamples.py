@@ -108,36 +108,41 @@ class Grabber:
         self.whitelist = None
         
     def configure(self, version=None, forceTransfer=False):
-        reader = csv.reader(open(self.csvFile,'rb'),delimiter=',')
-        header = reader.next()
-        l = len(header)
-#         print 'header len',l,header
-        print ','.join(header)
-
-        cols = dict(zip(header,range(len(header))))
-        print cols
-        for row in reader:
-            if len(row) != l:
-                continue
-            idCol = cols['ID']
-            nickCol = cols['Nickname']
-            odsCol = cols['Output Dataset']
-            if not version:
-                verCol = cols['Skim Version']
-                ver = row[verCol]
-            else:
-                ver = version
-            cleanDS = row[odsCol].strip()
-            d = Dataset(row[idCol],row[nickCol],ver,cleanDS)
-            self.datasets.append(d);
-
-            if d.ver == '':
-#                 print 'Dataset',d.nick,'doesn\'t have a valid version number'
-                raise ValueError('Dataset '+d.nick+' doesn\'t have a valid version number')
-                
-
-#             print d
-            self.versions.add(d.ver)
+        self.datasets = psitools.getDataSets( self.csvFile, self.ids )
+        for d in self.datasets:
+            if d.ver != '':
+                self.versions.add(d.ver)
+        
+#        reader = csv.reader(open(self.csvFile,'rb'),delimiter=',')
+#        header = reader.next()
+#        l = len(header)
+##         print 'header len',l,header
+#        print ','.join(header)
+#
+#        cols = dict(zip(header,range(len(header))))
+#        print cols
+#        for row in reader:
+#            if len(row) != l:
+#                continue
+#            idCol = cols['ID']
+#            nickCol = cols['Nickname']
+#            odsCol = cols['Output Dataset']
+#            if not version:
+#                verCol = cols['Skim Version']
+#                ver = row[verCol]
+#            else:
+#                ver = version
+#            cleanDS = row[odsCol].strip()
+#            d = Dataset(row[idCol],row[nickCol],ver,cleanDS)
+#            self.datasets.append(d);
+#
+#            if d.ver == '':
+##                 print 'Dataset',d.nick,'doesn\'t have a valid version number'
+#                raise ValueError('Dataset '+d.nick+' doesn\'t have a valid version number')
+#                
+#
+##             print d
+#            self.versions.add(d.ver)
 
 #         print self.versions
         if not forceTransfer:
