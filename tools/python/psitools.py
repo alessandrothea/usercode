@@ -76,14 +76,29 @@ def getDataSets( csvFile, ids ):
 
     cols = dict(zip(header,range(len(header))))
     print cols
+    odCols = ['Output Dataset','Output Dataset (UCSD)','Output Dataset (IFCA)']
+    
+    labelId      = 'ID'
+    labelNick    = 'Nickname'
+    labelVersion = 'Skim Version'
+    labelOD      = None
+    for c in odCols:
+        if c in cols.keys():
+            labelOD = c
+    
+    if not labelOD:
+        raise NameError('No output dataset column found: '+','.join(odCols))
+        
+
     for row in reader:
         if len(row) != l:
             continue
-        colId   = cols['ID']
-        colNick = cols['Nickname']
-        colOD   = cols['Output Dataset']
+        colId   = cols[labelId]
+        colNick = cols[labelNick]
+
+        colOD   = cols[labelOD]
         try:
-            colSkim = cols['Skim Version']
+            colSkim = cols[labelNick]
             version = row[verCol]
         except KeyError:
             version=''
