@@ -66,7 +66,7 @@ class Dataset:
         self.t0 = None
         self.t1 = None
 
-def getDataSets( csvFile, ids ):
+def getDatasetsFromCSV( csvFile, ids ):
     reader = csv.reader(open(csvFile,'rb'),delimiter=',')
     header = reader.next()
     l = len(header)
@@ -89,6 +89,7 @@ def getDataSets( csvFile, ids ):
     if not labelOD:
         raise NameError('No output dataset column found: '+','.join(odCols))
         
+    reVer = re.compile('.*-(R[0-9a-zA-Z]{3}_S1_V[0-9]+_S2_V[0-9]+_S3_V[0-9]+)')
 
     for row in reader:
         if len(row) != l:
@@ -97,11 +98,13 @@ def getDataSets( csvFile, ids ):
         colNick = cols[labelNick]
 
         colOD   = cols[labelOD]
-        try:
-            colSkim = cols[labelNick]
-            version = row[verCol]
-        except KeyError:
-            version=''
+        if labelVersion in cols.keys():
+            version = row[labelVersion]
+        else:
+            m = reVer.match(row[labelOD])
+            version = m.group(1) if m else ''
+            
+            
         d = Dataset(row[colId],row[colNick],version,row[colOD].strip())
 
         numId = int(re.search('[0-9]+',d.id).group(0))
