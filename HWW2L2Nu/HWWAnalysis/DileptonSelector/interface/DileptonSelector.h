@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Apr 14 12:29:55 CEST 2011
-// $Id: DileptonSelector.h,v 1.5 2011/05/07 08:32:18 thea Exp $
+// $Id: DileptonSelector.h,v 1.7 2011/05/21 18:07:04 thea Exp $
 //
 //
 // system include files
@@ -169,10 +169,28 @@ class DileptonSelector : public edm::EDAnalyzer {
 
         HltObjMatcher* _hltMatcher;
 
-        edm::InputTag _ptWeightTag;
-        edm::InputTag _electronsTag;
-        edm::InputTag _muonsTag;
-        edm::InputTag _jetsTag;
+        //-----------tags & containers----------------------
+        edm::InputTag _ptWeightSrc;
+
+        edm::InputTag _puInfoSrc;
+        edm::InputTag _vertexSrc;
+        edm::InputTag _electronSrc;
+        edm::InputTag _muonSrc;
+        edm::InputTag _jetSrc;
+        edm::InputTag _tcMetSrc;
+        edm::InputTag _pfMetSrc;
+        edm::InputTag _chMetSrc;
+
+        
+        // not used so far
+        edm::Handle<std::vector<PileupSummaryInfo> >    _puInfo;
+        edm::Handle<std::vector<reco::Vertex> >         _vertexes;
+        edm::Handle<std::vector<pat::Electron> >        _electrons;
+        edm::Handle<std::vector<pat::Muon> >            _muons;
+        edm::Handle<std::vector<pat::Jet> >             _jets;
+        edm::Handle<std::vector<reco::MET> >            _tcMet;
+        edm::Handle<std::vector<reco::PFMET> >          _pfMet;
+        edm::Handle<edm::ValueMap<reco::PFMET> >        _chargedMet;
 
         // ----------member data ---------------------------
         static const double _etaMaxTrk;

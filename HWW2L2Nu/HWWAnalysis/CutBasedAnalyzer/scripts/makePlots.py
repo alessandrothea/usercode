@@ -9,6 +9,8 @@ import shlex
 import csv
 import os.path
 import tempfile
+import fnmatch
+import copy
 import HWWAnalysis.Misc.ROOTAndUtils as utils
 
 class plotEntry:
@@ -68,8 +70,6 @@ class PlotReader:
             self.metaPlots[d.name] = d
 
     def match(self, rootfile):
-        import fnmatch
-        import copy
         finder = utils.ObjFinder('TH1')
         paths = set(finder.find(rootfile))
     
@@ -310,18 +310,21 @@ class Plotter:
         
         entries = [ ROOT.TLatex(0,0,sample.legend) for (h,sample) in allSamples ]
         
-        Dx = max([txt.GetXsize() for txt in entries])        
-        dy = entries[0].GetYsize()
+        shrink = 0.7
+        Dx = shrink * max([txt.GetXsize() for txt in entries])        
+        dy = shrink * entries[0].GetYsize()
         rows = len(entries)+1
         
-        x1 = 0.95
-        y1 = 0.95
+        x1 = 0.885
+        y1 = 0.885
         
         x0 = x1-Dx
         y0 = y1-dy*1.1*rows
         
         legend = ROOT.TLegend(x0,y0,x1,y1)
         legend.SetFillColor(ROOT.kWhite)
+        legend.SetFillStyle(0)
+        legend.SetBorderSize(0)
 
         for (h,s) in data:
             legend.AddEntry(h, s.legend,'p')
@@ -331,6 +334,53 @@ class Plotter:
             legend.AddEntry(h,s.legend,'f')
         
         return legend
+
+    def makeCMSText(self):
+        lines = [ 'CMS Preliminary','#sqrt{s}=7 TeV']
+
+        entries = [ ROOT.TLatex(0,0,line) for line in lines ]
+        
+        shrink = 0.7
+        Dx = shrink * max([txt.GetXsize() for txt in entries])
+        dy = shrink*entries[0].GetYsize()
+
+        x0 = 0.115
+        y1 = 0.885
+
+        x1 = x0 + Dx
+        y0 = y1-dy*len(lines)-0.01*(len(lines)-1)
+
+        pave = ROOT.TPaveText(x0,y0,x1,y1,'ndc')
+        pave.SetFillColor(ROOT.kRed)
+        pave.SetBorderSize(0)
+        pave.SetFillStyle(0)
+
+        pave.SetName('preliminary')
+
+        for line in lines:
+            pave.InsertText(line)
+
+        return pave
+        l = ROOT.TLatex(0.5,0.5,'CMS')
+        l.SetTextSize(0.7*l.GetTextSize())
+        l.SetBit(ROOT.TLatex.kTextNDC)
+        l.SetTextAlign(13)
+        l.SetNDC()
+
+        x0 = 0.11
+        y0 = 0.89
+
+        txts = []
+
+        l1 = l.Clone()
+        l1.SetText(x0,y0,'CMS Preliminary')
+        txts.append(l1)
+        l2 = l.Clone()
+        l2.SetText(x0, y0-1.1*l.GetYsize(),'#sqrt{s} = 7 TeV')
+        txts.append(l2)
+
+        return txts
+
     
     def makeDataMCPlot(self,name):
 
@@ -363,8 +413,10 @@ class Plotter:
             stack.Add(h,'hist')
             
         cName = 'c_'+baseName
-        c = ROOT.TCanvas(cName)
+        c = ROOT.TCanvas(cName,cName,-2)
+#         print c.GetWw(),c.GetWh()
         c.SetTicks();
+        c.Size(30,30)
 #         print '- logx =', pl.logX, ': logy =',pl.logY
         maxY = ROOT.TMath.Max(data0.GetMaximum(),stack.GetMaximum())
         minY = ROOT.TMath.Min(data0.GetMinimum(),min(mcMinima))
@@ -403,6 +455,9 @@ class Plotter:
 
         legend = self.makeLegend(data,mc)
         legend.Draw()
+
+        txt = self.makeCMSText()
+        txt.Draw()
 
         c.Write()
         oldDir.cd()
@@ -483,6 +538,7 @@ def main():
     ROOT.gStyle.SetTitleFont(42,"")
     ROOT.gStyle.SetLabelFont(42,"xyz")
     ROOT.gStyle.SetTextFont(42)   
+    ROOT.gStyle.SetFillColor(ROOT.kWhite)   
     
     p = Plotter()
     p.verbosity = opt.verbosity

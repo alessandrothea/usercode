@@ -203,7 +203,9 @@ void HWWAnalyzer::bookExtraHistograms(std::vector<TH1D*>& histograms, const std:
     // all numbers to 0, just to be sure;
     histograms.assign(kExtraSize,0x0);
 
-    histograms[kExtraDeltaPhi]      = new TH1D((nPrefix+"DeltaPhi").c_str(),          (lPrefix+"#Delta#Phi_{ll}").c_str(), 180, 0, 180.);
+    histograms[kExtraDeltaPhi]      = new TH1D((nPrefix+"DeltaPhi").c_str(),     (lPrefix+"#Delta#Phi_{ll}").c_str(), 180, 0, 180.);
+    Double_t edges[] = {0., 45., 60., 90., 135., 150., 180. };
+    histograms[kExtraDeltaPhiBands] = new TH1D((nPrefix+"DeltaPhiBands").c_str(), (lPrefix+"#Delta#Phi_{ll} Bands").c_str(), 6, edges);
     
 }
 
@@ -669,6 +671,7 @@ void HWWAnalyzer::fillExtra(std::vector<TH1D*>& extra ) {
 //     if ( _ntuple->pfMet < 30. ) return;
 
     extra[kExtraDeltaPhi]->Fill(_ntuple->dPhi*TMath::RadToDeg(), getWeight() );
+    extra[kExtraDeltaPhiBands]->Fill(_ntuple->dPhi*TMath::RadToDeg(), getWeight() );
 
 }
 

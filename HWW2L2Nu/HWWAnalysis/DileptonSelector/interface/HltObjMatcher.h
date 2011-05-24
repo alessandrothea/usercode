@@ -1,7 +1,7 @@
 // -*- C++ -*-
 //
 // Package:    DileptonSelector
-// Class:      HLTObjMatcher
+// Class:      HltObjMatcher
 // 
 /**
 
@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Apr 14 12:29:55 CEST 2011
-// $Id: DileptonSelector.h,v 1.3 2011/04/29 11:57:00 thea Exp $
+// $Id: HltObjMatcher.h,v 1.1 2011/05/07 08:56:43 thea Exp $
 //
 //
 // system include files
@@ -42,6 +42,7 @@ class HltObjMatcher {
     };
 
     bool isData() { return _dataType != kMC; }
+    std::vector<unsigned int> findIndexes( const std::string& path );
 
     bool passSingleMu( const reco::Candidate* );
     bool passDoubleMu( const reco::Candidate* );
@@ -57,6 +58,7 @@ class HltObjMatcher {
     std::string dataLabel() { return dataEnumToStr( _dataType ); }
 
     protected:
+    std::vector<std::string> search(const std::string& name,const std::vector< std::string >& nameVec );
     std::string dataEnumToStr( int );
     int dataStrToEnum( const std::string& );
 
@@ -65,5 +67,6 @@ class HltObjMatcher {
     const edm::TriggerResults* _hltTrgResults;
     edm::TriggerNames _hltTriggerNames;
     int _dataType;
+    static const char wildcard_;// = '*';
 };
 #endif // HWWAnalysisDileptonSelector_HltObjMatcher_h 

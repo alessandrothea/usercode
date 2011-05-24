@@ -9,20 +9,21 @@
 #include <fstream>
 #include <stdexcept>
 #include <vector>
-// #include "HWWAnalysis/CutBasedAnalyzer/interface/HWWAnalyzer.h"
 #include "HWWAnalysis/DataFormats/interface/HWWNtuple.h"
 
 #include "CommonTools/Utils/interface/StringCutObjectSelector.h"
 #include "CommonTools/Utils/interface/StringObjectFunction.h"
 
 #include "HWWAnalysis/Misc/interface/Tools.h"
+#include "HWWAnalysis/CutBasedAnalyzer/interface/PsetReader.h"
 #include "FWCore/FWLite/interface/AutoLibraryLoader.h"
-#include "FWCore/Utilities/interface/Parse.h"
-#include "FWCore/PythonParameterSet/interface/MakeParameterSets.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include <Reflex/Object.h>
 #include <TSystem.h>
 #include <TChain.h>
+
+typedef std::vector<std::pair<std::string, StringCutObjectSelector<HWWNtuple> > > CutVector;
+typedef std::vector<std::pair<std::string, StringObjectFunction<HWWNtuple> > >    VarVector;
 
 int main( int argc, char **argv ) {
 
@@ -30,39 +31,11 @@ int main( int argc, char **argv ) {
     gSystem->Load( "libFWCoreFWLite" );
     AutoLibraryLoader::enable();
     
-    if ( argc < 2 )
-        THROW_RUNTIME("No file defined"); 
+    PsetReader reader("process");
 
-    if ( argv[1][1] == '-' )
-        THROW_RUNTIME("Usage " << argv[0] << " config.py opts")
-    
-    std::string cfgStr = edm::read_whole_file( argv[1] );
-
-//     std::cout << argc << std::endl;
-    std::vector<std::string> args;
-    for ( int i=1; i<argc; ++i ) 
-        args.push_back(argv[i]);
-
-    std::stringstream header;
-    header << "import sys\n";
-    header << "sys.argv = []\n";
-    for ( unsigned int i(0); i<args.size(); ++i) 
-        header << "sys.argv.append('" << args[i] << "')\n";
-    
-    
-//     std::cout << header.str() << std::endl;
-
-    cfgStr = header.str()+cfgStr;
-//     std::cout << cfgStr << std::endl;
-    
-
-    boost::shared_ptr<edm::ParameterSet> pyConfig = edm::readPSetsFrom(cfgStr);
-    if( !pyConfig->existsAs<edm::ParameterSet>("process") ){
-        THROW_RUNTIME(" ERROR: ParametersSet 'process' is missing in your configuration file");
-    }
-
-    edm::ParameterSet config =  pyConfig->getParameter<edm::ParameterSet>("process");
+    edm::ParameterSet config = reader.read( argc, argv );
     std::cout << config << std::endl;
+
 
     std::vector<std::string> inputFiles = config.getParameter<std::vector<std::string> >("inputFiles");
 
@@ -71,6 +44,28 @@ int main( int argc, char **argv ) {
     std::vector<std::string>::iterator it;
     for ( it = inputFiles.begin(); it != inputFiles.end(); ++it )
         c.Add(it->c_str());
+
+    edm::VParameterSet cutPars = config.getParameter<edm::VParameterSet>("cuts");
+    edm::VParameterSet varPars = config.getParameter<edm::VParameterSet>("variables");
+
+    edm::VParameterSet::iterator itPset;
+
+    CutVector cutFlow; 
+
+    for( itPset = cutPars.begin(); itPset != cutPars.end(); ++itPset) {
+        std::string label = itPset->getParameter<std::string>("label");
+        std::string cut   = itPset->getParameter<std::string>("cut");
+        cutFlow.push_back( std::make_pair( label,  StringCutObjectSelector<HWWNtuple>(cut) ) );
+    }
+
+    VarVector vars;
+    for( itPset = varPars.begin(); itPset != varPars.end(); ++itPset) {
+        std::string label = itPset->getParameter<std::string>("label");
+        vars.push_back( std::make_pair( label, StringObjectFunction<HWWNtuple>(label) ) ); 
+    }
+
+   
+
 
     HWWNtuple* nt = 0x0;
     c.SetBranchAddress("nt",&nt);
@@ -82,9 +77,24 @@ int main( int argc, char **argv ) {
     StringObjectFunction<HWWNtuple> testFun("mll");
     Long64_t nEntries = c.GetEntriesFast();
     nEntries = 100;
+    
+    CutVector::iterator cut;
+    VarVector::iterator var;
+
     for ( Long64_t i(0); i<nEntries; ++i) {
         c.GetEntry(i);
-        std::cout << i << " - " << nt->mll << " / " << testCut(*nt) << '|' << testBit(*nt) <<  " mll:" << testFun(*nt) << std::endl; 
+
+        std::stringstream ss;
+        for ( var = vars.begin(); var != vars.end(); ++var ) {
+            ss << var->first << ": " << var->second(*nt);
+        }
+        ss << " >-< ";
+        for ( cut = cutFlow.begin(); cut != cutFlow.end(); ++cut ) {
+            ss << cut->first << ": " << cut->second(*nt) << ' | ';
+        } 
+        std::cout << "+ " << ss.str() << std::endl;
+
+//         std::cout << i << " - " << nt->mll << " / " << testCut(*nt) << '|' << testBit(*nt) <<  " mll:" << testFun(*nt) << std::endl; 
     }
     
 	return 0;

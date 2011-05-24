@@ -2,6 +2,7 @@
 <use name="rootmath"/>
 <use name="HWWAnalysis/DataFormats" />
 <use name="FWCore/FWLite"/>
+<use name="FWCore/PythonParameterSet"/>
 <flags cxxflags="-g -ggdb" />
 <export>
     <lib name="1"/>

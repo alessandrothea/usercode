@@ -83,10 +83,22 @@ DileptonSelector::DileptonSelector(const edm::ParameterSet& iConfig) : _nEvents(
     // configuration
     _debugLvl       = iConfig.getUntrackedParameter<int>("debugLevel");
     _puFactors      = iConfig.getParameter<std::vector<double> >("pileupFactors");
+
+
+    // src tags
     if( iConfig.existsAs<edm::InputTag>("ptWeightSrc") ) {
-        _ptWeightTag = iConfig.getParameter<edm::InputTag> ("ptWeightSrc");
+        _ptWeightSrc = iConfig.getParameter<edm::InputTag> ("ptWeightSrc");
     }
-    
+
+    _puInfoSrc      = iConfig.getParameter<edm::InputTag>("puInfoSrc");
+    _vertexSrc      = iConfig.getParameter<edm::InputTag>("vertexSrc");
+    _electronSrc    = iConfig.getParameter<edm::InputTag>("electronSrc");
+    _muonSrc        = iConfig.getParameter<edm::InputTag>("muonSrc");
+    _jetSrc         = iConfig.getParameter<edm::InputTag>("jetSrc");
+    _tcMetSrc       = iConfig.getParameter<edm::InputTag>("tcMetSrc");
+    _pfMetSrc       = iConfig.getParameter<edm::InputTag>("pfMetSrc");
+    _chMetSrc       = iConfig.getParameter<edm::InputTag>("chMetSrc");
+
     const edm::ParameterSet& vrtxCuts = iConfig.getParameterSet("vrtxCuts");
     _vrtxCut_nDof = vrtxCuts.getParameter<double>("nDof"); // 4.
     _vrtxCut_rho  = vrtxCuts.getParameter<double>("rho"); // 2.
@@ -179,6 +191,22 @@ DileptonSelector::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     //    _nEvents++;
     EventProxy proxy(iEvent, iSetup);
     _eventProxy = &proxy;
+
+    // set the labels
+    proxy._puInfoTag    = this->_puInfoSrc; 
+    proxy._vertexTag    = this->_vertexSrc;
+    proxy._electronTag  = this->_electronSrc;
+    proxy._muonTag      = this->_muonSrc;
+    proxy._jetTag       = this->_jetSrc;
+    proxy._tcMetTag     = this->_tcMetSrc;
+    proxy._pfMetTag     = this->_pfMetSrc;
+    proxy._chMetTag     = this->_chMetSrc;
+
+    proxy.connect();
+
+
+
+
 
     Debug(3) << "--"<< iEvent.id().event() << "-----------------------------------------------" << std::endl;
     // make sure the previous event is cleared
@@ -290,9 +318,9 @@ DileptonSelector::calculateWeight( const edm::Event& iEvent ) {
         _puNVertexes->Fill( getEvent()->getNVrtx(), this->weight() );
     }
 
-    if ( !(_ptWeightTag == edm::InputTag()) ) {
+    if ( !(_ptWeightSrc == edm::InputTag()) ) {
         edm::Handle<double> ptWeightHandle;
-        iEvent.getByLabel(_ptWeightTag, ptWeightHandle);
+        iEvent.getByLabel(_ptWeightSrc, ptWeightHandle);
         
         _eventWeight *= *ptWeightHandle;
         
@@ -1506,11 +1534,6 @@ void DileptonSelector::cleanJets() {
         // the jets must be identified
         if ( !jetLooseId( jet ) ) continue;
 
-        // jet ptcut
-        if ( jet.pt() > _jetCut_Pt  && TMath::Abs(jet.eta()) < _jetCut_Eta ) {
-            _selectedPFJets.insert(i);
-            continue;
-        }
         
         _jetBTagProbTkCntHighEff->Fill( btagProb, this->weight());
 
@@ -1524,10 +1547,15 @@ void DileptonSelector::cleanJets() {
         _btag_trackCountingHighEff.push_back(jet.bDiscriminator("trackCountingHighEffBJetTags"));
         _btag_trackCountingHighPur.push_back(jet.bDiscriminator("trackCountingHighPurBJetTags"));
 
-        // or check for btagged jets
+        // check for btagged jets (any jet in the event)
         if ( btagProb > _jetCut_BtagProb )
             _btaggedJets.insert(i);
 
+        // jet ptcut
+        if ( jet.pt() > _jetCut_Pt  && TMath::Abs(jet.eta()) < _jetCut_Eta ) {
+            _selectedPFJets.insert(i);
+            continue;
+        }
 	}
 
 }

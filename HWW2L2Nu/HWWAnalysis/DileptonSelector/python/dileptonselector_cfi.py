@@ -6,10 +6,14 @@ from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import *
 DileptonSelector = cms.EDAnalyzer('DileptonSelector',
         debugLevel  = cms.untracked.int32(0),
 
-        pileupSrc   = cms.InputTag(''),
-        electronSrc = cms.InputTag(''),
-        muonSrc     = cms.InputTag(''),
-        jetSrc      = cms.InputTag(''),
+        puInfoSrc   = cms.InputTag('addPileupInfo'),
+        vertexSrc   = cms.InputTag('offlinePrimaryVerticesWithBS'),
+        electronSrc = cms.InputTag('boostedElectrons'),
+        muonSrc     = cms.InputTag('boostedMuons'),
+        jetSrc      = cms.InputTag('slimPatJetsTriggerMatch'),
+        tcMetSrc    = cms.InputTag('tcMet'),
+        pfMetSrc    = cms.InputTag('pfMet'),
+        chMetSrc    = cms.InputTag('chargedMetProducer'),
 
         pileupFactors = cms.vdouble(puWeights[:]),
         elCutBasedId = elVBTF2011,

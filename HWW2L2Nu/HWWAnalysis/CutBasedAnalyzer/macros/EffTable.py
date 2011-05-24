@@ -27,13 +27,14 @@ prefix='fullSelection/'
 # prefix='diLepSel/'
 for s in fStates:
     d[s] = odict.OrderedDict()
-    print '\n-',s+'Counters'
+#     print '\n-',s+'Counters'
     name = prefix+s+'Counters'
     counters = f.Get(name)
     if not counters.__nonzero__():
         raise NameError('histogram '+name+' not found in '+args[1])
     lastBin = counters.GetNbinsX()
-    print 'Entries:',counters.GetBinContent(1)
+#     print 'Entries:',counters.GetBinContent(1)
+    d[s]['entries'] = '%.2f' % counters.GetBinContent(1)
     for i in range(2,lastBin+1):
         ax = counters.GetXaxis()
         labelAbs = ax.GetBinLabel(i)
@@ -51,7 +52,7 @@ for s in fStates:
             relEff = 100.*theBin/prevBin
         
         d[s][labelAbs] = '%.1f+-%.1f' % ( theBin, math.sqrt(theBin) )
-        print '  %s = %d - %.3f%% (%.3f%%)' % (labelAbs.ljust(20), theBin,absEff, relEff)
+#         print '  %s = %d - %.3f%% (%.3f%%)' % (labelAbs.ljust(20), theBin,absEff, relEff)
         
 print '+ Cut'.ljust(34),' | '.join([ s.ljust(20) for s in fStates ])
 

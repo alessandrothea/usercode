@@ -19,15 +19,17 @@
 #include <HWWAnalysis/Misc/interface/Tools.h>
 
 EventProxy::EventProxy( const edm::Event& event , const edm::EventSetup& setup ) : _event(event), _setup(setup) {
+}
 
-    _event.getByLabel("addPileupInfo", _puInfo);
-    _event.getByLabel("offlinePrimaryVertices", _vertexes);
-    _event.getByLabel("boostedElectrons", _electrons);
-    _event.getByLabel("boostedMuons", _muons);
-    _event.getByLabel("slimPatJetsTriggerMatch", _jets);
-    _event.getByLabel("tcMet", _tcMet);
-    _event.getByLabel("pfMet", _pfMet);
-    _event.getByLabel("chargedMetProducer", _chargedMet);
+void EventProxy::connect() {
+    _event.getByLabel(_puInfoTag,   _puInfo);
+    _event.getByLabel(_vertexTag,   _vertexes);
+    _event.getByLabel(_electronTag, _electrons);
+    _event.getByLabel(_muonTag,     _muons);
+    _event.getByLabel(_jetTag,      _jets);
+    _event.getByLabel(_tcMetTag,    _tcMet);
+    _event.getByLabel(_pfMetTag,    _pfMet);
+    _event.getByLabel(_chMetTag,    _chargedMet);
 
 
 }
@@ -51,10 +53,6 @@ Int_t EventProxy::getNPileUp() {
     nPileUp = puIt->getPU_NumInteractions();
     return nPileUp;
 }
-/*
-Double_t EventProxy::getGenMET() { return _reader->GenMET;}
-Int_t* EventProxy::getHLTResults() { return _reader->HLTResults;}
-*/
 
 UInt_t   EventProxy::getRun() { return _event.id().run();}
 UInt_t   EventProxy::getEvent() { return _event.id().event();}
@@ -63,17 +61,6 @@ UInt_t   EventProxy::getLumiSection() { return _event.luminosityBlock();}
 const reco::MET& EventProxy::getTCMET() { return (*_tcMet)[0]; }
 const reco::PFMET& EventProxy::getPFMET() { return (*_pfMet)[0]; }
 const reco::PFMET& EventProxy::getChargedMET() { return (*_chargedMet).get(0); }
-
-// Double_t EventProxy::getTCMETphi() { return (*_tcMet)[0].phi();}
-// Double_t EventProxy::getPFMETphi() { return (*_pfMet)[0].phi();}
-// Double_t EventProxy::getChargedMETphi() { return (*_chargedMet).get(0).phi();}
-
-
-// math::XYZTLorentzVector EventProxy::getTCVector4() { return (*_tcMet)[0].p4(); }
-
-// math::XYZTLorentzVector EventProxy::getPFVector4() { return (*_pfMet)[0].p4(); }
-
-// math::XYZTLorentzVector EventProxy::getChargedVector4() { return (*_chargedMet).get(0).p4(); }
 
 
    Int_t EventProxy::getNVrtx() { return _vertexes->size();}

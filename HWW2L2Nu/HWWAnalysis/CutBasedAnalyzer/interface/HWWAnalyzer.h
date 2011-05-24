@@ -92,6 +92,7 @@ protected:
     //
     enum extraHist {
         kExtraDeltaPhi,
+        kExtraDeltaPhiBands,
         kExtraSize
     };
 

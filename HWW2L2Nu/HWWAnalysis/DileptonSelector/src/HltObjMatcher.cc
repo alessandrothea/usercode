@@ -11,6 +11,9 @@
 #include <DataFormats/PatCandidates/interface/Muon.h>
 #include <DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h>
 #include <algorithm>
+#include <boost/algorithm/string.hpp>
+
+const char HltObjMatcher::wildcard_ = '*';
 
 //______________________________________________________________________________
 HltObjMatcher::HltObjMatcher( const std::string& dataType ) {
@@ -94,6 +97,23 @@ void HltObjMatcher::setTriggerResults( const edm::EventBase& event ) {
 
 //     for ( size_t i(0); i< 
 // }
+
+//______________________________________________________________________________
+std::vector<unsigned int> HltObjMatcher::findIndexes( const std::string& path  ) {
+    std::vector<unsigned int> indexes;
+
+    const std::vector<std::string>& allNames = _hltTriggerNames.triggerNames();
+    std::vector<std::string> matches = this->search(path,allNames);
+    std::vector<std::string>::iterator iMatch;
+    for( iMatch = matches.begin(); iMatch != matches.end(); ++iMatch ) {
+        unsigned int i = _hltTriggerNames.triggerIndex(*iMatch);
+        if ( i == _hltTriggerNames.size() ) continue;
+
+        indexes.push_back(i);
+    }
+
+    return indexes;
+}
 
 //______________________________________________________________________________
 bool HltObjMatcher::matchesBits( LepPair& pair ) {
@@ -369,3 +389,63 @@ bool HltObjMatcher::passElMu( const reco::Candidate* lep ) {
 
     return ismatch;
 }
+
+
+std::vector<std::string> HltObjMatcher::search( const std::string& name,const std::vector< std::string >& nameVec ) {
+
+    std::vector<std::string> matches;
+
+    // Special cases first
+    // Always false for empty vector to check
+    if ( nameVec.empty() ) return matches;
+
+    // Always true for general wild-card(s)
+    // no wildcard case
+    if ( name.find_first_not_of( wildcard_ ) == std::string::npos ) {
+        // basic loop without wildcard evalutation
+        for ( std::vector< std::string >::const_iterator iVec = nameVec.begin(); iVec != nameVec.end(); ++iVec ) {
+            if ( *iVec == name )
+                matches.push_back(*iVec);
+        }
+
+    } else {
+        // wildcard case
+        // Split name to evaluate in parts, seperated by wild-cards
+        std::vector< std::string > namePartsVec;
+        boost::split( namePartsVec, name, boost::is_any_of( std::string( 1, wildcard_ ) ), boost::token_compress_on );
+        // Iterate over vector of names to search
+        for ( std::vector< std::string >::const_iterator iVec = nameVec.begin(); iVec != nameVec.end(); ++iVec ) {
+            // Not failed yet
+            bool failed( false );
+            // Start searching at the first character
+            size_t index( 0 );
+            // Iterate over evaluation name parts
+            for ( std::vector< std::string >::const_iterator iName = namePartsVec.begin(); iName != namePartsVec.end(); ++iName ) {
+                // Empty parts due to
+                // - wild-card at beginning/end or
+                // - multiple wild-cards (should be supressed by 'boost::token_compress_on')
+                if ( iName->length() == 0 ) continue;
+                // Search from current index and
+                // set index to found occurence
+                index = iVec->find( *iName, index );
+                // Failed and exit loop, if
+                // - part not found
+                // - part at beginning not found there
+                if ( index == std::string::npos || ( iName == namePartsVec.begin() && index > 0 ) ) {
+                    failed = true;
+                    break;
+                }
+                // Increase index by length of found part
+                index += iName->length();
+            }
+            // Failed, if end of name not reached
+            if ( index < iVec->length() && namePartsVec.back().length() != 0 ) failed = true;
+            // Match found!
+            if ( ! failed ) //return true;
+            matches.push_back(*iVec);
+        }
+    }
+    // No match found!
+    return matches;
+}
+

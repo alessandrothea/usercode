@@ -36,6 +36,7 @@ class EventProxy {
     public:
         EventProxy( const edm::Event& event , const edm::EventSetup& setup );
 
+        void connect();
         /*
            Double_t getGenMET();
            Int_t* getHLTResults();
@@ -133,6 +134,17 @@ class EventProxy {
         Double_t getPFJPy( int i );
         Double_t getPFJPz( int i );
         Double_t getPFJbTagProbTkCntHighEff( int i );      
+
+        
+        edm::InputTag _puInfoTag;
+        edm::InputTag _vertexTag;
+        edm::InputTag _electronTag;
+        edm::InputTag _muonTag;
+        edm::InputTag _jetTag;
+        edm::InputTag _tcMetTag;
+        edm::InputTag _pfMetTag;
+        edm::InputTag _chMetTag;
+        
     protected:
         const edm::Event& _event;
         const edm::EventSetup& _setup;

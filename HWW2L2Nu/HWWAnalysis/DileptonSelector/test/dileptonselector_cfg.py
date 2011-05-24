@@ -76,9 +76,9 @@ if options.eventsToProcess:
 # apply json mask if defined
 if options.useLumi:
     lumis = LumiList.LumiList(filename = options.useLumi ).getCMSSWString().split(',')
-    print lumis
+#     print lumis
     process.source.lumisToProcess = cms.untracked(cms.VLuminosityBlockRange())
-    print process.source.lumisToProcess
+#     print process.source.lumisToProcess
     process.source.lumisToProcess.extend(lumis)
     print process.source.lumisToProcess
 #-------------------------------------------------------------------------------
@@ -137,12 +137,13 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 
 # initialize MessageLogger and output report
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.MessageLogger.destinations = ['cout', 'cerr']
+process.MessageLogger.destinations = ['cerr']
+# process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1000)
+
 # process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 # process.MessageLogger.cerr.threshold = 'INFO'
 # process.MessageLogger.categories.append('pippo')
 # process.MessageLogger.cerr.INFO = cms.untracked.PSet(
 #             limit = cms.untracked.int32(-1)
 #             )
-# process.p = cms.Path(process.DileptonSelector)
