@@ -8,31 +8,43 @@
 #ifndef HWWNTUPLE_H_
 #define HWWNTUPLE_H_
 
-#include <TObject.h>
-#include <TLorentzVector.h>
+// #include <TLorentzVector.h>
+#include "DataFormats/Math/interface/LorentzVector.h"
 
-class HWWNtuple {//: public TObject {
+class HWWNtuple {
 public:
 	HWWNtuple();
 	virtual ~HWWNtuple();
 
-	void Clear( Option_t* option="" );
+	void clear();
 
+    enum pairtype {
+        elel = 0,
+        elmu = 1,
+        muel = 10,
+        mumu = 11
+    };
+
+    bool is( pairtype t ) const { return type == t; }
+    bool same() const { return is(elel) || is(mumu); }
+    bool different() const { return is(elmu) || is(muel); }
 	short type;
 
-    UInt_t run;
-    UInt_t lumiSection;
-    UInt_t event;
-    Bool_t selected;
-    Double_t weight;
+    unsigned int run;
+    unsigned int lumiSection;
+    unsigned int event;
+    bool selected;
+    double weight;
 
     unsigned long tags;
 
-	TLorentzVector pA;
-	TLorentzVector pB;
+//     TLorentzVector pA;
+//     TLorentzVector pB;
+    math::XYZTLorentzVector pA;
+    math::XYZTLorentzVector pB;
 
-	Int_t cA;
-	Int_t cB;
+	int cA;
+	int cB;
 
 	double d0A;
 	double d0B;
@@ -62,11 +74,14 @@ public:
     double mrStar;
     double gammaMRstar;
     double razor;
-	int    nPfJets;
-	unsigned int nSoftMus;
-	unsigned int nBJets;
 
-	ClassDef(HWWNtuple,1)
+	unsigned int    nJets;
+	unsigned int    nSoftMus;
+	unsigned int    nBJets;
+    // 1 jet only
+    double dPhillj;
+
+//     ClassDef(HWWNtuple,1)
 };
 
 #endif /* HWWNTUPLE_H_ */

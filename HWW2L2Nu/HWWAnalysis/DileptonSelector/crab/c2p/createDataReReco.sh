@@ -1,6 +1,6 @@
 nJobs=50
 csvFile="$HOME/higgsWW/samples/R42X_S1_V00_S2_V00_S3_V00.csv"
-optArgs="useLumi=$HOME/higgsWW/lumi/ReRecoMay10/certifiedUCSD.json"
+optArgs="useLumi=$HOME/higgsWW/lumi/ReRecoMay10/currentLumi.json"
 
 crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Spring11/jobs -w ../../ -i 90 -a "$optArgs dataType=SingleMu" -g 2011:ReRecoMay10:$CMSSW_VERSION:Spring11:data:SingleMu
 crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Spring11/jobs -w ../../ -i 91 -a "$optArgs dataType=DoubleMu" -g 2011:ReRecoMay10:$CMSSW_VERSION:Spring11:data:DoubleMu 

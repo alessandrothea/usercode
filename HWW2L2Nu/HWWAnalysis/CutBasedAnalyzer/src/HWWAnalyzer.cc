@@ -422,7 +422,6 @@ void HWWAnalyzer::fillNtuple(){
     Int_t cA(0), cB(0);
     double d0A(0), d0B(0);
     double dZA(0), dZB(0);
-    double maxProjMet(0);
     unsigned short type = 0;
 
 //  std::cout << "Neles " << _event->NEles << "   NMus " << _event->NMus << std::endl;
@@ -442,7 +441,6 @@ void HWWAnalyzer::fillNtuple(){
         dZA = _event->Els[0].DzPV;
         dZB = _event->Els[1].DzPV;
 
-        maxProjMet = _minProjMetLL;
         type = kElEl_t;
         break;
     case 1:
@@ -474,7 +472,6 @@ void HWWAnalyzer::fillNtuple(){
             type = kMuEl_t;
         }
 
-        maxProjMet = _minProjMetEM;
 
         break;
     case 0:
@@ -491,7 +488,6 @@ void HWWAnalyzer::fillNtuple(){
         dZA = _event->Mus[0].DzPV;
         dZB = _event->Mus[1].DzPV;
 
-        maxProjMet = _minProjMetLL;
         type = kMuMu_t;
 
         break;
@@ -546,6 +542,14 @@ void HWWAnalyzer::fillNtuple(){
     // 6 - dPhiEE
     double dPhiLL = TMath::Abs(pA.DeltaPhi(pB));
 
+    double dPhiLLJet = -TMath::TwoPi();
+    // 7 1-jet case
+    if ( _event->PFNJets == 1 ) {
+        TLorentzVector pJet = _event->PFJets[0].P;
+        TLorentzVector pLL  = pA+pB;
+        dPhiLLJet           = TMath::Abs(pJet.DeltaPhi(pLL));
+    }
+
     _ntuple->type = type;
 
     _ntuple->run           = _event->Run;
@@ -559,8 +563,9 @@ void HWWAnalyzer::fillNtuple(){
     _ntuple->cA            = cA;
     _ntuple->cB            = cB;
 
-    _ntuple->pA            = pA;
-    _ntuple->pB            = pB;
+    _ntuple->pA.SetXYZT(pA.X(),pA.Y(),pA.Z(),pA.T());
+    _ntuple->pB.SetXYZT(pB.X(),pB.Y(),pB.Z(),pB.T());
+//     _ntuple->pB            = pB;
     
     _ntuple->d0A           = d0A;
     _ntuple->d0B           = d0B;
@@ -595,10 +600,11 @@ void HWWAnalyzer::fillNtuple(){
 
 
     _ntuple->dPhi          = dPhiLL;
-    _ntuple->nPfJets       = _event->PFNJets;
+    _ntuple->nJets         = _event->PFNJets;
     _ntuple->nSoftMus      = _event->NSoftMus;
     _ntuple->nBJets        = _event->NBTaggedJets;
 
+    _ntuple->dPhillj       = dPhiLLJet;
 
 }
 
@@ -637,7 +643,7 @@ void HWWAnalyzer::fillNminus1(std::vector<TH1D*>& nm1, higgsBitWord word ){
         nm1[kProjMet]->Fill( _ntuple->projMet , getWeight() );
 
     if ( (word & _nthMask[kJetVeto]) == _nthMask[kJetVeto] )
-        nm1[kJetVeto]->Fill(_ntuple->nPfJets, getWeight() );
+        nm1[kJetVeto]->Fill(_ntuple->nJets, getWeight() );
 
     if ( (word & _nthMask[kSoftMuon]) == _nthMask[kSoftMuon] )
         nm1[kSoftMuon]->Fill(_ntuple->nSoftMus, getWeight() );
@@ -666,7 +672,7 @@ void HWWAnalyzer::fillNminus1(std::vector<TH1D*>& nm1, higgsBitWord word ){
 void HWWAnalyzer::fillExtra(std::vector<TH1D*>& extra ) {
     
     if ( _ntuple->mll < 12. || _ntuple->mll > 60. ) return;
-    if ( _ntuple->nPfJets != 0 ) return;
+    if ( _ntuple->nJets != 0 ) return;
     if ( _ntuple->pB.Pt() < 30. ) return;
 //     if ( _ntuple->pfMet < 30. ) return;
 
@@ -678,7 +684,7 @@ void HWWAnalyzer::fillExtra(std::vector<TH1D*>& extra ) {
 //______________________________________________________________________________
 void HWWAnalyzer::fillVariables( HistogramSet* histograms, HCuts_t cutCode ) {
 
-    histograms->cutByCut[kLogNJets][cutCode]->Fill( _ntuple->nPfJets, getWeight());
+    histograms->cutByCut[kLogNJets][cutCode]->Fill( _ntuple->nJets, getWeight());
 
     histograms->cutByCut[kLogNSoftMus][cutCode]->Fill( _ntuple->nSoftMus, getWeight());
 
@@ -763,7 +769,7 @@ void HWWAnalyzer::cutAndFill() {
     float minProjMet  = isMixedFlavour ? _minProjMetEM : _minProjMetLL;
     word[kProjMet]    = ( _ntuple->projMet > minProjMet);
 
-    word[kJetVeto]    = ( _ntuple->nPfJets == 0);
+    word[kJetVeto]    = ( _ntuple->nJets == 0);
 
     word[kSoftMuon]   = ( _ntuple->nSoftMus == 0);
 
@@ -863,10 +869,10 @@ void HWWAnalyzer::cutAndFill() {
     nJnV->Fill(_event->NVrtx, _event->PFJets.size(), getWeight() );
 
     // njets == 0
-    histograms->preCuts[kJetVeto]->Fill(_ntuple->nPfJets, getWeight() );
+    histograms->preCuts[kJetVeto]->Fill(_ntuple->nJets, getWeight() );
     if ( !word[kJetVeto] ) return;
     histograms->counters->Fill(kJetVeto, getWeight() );
-    histograms->postCuts[kJetVeto]->Fill(_ntuple->nPfJets, getWeight() );
+    histograms->postCuts[kJetVeto]->Fill(_ntuple->nJets, getWeight() );
 
     fillVariables( histograms, kJetVeto);
 
@@ -938,7 +944,7 @@ void HWWAnalyzer::Process( Long64_t iEvent ) {
 //  std::cout << iEvent <<  std::endl;
     _chain->GetEntry(iEvent);
 
-    _ntuple->Clear();
+    _ntuple->clear();
 //     _btaggedJets.clear();
 //     _selectedJets.clear();
 

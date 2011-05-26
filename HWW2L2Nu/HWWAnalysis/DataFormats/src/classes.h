@@ -4,6 +4,7 @@
 #include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
 #include "HWWAnalysis/DataFormats/interface/HWWNtuple.h"
 #include <vector>
+#include <TLorentzVector.h>
 
 namespace {
    struct HWWAnalysis_DataFormats {

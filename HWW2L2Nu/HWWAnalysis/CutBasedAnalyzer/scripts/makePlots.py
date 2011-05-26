@@ -118,7 +118,7 @@ class Plotter:
             if key == token:
                 raise NameError('Malformed variable declaration '+arg)
 
-        self.variables[key] = value
+            self.variables[key] = value
 
     def setLuminosity(self,lumi ):
         self.luminosity = lumi

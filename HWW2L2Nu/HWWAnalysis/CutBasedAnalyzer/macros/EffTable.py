@@ -59,6 +59,12 @@ print '+ Cut'.ljust(34),' | '.join([ s.ljust(20) for s in fStates ])
 for lab in d['ll'].iterkeys():
     print '-',lab.ljust(30),'=',' | '.join( [ d[s][lab].ljust(20) for s in fStates ]) 
 
+print r'\begin{tabular}{'+'l'*(len(fStates)+1)+'}'
+for lab in d['ll'].iterkeys():
+    print '$'+lab.replace('#','\\')+'$','&',' & '.join([ d[s][lab].replace('+-',' $\\pm$ ') for s in fStates ]  ),r'\\'
+print r'\end{tabular}'
+
+
 #if __name__ == '__main__':
 #    
 #    usage = 'usage: %prog [options]'

@@ -10,14 +10,14 @@
 
 HWWNtuple::HWWNtuple() {
 
-	Clear();
+	clear();
 }
 
 HWWNtuple::~HWWNtuple() {
 
 }
 
-void HWWNtuple::Clear( Option_t* option ){
+void HWWNtuple::clear(){
 
 	type = -1;
 
@@ -29,8 +29,8 @@ void HWWNtuple::Clear( Option_t* option ){
 
     tags = 0;
 
-	pA = TLorentzVector();
-	pB = TLorentzVector();
+	pA = math::XYZTLorentzVector();
+	pB = math::XYZTLorentzVector();
 	cA = 0;
 	cB = 0;
 	d0A = 0;
@@ -62,7 +62,9 @@ void HWWNtuple::Clear( Option_t* option ){
     mrStar = 0;
     gammaMRstar = 0;
     razor = 0;
-	nPfJets = 0;
+	nJets = 0;
 	nSoftMus = 0;
 	nBJets  = 0;
+
+    dPhillj = 0.;
 }

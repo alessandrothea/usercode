@@ -2,6 +2,12 @@
 <use name="HWWAnalysis/DataFormats"/>
 <use name="FWCore/PythonParameterSet"/>
 <use name="CommonTools/Utils"/>
+<use name="FWCore/FWLite"/>
+<use name="PhysicsTools/Utilities"/>
+<use name="PhysicsTools/FWLite"/>
 <use name="root"/>
+<use name="rootrflx"/>
+<use name="rootphysics"/>
+<use name="rootcintex"/>
 <bin file="runHWW.cc" name="runHWW.exe"/>
 <bin file="testFWLite.cc" name="fwLiteTest.exe"/>
