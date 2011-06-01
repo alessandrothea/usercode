@@ -51,7 +51,8 @@ for s in fStates:
         else:
             relEff = 100.*theBin/prevBin
         
-        d[s][labelAbs] = '%.1f+-%.1f' % ( theBin, math.sqrt(theBin) )
+#         d[s][labelAbs] = '%.1f+-%.1f' % ( theBin, math.sqrt(theBin) )
+        d[s][labelAbs] = '%.1f' % ( theBin, )
 #         print '  %s = %d - %.3f%% (%.3f%%)' % (labelAbs.ljust(20), theBin,absEff, relEff)
         
 print '+ Cut'.ljust(34),' | '.join([ s.ljust(20) for s in fStates ])
@@ -61,7 +62,7 @@ for lab in d['ll'].iterkeys():
 
 print r'\begin{tabular}{'+'l'*(len(fStates)+1)+'}'
 for lab in d['ll'].iterkeys():
-    print '$'+lab.replace('#','\\')+'$','&',' & '.join([ d[s][lab].replace('+-',' $\\pm$ ') for s in fStates ]  ),r'\\'
+    print '$'+lab.replace('#','\\')+'$','&',' & '.join([ d[s][lab].replace('+-',' $\\pm$ ').replace('%','\%') for s in fStates ]  ),r'\\'
 print r'\end{tabular}'
 
 

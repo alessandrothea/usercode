@@ -139,7 +139,13 @@ void UserAnalyzer::Loop() {
 //         if ( i%1000 == 0 ) {
 			watch.Stop();
             if ( i!=0 ) std::cout << '\r';
-			std::cout << "+ " << TMath::Nint(i*100/(double)_nEvents) << "% i = " << i << " RealTime : " << watch.RealTime() << " Cpu : " << watch.CpuTime() << std::flush;
+            int barLen = 100;
+            int progress = TMath::Nint(i*barLen/(double)_nEvents);
+            std::string bar(progress, '=');
+            bar[progress-1] = '>';
+            bar.resize(barLen,' ');
+
+			std::cout << " |" << bar << " " << TMath::Nint(i*100/(double)_nEvents) << "% i = " << i << " RT: " << watch.RealTime() << " Cpu : " << watch.CpuTime() << std::flush;
 			watch.Continue();
 		}
 		Process( i );

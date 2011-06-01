@@ -215,14 +215,19 @@ class Plotter:
             if not e.file.IsOpen():
                 raise NameError('file '+e.path+' not found')
             entries = e.file.Get('entries')
+            if not entries.__nonzero__():
+                raise NameError('histogram entries not found in '+fullPath)
             e.entries = entries.GetBinContent(1)
             
         for e in self.mcSamples:
             fullPath = self.baseDir+'/'+e.path
             e.file = ROOT.TFile(fullPath)
-            if not e.file.IsOpen():
+            if not e.file.IsOpen() or not e.file.__nonzero__():
                 raise NameError('file '+e.path+' not found')
+
             entries = e.file.Get('entries')
+            if not entries.__nonzero__():
+                raise NameError('histogram entries not found in '+fullPath)
             e.entries = entries.GetBinContent(1)
 
     def getHistograms(self,samples,name,prefix):
@@ -259,7 +264,7 @@ class Plotter:
         for (h,s) in histograms:
 
             fact = s.sFact*self.luminosity/1000.
-            h.Sumw2()
+#             h.Sumw2()
             h.Scale(fact)
             if self.verbosity > 1:
                 print '%f\t%f\t%s'%(s.sFact, fact, s.path)
@@ -399,6 +404,8 @@ class Plotter:
         self.normalize(mc) #, self.mcSamples)
         
         mc   = self.sum(mc) #,self.mcSamples)
+        data = self.sum(data)
+#         print data
         (data0, sample0) = data[0]
         baseName = os.path.basename(name)
         stack = ROOT.THStack('mcstack_'+baseName,data0.GetTitle())
@@ -413,10 +420,10 @@ class Plotter:
             stack.Add(h,'hist')
             
         cName = 'c_'+baseName
-        c = ROOT.TCanvas(cName,cName,-2)
+        c = ROOT.TCanvas(cName,cName,2)
 #         print c.GetWw(),c.GetWh()
         c.SetTicks();
-        c.Size(30,30)
+#         c.Size(30,30)
 #         print '- logx =', pl.logX, ': logy =',pl.logY
         maxY = ROOT.TMath.Max(data0.GetMaximum(),stack.GetMaximum())
         minY = ROOT.TMath.Min(data0.GetMinimum(),min(mcMinima))
@@ -435,7 +442,7 @@ class Plotter:
             minY -= (maxY-minY)*0.1
     
 
-        frame = data0.Clone('frame')
+        frame = data0.Clone('hframe')
         frame.Reset()
         frame.SetMaximum(maxY)
         frame.SetMinimum(minY)
@@ -445,13 +452,21 @@ class Plotter:
         frame.SetXTitle(pl.xtitle if pl.xtitle != 'self' else data0.GetXaxis().GetTitle())
         frame.SetYTitle(pl.ytitle if pl.xtitle != 'self' else data0.GetYaxis().GetTitle())
         frame.Draw()
-        data0.SetFillColor(1);
-        data0.SetMarkerColor(1);
-        data0.SetMarkerStyle(20);
-        data0.SetMarkerSize(0.7);
+
+        for d,s in data:
+            d.SetFillColor(1);
+            d.SetMarkerColor(1);
+            d.SetMarkerStyle(20);
+            d.SetMarkerSize(0.7);
+#         data0.SetFillColor(1);
+#         data0.SetMarkerColor(1);
+#         data0.SetMarkerStyle(20);
+#         data0.SetMarkerSize(0.7);
         
         stack.Draw('same')
-        data0.Draw('e1 same')
+        for d,s in data:
+            d.Draw('e1 same')
+#         data0.Draw('e1 same')
 
         legend = self.makeLegend(data,mc)
         legend.Draw()

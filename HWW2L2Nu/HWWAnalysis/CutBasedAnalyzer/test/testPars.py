@@ -21,7 +21,8 @@ options.parseArguments()
 process = cms.PSet(
         inputFiles = cms.vstring(options.inputFiles),
         outputFile = cms.string(options.outputFile),
-        reportEvery = cms.int32(1000),
+        maxEvents   = cms.int64(options.maxEvents),
+        copyObjects = cms.vstring(['entries']),
 )
 
 process.channels = cms.VPSet(

@@ -33,9 +33,9 @@ void HWWEvent::Clear( Option_t* option ){
 	NVrtx          = 0;
 	NPileUp        = 0;
 
-    TCMet          = TLorentzVector();
-    PFMet          = TLorentzVector();
-    ChargedMet     = TLorentzVector();
+    TCMet          = math::XYZTLorentzVector(); //TLorentzVector();
+    PFMet          = math::XYZTLorentzVector(); //TLorentzVector();
+    ChargedMet     = math::XYZTLorentzVector(); //TLorentzVector();
 
 	NSoftMus       = 0;
 	NBTaggedJets   = 0;

@@ -10,4 +10,4 @@
 <use name="rootphysics"/>
 <use name="rootcintex"/>
 <bin file="runHWW.cc" name="runHWW.exe"/>
-<bin file="testFWLite.cc" name="fwLiteTest.exe"/>
+<bin file="testFWLite.cc" name="simpleCutter.exe"/>

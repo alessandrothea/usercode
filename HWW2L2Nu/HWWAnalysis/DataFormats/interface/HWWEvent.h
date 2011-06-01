@@ -8,13 +8,16 @@
 #ifndef HWWEVENT_H_
 
 #include <TObject.h>
-#include <TLorentzVector.h>
+// #include <TLorentzVector.h>
+#include "DataFormats/Math/interface/LorentzVector.h"
+
 
 class HWWElectron {
 public:
 	HWWElectron() {}
 	virtual ~HWWElectron() {}
-	TLorentzVector 	P;
+//     TLorentzVector 	P;
+    math::XYZTLorentzVector P;
 	Int_t           Charge;
 	Double_t        SigmaIetaIeta;
 	Double_t        CaloEnergy;
@@ -34,7 +37,8 @@ class HWWMuon {
 public:
 	HWWMuon() {}
 	virtual ~HWWMuon() {}
-	TLorentzVector	P;
+//     TLorentzVector	P;
+    math::XYZTLorentzVector P;
 	Int_t           Charge;
 	Double_t        Iso03SumPt;
 	Double_t        Iso03EmEt;
@@ -53,7 +57,8 @@ public:
 
 class HWWPFJet {
 public:
-	TLorentzVector P;
+//     TLorentzVector P;
+    math::XYZTLorentzVector P;
 	Double_t        ChHadfrac;
 	Double_t        NeuHadfrac;
 	Double_t        ChEmfrac;
@@ -103,9 +108,12 @@ public:
 	UInt_t   NPileUp;
 
 	// Met
-    TLorentzVector TCMet;
-    TLorentzVector PFMet;
-    TLorentzVector ChargedMet;
+//     TLorentzVector TCMet;
+//     TLorentzVector PFMet;
+//     TLorentzVector ChargedMet;
+    math::XYZTLorentzVector TCMet;
+    math::XYZTLorentzVector PFMet;
+    math::XYZTLorentzVector ChargedMet;
 
 	Bool_t   NSoftMus;
 	Bool_t	 NBTaggedJets;

@@ -76,13 +76,14 @@ samples.extend(data2011)
 
 samples = []
 samples.extend(data2011ReReco)
-samples.extend(data2011PromptReco)
-samples = []
+# samples.extend(data2011PromptReco)
+# samples = []
 
 masses = [120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 250, 300, 350, 400, 450, 500, 550, 600]
 masses = [ 160 ]
-lumi=133.5
-#lumi=168.9
+# lumi=133.5
+# lumi=146.1
+lumi=187.6
 
 usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
@@ -118,28 +119,30 @@ for mass in masses:
     sumData(samples,data2011ReReco,ntuplePath,'Data2011ReReco')
 
     dataTags = ['Data2011PromptReco','Data2011ReReco']
+#     dataTags = ['Data2011PromptReco']
     for tag in dataTags:
         if not os.path.exists(ntuplePath+'/hww_'+tag+'.root'):
             print ntuplePath+'/hww_'+tag+'.root  not found'
             continue
 
-        print 'Making stack plots for '+tag  
-        optVars = 'higgsMass='+str(mass)+' dataTag='+tag
-        cmds = []
-        cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_yield.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_yield.root'
-        )
-        cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_dileptons.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_dileptons.root'
-        )
-        cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_cuts.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_cuts.root'
-        )
-        cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_extra.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_extra.root'
-        )
+    break
+    print 'Making stack plots for '+tag  
+    optVars = 'higgsMass='+str(mass)+' dataTag='+tag
+    cmds = []
+    cmds.append(
+        'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_yield.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_yield.root'
+    )
+    cmds.append(
+        'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_dileptons.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_dileptons.root'
+    )
+    cmds.append(
+        'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_cuts.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_cuts.root'
+    )
+    cmds.append(
+        'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_extra.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_extra.root'
+    )
 
-        for cmd in cmds:
-            print cmd
-            os.system(cmd)
+    for cmd in cmds:
+        print cmd
+        os.system(cmd)
 

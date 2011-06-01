@@ -8,7 +8,6 @@
 #ifndef HWWNTUPLE_H_
 #define HWWNTUPLE_H_
 
-// #include <TLorentzVector.h>
 #include "DataFormats/Math/interface/LorentzVector.h"
 
 class HWWNtuple {

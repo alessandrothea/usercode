@@ -1,12 +1,16 @@
 
 #include "HWWAnalysis/CutBasedAnalyzer/interface/Razor.h"
+#include <TVector3.h>
+
+
 
 namespace razor {
 
 //
 // this is the 'new' MRstar
 //
-double MRstar(const TLorentzVector& ja, const TLorentzVector& jb){
+// double MRstar(const TLorentzVector& ja, const TLorentzVector& jb){
+double MRstar(const math::XYZTLorentzVector& ja, const math::XYZTLorentzVector& jb){
   double A = ja.P();
   double B = jb.P();
   double az = ja.Pz();
@@ -27,7 +31,8 @@ double MRstar(const TLorentzVector& ja, const TLorentzVector& jb){
 // this is the 'new' MRstar, times 'gamma_{R*}' - I would recommend making 'R*' with this as
 // the denominator and 'M_{T}^{R}' as the numerator (the next function in this file)
 //
-double gammaMRstar(const TLorentzVector& ja, const TLorentzVector& jb){
+// double gammaMRstar(const TLorentzVector& ja, const TLorentzVector& jb){
+double gammaMRstar(const math::XYZTLorentzVector& ja, const math::XYZTLorentzVector& jb){
   double A = ja.P();
   double B = jb.P();
   double az = ja.Pz();

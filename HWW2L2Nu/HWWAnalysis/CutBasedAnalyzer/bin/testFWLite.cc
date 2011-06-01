@@ -9,6 +9,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <vector>
+#include <algorithm>
 #include "HWWAnalysis/DataFormats/interface/HWWNtuple.h"
 
 #include "CommonTools/Utils/interface/StringCutObjectSelector.h"
@@ -19,9 +20,12 @@
 #include "FWCore/FWLite/interface/AutoLibraryLoader.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "PhysicsTools/FWLite/interface/TFileService.h"
+#include "CommonTools/Utils/interface/TH1AddDirectorySentry.h"
 #include <Reflex/Object.h>
+#include <TMath.h>
 #include <TSystem.h>
 #include <TChain.h>
+#include <TROOT.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
 #include <boost/dynamic_bitset.hpp>
@@ -78,6 +82,7 @@ int main( int argc, char **argv ) {
     // load framework libraries
     gSystem->Load( "libFWCoreFWLite" );
     AutoLibraryLoader::enable();
+    TH1::AddDirectory(false);
     
     PsetReader reader("process");
 
@@ -87,12 +92,6 @@ int main( int argc, char **argv ) {
 
     std::vector<std::string> inputFiles = config.getParameter<std::vector<std::string> >("inputFiles");
     std::string outputFile = config.getParameter<std::string>("outputFile");
-
-    TChain c("hwwAnalysis");
-
-    std::vector<std::string>::iterator it;
-    for ( it = inputFiles.begin(); it != inputFiles.end(); ++it )
-        c.Add(it->c_str());
 
 
     /*  _____              __ _                      
@@ -105,6 +104,58 @@ int main( int argc, char **argv ) {
     //                          |___/                
     */     
 
+
+    long long maxEvents      = config.getParameter<long long>("maxEvents");
+    std::vector<std::string> copyHistograms = config.getParameter<std::vector<std::string> >("copyObjects");
+
+    // update
+    TChain c("hwwAnalysis");
+
+    std::vector<std::string>::iterator iFileName;
+    for ( iFileName = inputFiles.begin(); iFileName != inputFiles.end(); ++iFileName ) {
+        c.Add(iFileName->c_str());
+        std::cout << *iFileName << std::endl;
+    }
+//     std::cout << "A " << inputFiles.size() << "   " << TH1::AddDirectoryStatus() << std::endl;
+
+    // output
+    fwlite::TFileService fs(outputFile);
+
+    TObjArray buffer;
+    {
+//         std::cout << "B " << inputFiles.size() << std::endl;
+        std::vector<boost::shared_ptr<TFile> >  files;
+        // loop over files
+        for( iFileName = inputFiles.begin(); iFileName != inputFiles.end(); ++iFileName ) {
+//             std::cout << "C" << *iFileName << std::endl;
+            TFile* filePtr = TFile::Open(iFileName->c_str());
+            boost::shared_ptr<TFile> file(filePtr);
+            gROOT->GetListOfFiles()->Remove(filePtr);
+            files.push_back(file);
+        }
+
+        std::vector<boost::shared_ptr<TFile> >::iterator iFile;
+        std::vector<std::string>::iterator iObj;
+        for( iObj = copyHistograms.begin(); iObj != copyHistograms.end(); ++iObj ) {
+            std::cout << "Cloning " << *iObj << std::endl;
+            TH1* h = 0x0;
+            for( iFile = files.begin(); iFile != files.end(); ++iFile ) {
+                TH1* dummy = (TH1*)(*iFile)->Get(iObj->c_str());
+                if ( !dummy ) THROW_RUNTIME("Histogram " << *iObj << " not found");
+
+                if ( h == 0 ) {
+                    h = dynamic_cast<TH1*>(dummy->Clone());
+                } else {
+                    h->Add(dummy);
+                }
+
+            }
+            buffer.Add(h);
+        }
+    }
+
+    //
+//  long long reportEvery = config.getParameter<long long>("reportEvery");
     // create the variables and cuts to monitor
     edm::VParameterSet  chPars = config.getParameter<edm::VParameterSet>("channels");
     edm::VParameterSet cutPars = config.getParameter<edm::VParameterSet>("cuts");
@@ -137,7 +188,6 @@ int main( int argc, char **argv ) {
     }
 
 
-    fwlite::TFileService fs(outputFile);
 
     
     CutVector::iterator cut;
@@ -200,8 +250,8 @@ int main( int argc, char **argv ) {
     std::cout << " - " << c.GetEntries() << " entries found" << std::endl;
 
     Long64_t nEntries = c.GetEntriesFast();
-//     nEntries = 10;
     
+    nEntries = std::max(nEntries,maxEvents);
 
     Long64_t selected = 0;
     double weighted = 0.;
@@ -211,6 +261,20 @@ int main( int argc, char **argv ) {
 
         cutBits.reset();
         c.GetEntry(i);
+//         if( i % reportEvery == 0 ) {
+//             std::cout << "- event " << i << std::endl;
+//         }
+
+        if ( i==0 || ( TMath::FloorNint(i*100/(double)nEntries) == TMath::CeilNint( (i-1)*100/(double)nEntries) ) ) {
+            if ( i!=0 ) std::cout << '\r';
+            int barLen = 100;
+            int progress = TMath::Nint(i*barLen/(double)nEntries);
+            std::string bar(progress, '=');
+            bar[progress-1] = '>';
+            bar.resize(barLen,' ');
+
+			std::cout << " |" << bar << " " << TMath::Nint(i*100/(double)nEntries) << "% i = " << i << std::flush;
+		}
 
         bool eventAccepted = false;
         for ( chan = channels.begin(); chan != channels.end(); ++chan ) {
@@ -229,7 +293,7 @@ int main( int argc, char **argv ) {
                 if ( accepted ){ 
                     std::vector<std::pair<VarPtr,TH1D*> >::iterator iHist;
                     for ( iHist = chan->histograms[k].begin(); iHist != chan->histograms[k].end(); ++iHist ) {
-                        iHist->second->Fill( iHist->first->value(*nt)*nt->weight );
+                        iHist->second->Fill( iHist->first->value(*nt),nt->weight );
                     }
                     chan->yield->Fill(k, nt->weight);
                 }
@@ -248,6 +312,11 @@ int main( int argc, char **argv ) {
     }
     
     std::cout << " Finish: selected entries " << selected << " weighted " << weighted << std::endl; 
+
+    fs.cd();
+    buffer.Write();
+
+
     typedef boost::multi_array<std::string, 2> table;
     table summary(boost::extents[channels.size()+1][cutflow.size()+1]);
 

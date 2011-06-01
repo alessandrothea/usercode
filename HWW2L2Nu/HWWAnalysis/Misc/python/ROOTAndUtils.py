@@ -31,6 +31,30 @@ class ObjFinder:
             paths.extend( [dirname+p for p in self.findRecursive(d)] )
         return paths
 
+    def tree(self, rootFile):
+        if not rootFile.__nonzero__() or not rootFile.IsOpen():
+            raise ValueError('ROOTFile '+rootFile.GetName()+' is not valid')
+        return self.treeRecursive( rootFile )
+
+    def treeRecursive( self, dir ):
+        keys = dir.GetListOfKeys();
+        fullname = dir.GetPath()
+        fullname = fullname[fullname.index(':')+1:]
+#         dirname = fullname+'/' if not ROOTInheritsFrom(dir.IsA().GetName(),'TFile') else ''
+        dirname = fullname+'/' if fullname != '/' else '/'
+        print fullname
+
+        subdirs = [d.ReadObj() for d in filter( lambda key: ROOTInheritsFrom(key.GetClassName(),'TDirectoryFile'), keys) ] 
+        paths   = [dirname+obj.GetName() for obj in filter( lambda key:ROOTInheritsFrom( key.GetClassName(),self.classname), keys) ]
+
+        branch = []
+
+        for d in subdirs:
+            branch.append( (dirname+d.GetName(), self.treeRecursive(d)) )
+        
+        branch.extend( paths )
+        return branch
+
 
 
 class BlankCommentFile:

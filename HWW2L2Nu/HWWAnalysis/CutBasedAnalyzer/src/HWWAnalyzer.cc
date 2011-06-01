@@ -10,6 +10,7 @@
 #include "HWWAnalysis/CutBasedAnalyzer/interface/Razor.h"
 #include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
 #include "HWWAnalysis/DataFormats/interface/HWWNtuple.h"
+#include "Math/VectorUtil.h"
 #include <TChain.h>
 #include <TFile.h>
 #include <TVector3.h>
@@ -418,7 +419,8 @@ HWWAnalyzer::HiggsCutSet HWWAnalyzer::getHiggsCutSet(int mass) {
 //_____________________________________________________________________________
 void HWWAnalyzer::fillNtuple(){
 
-    TLorentzVector pA, pB;
+//     TLorentzVector pA, pB;
+    math::XYZTLorentzVector pA, pB;
     Int_t cA(0), cB(0);
     double d0A(0), d0B(0);
     double dZA(0), dZB(0);
@@ -499,11 +501,15 @@ void HWWAnalyzer::fillNtuple(){
     }
 
     // 3 - invariant mass
-    double mll = (pA+pB).Mag();
+//     double mll = (pA+pB).Mag();
+    double mll = (pA+pB).mass();
 
-    TLorentzVector& pfMet4 = _event->PFMet;
-    TLorentzVector& tcMet4 = _event->TCMet;
-    TLorentzVector& chargedMet4 = _event->ChargedMet;
+//     TLorentzVector& pfMet4 = _event->PFMet;
+//     TLorentzVector& tcMet4 = _event->TCMet;
+//     TLorentzVector& chargedMet4 = _event->ChargedMet;
+    math::XYZTLorentzVector& pfMet4 = _event->PFMet;
+    math::XYZTLorentzVector& tcMet4 = _event->TCMet;
+    math::XYZTLorentzVector& chargedMet4 = _event->ChargedMet;
 
     // 4a pfMet
     double pfMet = pfMet4.Pt();
@@ -516,8 +522,10 @@ void HWWAnalyzer::fillNtuple(){
     // 5a - projPfMet
 
     double pfMetDphi = TMath::Min(
-            TMath::Abs(pfMet4.DeltaPhi( pA )),
-            TMath::Abs(pfMet4.DeltaPhi( pB ))
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pfMet4, pA)),
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pfMet4, pB))
+//             TMath::Abs(pfMet4.DeltaPhi( pA )),
+//             TMath::Abs(pfMet4.DeltaPhi( pB ))
             );
 
     double projPfMet = pfMet*(pfMetDphi < TMath::PiOver2() ? TMath::Sin(pfMetDphi) : 1.);
@@ -525,29 +533,37 @@ void HWWAnalyzer::fillNtuple(){
     // 5b - projTcMet
 
     double tcMetDphi = TMath::Min(
-            TMath::Abs(tcMet4.DeltaPhi( pA )),
-            TMath::Abs(tcMet4.DeltaPhi( pB ))
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(tcMet4, pA)),
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(tcMet4, pB))
+//             TMath::Abs(tcMet4.DeltaPhi( pA )),
+//             TMath::Abs(tcMet4.DeltaPhi( pB ))
             );
 
     double projTcMet = tcMet*(tcMetDphi < TMath::PiOver2() ? TMath::Sin(tcMetDphi) : 1.);
 
     // 5c - projChargedMet
     double chargedMetDphi = TMath::Min(
-            TMath::Abs(chargedMet4.DeltaPhi( pA )),
-            TMath::Abs(chargedMet4.DeltaPhi( pB ))
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(chargedMet4, pA)),
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(chargedMet4, pB))
+//             TMath::Abs(chargedMet4.DeltaPhi( pA )),
+//             TMath::Abs(chargedMet4.DeltaPhi( pB ))
             );
 
     double projChargedMet = chargedMet*(chargedMetDphi < TMath::PiOver2() ? TMath::Sin(chargedMetDphi) : 1.);
 
     // 6 - dPhiEE
-    double dPhiLL = TMath::Abs(pA.DeltaPhi(pB));
+//     double dPhiLL = TMath::Abs(pA.DeltaPhi(pB));
+    double dPhiLL = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pA, pB));
 
     double dPhiLLJet = -TMath::TwoPi();
     // 7 1-jet case
     if ( _event->PFNJets == 1 ) {
-        TLorentzVector pJet = _event->PFJets[0].P;
-        TLorentzVector pLL  = pA+pB;
-        dPhiLLJet           = TMath::Abs(pJet.DeltaPhi(pLL));
+//         TLorentzVector pJet = _event->PFJets[0].P;
+//         TLorentzVector pLL  = pA+pB;
+//         dPhiLLJet           = TMath::Abs(pJet.DeltaPhi(pLL));
+        math::XYZTLorentzVector pJet = _event->PFJets[0].P;
+        math::XYZTLorentzVector pLL  = pA+pB;
+        dPhiLLJet           = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));
     }
 
     _ntuple->type = type;
@@ -673,7 +689,7 @@ void HWWAnalyzer::fillExtra(std::vector<TH1D*>& extra ) {
     
     if ( _ntuple->mll < 12. || _ntuple->mll > 60. ) return;
     if ( _ntuple->nJets != 0 ) return;
-    if ( _ntuple->pB.Pt() < 30. ) return;
+    if ( _ntuple->pB.Pt() < 35. ) return;
 //     if ( _ntuple->pfMet < 30. ) return;
 
     extra[kExtraDeltaPhi]->Fill(_ntuple->dPhi*TMath::RadToDeg(), getWeight() );
