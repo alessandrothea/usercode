@@ -216,10 +216,10 @@ void HWWAnalyzer::bookCutHistograms( std::vector<TH1D*>& histograms , const std:
     // all numbers to 0, just to be sure;
     histograms.assign(kCutsSize,0x0);
 
-    histograms[kMinMet]     = new TH1D(("01_"+nPrefix+"MinMet").c_str(),     (lPrefix+"min #slash E_{T}").c_str(),        100, 0, 100);
+    histograms[kMinMet]     = new TH1D(("01_"+nPrefix+"MinMet").c_str(),     (lPrefix+"min #slash{E}_{T}").c_str(),        100, 0, 100);
     histograms[kMinMll]     = new TH1D(("02_"+nPrefix+"MinMll").c_str(),     (lPrefix+"m^{ll}_{min}").c_str(),    300, 0, 300);
     histograms[kZveto]      = new TH1D(("03_"+nPrefix+"Zveto").c_str(),      (lPrefix+"Z veto").c_str(),          300, 0, 300);
-    histograms[kProjMet]    = new TH1D(("04_"+nPrefix+"MinProjMet").c_str(), (lPrefix+"Proj #slash E_{T}").c_str(),   100, 0, 100);
+    histograms[kProjMet]    = new TH1D(("04_"+nPrefix+"MinProjMet").c_str(), (lPrefix+"Proj #slash{E}_{T}").c_str(),   100, 0, 100);
     histograms[kJetVeto]    = new TH1D(("05_"+nPrefix+"JetVeto").c_str(),    (lPrefix+"n_{jets} = 0").c_str(),     15, 0, 15);
     histograms[kSoftMuon]   = new TH1D(("06_"+nPrefix+"SoftMuon").c_str(),   (lPrefix+"No Soft #mu").c_str(),      10, 0,10);
     histograms[kTopVeto]    = new TH1D(("07_"+nPrefix+"TopVeto").c_str(),    (lPrefix+"Top Veto").c_str(),         10, 0,10);
@@ -241,14 +241,14 @@ void HWWAnalyzer::bookHistogramSet( HistogramSet& set, const std::string& name )
 
     std::map<int,std::string> labels;
 
-    labels[kSkimmed] = "N_{l^{+}l^{-}}";
-    labels[kMinMet]    = "min #slash E_{T}";
+    labels[kSkimmed]   = "N_{l^{+}l^{-}}";
+    labels[kMinMet]    = "min #slash{E}_{T}";
     labels[kMinMll]    = "m^{ll}_{min}";
     labels[kZveto]     = "Z veto";
-    labels[kProjMet]   = "Proj#slash E_{T}";
+    labels[kProjMet]   = "Proj#slash{E}_{T}";
     labels[kJetVeto]   = "n_{jets} == 0";
     labels[kSoftMuon]  = "No Soft #mu";
-    labels[kTopVeto]   = "Top Veto";
+    labels[kTopVeto]   = "anti-b";
     labels[kMaxMll]    = "m^{ll}_{max}";
     labels[kLeadPtMin] = "p^{lead}_{min}";
     labels[kTrailPtMin] = "p^{trail}_{min}";

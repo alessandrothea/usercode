@@ -75,7 +75,7 @@ samples.extend(higgs)
 samples.extend(data2011)
 
 samples = []
-samples.extend(data2011ReReco)
+# samples.extend(data2011ReReco)
 # samples.extend(data2011PromptReco)
 # samples = []
 
@@ -118,14 +118,13 @@ for mass in masses:
     sumData(samples,data2011PromptReco,ntuplePath,'Data2011PromptReco')
     sumData(samples,data2011ReReco,ntuplePath,'Data2011ReReco')
 
-    dataTags = ['Data2011PromptReco','Data2011ReReco']
-#     dataTags = ['Data2011PromptReco']
+#     dataTags = ['Data2011PromptReco','Data2011ReReco']
+    dataTags = ['Data2011PromptReco']
     for tag in dataTags:
         if not os.path.exists(ntuplePath+'/hww_'+tag+'.root'):
             print ntuplePath+'/hww_'+tag+'.root  not found'
             continue
 
-    break
     print 'Making stack plots for '+tag  
     optVars = 'higgsMass='+str(mass)+' dataTag='+tag
     cmds = []

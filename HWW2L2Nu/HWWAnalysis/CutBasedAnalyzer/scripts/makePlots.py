@@ -366,26 +366,6 @@ class Plotter:
             pave.InsertText(line)
 
         return pave
-        l = ROOT.TLatex(0.5,0.5,'CMS')
-        l.SetTextSize(0.7*l.GetTextSize())
-        l.SetBit(ROOT.TLatex.kTextNDC)
-        l.SetTextAlign(13)
-        l.SetNDC()
-
-        x0 = 0.11
-        y0 = 0.89
-
-        txts = []
-
-        l1 = l.Clone()
-        l1.SetText(x0,y0,'CMS Preliminary')
-        txts.append(l1)
-        l2 = l.Clone()
-        l2.SetText(x0, y0-1.1*l.GetYsize(),'#sqrt{s} = 7 TeV')
-        txts.append(l2)
-
-        return txts
-
     
     def makeDataMCPlot(self,name):
 
@@ -431,26 +411,36 @@ class Plotter:
         if pl.logX is 1:
             c.SetLogx()
             
-        if pl.logY is 1 and not (maxY == minY == 0):
-            c.SetLogy()
-            if minY==0.:
-                minY = 0.1
-            maxY *= ROOT.TMath.Power(maxY/minY,0.1)
-            minY /= ROOT.TMath.Power(maxY/minY,0.1)
-        else:
-            maxY += (maxY-minY)*0.1
-            minY -= (maxY-minY)*0.1
+#         if pl.logY is 1 and not (maxY == minY == 0):
+#             c.SetLogy()
+#             if minY==0.:
+#                 minY = 0.1
+#             maxY *= ROOT.TMath.Power(maxY/minY,0.1)
+#             minY /= ROOT.TMath.Power(maxY/minY,0.1)
+#         else:
+#             maxY += (maxY-minY)*0.1
+#             minY -= (maxY-minY)*0.1 if minY != 0. else 0;#-1111.
+        maxY += (maxY-minY)*0.1
+        minY -= (maxY-minY)*0.1 if minY != 0. else 0;#-1111.
     
+        minX = data0.GetXaxis().GetXmin()
+        maxX = data0.GetXaxis().GetXmax()
 
-        frame = data0.Clone('hframe')
+#         frame = c.DrawFrame(minX, minY, maxX, maxY)
+        frame = data0.Clone('frame')
+        frame.SetFillStyle(0)
+        frame.SetLineColor(ROOT.gStyle.GetFrameFillColor())
         frame.Reset()
-        frame.SetMaximum(maxY)
-        frame.SetMinimum(minY)
-        frame.GetYaxis().SetLimits(minY,maxY)
+        frame.SetBinContent(1,maxY)
+        frame.SetBinContent(frame.GetNbinsX(),minY)
+#         frame.SetMaximum(maxY)
+#         frame.SetMinimum(minY)
+        
+#         frame.GetYaxis().SetLimits(minY,maxY)
         frame.SetBit(ROOT.TH1.kNoStats)
         frame.SetTitle(pl.title if pl.title != 'self' else data0.GetTitle())
         frame.SetXTitle(pl.xtitle if pl.xtitle != 'self' else data0.GetXaxis().GetTitle())
-        frame.SetYTitle(pl.ytitle if pl.xtitle != 'self' else data0.GetYaxis().GetTitle())
+        frame.SetYTitle(pl.ytitle if pl.ytitle != 'self' else data0.GetYaxis().GetTitle())
         frame.Draw()
 
         for d,s in data:
@@ -458,15 +448,10 @@ class Plotter:
             d.SetMarkerColor(1);
             d.SetMarkerStyle(20);
             d.SetMarkerSize(0.7);
-#         data0.SetFillColor(1);
-#         data0.SetMarkerColor(1);
-#         data0.SetMarkerStyle(20);
-#         data0.SetMarkerSize(0.7);
         
         stack.Draw('same')
         for d,s in data:
             d.Draw('e1 same')
-#         data0.Draw('e1 same')
 
         legend = self.makeLegend(data,mc)
         legend.Draw()
