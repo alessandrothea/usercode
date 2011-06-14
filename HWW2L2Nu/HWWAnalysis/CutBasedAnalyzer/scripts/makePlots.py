@@ -341,7 +341,7 @@ class Plotter:
         return legend
 
     def makeCMSText(self):
-        lines = [ 'CMS Preliminary','#sqrt{s}=7 TeV']
+        lines = [ 'CMS Preliminary - #sqrt{s}=7 TeV']
 
         entries = [ ROOT.TLatex(0,0,line) for line in lines ]
         
@@ -349,16 +349,20 @@ class Plotter:
         Dx = shrink * max([txt.GetXsize() for txt in entries])
         dy = shrink*entries[0].GetYsize()
 
-        x0 = 0.115
-        y1 = 0.885
+        x0 = 0.1
+        y0 = 0.9
+#         x0 = 0.115
+#         y1 = 0.885
 
         x1 = x0 + Dx
-        y0 = y1-dy*len(lines)-0.01*(len(lines)-1)
+        y1 = y0+dy*len(lines)+0.01*(len(lines))
 
         pave = ROOT.TPaveText(x0,y0,x1,y1,'ndc')
         pave.SetFillColor(ROOT.kRed)
         pave.SetBorderSize(0)
+        pave.SetMargin(0)
         pave.SetFillStyle(0)
+        pave.SetTextAlign(11)
 
         pave.SetName('preliminary')
 
@@ -366,6 +370,39 @@ class Plotter:
             pave.InsertText(line)
 
         return pave
+
+    def makeTitle(self, title):
+        lines = [ title ]
+
+        entries = [ ROOT.TLatex(0,0,line) for line in lines ]
+        
+        shrink = 0.7
+        Dx = shrink * max([txt.GetXsize() for txt in entries])
+        dy = shrink*entries[0].GetYsize()
+
+        x1 = 0.9
+        y0 = 0.9
+
+        x0 = x1 - Dx
+        y1 = y0+dy*len(lines)+0.01*(len(lines))
+
+        pave = ROOT.TPaveText(x0,y0,x1,y1,'ndc')
+        pave.SetFillColor(ROOT.kRed)
+        pave.SetBorderSize(0)
+        pave.SetMargin(0)
+        pave.SetFillStyle(0)
+        pave.SetTextAlign(31)
+
+        pave.SetName('title')
+
+        for line in lines:
+            pave.AddText(line)
+
+        return pave
+
+
+
+
     
     def makeDataMCPlot(self,name):
 
@@ -392,12 +429,29 @@ class Plotter:
             
         if pl.rebin != 1:
             data0.Rebin(pl.rebin)
+        
+        # find the minima, move the following in a separate function
         mcMinima = []    
         for (h,s) in mc:
             if pl.rebin != 1:
                 h.Rebin(pl.rebin)
             mcMinima.append(h.GetMinimum())
+#             print h.GetName(),mcMinima[-1],mcMinimaNonZero[-1]
             stack.Add(h,'hist')
+
+        # find the absolute minimum
+        minima = [ h.GetMinimum() for h in stack.GetStack() ]
+        minima.append(data0.GetMinimum())
+
+        # find the 
+        minimaNonZero = [ h.GetMinimum(0) for h in stack.GetStack() ]
+        minimaNonZero.append(data0.GetMinimum(0))
+
+
+#         minYMc = min(mcMinima)
+        maxY = ROOT.TMath.Max(data0.GetMaximum(),stack.GetMaximum())
+        minY = ROOT.TMath.Min(data0.GetMinimum(),min(mcMinima))
+#         minY = ROOT.TMath.Min(data0.GetMinimum(),stack.GetStack().First().GetMinimum())
             
         cName = 'c_'+baseName
         c = ROOT.TCanvas(cName,cName,2)
@@ -405,23 +459,26 @@ class Plotter:
         c.SetTicks();
 #         c.Size(30,30)
 #         print '- logx =', pl.logX, ': logy =',pl.logY
-        maxY = ROOT.TMath.Max(data0.GetMaximum(),stack.GetMaximum())
-        minY = ROOT.TMath.Min(data0.GetMinimum(),min(mcMinima))
         
         if pl.logX is 1:
             c.SetLogx()
             
-#         if pl.logY is 1 and not (maxY == minY == 0):
-#             c.SetLogy()
-#             if minY==0.:
-#                 minY = 0.1
+        if pl.logY is 1 and not (maxY == minY == 0):
+            c.SetLogy()
+            if minY==0.:
+                minY = min(minimaNonZero)
+                # don't allow the min to go below 0.1 data min
+                minY = max([minY, 0.1*data0.GetMinimum(0)])
 #             maxY *= ROOT.TMath.Power(maxY/minY,0.1)
 #             minY /= ROOT.TMath.Power(maxY/minY,0.1)
 #         else:
 #             maxY += (maxY-minY)*0.1
 #             minY -= (maxY-minY)*0.1 if minY != 0. else 0;#-1111.
+
+#         print 'minmax',minY, maxY
+
         maxY += (maxY-minY)*0.1
-        minY -= (maxY-minY)*0.1 if minY != 0. else 0;#-1111.
+#         minY -= (maxY-minY)*0.1 if minY != 0. else 0
     
         minX = data0.GetXaxis().GetXmin()
         maxX = data0.GetXaxis().GetXmax()
@@ -442,6 +499,7 @@ class Plotter:
         frame.SetXTitle(pl.xtitle if pl.xtitle != 'self' else data0.GetXaxis().GetTitle())
         frame.SetYTitle(pl.ytitle if pl.ytitle != 'self' else data0.GetYaxis().GetTitle())
         frame.Draw()
+#         frame.GetPainter().PaintTitle()
 
         for d,s in data:
             d.SetFillColor(1);
@@ -452,6 +510,9 @@ class Plotter:
         stack.Draw('same')
         for d,s in data:
             d.Draw('e1 same')
+
+        title = self.makeTitle(frame.GetTitle() )
+        title.Draw()
 
         legend = self.makeLegend(data,mc)
         legend.Draw()
@@ -496,6 +557,7 @@ class Plotter:
 
         legend = self.makeLegend(mc=mc)
         legend.Draw()
+        c.ls()
         c.Write()
 
         
@@ -529,15 +591,18 @@ def main():
     ROOT.gROOT.SetBatch()
 #     ROOT.gSystem.Load("lib/libHWWNtuple.so")
     
-    ROOT.gStyle.SetTitleAlign(21)
-    ROOT.gStyle.SetTitleX(0.5)
+    ROOT.gStyle.SetTitleAlign(31)
+    ROOT.gStyle.SetTitleX(0.9)
     ROOT.gStyle.SetTitleY(0.9)
     ROOT.gStyle.SetFrameLineWidth(2)
     ROOT.gStyle.SetTitleStyle(0)
     ROOT.gStyle.SetTitleFont(42,"xyz")
     ROOT.gStyle.SetTitleFont(42,"")
     ROOT.gStyle.SetLabelFont(42,"xyz")
-    ROOT.gStyle.SetTextFont(42)   
+    ROOT.gStyle.SetTextFont(42)
+    ROOT.gStyle.SetTitleH(0)
+    ROOT.gStyle.SetTitleW(0)
+
     ROOT.gStyle.SetFillColor(ROOT.kWhite)   
     
     p = Plotter()

@@ -616,6 +616,17 @@ void HWWAnalyzer::fillNtuple(){
 
 
     _ntuple->dPhi          = dPhiLL;
+
+    _ntuple->nCentralJets = 0;
+    std::vector<HWWPFJet>::iterator iJet;
+    for( iJet = _event->PFJets.begin(); iJet != _event->PFJets.end(); ++iJet)
+        if ( iJet->P.eta() <  2.5 ) {
+            ++_ntuple->nCentralJets;
+            if ( iJet->P.pt() > 40. ) {
+                ++_ntuple->nCentralJets40;
+            }
+        }
+
     _ntuple->nJets         = _event->PFNJets;
     _ntuple->nSoftMus      = _event->NSoftMus;
     _ntuple->nBJets        = _event->NBTaggedJets;

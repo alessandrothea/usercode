@@ -74,11 +74,14 @@ public:
     double gammaMRstar;
     double razor;
 
-	unsigned int    nJets;
-	unsigned int    nSoftMus;
-	unsigned int    nBJets;
+	unsigned nJets;
+	unsigned nSoftMus;
+	unsigned nBJets;
     // 1 jet only
     double dPhillj;
+    // additional
+	unsigned nCentralJets;
+	unsigned nCentralJets40;
 
 //     ClassDef(HWWNtuple,1)
 };

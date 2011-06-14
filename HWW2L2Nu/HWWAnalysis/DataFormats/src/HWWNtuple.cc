@@ -63,6 +63,8 @@ void HWWNtuple::clear(){
     gammaMRstar = 0;
     razor = 0;
 	nJets = 0;
+	nCentralJets    = 0;
+	nCentralJets40  = 0;
 	nSoftMus = 0;
 	nBJets  = 0;
 
