@@ -10,7 +10,7 @@ import time
 import sys
 import psitools
 
-sema = threading.Semaphore(3)
+sema = threading.Semaphore(1)
 
 class Chdir:         
     def __init__( self, newPath ):  
@@ -36,13 +36,15 @@ class ThreadTransfer( threading.Thread ):
     def __init__(self, ds, site, blacklist, whitelist):
         threading.Thread.__init__(self)
         self.dataset = ds
-        self.site = site
-        self.kill = False
-        self.code = None
+        self.site  = site
+        self.go    = False
+        self.kill  = False
+        self.code  = None
         self.blacklist = blacklist
         self.whitelist = whitelist
         self.t1 = 0.
         self.t2 = 0.
+        self.tLastChange = 0.;
 
     def run(self):
         sema.acquire()
@@ -50,7 +52,8 @@ class ThreadTransfer( threading.Thread ):
             print ' * Transfer',self.dataset.nick,'aborted'
             sema.release()
             return
-
+        
+        self.go = True
         self.t1 = time.time()
         self.t2 = self.t1
         print ' - Starting transfer',self.dataset.nick
@@ -58,15 +61,19 @@ class ThreadTransfer( threading.Thread ):
         try:
             if not os.path.exists(wd):
                 os.mkdir(wd)
-            cmd = ['dbs_transferRegister.py','--to-site=%s' % self.site,self.dataset.name]
+            cmd = ['dbs_transferRegister.py','--debug','--to-site=%s' % self.site,self.dataset.name]
             if self.blacklist is not None:
                 cmd.append('--blacklist=%s' % self.blacklist) 
             if self.whitelist is not None:
                 cmd.append('--whitelist=%s' % self.whitelist) 
-            print 'CMD =',' '.join(cmd)
+            print '- Executing:',' '.join(cmd)
             logFile = open(wd+'/grab.log','w')
+            logFile.write('#'*80+'\n')
+            logFile.write(' '.join(cmd)+'\n')
+            logFile.write('#'*80+'\n')
             dbsTransfer = subprocess.Popen(cmd, cwd=wd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             retcode = None
+            self.tLastChange = time.time()
             while( not retcode ): 
                 retcode = dbsTransfer.poll()
 #                 print 'retcode',retcode
@@ -84,9 +91,16 @@ class ThreadTransfer( threading.Thread ):
                     time.sleep(1.)
 
                 out = psitools.readAllSoFar(dbsTransfer)
-                logFile.write(out)
-                logFile.flush()
-#                 os.fsync(logFile)
+                if len(out) != 0:
+                    logFile.write(out)
+                    logFile.flush()
+                    os.fsync(logFile)
+                    self.tLastChange = time.time()
+
+#                 if time.time()-self.tLastChange > 600: #10 mins?
+#                     print ' ? Warning: no output since 600 seconds'
+
+
 
 
         finally:
@@ -108,41 +122,11 @@ class Grabber:
         self.whitelist = None
         
     def configure(self, version=None, forceTransfer=False):
-        self.datasets = psitools.getDataSets( self.csvFile, self.ids )
+        self.datasets = psitools.getDatasetsFromCSV( self.csvFile, self.ids )
+#         print '\n'.join([ d.name for d in self.datasets])
         for d in self.datasets:
             if d.ver != '':
                 self.versions.add(d.ver)
-        
-#        reader = csv.reader(open(self.csvFile,'rb'),delimiter=',')
-#        header = reader.next()
-#        l = len(header)
-##         print 'header len',l,header
-#        print ','.join(header)
-#
-#        cols = dict(zip(header,range(len(header))))
-#        print cols
-#        for row in reader:
-#            if len(row) != l:
-#                continue
-#            idCol = cols['ID']
-#            nickCol = cols['Nickname']
-#            odsCol = cols['Output Dataset']
-#            if not version:
-#                verCol = cols['Skim Version']
-#                ver = row[verCol]
-#            else:
-#                ver = version
-#            cleanDS = row[odsCol].strip()
-#            d = Dataset(row[idCol],row[nickCol],ver,cleanDS)
-#            self.datasets.append(d);
-#
-#            if d.ver == '':
-##                 print 'Dataset',d.nick,'doesn\'t have a valid version number'
-#                raise ValueError('Dataset '+d.nick+' doesn\'t have a valid version number')
-#                
-#
-##             print d
-#            self.versions.add(d.ver)
 
 #         print self.versions
         if not forceTransfer:
@@ -158,18 +142,35 @@ class Grabber:
             if not numId in self.ids:
                 continue
 
-            print 'Queuing',ds.nick, ds.id,'for transfer'
+            print 'Registering',ds.nick, ds.id,'for transfer'
             ds.transfer = True
+        print '---'
 
     def start(self):
         for ds in self.datasets:
-            if ds.transfer:
-                t = ThreadTransfer(ds,self.destination, self.blacklist, self.whitelist)
-                self.threads.append(t)
-                t.start()
+            if not ds.transfer:
+                continue
 
+            t = ThreadTransfer(ds,self.destination, self.blacklist, self.whitelist)
+            self.threads.append(t)
+            if threading.activeCount() > 1:
+                print ' - Wait 10 sec before queuing',ds.nick
+                time.sleep(10.)
+
+            t.start()
+            print ' -',ds.nick,'Ready.'
+
+        print ' - All datasets ready or running'
+        print '---'
+
+    def monitor(self):
+        counter = 0
+        reportEvery = 600
         while threading.activeCount() > 1:
             time.sleep(.1)
+            if (counter % reportEvery) == 0:
+                self.report()
+            counter += 1
 
     def kill(self):
         for t in self.threads:
@@ -178,12 +179,32 @@ class Grabber:
         while threading.activeCount() > 1:
             time.sleep(.1)
 
+    def report(self):
+        timeFmt = '%a, %d %b %Y %H:%M:%S' 
+        print '- report ('+time.strftime( timeFmt, time.gmtime())+')---'
+        lmax = max([len(t.dataset.nick) for t in self.threads])
+        for t in self.threads:
+            if not t.go:
+                statusstr = 'Not started'
+            elif t.code is None:
+                statusstr = 'Running'
+            elif t.code == 0:
+                statusstr = 'Finished successfully'
+            else:
+                statusstr = 'Terminated with error ('+t.code+')'
+            timeStr = time.strftime(timeFmt,time.gmtime(t.tLastChange))
+            dt = '%.2f' % (time.time()-t.tLastChange,)
+            print '|',t.dataset.nick.ljust(lmax),statusstr,'(last change ',timeStr,dt,'sec ago)'
+
+
     def summary(self):
         for t in self.threads:
-            if t.code==0:
+            if t.kill:
+                exitstr = 'Killed'
+            elif not t.go:
+                exitstr = 'Not started'
+            elif t.code==0:
                 exitstr = 'OK'
-            if t.code==None:
-                exitstr = 'Error, job killed?'
             else:
                 exitstr = 'Error(%d)' % t.code
 
@@ -233,9 +254,9 @@ if __name__ == '__main__':
         parser.error('Input csv file not defined')
 
     csvFile = args[0]
-    if opt.site == 't3psi':
+    if opt.site == 't3psi' or opt.site == 'T3_CH_PSI':
         site = 'T3_CH_PSI'
-    elif opt.site == 't2cscs':
+    elif opt.site == 't2cscs' or opt.site == 'T2_CH_CSCS':
         site = 'T2_CH_CSCS'
     else:
         parser.error('site can be either t3psi or t2cscs')
@@ -251,6 +272,7 @@ if __name__ == '__main__':
         g.whitelist = opt.whitelist
         g.configure( opt.skimVersion, opt.forceTransfer )
         g.start()
+        g.monitor()
     except ValueError as v:
         print v
         g.kill()

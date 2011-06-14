@@ -21,7 +21,7 @@ def c2p( args ):
 
     ids = psitools.strToNumbers(opt.ids)
     print ' - Ids considered for inclusion: ', opt.ids
-    datasets =  psitools.getDataSets( opt.csvFile, ids )
+    datasets =  psitools.getDatasetsFromCSV( opt.csvFile, ids )
     print [d.nick for d in datasets]
 
     for d in datasets:

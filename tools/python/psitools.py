@@ -57,7 +57,7 @@ class ReqOptions:
 
 
 class Dataset:
-    def __init__(self, id, nick, ver, name):
+    def __init__(self, id, nick, ver = '', name = ''):
         self.id = id
         self.nick = nick
         self.ver  = ver
@@ -74,38 +74,64 @@ def getDatasetsFromCSV( csvFile, ids ):
 
     datasets = []
 
-    cols = dict(zip(header,range(len(header))))
-    print cols
+    columns = dict(zip(header,range(len(header))))
+#     print columns
     odCols = ['Output Dataset','Output Dataset (UCSD)','Output Dataset (IFCA)']
     
     labelId      = 'ID'
     labelNick    = 'Nickname'
     labelVersion = 'Skim Version'
-    labelOD      = None
+
+    colId   = columns[labelId]
+    colNick = columns[labelNick]
+
+    colODVec     = []
     for c in odCols:
-        if c in cols.keys():
-            labelOD = c
+        if c in columns:
+            colODVec.append(columns[c])
     
-    if not labelOD:
+    if len(colODVec) == 0:
         raise NameError('No output dataset column found: '+','.join(odCols))
-        
+    print colODVec
+
     reVer = re.compile('.*-(R[0-9a-zA-Z]{3}_S1_V[0-9]+_S2_V[0-9]+_S3_V[0-9]+)')
 
     for row in reader:
-        if len(row) != l:
-            continue
-        colId   = cols[labelId]
-        colNick = cols[labelNick]
+#         if len(row) != l:
+#             continue
 
-        colOD   = cols[labelOD]
-        if labelVersion in cols.keys():
-            version = row[labelVersion]
-        else:
-            m = reVer.match(row[labelOD])
-            version = m.group(1) if m else ''
+
+        try:
+            # build a temporary dataset with no name
+            d = Dataset(row[colId],row[colNick])
+
+            # extract the dataset from one the possible columns 
+            colOD = None
+            for c in colODVec:
+#                 if c >= len(row) or row[c].strip() == '':
+                if row[c].strip() == '':
+                    continue
+
+                colOD = c
+                break
+
+            # not found...
+            if not colOD:
+                raise NameError('No output dataset found for '+row[colNick])
+
+            # read or infer the version
+            if labelVersion in columns:
+                version = row[labelVersion]
+            else:
+                m = reVer.match(row[colOD])
+                version = m.group(1) if m else ''
             
-            
-        d = Dataset(row[colId],row[colNick],version,row[colOD].strip())
+            # complete the dataset
+            d.name = row[colOD].strip()
+            d.ver  = version
+
+        except IndexError:
+            continue
 
         numId = int(re.search('[0-9]+',d.id).group(0))
         if len(ids) != 0 and not numId in ids:
