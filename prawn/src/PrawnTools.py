@@ -316,8 +316,8 @@ class Manager:
         if len(c.execute('SELECT jid FROM job WHERE sessionName = ?',t).fetchall()):
             c.execute('DELETE FROM job WHERE sessionName=?',t)
             print ' Jobs belonging to session ['+sessionName+'] removed'
-        else:
-            print ' No job belonging to session ['+sessionName+']  was found'
+#        else:
+#            print ' No job belonging to session ['+sessionName+']  was found'
         self.connection.commit()
             
     def setSessionStatus(self,sessionName, status):
@@ -454,6 +454,10 @@ class Manager:
 #        for (key,val) in session.__dict__.iteritems():
 #            print key,val
         
+        jobs = self.getJobs(session.name)
+        if len(jobs) != 0:
+            raise NameError('Jobs for session',session.name,'not deleted. Remove them first')
+        
         rootFiles = session.allFiles.split()
         nFiles = len(rootFiles)
         # prepare the parameters according to the mode
@@ -494,8 +498,8 @@ class Manager:
         print '|  queue: ',session.queue
         print '|  optArgs: ',session.optArgs
         print hline
-        
-        self.removeAllJobs(session.name)
+#        print '|  Removing old jobs'
+#        self.removeAllJobs(session.name)
  
         tmpl = string.Template(session.template)
         print '|  Creating',nJobs,'job(s)'

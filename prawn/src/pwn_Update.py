@@ -22,7 +22,7 @@ def updateSession( options, args ):
     opt = RequiredOptions(options, required);
     
     if not opt.sessionName and not opt.sessionGroups:
-        raise NameError('Session or Grous must be defined')
+        raise NameError('Session or group must be defined')
         
     dummy = PrawnTools.Session()
     toUpdate = {}
@@ -43,8 +43,12 @@ def updateSession( options, args ):
         for key,val in toUpdate.iteritems():
             setattr(s,key,val)
 #            print key, val
+        
         m.updateSession(s)
-        m.generateJobs(s)
+        m.removeAllJobs(s.name)
+        print '|  Session',s.name,'updated'
+        if not opt.noJobs:
+            m.generateJobs(s)
     
     m.disconnect()
     
@@ -60,6 +64,7 @@ if __name__ == "__main__":
     parser.add_option('--dbpath', dest='database', help='Database path', default=PrawnTools.jmDBPath())
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-g', '--groups', dest='sessionGroups', help='Column separated list of groups')
+    parser.add_option('-n', '--noJobs', dest='noJobs', action='store_true', help='Don\t regenerate the jobs after updating the session')
        
     (opt, args) = parser.parse_args()
     

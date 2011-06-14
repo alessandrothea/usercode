@@ -35,6 +35,7 @@ def main():
     parser = optparse.OptionParser(usage)
 
     parser.add_option('--dbpath', dest='database', help='Database path', default=PrawnTools.jmDBPath())
+    parser.add_option('-n', '--noJobs',dest='noJobs', action='store_true', help='Don\'t generate the jobs')
     parser.add_option('-s', '--session', dest='sessionName', help='Name of the session')
     parser.add_option('-l', '--label', dest='sessionLabel', help='Label for the session')
     parser.add_option('-g', '--groups', dest='sessionGroups', help='Column separated list of groups')
@@ -162,30 +163,32 @@ def main():
     except ValueError as e:
         print '\nError: ',e,'\n'
         return -1
+    if not opt.noJobs:
+        m.generateJobs(s)
 
-    print '|  Creating',nJobs,'job(s)'
-    for i in range(nJobs):
-        job = m.makeNextJob(s.name)
-        job.fileList  = string.join(fileList[i],'\n')
-        job.firstEvent = firstEvent[i]
-        # set nEvents to 0 (= all) for the last event
-        job.nEvents    = i is not nJobs-1 and eventsPerJob or s.nTotEvents-job.firstEvent
-        job.inputFile  = s.outputDir+'/input/'+job.name()+'.input'
-        job.outputFile = s.outputDir+'/res/'+job.name()+'.root'
-        job.scriptPath = s.outputDir+'/scripts/'+job.name()+'.sh'
-        job.stdOutPath = s.outputDir+'/log/'+job.name()+'.out'
-        job.stdErrPath = s.outputDir+'/log/'+job.name()+'.err'
-        job.exitPath   = s.outputDir+'/tmp/'+job.name()+'.status'
-
-
-        jDict = s.__dict__
-        jDict.update(job.__dict__)
-        jDict['jobName'] = job.name()
-        job.script = tmpl.safe_substitute(jDict)
-        job.script += '\n'+'echo $? > '+job.exitPath
-        m.insertNewJob(job)
-        eventStr = s.mode is 'file' and 'all events' or str(job.nEvents)+'events (firstEvent ='+str(job.firstEvent)+')'
-        print '|  Job \''+job.name()+'\' added to session',s.name,'with',len(fileList[i]),'files and',eventStr
+#    print '|  Creating',nJobs,'job(s)'
+#    for i in range(nJobs):
+#        job = m.makeNextJob(s.name)
+#        job.fileList  = string.join(fileList[i],'\n')
+#        job.firstEvent = firstEvent[i]
+#        # set nEvents to 0 (= all) for the last event
+#        job.nEvents    = i is not nJobs-1 and eventsPerJob or s.nTotEvents-job.firstEvent
+#        job.inputFile  = s.outputDir+'/input/'+job.name()+'.input'
+#        job.outputFile = s.outputDir+'/res/'+job.name()+'.root'
+#        job.scriptPath = s.outputDir+'/scripts/'+job.name()+'.sh'
+#        job.stdOutPath = s.outputDir+'/log/'+job.name()+'.out'
+#        job.stdErrPath = s.outputDir+'/log/'+job.name()+'.err'
+#        job.exitPath   = s.outputDir+'/tmp/'+job.name()+'.status'
+#
+#
+#        jDict = s.__dict__
+#        jDict.update(job.__dict__)
+#        jDict['jobName'] = job.name()
+#        job.script = tmpl.safe_substitute(jDict)
+#        job.script += '\n'+'echo $? > '+job.exitPath
+#        m.insertNewJob(job)
+#        eventStr = s.mode is 'file' and 'all events' or str(job.nEvents)+'events (firstEvent ='+str(job.firstEvent)+')'
+#        print '|  Job \''+job.name()+'\' added to session',s.name,'with',len(fileList[i]),'files and',eventStr
     
     m.setSessionStatus(s.name, PrawnTools.kCreated)
     print hline

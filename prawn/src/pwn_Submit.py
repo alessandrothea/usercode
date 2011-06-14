@@ -49,6 +49,11 @@ def main():
             print '\m   Error: '+str(e)+'\n'
             return
         
+        if len(jobs) == 0 and s.nJobs != 0:
+            print "| no jobs created: regenerating"
+            m.generateJobs(s)
+            jobs = m.getJobs(s.name)
+        
 
         updated = submitSession(s,jobs,opt,numbers)
         
