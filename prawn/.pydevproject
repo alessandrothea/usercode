@@ -8,10 +8,6 @@
 <path>/prawn/src</path>
 </pydev_pathproperty>
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
-<path>${ROOTSYS}/lib</path>
+<path>/Users/ale/cern/root_v5.26.00_python/lib</path>
 </pydev_pathproperty>
-<pydev_variables_property name="org.python.pydev.PROJECT_VARIABLE_SUBSTITUTION">
-<key>ROOTSYS</key>
-<value>/Users/ale/cern/root</value>
-</pydev_variables_property>
 </pydev_project>
