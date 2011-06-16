@@ -132,6 +132,9 @@ class Plotter:
             return self.outFile.Get(path)
 
     def openFile(self,filename):
+	dir = os.path.dirname(filename)
+	if not os.path.exists(dir):
+		os.system('mkdir -p '+dir)
         self.outFile = ROOT.TFile.Open(filename,'recreate')
         
         dirSet = set()
