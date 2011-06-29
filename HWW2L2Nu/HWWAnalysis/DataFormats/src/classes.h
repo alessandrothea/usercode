@@ -3,7 +3,6 @@
 //Add includes for your classes here
 #include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
 #include "HWWAnalysis/DataFormats/interface/HWWNtuple.h"
-#include "HWWAnalysis/DataFormats/interface/EventView.h"
 #include "HWWAnalysis/DataFormats/interface/DileptonView.h"
 #include <vector>
 #include <TLorentzVector.h>
