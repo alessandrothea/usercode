@@ -1,0 +1,6 @@
+<use name="root"/>
+<use name="CommonTools/Utils"/>
+<flags CXXFLAGS="-g -ggdb"/>
+<export>
+   <lib name="1"/>
+</export>
