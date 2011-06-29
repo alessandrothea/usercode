@@ -29,14 +29,15 @@ void HWWNtuple::clear(){
 
     tags = 0;
 
+    nExtra = 0;
 	pA = math::XYZTLorentzVector();
 	pB = math::XYZTLorentzVector();
 	cA = 0;
 	cB = 0;
-	d0A = 0;
-	d0B = 0;
-	dZA = 0;
-	dZB = 0;
+//     d0A = 0;
+//     d0B = 0;
+//     dZA = 0;
+//     dZB = 0;
 
     nVrtx = 0;
     nPileUp = 0;
@@ -69,4 +70,6 @@ void HWWNtuple::clear(){
 	nBJets  = 0;
 
     dPhillj = 0.;
+
+    mtll    = 0.;
 }

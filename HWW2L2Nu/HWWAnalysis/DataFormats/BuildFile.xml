@@ -1,6 +1,8 @@
 <use name="DataFormats/Common"/>
+<use name="DataFormats/RecoCandidate"/>
 <use name="root"/>
 <use name="rootrflx"/>
+<use name="clhep"/>
 <flags rootmap="yes"/>
 <export>
   <lib name="1"/>

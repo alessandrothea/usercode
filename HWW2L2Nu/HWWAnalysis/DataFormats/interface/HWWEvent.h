@@ -8,20 +8,22 @@
 #ifndef HWWEVENT_H_
 
 #include <TObject.h>
-// #include <TLorentzVector.h>
 #include "DataFormats/Math/interface/LorentzVector.h"
+#include "DataFormats/Math/interface/Point3D.h"
 
 
-class HWWElectron {
-public:
-	HWWElectron() {}
-	virtual ~HWWElectron() {}
-//     TLorentzVector 	P;
+struct HWWLepton{
     math::XYZTLorentzVector P;
 	Int_t           Charge;
+    Int_t           PdgId;
+};
+
+struct HWWElectron : public HWWLepton {
 	Double_t        SigmaIetaIeta;
 	Double_t        CaloEnergy;
 	Double_t        DR03TkSumPt;
+	Double_t        DR03EcalRecHitSumEt;
+	Double_t        DR03HcalTowerSumEt;
 	Double_t        DR04EcalRecHitSumEt;
 	Double_t        DR04HcalTowerSumEt;
 	Int_t           NumberOfMissingInnerHits;
@@ -30,16 +32,9 @@ public:
 	Double_t        D0PV;
 	Double_t        DzPV;
 
-//     ClassDef(HWWElectron,1)
 };
 
-class HWWMuon {
-public:
-	HWWMuon() {}
-	virtual ~HWWMuon() {}
-//     TLorentzVector	P;
-    math::XYZTLorentzVector P;
-	Int_t           Charge;
+struct HWWMuon : HWWLepton {
 	Double_t        Iso03SumPt;
 	Double_t        Iso03EmEt;
 	Double_t        Iso03HadEt;
@@ -52,22 +47,19 @@ public:
 	Double_t        D0PV;
 	Double_t        DzPV;
 
-//     ClassDef(HWWMuon, 1)
 };
 
 class HWWPFJet {
 public:
-//     TLorentzVector P;
     math::XYZTLorentzVector P;
-	Double_t        ChHadfrac;
-	Double_t        NeuHadfrac;
-	Double_t        ChEmfrac;
-	Double_t        NeuEmfrac;
-	Double_t        TrkCountingHighEffBJet;
-	Int_t           NConstituents;
-    Double_t        BTagProbTkCntHighEff;
-
-//     ClassDef(HWWPFJet,1)
+	Double_t                ChHadfrac;
+	Double_t                NeuHadfrac;
+	Double_t                ChEmfrac;
+	Double_t                NeuEmfrac;
+	Double_t                TrkCountingHighEffBJet;
+	Int_t                   NConstituents;
+    Double_t                BTagProbTkCntHighEff;
+    std::vector<double>     BTaggers;
 };
 
 class HWWBTaggers {
@@ -83,7 +75,11 @@ public:
     std::vector<double> TkCntHighEff;
     std::vector<double> TkCntHighPur;
 
-//     ClassDef(HWWBTaggers,1)
+};
+
+struct HWWSlimBTags {
+    double pt;
+    std::vector<double> values;
 };
 
 class HWWEvent {
@@ -100,7 +96,7 @@ public:
     Double_t  Weight;
 
 	// Vertex
-	Int_t    PrimVtxGood;
+    math::XYZPoint PrimVtxPosition;
 	Double_t PrimVtxx;
 	Double_t PrimVtxy;
 	Double_t PrimVtxz;
@@ -108,15 +104,14 @@ public:
 	UInt_t   NPileUp;
 
 	// Met
-//     TLorentzVector TCMet;
-//     TLorentzVector PFMet;
-//     TLorentzVector ChargedMet;
     math::XYZTLorentzVector TCMet;
     math::XYZTLorentzVector PFMet;
     math::XYZTLorentzVector ChargedMet;
 
-	Bool_t   NSoftMus;
-	Bool_t	 NBTaggedJets;
+    std::vector<math::XYZTLorentzVector> ReducedPFMomenta;
+
+	Int_t    NSoftMus;
+	Int_t	 NBTaggedJets;
 	Int_t	 NEles;   // Electrons
 	Int_t 	 NMus;    // Mus
 	Int_t    PFNJets; // Particle flow
@@ -125,8 +120,9 @@ public:
 	std::vector<HWWMuon> 	 Mus;
 	std::vector<HWWPFJet>	 PFJets;
 
+    std::vector<HWWSlimBTags> JetBtags;
+
     HWWBTaggers BTaggers;
-//     ClassDef(HWWEvent,1)
 };
 
 #define HWWEVENT_H_

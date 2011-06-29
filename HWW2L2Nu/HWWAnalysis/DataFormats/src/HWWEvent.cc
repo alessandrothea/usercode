@@ -26,7 +26,7 @@ void HWWEvent::Clear( Option_t* option ){
 	LumiSection    = 0;
     Weight         = 1;
 
-	PrimVtxGood    = 0;
+	PrimVtxPosition = math::XYZPoint();
 	PrimVtxx       = 0;
 	PrimVtxy       = 0;
 	PrimVtxz       = 0;
@@ -37,6 +37,9 @@ void HWWEvent::Clear( Option_t* option ){
     PFMet          = math::XYZTLorentzVector(); //TLorentzVector();
     ChargedMet     = math::XYZTLorentzVector(); //TLorentzVector();
 
+
+    ReducedPFMomenta.clear();
+
 	NSoftMus       = 0;
 	NBTaggedJets   = 0;
 	NEles          = 0;
@@ -46,6 +49,7 @@ void HWWEvent::Clear( Option_t* option ){
 	Els.clear();
 	Mus.clear();
 	PFJets.clear();
+    JetBtags.clear();
 
     BTaggers.CombSecVrtxMVA.clear();
     BTaggers.SimpleSecVrtxHighEff.clear();

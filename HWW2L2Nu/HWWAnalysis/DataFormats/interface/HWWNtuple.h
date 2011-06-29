@@ -37,6 +37,7 @@ public:
 
     unsigned long tags;
 
+    unsigned int nExtra;
 //     TLorentzVector pA;
 //     TLorentzVector pB;
     math::XYZTLorentzVector pA;
@@ -44,11 +45,6 @@ public:
 
 	int cA;
 	int cB;
-
-	double d0A;
-	double d0B;
-	double dZA;
-	double dZB;
 
     unsigned int nVrtx;
     unsigned int nPileUp;
@@ -59,13 +55,16 @@ public:
 	double pfMet;
 	double tcMet;
 	double chargedMet;
+    double smurfChargedMet;
 	double pfMetDphi;
 	double tcMetDphi;
 	double chargedMetDphi;
+    double smurfChargedMetDphi;
 
 	double projPfMet;
 	double projTcMet;
 	double projChargedMet;
+	double projChargedSmurfMet;
     double minProjMet;
 
 	double mll;
@@ -79,6 +78,9 @@ public:
 	unsigned nBJets;
     // 1 jet only
     double dPhillj;
+
+    double mtll;
+
     // additional
 	unsigned nCentralJets;
 	unsigned nCentralJets40;

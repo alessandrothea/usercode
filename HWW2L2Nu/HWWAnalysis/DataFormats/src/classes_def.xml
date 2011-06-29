@@ -1,13 +1,30 @@
 <lcgdict>
   <class name="HWWEvent" />
+  <class name="HWWLepton" />
   <class name="HWWElectron" />
   <class name="HWWMuon" />
   <class name="HWWPFJet" />
+  <class name="HWWSlimBTags" />
   <class name="HWWBTaggers" />
   <class name="std::vector<HWWElectron>" />
   <class name="std::vector<HWWMuon>" />
   <class name="std::vector<HWWPFJet>"/>
+  <class name="std::vector<HWWSlimBTags>"/>
   <class name="HWWNtuple"/>
+  <class name="hww::DileptonView"/>
+  <class name="std::vector<hww::DileptonView>"/>
+  <class name="edm::Wrapper<hww::DileptonView>"/>
+  <class name="edm::Wrapper<std::vector<hww::DileptonView> >"/>
+
+  <class name="edm::Ptr<reco::RecoCandidate>"/>
+  <class name="std::vector<edm::Ptr<reco::RecoCandidate> >"/>
+
+<!--
+  <class name="hww::EventView"/>
+  <class name="std::vector<hww::EventView>"/>
+  <class name="edm::Wrapper<hww::EventView>"/>
+  <class name="edm::Wrapper<std::vector<hww::EventView> >"/>
+-->
 <!--   <class name="std::vector<YOUR_CLASS_GOES_HERE>" /> -->
 <!--   <class pattern="edm::Wrapper<YOUR_CLASS_GOES_HERE>"/> -->
 <!--   <class name="edm::Wrapper<std::vector<YOUR_CLASS_GOES_HERE> >" /> -->
