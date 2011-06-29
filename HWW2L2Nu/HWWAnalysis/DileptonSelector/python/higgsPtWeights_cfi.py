@@ -26,5 +26,8 @@ def higgsPtFactorFile( mass ):
     if not mass in masses:
         raise ValueError('Scale factors for mass '+mass+' not supported')
 
-    path = 'WWAnalysis/Misc/Scales/scalefactor.mh'+str(mass)+'.dat'
+    path  = 'HiggsAnalysis/HiggsToWW2Leptons/data/kfactors_Std/'
+    path += 'kfactors_mh'+mass+'_ren'+mass+'_fac'+mass+'.dat'
+
+#     path = 'WWAnalysis/Misc/Scales/scalefactor.mh'+str(mass)+'.dat'
     return path

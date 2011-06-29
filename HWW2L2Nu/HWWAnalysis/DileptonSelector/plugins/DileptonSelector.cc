@@ -1370,7 +1370,6 @@ void DileptonSelector::assembleEvent() {
 	_diLepEvent->Weight       = this->weight();
 
     // primary vertexes
-	_diLepEvent->PrimVtxGood  = ev->getPrimVtxGood();
 	_diLepEvent->PrimVtxx     = ev->getPrimVtxx();
 	_diLepEvent->PrimVtxy     = ev->getPrimVtxy();
 	_diLepEvent->PrimVtxz     = ev->getPrimVtxz();

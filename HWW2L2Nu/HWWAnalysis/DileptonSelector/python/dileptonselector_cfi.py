@@ -7,7 +7,7 @@ DileptonSelector = cms.EDAnalyzer('DileptonSelector',
         debugLevel  = cms.untracked.int32(0),
 
         puInfoSrc   = cms.InputTag('addPileupInfo'),
-        vertexSrc   = cms.InputTag('offlinePrimaryVerticesWithBS'),
+        vertexSrc   = cms.InputTag('offlinePrimaryVertices'),
         electronSrc = cms.InputTag('boostedElectrons'),
         muonSrc     = cms.InputTag('boostedMuons'),
         jetSrc      = cms.InputTag('slimPatJetsTriggerMatch'),

@@ -4,10 +4,13 @@
 <use name="FWCore/ServiceRegistry"/>
 <use name="CommonTools/UtilAlgos"/>
 <use name="HWWAnalysis/DataFormats"/>
-<use name="HWWAnalysis/Misc"/>
+<use name="HWWAnalysis/DileptonSelector"/>
 <use name="root"/>
 <use name="DataFormats/PatCandidates"/>
 <flags CXXFLAGS="-g -ggdb"/>
+<library name="HWWAnalysiDileptonSelectorPlugins" file="*.cc">
+   <flags   EDM_PLUGIN="1"/>
+</library>
+
 <export>
-   <lib name="1"/>
 </export>
