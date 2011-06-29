@@ -27,7 +27,7 @@ class plotEntry:
 class sampleEntry:
     def __init__(self):
         self.path = ''
-        self.entries = 0
+#         self.entries = 0
         self.sum = "no"
         self.xSec = 0.
         self.sFact = 1
@@ -217,10 +217,10 @@ class Plotter:
             e.file = ROOT.TFile(fullPath)
             if not e.file.IsOpen():
                 raise NameError('file '+e.path+' not found')
-            entries = e.file.Get('entries')
-            if not entries.__nonzero__():
-                raise NameError('histogram entries not found in '+fullPath)
-            e.entries = entries.GetBinContent(1)
+#             entries = e.file.Get('entries')
+#             if not entries.__nonzero__():
+#                 raise NameError('histogram entries not found in '+fullPath)
+#             e.entries = entries.GetBinContent(1)
             
         for e in self.mcSamples:
             fullPath = self.baseDir+'/'+e.path
@@ -228,10 +228,10 @@ class Plotter:
             if not e.file.IsOpen() or not e.file.__nonzero__():
                 raise NameError('file '+e.path+' not found')
 
-            entries = e.file.Get('entries')
-            if not entries.__nonzero__():
-                raise NameError('histogram entries not found in '+fullPath)
-            e.entries = entries.GetBinContent(1)
+#             entries = e.file.Get('entries')
+#             if not entries.__nonzero__():
+#                 raise NameError('histogram entries not found in '+fullPath)
+#             e.entries = entries.GetBinContent(1)
 
     def getHistograms(self,samples,name,prefix):
                 

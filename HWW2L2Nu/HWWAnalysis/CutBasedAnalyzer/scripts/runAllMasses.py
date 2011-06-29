@@ -76,13 +76,17 @@ samples.extend(background)
 samples.extend(higgs)
 # samples.extend(data2011)
 
-# samples = []
+samples = []
+# samples.extend(data2011ReReco)
+samples.extend(data2011PromptReco)
 samples.extend(data2011ReReco)
 samples.extend(data2011PromptReco)
 # samples = []
 
 masses = [120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 250, 300, 350, 400, 450, 500, 550, 600]
 masses = [ 160 ]
+lumi=187.6
+#lumi=168.9
 # lumi=133.5
 # lumi=146.1
 lumi=187.6

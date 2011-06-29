@@ -8,9 +8,9 @@
 #ifndef USERANALYZER_H_
 #define USERANALYZER_H_
 
-#include "CommandLine.h"
 #include <TObject.h>
 #include <TBenchmark.h>
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 class TChain;
 class TFile;
@@ -37,12 +37,12 @@ protected:
 
 	std::string _treeName;
 	std::string _folder;
-	std::string _inputFile;
+    std::vector<std::string> _inputFiles;
 	std::string _outputFile;
 	long long _firstEvent;
 	long long _nEvents;
 
-	CommandLine _config;
+    edm::ParameterSet _config;
 
 	TBenchmark _benchmark;
 

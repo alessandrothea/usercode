@@ -13,20 +13,24 @@
 #include <stdexcept>
 #include <fstream>
 #include "HWWAnalysis/Misc/interface/Tools.h"
+#include "HWWAnalysis/CutBasedAnalyzer/interface/PsetReader.h"
 
+
+using namespace std;
 //_____________________________________________________________________________
 UserAnalyzer::UserAnalyzer( int argc, char** argv ) : _chain(0x0), _output(0x0), _initialized(false) {
 	// TODO Auto-generated constructor stub
 
-	_config.parse(argc,argv);
+    PsetReader reader("process");
+	_config = reader.read(argc,argv);
 
-	_treeName   = _config.getValue<std::string>("UserAnalyzer.treeName");
+	_treeName   = _config.getParameter<string>("treeName");
 
-	_folder  = _config.getValue<std::string>("UserAnalyzer.folder");
-	_inputFile  = _config.getValue<std::string>("UserAnalyzer.inputFile");
-	_outputFile = _config.getValue<std::string>("UserAnalyzer.outputFile");
-	_firstEvent = _config.getValue<long long>("UserAnalyzer.firstEvent");
-	_nEvents    = _config.getValue<long long>("UserAnalyzer.nEvents");
+	_folder  = _config.getParameter<string>("folder");
+	_inputFiles = _config.getParameter< vector<string> >("inputFiles");
+	_outputFile = _config.getParameter<string>("outputFile");
+	_firstEvent = _config.getParameter<long long>("firstEvent");
+	_nEvents    = _config.getParameter<long long>("maxEvents");
 
 }
 
@@ -56,53 +60,54 @@ void UserAnalyzer::Analyze() {
 void UserAnalyzer::Start() {
 	std::cout << "--- " << TermColors::kLightBlue << "Start" << TermColors::kReset << " - [" << TDatime().AsString() << "]" << std::endl;
 	_benchmark.Start("main");
-	if (!_config.check() )
-		THROW_RUNTIME("Broken configuration")
-	_config.print();
 
-	if ( ::access(_inputFile.c_str(), F_OK ) )
-		THROW_RUNTIME("Input file " << _inputFile << " not accessible");
+//     if ( ::access(_inputFile.c_str(), F_OK ) )
+//         THROW_RUNTIME("Input file " << _inputFile << " not accessible");
 
 	std::string dotRoot  = ".root";
-	std::string dotInput = ".input";
-	std::string dotDcap  = ".dcap";
+//     std::string dotInput = ".input";
+//     std::string dotDcap  = ".dcap";
 
 	// build the TChain
 	_chain = new TChain((_folder+'/'+_treeName).c_str());
 
+    
+    for( uint i(0); i<_inputFiles.size(); ++i )
+        _chain->AddFile(_inputFiles[i].c_str());
+
 	// check if it's a single rootfile or a list
-	if ( std::equal(dotRoot.rbegin(), dotRoot.rend(),_inputFile.rbegin()) ) {
-		// single rootfile
-		std::cout << "Input file " << _inputFile << " is a ROOTFile" << std::endl;
-		_chain->AddFile(_inputFile.c_str());
+//     if ( std::equal(dotRoot.rbegin(), dotRoot.rend(),_inputFile.rbegin()) ) {
+//         // single rootfile
+//         std::cout << "Input file " << _inputFile << " is a ROOTFile" << std::endl;
+//         _chain->AddFile(_inputFile.c_str());
 
-	} else if ( std::equal(dotInput.rbegin(), dotInput.rend(),_inputFile.rbegin())
-		|| std::equal(dotDcap.rbegin(), dotDcap.rend(),_inputFile.rbegin()) ) {
-		// proper list of files
-		std::cout << "Input file " << _inputFile << " is a list of ROOTFiles" << std::endl;
+//     } else if ( std::equal(dotInput.rbegin(), dotInput.rend(),_inputFile.rbegin())
+//         || std::equal(dotDcap.rbegin(), dotDcap.rend(),_inputFile.rbegin()) ) {
+//         // proper list of files
+//         std::cout << "Input file " << _inputFile << " is a list of ROOTFiles" << std::endl;
 
-		// read the list of files
-		ifstream fileList(_inputFile.c_str(), ifstream::in);
-		if ( !fileList.is_open() )
-			THROW_RUNTIME("File " << _inputFile << " not found");
+//         // read the list of files
+//         ifstream fileList(_inputFile.c_str(), ifstream::in);
+//         if ( !fileList.is_open() )
+//             THROW_RUNTIME("File " << _inputFile << " not found");
 
-		std::string line;
-		while( fileList.good() ) {
-			getline(fileList, line);
-			// clean up the line using the streamer
-			std::stringstream ss(line);
-			std::string filepath;
+//         std::string line;
+//         while( fileList.good() ) {
+//             getline(fileList, line);
+//             // clean up the line using the streamer
+//             std::stringstream ss(line);
+//             std::string filepath;
 
-			ss >> filepath;
-			// if comment, continue
-			if ( filepath.empty() || filepath[0] == '#') continue;
-			_chain->AddFile(line.c_str());
-			std::cout << "Adding "<< filepath << std::endl;
-		}
+//             ss >> filepath;
+//             // if comment, continue
+//             if ( filepath.empty() || filepath[0] == '#') continue;
+//             _chain->AddFile(line.c_str());
+//             std::cout << "Adding "<< filepath << std::endl;
+//         }
 
-	} else {
-		THROW_RUNTIME("Input file extension  not supported" << _inputFile);
-	}
+//     } else {
+//         THROW_RUNTIME("Input file extension  not supported" << _inputFile);
+//     }
 
 	_chain->SetNotify(this);
 
@@ -117,11 +122,11 @@ void UserAnalyzer::Start() {
 //_____________________________________________________________________________
 void UserAnalyzer::Loop() {
 
-	std::cout << "Checking " << _inputFile << ": " <<_chain->GetEntries() << " events found" << std::endl;
+	std::cout << "Checking inpufiles: " <<_chain->GetEntries() << " events found" << std::endl;
 
 	// loop over the events (to be moved to the parent class?)
 	Long64_t lastEvent = _firstEvent + _nEvents;
-	if ( _nEvents == 0 ) {
+	if ( _nEvents == -1 ) {
 		// run over all the events in the dataset
 		lastEvent = _chain->GetEntriesFast();
 		_nEvents = _chain->GetEntriesFast();

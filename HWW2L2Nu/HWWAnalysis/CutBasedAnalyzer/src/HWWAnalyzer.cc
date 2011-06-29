@@ -21,9 +21,12 @@
 #include <TH1D.h>
 #include <THashList.h>
 #include <TH2D.h>
+#include <TObjArray.h>
 
 
 const double HWWAnalyzer::_Z0Mass = 9.11869999999999976e+01;
+
+using namespace std;
 
 //_____________________________________________________________________________
 void HWWAnalyzer::HiggsCutSet::print() {
@@ -38,22 +41,34 @@ void HWWAnalyzer::HiggsCutSet::print() {
 }
 
 //_____________________________________________________________________________
+//helper class to srot dilepton pairs
+struct PairLessByPtSum {
+    typedef pair<HWWLepton*,HWWLepton*> lepPair;
+    bool operator()( const lepPair& a, const lepPair& b ) const {
+        return ( a.first->P.pt() + a.second->P.pt() ) > ( b.first->P.pt() + b.second->P.pt() );
+    }
+};
+
+//_____________________________________________________________________________
 HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthMask(kCutsSize),
-        _hEntries(0x0), _analysisTree(0x0), _event(0x0), _ntuple(0x0) {
+         _analysisTree(0x0), _event(0x0), _ntuple(0x0), _hScalars(0x0) {
 
-    _analysisTreeName = _config.getValue<std::string>("HWWAnalyzer.analysisTreeName");
+    _analysisTreeName = _config.getParameter<std::string>("analysisTreeName");
 
-    _higgsMass        = _config.getValue<int>("HWWAnalyzer.higgsMass");
+    _higgsMass        = _config.getParameter<int>("higgsMass");
 
-    _cutFile          = _config.getValue<std::string>("HWWAnalyzer.cutFile");
-    _minMet           = _config.getValue<double>("HWWAnalyzer.minMet");
-    _minMll           = _config.getValue<double>("HWWAnalyzer.minMll");
-    _zVetoWidth       = _config.getValue<double>("HWWAnalyzer.zVetoWidth");
+    _cutFile          = _config.getParameter<std::string>("cutFile");
+    _minJetPT         = _config.getParameter<double>("jetPtMin");
+    _minMet           = _config.getParameter<double>("minMet");
+    _minMll           = _config.getParameter<double>("minMll");
+    _zVetoWidth       = _config.getParameter<double>("zVetoWidth");
 
-    _minProjMetEM     = _config.getValue<double>("HWWAnalyzer.minProjMetEM");
-    _minProjMetLL     = _config.getValue<double>("HWWAnalyzer.minProjMetLL");
+    _minProjMetEM     = _config.getParameter<double>("minProjMetEM");
+    _minProjMetLL     = _config.getParameter<double>("minProjMetLL");
+    _bThreshold       = _config.getParameter<double>("bThreshold");
+    _bDiscriminator   = _config.getParameter<string>("bDiscriminator");
 
-    _histLabels = _config.getVector<std::string>("HWWAnalyzer.copyHistograms");
+    _histLabels = _config.getParameter<std::vector<std::string> >("copyHistograms");
 
     //std::copy(_histLabels.begin(), _histLabels.end(), output);
 
@@ -70,7 +85,6 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
     for( int k=2; k<kCutsSize; ++k) {
         _nthMask[k] = _theMask;
         _nthMask[k].set(k,false);
-//         std::cout << _nthMask[k].to_string() << std::endl;
     }
 
 }
@@ -89,7 +103,7 @@ void HWWAnalyzer::Book() {
     std::map<int,std::string> entriesLabels;
     entriesLabels[0] = "Entries";
     entriesLabels[1] = "Pre-selected Entries";
-    _hEntries = makeLabelHistogram("entries","HWW selection entries",entriesLabels);
+    _hScalars = makeLabelHistogram("entries","HWW selection entries",entriesLabels);
 
     
     bookHistogramSet(_llHistograms, "ll");
@@ -136,18 +150,36 @@ Bool_t HWWAnalyzer::Notify() {
         return true;
     }
 
+    if ( _chain->GetTree() ) {
+        int newIdx = -1;
+        TList* userInfo = _chain->GetTree()->GetUserInfo();
+        TObjArray* labels = dynamic_cast<TObjArray*>(userInfo->FindObject("BtagLabels"));
+        for( int i(0); i<=labels->GetLast(); ++i ) {
+            TObjString* objStr =dynamic_cast<TObjString*>(labels->At(i)); 
+            if ( objStr->String().Data() == _bDiscriminator ) {
+                newIdx = i;
+                break;
+            }
+
+        }
+        if (newIdx < 0 )
+            THROW_RUNTIME("Discriminator " << _bDiscriminator << " not found");
+        _bIdx = newIdx;
+//         cout << "index " << _bIdx << endl;
+    }
+
 
     if (  _chain->GetCurrentFile() ) {
         std::cout << "--- Notify(): New file opened: "<<  _chain->GetCurrentFile()->GetName() << std::endl;
         bool add = TH1::AddDirectoryStatus();
         TH1::AddDirectory(kFALSE);
 
-//         std::cout << _hEntries << std::endl;
-        TH1D* entries = (TH1D*)_chain->GetCurrentFile()->Get((_folder+"/entries").c_str());
+//         std::cout << _hScalars << std::endl;
+        TH1D* entries = (TH1D*)_chain->GetCurrentFile()->Get((_folder+"/scalars").c_str());
         if ( !entries )
             std::cout << "Warning: Preselection entries not found" << std::endl;
         else
-            _hEntries->Add(entries);
+            _hScalars->Add(entries);
 
         std::vector<std::string>::iterator it;
         for( it = _histLabels.begin(); it!=_histLabels.end();it++) {
@@ -175,6 +207,92 @@ Bool_t HWWAnalyzer::Notify() {
 //_____________________________________________________________________________
 void HWWAnalyzer::BeginJob() {
     _chain->SetBranchAddress("ev", &_event);
+
+}
+
+//_____________________________________________________________________________
+void HWWAnalyzer::Process( Long64_t iEvent ) {
+//  std::cout << iEvent <<  std::endl;
+    _chain->GetEntry(iEvent);
+
+    _ntuple->clear();
+
+//     if ( _event->NEles + _event->NMus != 2 )
+//         THROW_RUNTIME("Wrong number of leptons in the event: NEles = " << _event->NEles << " NMus = " << _event->NMus  );
+
+    buildNtuple();
+    cutAndFill();
+
+    _analysisTree->Fill();
+}
+
+
+//_____________________________________________________________________________
+uint HWWAnalyzer::countJets( double ptmin ) {
+
+    uint nJets = 0;
+    vector<HWWPFJet>::const_iterator iJet, bJ = _event->PFJets.begin(), eJ = _event->PFJets.end();
+    for( iJet = bJ; iJet != eJ; ++iJet ) 
+        if ( iJet->P.pt() >= ptmin ) ++nJets;
+
+    return nJets;
+}
+
+//_____________________________________________________________________________
+uint HWWAnalyzer::countBtags( double min, double ptmin ) {
+    uint nBtags = 0;
+    vector<HWWSlimBTags>::iterator iBtag, bT = _event->JetBtags.begin(), eT = _event->JetBtags.end();
+    for( iBtag = bT; iBtag != eT; ++iBtag ) {
+        for ( uint k(0); k<iBtag->values.size(); ++k ) {
+            if ( iBtag->values[_bIdx] >= min && iBtag->pt > ptmin ) ++nBtags;
+        }
+    }
+    return nBtags;
+
+}
+
+
+//_____________________________________________________________________________
+std::pair<HWWLepton*,HWWLepton*> HWWAnalyzer::buildPair() {
+    std::vector<HWWLepton*> leptons;
+
+    for( uint i=0; i< _event->Els.size(); ++i )
+        leptons.push_back( &(_event->Els[i]) );
+
+    for( uint i=0; i< _event->Mus.size(); ++i ) 
+        leptons.push_back( &(_event->Mus[i]) );
+
+    vector<pair<HWWLepton*,HWWLepton*> > pairs;
+    for( uint i=0; i<leptons.size(); ++i ) {
+        for( uint j(i+1); j<leptons.size(); ++j ) {
+            // opposite sign
+            if ( leptons[i]->Charge != -leptons[j]->Charge ) continue;
+
+            // fist is the highest
+            if ( leptons[i]->P.pt() > leptons[j]->P.pt() )
+                pairs.push_back( make_pair(leptons[i], leptons[j]) );
+            else
+                pairs.push_back( make_pair(leptons[j], leptons[i]) );
+        }
+    }
+
+    sort(pairs.begin(), pairs.end(), PairLessByPtSum() );
+
+    /*
+    for ( uint i(0); i< pairs.size(); ++i ) {
+        cout << i;
+       cout << " ptA " << pairs[i].first->P.pt();
+       cout << " chA " << pairs[i].first->Charge;
+       cout << " idA " << pairs[i].first->PdgId;
+       cout << " ptB " << pairs[i].second->P.pt();
+       cout << " chB " << pairs[i].second->Charge;
+       cout << " idB " << pairs[i].second->PdgId;
+       cout << endl;
+    }
+    */
+    return pairs.front();
+    
+
 
 }
 
@@ -417,83 +535,44 @@ HWWAnalyzer::HiggsCutSet HWWAnalyzer::getHiggsCutSet(int mass) {
 }
 
 //_____________________________________________________________________________
-void HWWAnalyzer::fillNtuple(){
+void HWWAnalyzer::buildNtuple(){
 
 //     TLorentzVector pA, pB;
     math::XYZTLorentzVector pA, pB;
     Int_t cA(0), cB(0);
-    double d0A(0), d0B(0);
-    double dZA(0), dZB(0);
+//     double d0A(0), d0B(0);
+//     double dZA(0), dZB(0);
     unsigned short type = 0;
 
-//  std::cout << "Neles " << _event->NEles << "   NMus " << _event->NMus << std::endl;
+    // what if there is no pair?
+    // Well, the step 2 files should always contain at least one pair.
+    std::pair<HWWLepton*,HWWLepton*> thePair = buildPair();
+    _ntuple->nExtra = (_event->NEles + _event->NMus -2 );
+    
 
-    switch ( _event->NEles ) {
-    case 2:
-        // A has the highst pT?
-        pA = _event->Els[0].P;
-        pB = _event->Els[1].P;
+//     cout << "NExtra " <<  _ntuple->nExtra << endl;
 
-        cA = _event->Els[0].Charge;
-        cB = _event->Els[1].Charge;
 
-        d0A = _event->Els[0].D0PV;
-        d0B = _event->Els[1].D0PV;
+    uint idA = TMath::Abs(thePair.first->PdgId);
+    uint idB = TMath::Abs(thePair.second->PdgId);
 
-        dZA = _event->Els[0].DzPV;
-        dZB = _event->Els[1].DzPV;
-
+    if( idA == 11 && idB == 11 ) {
         type = kElEl_t;
-        break;
-    case 1:
-        if ( _event->Els[0].P.Pt() > _event->Mus[0].P.Pt() ) {
-            pA = _event->Els[0].P;
-            pB = _event->Mus[0].P;
-
-            cA = _event->Els[0].Charge;
-            cB = _event->Mus[0].Charge;
-
-            d0A = _event->Els[0].D0PV;
-            d0B = _event->Mus[0].D0PV;
-
-            dZA = _event->Els[0].DzPV;
-            dZB = _event->Mus[0].DzPV;
-            type = kElMu_t;
-        } else {
-            pA = _event->Mus[0].P;
-            pB = _event->Els[0].P;
-
-            cA = _event->Mus[0].Charge;
-            cB = _event->Els[0].Charge;
-
-            d0A = _event->Mus[0].D0PV;
-            d0B = _event->Els[0].D0PV;
-
-            dZA = _event->Mus[0].DzPV;
-            dZB = _event->Els[0].DzPV;
-            type = kMuEl_t;
-        }
-
-
-        break;
-    case 0:
-        // A has the highst pT?
-        pA = _event->Mus[0].P;
-        pB = _event->Mus[1].P;
-
-        cA = _event->Mus[0].Charge;
-        cB = _event->Mus[1].Charge;
-
-        d0A = _event->Mus[0].D0PV;
-        d0B = _event->Mus[1].D0PV;
-
-        dZA = _event->Mus[0].DzPV;
-        dZB = _event->Mus[1].DzPV;
-
+    } else if (idA == 11 && idB == 13) {
+        type = kElMu_t;
+    } else if (idA == 13 && idB == 11) {
+        type = kMuEl_t;
+    } else if (idA == 13 && idB == 13) {
         type = kMuMu_t;
-
-        break;
+    } else {
+        THROW_RUNTIME("Pair with particle ids " << idA << " " << idB << " not supported");
     }
+
+    pA = thePair.first->P;
+    pB = thePair.second->P;
+
+    cA = thePair.first->Charge;
+    cB = thePair.second->Charge;
 
     // we work on the assumption A is the highet pT lepton, B is not. This is a watchdog
     if ( pB.Pt() > pA.Pt() ) {
@@ -504,19 +583,34 @@ void HWWAnalyzer::fillNtuple(){
 //     double mll = (pA+pB).Mag();
     double mll = (pA+pB).mass();
 
-//     TLorentzVector& pfMet4 = _event->PFMet;
-//     TLorentzVector& tcMet4 = _event->TCMet;
-//     TLorentzVector& chargedMet4 = _event->ChargedMet;
     math::XYZTLorentzVector& pfMet4 = _event->PFMet;
     math::XYZTLorentzVector& tcMet4 = _event->TCMet;
     math::XYZTLorentzVector& chargedMet4 = _event->ChargedMet;
 
+    // calculate the smurf met
+    math::XYZTLorentzVector pSum;
+    vector<math::XYZTLorentzVector>::iterator iP4, bP = _event->ReducedPFMomenta.begin(), eP = _event->ReducedPFMomenta.end();
+    for( iP4 = bP; iP4 != eP; ++iP4) {
+        if ( TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(*iP4,pA)) > 0.1 ) continue;
+        if ( TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(*iP4,pB)) > 0.1 ) continue;
+        pSum += *iP4;
+    }
+    pSum += thePair.first->P;
+    pSum += thePair.second->P;
+
+    math::XYZTLorentzVector smurfChargedMet4(-pSum);
+
+
     // 4a pfMet
-    double pfMet = pfMet4.Pt();
+    double pfMet = pfMet4.pt();
     // 4b - tcMet
-    double tcMet = tcMet4.Pt();
+    double tcMet = tcMet4.pt();
     // 4c - chargedMet
     double chargedMet = chargedMet4.Pt();
+    // 4d - smuf charged
+    double smurfChargedMet = smurfChargedMet4.pt();
+    
+//     _event->ChargedPFCandidatesTotalP
 
     // 5 - projected MeT
     // 5a - projPfMet
@@ -524,8 +618,6 @@ void HWWAnalyzer::fillNtuple(){
     double pfMetDphi = TMath::Min(
             TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pfMet4, pA)),
             TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pfMet4, pB))
-//             TMath::Abs(pfMet4.DeltaPhi( pA )),
-//             TMath::Abs(pfMet4.DeltaPhi( pB ))
             );
 
     double projPfMet = pfMet*(pfMetDphi < TMath::PiOver2() ? TMath::Sin(pfMetDphi) : 1.);
@@ -535,8 +627,6 @@ void HWWAnalyzer::fillNtuple(){
     double tcMetDphi = TMath::Min(
             TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(tcMet4, pA)),
             TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(tcMet4, pB))
-//             TMath::Abs(tcMet4.DeltaPhi( pA )),
-//             TMath::Abs(tcMet4.DeltaPhi( pB ))
             );
 
     double projTcMet = tcMet*(tcMetDphi < TMath::PiOver2() ? TMath::Sin(tcMetDphi) : 1.);
@@ -545,26 +635,32 @@ void HWWAnalyzer::fillNtuple(){
     double chargedMetDphi = TMath::Min(
             TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(chargedMet4, pA)),
             TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(chargedMet4, pB))
-//             TMath::Abs(chargedMet4.DeltaPhi( pA )),
-//             TMath::Abs(chargedMet4.DeltaPhi( pB ))
             );
 
     double projChargedMet = chargedMet*(chargedMetDphi < TMath::PiOver2() ? TMath::Sin(chargedMetDphi) : 1.);
+    
+    // 5d - smurfChargedMet
+    double smurfChargedMetDphi = TMath::Min(
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(smurfChargedMet4, pA)),
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(smurfChargedMet4, pB))
+            );
 
-    // 6 - dPhiEE
-//     double dPhiLL = TMath::Abs(pA.DeltaPhi(pB));
+    double projChargedSmurfMet = chargedMet*(smurfChargedMetDphi < TMath::PiOver2() ? TMath::Sin(smurfChargedMetDphi) : 1.);
+
+    // 6 - nJets 
+    uint nJets         = countJets( _minJetPT );
+    // 7 - dPhiEE
     double dPhiLL = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pA, pB));
 
     double dPhiLLJet = -TMath::TwoPi();
-    // 7 1-jet case
-    if ( _event->PFNJets == 1 ) {
-//         TLorentzVector pJet = _event->PFJets[0].P;
-//         TLorentzVector pLL  = pA+pB;
-//         dPhiLLJet           = TMath::Abs(pJet.DeltaPhi(pLL));
+    // 8 1-jet case
+    if ( nJets == 1 ) {
+        // tocheck, is [0] the higest pt jet?
         math::XYZTLorentzVector pJet = _event->PFJets[0].P;
         math::XYZTLorentzVector pLL  = pA+pB;
-        dPhiLLJet           = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));
+        dPhiLLJet                    = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));
     }
+
 
     _ntuple->type = type;
 
@@ -581,20 +677,13 @@ void HWWAnalyzer::fillNtuple(){
 
     _ntuple->pA.SetXYZT(pA.X(),pA.Y(),pA.Z(),pA.T());
     _ntuple->pB.SetXYZT(pB.X(),pB.Y(),pB.Z(),pB.T());
-//     _ntuple->pB            = pB;
     
-    _ntuple->d0A           = d0A;
-    _ntuple->d0B           = d0B;
-
-    _ntuple->dZA           = dZA;
-    _ntuple->dZB           = dZB;
-
     _ntuple->mll           = mll;
 
-    _ntuple->pfMet         = pfMet;
-    _ntuple->tcMet         = tcMet;
-    _ntuple->chargedMet    = chargedMet;
-
+    _ntuple->pfMet           = pfMet;
+    _ntuple->tcMet           = tcMet;
+    _ntuple->chargedMet      = chargedMet;
+    _ntuple->smurfChargedMet = smurfChargedMet;
 
     _ntuple->pfMetDphi     = pfMetDphi;
     _ntuple->tcMetDphi     = tcMetDphi;
@@ -603,8 +692,9 @@ void HWWAnalyzer::fillNtuple(){
     _ntuple->projPfMet     = projPfMet;
     _ntuple->projTcMet     = projTcMet;
     _ntuple->projChargedMet  = projChargedMet;
+    _ntuple->projChargedSmurfMet  = projChargedSmurfMet;
 
-    _ntuple->minProjMet    = TMath::Min(_ntuple->projPfMet, _ntuple->projChargedMet);
+    _ntuple->minProjMet    = TMath::Min(_ntuple->projPfMet, _ntuple->projChargedSmurfMet);
 
     _ntuple->met           = _ntuple->pfMet;
     _ntuple->projMet       = _ntuple->minProjMet;
@@ -627,11 +717,12 @@ void HWWAnalyzer::fillNtuple(){
             }
         }
 
-    _ntuple->nJets         = _event->PFNJets;
+    _ntuple->nJets         = nJets;
     _ntuple->nSoftMus      = _event->NSoftMus;
-    _ntuple->nBJets        = _event->NBTaggedJets;
+    _ntuple->nBJets        = countBtags( _bThreshold ); 
 
     _ntuple->dPhillj       = dPhiLLJet;
+    _ntuple->mtll          = transverseMass( pA+pB ,pfMet4 );
 
 }
 
@@ -911,7 +1002,7 @@ void HWWAnalyzer::cutAndFill() {
 
     fillVariables( histograms, kSoftMuon);
 
-    fillBtaggers();
+//     fillBtaggers();
 
     // top veto
     histograms->preCuts[kTopVeto]->Fill(_ntuple->nBJets, getWeight() );
@@ -964,26 +1055,6 @@ void HWWAnalyzer::cutAndFill() {
     _ntuple->selected = true;
 
 
-}
-
-//_____________________________________________________________________________
-void HWWAnalyzer::Process( Long64_t iEvent ) {
-//  std::cout << iEvent <<  std::endl;
-    _chain->GetEntry(iEvent);
-
-    _ntuple->clear();
-//     _btaggedJets.clear();
-//     _selectedJets.clear();
-
-//     sortJets();
-
-    if ( _event->NEles + _event->NMus != 2 )
-        THROW_RUNTIME("Wrong number of leptons in the event: NEles = " << _event->NEles << " NMus = " << _event->NMus  );
-
-    fillNtuple();
-    cutAndFill();
-
-    _analysisTree->Fill();
 }
 
 //_____________________________________________________________________________
@@ -1186,3 +1257,13 @@ TH1D* HWWAnalyzer::glueCounters(TH1D* counters) {
     return hNew;
 
 }
+
+double HWWAnalyzer::transverseMass(math::XYZTLorentzVector lep, math::XYZTLorentzVector met) {
+    double mt;
+    double pt1 = lep.Pt();
+    double pt2 = met.Pt();  // pt2=met
+    double delPhi = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(lep, met));
+    mt = TMath::Sqrt(2*TMath::Abs(pt1)*TMath::Abs(pt2)*(1-TMath::Cos(delPhi)));
+    return mt;
+}
+

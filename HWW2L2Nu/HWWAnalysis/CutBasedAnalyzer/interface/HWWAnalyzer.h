@@ -31,8 +31,6 @@ public:
 	virtual void Book();
 	virtual void BeginJob();
 	virtual void Process( Long64_t iEvent );
-	virtual void fillNtuple();
-	virtual void cutAndFill();
 	virtual void EndJob();
 
 protected:
@@ -129,7 +127,13 @@ protected:
 		kCutsSize
 	};
 
-    // 
+    // main functions 
+	void buildNtuple();
+	void cutAndFill();
+    uint countJets( double ptMin );
+    uint countBtags( double thres, double ptMin = 0.);
+    std::pair<HWWLepton*,HWWLepton*> buildPair();
+    
 
     // constants
 	const static unsigned short _wordLen = 32;
@@ -159,9 +163,10 @@ protected:
 
     double getWeight() { return _event->Weight; }
     
+    // transverse mass calculator
+    double transverseMass(math::XYZTLorentzVector lep, math::XYZTLorentzVector met);
 
     // helper methods for the analysis
-//     int countJets( double ptmin );
 
     void fillDiLeptons(std::vector<TH1D*>& histograms );
     void fillExtra(std::vector<TH1D*>& histograms );
@@ -171,16 +176,14 @@ protected:
 
  
     // cuts
-	int   _higgsMass;
-
-	double _maxD0;
-	double _maxDz;
+    double _minJetPT;
 	double _minMet;
 	double _minMll;
 	double _zVetoWidth;
 
 	double _minProjMetEM;
 	double _minProjMetLL;
+    double _bThreshold;
 
     // end cuts
 
@@ -189,9 +192,23 @@ protected:
 
 	HiggsCutSet _theCuts;
 
+    // vars used in the selection
+	int   _higgsMass;
+	std::string _cutFile;
+	std::vector<HiggsCutSet> _cutVector;
+
+    std::string _bDiscriminator;
+    uint        _bIdx;
+	std::string _analysisTreeName;
+	
+    // root obj
+    TTree*      _analysisTree;
+
+	HWWEvent*   _event;
+	HWWNtuple*  _ntuple;
 
     // histograms
-	TH1D* _hEntries;
+	TH1D* _hScalars;
 
 	TH1D* _nVrtx;
 	TH1D* _jetN;
@@ -219,16 +236,6 @@ protected:
     HistogramSet    _meHistograms;
     HistogramSet    _mmHistograms;
 
-	std::string _cutFile;
-
-	std::vector<HiggsCutSet> _cutVector;
-
-
-	std::string _analysisTreeName;
-	TTree* _analysisTree;
-
-	HWWEvent* _event;
-	HWWNtuple* _ntuple;
 
 };
 
