@@ -229,22 +229,3 @@ for (tag,dist) in puDist.iteritems():
     
 print 'Available pilup weights:',', '.join(puWeights.iterkeys())
 
-# # set a default for 2011
-# norm_Data = norm_certifiedUCSD_Jun1
-# norm_MC   = norm_Spring2011
-
-# # if needed for mc studies
-# puFlatWeights = [1]*25
-
-# if len(norm_Data) != len(norm_MC):
-#     raise ValueError('Weights: Data and MC have different lengths')
-
-# size = len(norm_Data)
-
-# puWeights = [0]*size
-# for i in range(size):
-#     puWeights[i] = norm_Data[i]/norm_MC[i]
-
-# # puWeights = [1]*25
-# print ' - Loaded Pilup Weights\n',' '.join([ str(w) for w in puWeights])
-
