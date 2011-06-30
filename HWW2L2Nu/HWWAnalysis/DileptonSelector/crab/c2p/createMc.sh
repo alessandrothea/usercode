@@ -1,6 +1,6 @@
 nJobs=15
 
-csvFile="$HOME/higgsWW/samples/R414_S1_V06_S2_V02.csv"
+csvFile="$HOME/higgsWW/samples/R42X_S1_V04_S2_V00_S3_V00.csv"
 
  crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Spring11/jobs -w ../../ -i 1-25,27-50    -g 2011:Spring11:bkg
  crab2prawn.py -c $csvFile -j 100    -t ../prawn_template.sh -o /shome/thea/higgsWW/Spring11/jobs -w ../../ -i 26            -g 2011:Spring11:bkg

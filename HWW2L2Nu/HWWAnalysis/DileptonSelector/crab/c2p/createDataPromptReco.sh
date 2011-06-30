@@ -1,9 +1,9 @@
-nJobs=10
-csvFile="$HOME/higgsWW/samples/R414_S1_V07_S2_V04_S3_V00.csv"
+nJobs=40
+csvFile="$HOME/higgsWW/samples/R42X_S1_V04_S2_V00_S3_V00.csv"
 optArgs="useLumi=$HOME/higgsWW/lumi/currentLumi.json"
 
-crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Spring11/jobs -w ../../ -i 74,79 -a "$optArgs dataType=SingleMu" -g 2011:PromptReco:$CMSSW_VERSION:Spring11:data:SingleMu
-crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Spring11/jobs -w ../../ -i 75,80 -a "$optArgs dataType=DoubleEl" -g 2011:PromptReco:$CMSSW_VERSION:Spring11:data:DoubleEl 
-crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Spring11/jobs -w ../../ -i 76,81 -a "$optArgs dataType=DoubleMu" -g 2011:PromptReco:$CMSSW_VERSION:Spring11:data:DoubleMu 
-crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Spring11/jobs -w ../../ -i 77,82 -a "$optArgs dataType=MuEg"     -g 2011:PromptReco:$CMSSW_VERSION:Spring11:data:MuEg 
+crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 84 -a "$optArgs triggerFilter=singleMu" -g 2011:PromptReco:42X:data:singleMu
+crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 85 -a "$optArgs triggerFilter=doubleEl" -g 2011:PromptReco:42X:data:doubleEl 
+crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 86 -a "$optArgs triggerFilter=doubleMu" -g 2011:PromptReco:42X:data:doubleMu 
+crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_template.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 87 -a "$optArgs triggerFilter=muEg"     -g 2011:PromptReco:42X:data:muEg 
 pwn_Update.py -n -g Spring11:data queue=short.q,all.q
