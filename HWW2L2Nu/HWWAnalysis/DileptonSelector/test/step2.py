@@ -367,16 +367,6 @@ process.thePath *= cms.Sequence(
 )
 
 
-
-# from HWWAnalysis.DileptonSelector.extraLeptonFilter_cff import addXLeptonFilter
-
-# addXLeptonFilter( process,
-#                  electrons = 'hwwEleIPMerge2',
-#                  muons     = 'hwwMuonsMergeIP',
-#         )
-
-# process.thePath += process.extraLeptonVeto                 
-
 process.schedule = cms.Schedule( process.thePath );
 
 # apply json mask if defined
