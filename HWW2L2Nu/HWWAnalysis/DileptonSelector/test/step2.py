@@ -217,7 +217,7 @@ process.thePath *= process.hltSummary
 # if defined in the command line apply the filtering
 if options.triggerFilter:
     process.hltFilter.mode = cms.string(options.triggerFilter)
-    processed.thePath *= process.hltFilter
+    process.thePath *= process.hltFilter
 
 
 #---------------------------------------------------------
