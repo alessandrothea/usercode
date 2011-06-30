@@ -20,6 +20,7 @@ def main():
     parser.add_option('-g', '--groups', dest='sessionGroups', help='Comma separated list of groups')
     parser.add_option('-f', '--force', dest='force', action='store_true', default=False)
     parser.add_option('-w', '--overwrite', dest='overWrite', action='store_true', default=False,help='')
+    parser.add_option('-p', '--prefix',dest='prefix', help='prefix for the output file', default='')
     
     (opt, args) = parser.parse_args()
 
@@ -37,7 +38,7 @@ def main():
     ses = m.getListOfSessions(opt.sessionName, opt.sessionGroups)
     for s in ses:
         jobs = m.getJobs(s.name)
-        path = s.name+'.root'
+        path = opt.prefix+s.name+'.root'
         print hline
         print '|  Merging root files for session',s.name
         print hline
