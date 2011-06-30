@@ -22,7 +22,7 @@ masses = set(['120',
               '600'
              ])
 
-def higgsPtFactorFile( mass ): 
+def higgsPtKFactorFile( mass ): 
     if not mass in masses:
         raise ValueError('Scale factors for mass '+mass+' not supported')
 

@@ -9,8 +9,10 @@ import FWCore.ParameterSet.Config as cms
 #                            __/ |              
 #                           |___/             
 
+puDist = {}
+
 # spring 2011 montecarlo
-norm_Spring2011 = [
+mcDist = [
         0.069286816,  
         0.069286816,
         0.069286816,
@@ -37,8 +39,11 @@ norm_Spring2011 = [
         7.52436E-05,
         1.25406E-05,
         ]
+
+
+
 # calculated using Cert_160404-162917_7TeV_PromptReco_Collisions11_JSON.txt
-norm_160404_162917 = [
+puDist['run160404_162917'] = [
         0.0034946613158383091,
         0.0035779730990497345,
         0.0084115883059061175,
@@ -67,7 +72,7 @@ norm_160404_162917 = [
         ]
 
 # calculated using pu_Cert_160404-163369_7TeV_PromptReco_Collisions11_JSON.txt
-norm_160404_163369 = [
+puDist['run160404_163369'] = [
     0.0234797085185,
     0.0327800386411,
     0.0722990332539,
@@ -96,7 +101,7 @@ norm_160404_163369 = [
 ]
 
 # latino's May6
-norm_certifiedLatinos_May6 = [
+puDist['certifiedLatinos_May6'] = [
         0.0205469803855,
         0.0347759488629,
         0.0760883292871,
@@ -124,7 +129,7 @@ norm_certifiedLatinos_May6 = [
         0.0,
         ]
 
-norm_certifiedLatinos_May11 = [
+puDist['certifiedLatinos_May11'] = [
         0.0186118378789,
         0.0307197763471,
         0.0698104803435,
@@ -152,7 +157,7 @@ norm_certifiedLatinos_May11 = [
         0.0,
         ]
 
-norm_certifiedUCSD_May6 = [
+puDist['certifiedUCSD_May6'] = [
     0.018569573628149264,
     0.031031409934914635,
     0.070285104498969145,
@@ -180,7 +185,7 @@ norm_certifiedUCSD_May6 = [
     0.0
 ]
 
-norm_certifiedUCSD_Jun1 = [
+puDist['certifiedUCSD_Jun1'] = [
     0.017549765402660809,
     0.029108833786529741,
     0.067478871437074303,
@@ -207,22 +212,39 @@ norm_certifiedUCSD_Jun1 = [
     3.2125160928692503e-06,
     0.0
 ]
-# set a default for 2011
-norm_Data = norm_certifiedUCSD_Jun1
-norm_MC   = norm_Spring2011
 
-# if needed for mc studies
-puFlatWeights = [1]*25
+# latino's 42X 710 pb-1, Jun 24 2011
+puDist['certifiedLatinos.42X_Jun24'] = mcDist[:]
 
-if len(norm_Data) != len(norm_MC):
-    raise ValueError('Weights: Data and MC have different lengths')
+puWeights = {}
+mcSize = len(mcDist)
+# additional flat distribution
+puWeights['Flat'] = [1]*mcSize
 
-size = len(norm_Data)
+for (tag,dist) in puDist.iteritems():
+    if len(dist) != mcSize:
+        raise ValueError('Weights: '+tag+' and Sping11 distributions have different lengths')
 
-puWeights = [0]*size
-for i in range(size):
-    puWeights[i] = norm_Data[i]/norm_MC[i]
+    puWeights[tag] = [ dist[i]/mcDist[i] for i in range(mcSize) ]
+    
+print 'Available pilup weights:',', '.join(puWeights.iterkeys())
 
-# puWeights = [1]*25
-print ' - Loaded Pilup Weights\n',' '.join([ str(w) for w in puWeights])
+# # set a default for 2011
+# norm_Data = norm_certifiedUCSD_Jun1
+# norm_MC   = norm_Spring2011
+
+# # if needed for mc studies
+# puFlatWeights = [1]*25
+
+# if len(norm_Data) != len(norm_MC):
+#     raise ValueError('Weights: Data and MC have different lengths')
+
+# size = len(norm_Data)
+
+# puWeights = [0]*size
+# for i in range(size):
+#     puWeights[i] = norm_Data[i]/norm_MC[i]
+
+# # puWeights = [1]*25
+# print ' - Loaded Pilup Weights\n',' '.join([ str(w) for w in puWeights])
 

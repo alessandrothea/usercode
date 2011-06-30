@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as opts
 
-from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import *
+from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import puWeights
 from HWWAnalysis.DileptonSelector.higgsPtWeights_cfi import *
 #
 import PhysicsTools.PythonAnalysis.LumiList as LumiList
@@ -26,11 +26,11 @@ options.register ('skipEvents',
                   opts.VarParsing.varType.int,          # string, int, or float
                   'Number of events to skip')
 
-options.register ( 'dataType',
-                  'mc',
+options.register ( 'triggerFilter',
+                  None,
                   opts.VarParsing.multiplicity.singleton,
                   opts.VarParsing.varType.string,
-                  'Data type to be processed, default mc, DoubleEl, DoubleMu, SingleMu, EgMu')
+                  'Data type to be processed, default: no filtering. available: mc, doubleEl, doubleMu, singleMu, egMu')
 
 options.register ('debugLevel',
                   0, # default value
@@ -68,7 +68,16 @@ options.parseArguments()
 process = cms.Process('Step2')
 
 #-------------------------------------------------------------------------------
-# pool source
+# ______        __               _  _        
+# |  _  \      / _|             | || |       
+# | | | | ___ | |_  __ _  _   _ | || |_  ___ 
+# | | | |/ _ \|  _|/ _` || | | || || __|/ __|
+# | |/ /|  __/| | | (_| || |_| || || |_ \__ \
+# |___/  \___||_|  \__,_| \__,_||_| \__||___/
+
+pileupTag = 'certifiedLatinos.42X_Jun24'
+
+#-------------------------------------------------------------------------------
 #  _____                  _   
 # |_   _|                | |  
 #   | | _ __  _ __  _   _| |_ 
@@ -123,7 +132,7 @@ process.thePath = cms.Path()
 
 
 if options.higgsPtWeights: 
-    scaleFile = higgsPtFactorFile( options.higgsPtWeights )
+    scaleFile = higgsPtKFactorFile( options.higgsPtWeights )
     process.higgsPtWeights = cms.EDProducer('HWWKFactorProducer',
         genParticlesTag = cms.InputTag('prunedGen'),
         inputFilename = cms.untracked.string( scaleFile ),
@@ -191,7 +200,7 @@ process.hwwCleanJets = cms.EDProducer('PATJetCleaner',
 
 process.thePath *= process.hwwCleanJets
 
-
+#---------------------------------------------------------
 #  _____    _                       
 # |_   _|  (_)                      
 #   | |_ __ _  __ _  __ _  ___ _ __ 
@@ -199,72 +208,16 @@ process.thePath *= process.hwwCleanJets
 #   | | |  | | (_| | (_| |  __/ |   
 #   \_/_|  |_|\__, |\__, |\___|_|   
 #              __/ | __/ |          
-#             |___/ |___/           
+#             |___/ |___/  
 
+process.load('HWWAnalysis.DileptonSelector.hltFilter_cff')
 
-process.hltSummary = cms.EDProducer('HltSummaryProducer',
-    triggerSrc = cms.InputTag('TriggerResults','','REDIGI311X'),
+process.thePath *= process.hltSummary
 
-    singleMuDataPaths = cms.vstring(
-        '1-163261:HLT_Mu15_v*',
-        '163262-164237:HLT_Mu24_v*',
-        '165085-999999:HLT_Mu30_v*',
-        '163262-999999:HLT_IsoMu17_v*'
-    ),
-    singleElDataPaths = cms.vstring(
-        '1-164237:HLT_Ele27_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_v*',
-        '165085-999999:HLT_Ele32_CaloIdVT_CaloIsoT_TrkIdT_TrkIsoT_v*'
-    ),
-    doubleMuDataPaths = cms.vstring(
-        '1-164237:HLT_DoubleMu7_v*',
-        '165085-999999:HLT_Mu13_Mu8_v*'
-    ),
-    doubleElDataPaths = cms.vstring(
-        'HLT_Ele17_CaloIdL_CaloIsoVL_Ele8_CaloIdL_CaloIsoVL_v*',
-        #'HLT_Ele17_CaloIdT_TrkIdVL_CaloIsoVL_TrkIsoVL_Ele8_CaloIdT_TrkIdVL_CaloIsoVL_TrkIsoVL_v*'
-    ),
-    muEGDataPaths     = cms.vstring(
-        'HLT_Mu8_Ele17_CaloIdL_v*',
-        'HLT_Mu17_Ele8_CaloIdL_v*'
-    ),
-    singleMuMCPaths   = cms.vstring('*'),
-    singleElMCPaths   = cms.vstring('*'),
-    doubleMuMCPaths   = cms.vstring('*'),
-    doubleElMCPaths   = cms.vstring('*'),
-    muEGMCPaths       = cms.vstring('*'),
-                                    
-)
-
-process.hltFilter = cms.EDFilter('HltDatasetFilter',
-    hltSummarySrc = cms.InputTag('hltSummary'),
-    mode = cms.string('mc'),
-    mc       = cms.PSet(
-        accept = cms.vstring('singleMuMCPaths','doubleMuMCPaths','doubleElMCPaths','muEGMCPaths'),
-        reject = cms.vstring(),
-    ),
-    data       = cms.PSet(
-        accept = cms.vstring('singleMuDataPaths','doubleMuDataPaths','doubleElDataPaths','muEGDataPaths'),
-        reject = cms.vstring(),
-    ),
-    singleMu = cms.PSet(
-        accept = cms.vstring('singleMuDataPaths'),
-        reject = cms.vstring('doubleMuDataPaths'),
-    ),
-    doubleMu = cms.PSet(
-        accept = cms.vstring('doubleMuDataPaths'),
-        reject = cms.vstring(),
-    ),
-    doubleEl = cms.PSet(
-        accept = cms.vstring('doubleElDataPaths'),
-        reject = cms.vstring(),
-    ),
-    muEG = cms.PSet(
-        accept = cms.vstring('muEGDataPaths'),
-        reject = cms.vstring('singleMuDataPaths'),
-    )
-)
-
-process.thePath *= process.hltSummary*process.hltFilter
+# if defined in the command line apply the filtering
+if options.triggerFilter:
+    process.hltFilter.mode = cms.string(options.triggerFilter)
+    processed.thePath *= process.hltFilter
 
 
 #---------------------------------------------------------
@@ -351,10 +304,19 @@ process.pairSequence = cms.Sequence(
 process.thePath *= process.pairSequence
 
 #--------------------------------------------------------------------
+#  _____            ______              _                     
+# |_   _|           | ___ \            | |                    
+#   | |_ __ ___  ___| |_/ / __ ___   __| |_   _  ___ ___ _ __ 
+#   | | '__/ _ \/ _ \  __/ '__/ _ \ / _` | | | |/ __/ _ \ '__|
+#   | | | |  __/  __/ |  | | | (_) | (_| | |_| | (_|  __/ |   
+#   \_/_|  \___|\___\_|  |_|  \___/ \__,_|\__,_|\___\___|_|   
+#                                                             
+
 process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
 
     treeName      = cms.string('hwwStep2'),
     puInfo        = cms.InputTag('addPileupInfo'),
+    hltSummary    = cms.InputTag('hltSummary'),
 
     electronSrc   = cms.InputTag('hwwEleIPMerge'),
     muonSrc       = cms.InputTag('hwwMuonsMergeIP'),
@@ -369,7 +331,7 @@ process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
     sptSrc        = cms.InputTag('vertexMapProd','sumPt'),
     spt2Src       = cms.InputTag('vertexMapProd','sumPt2'),
 
-    pileupWeights = cms.vdouble(puWeights[:]),
+    pileupWeights = cms.vdouble(puWeights['certifiedLatinos_May11']),
     jetCut        = cms.string('pt > 15.'),
     jetBTaggers   = cms.vstring('combinedSecondaryVertexBJetTags',
                                'combinedSecondaryVertexMVABJetTags',
@@ -384,7 +346,7 @@ process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
 )
 if options.flatPuWeights:
     print ' - Forcing all the PU weights to 1.'
-    process.treeproducer.pileupWeights = cms.vdouble(puFlatWeights[:])
+    process.treeproducer.pileupWeights = cms.vdouble(puWeights['Flat'])
 
 if options.higgsPtWeights:
     print ' - Adding the pt weights for mass '+options.higgsPtWeights
