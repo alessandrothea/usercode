@@ -120,7 +120,8 @@ public:
 	std::vector<HWWMuon> 	 Mus;
 	std::vector<HWWPFJet>	 PFJets;
 
-    std::vector<HWWSlimBTags> JetBtags;
+    std::vector<HWWSlimBTags>   JetBtags;
+    std::vector<bool>           HltPaths;
 
     HWWBTaggers BTaggers;
 };

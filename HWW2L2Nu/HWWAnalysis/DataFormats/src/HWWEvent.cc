@@ -50,6 +50,7 @@ void HWWEvent::Clear( Option_t* option ){
 	Mus.clear();
 	PFJets.clear();
     JetBtags.clear();
+    HltPaths.clear();
 
     BTaggers.CombSecVrtxMVA.clear();
     BTaggers.SimpleSecVrtxHighEff.clear();
