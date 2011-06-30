@@ -316,7 +316,7 @@ process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
 
     treeName      = cms.string('hwwStep2'),
     puInfo        = cms.InputTag('addPileupInfo'),
-    hltSummary    = cms.InputTag('hltSummary'),
+    hltSummarySrc = cms.InputTag('hltSummary'),
 
     electronSrc   = cms.InputTag('hwwEleIPMerge'),
     muonSrc       = cms.InputTag('hwwMuonsMergeIP'),
@@ -341,6 +341,7 @@ process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
                                'jetProbabilityBJetTags',
                                'trackCountingHighEffBJetTags',
                                'trackCountingHighPurBJetTags'),
+    hltPaths      = cms.vstring('singleMuDataPaths','doubleMuDataPaths','doubleElDataPaths','muEGDataPaths'),
 
     
 )

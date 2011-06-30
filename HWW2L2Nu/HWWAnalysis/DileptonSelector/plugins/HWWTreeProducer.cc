@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Fri Jun 24 12:10:37 CEST 2011
-// $Id$
+// $Id: HWWTreeProducer.cc,v 1.1 2011/06/29 22:16:06 thea Exp $
 //
 //
 
@@ -42,6 +42,7 @@
 #include "CommonTools/Utils/interface/StringCutObjectSelector.h"
 
 #include <SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h>
+#include "PhysicsTools/SelectorUtils/interface/strbitset.h"
 
 #include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
 #include <TTree.h>
@@ -74,6 +75,7 @@ class HWWTreeProducer : public edm::EDAnalyzer {
 
         // ----------member data ---------------------------
 
+        edm::InputTag hltSummarySrc_;
         edm::InputTag puInfoSrc_;
 
         edm::InputTag electronSrc_;
@@ -95,6 +97,7 @@ class HWWTreeProducer : public edm::EDAnalyzer {
         std::vector<double> puWeights_;
 
         std::vector<std::string> bTaggers_;
+        std::vector<std::string> hltPaths_;
         double weight_;
 
         std::string treeName_;
@@ -125,6 +128,7 @@ HWWTreeProducer::HWWTreeProducer(const edm::ParameterSet& iConfig)
     
     treeName_       = iConfig.getParameter<std::string>("treeName");
 
+    hltSummarySrc_  = iConfig.getParameter<edm::InputTag>("hltSummarySrc");
     puInfoSrc_      = iConfig.getParameter<edm::InputTag>("puInfo");
 
     electronSrc_	= iConfig.getParameter<edm::InputTag>("electronSrc");
@@ -142,7 +146,9 @@ HWWTreeProducer::HWWTreeProducer(const edm::ParameterSet& iConfig)
     spt2Src_	    = iConfig.getParameter<edm::InputTag>("spt2Src");
 
     puWeights_      = iConfig.getParameter<std::vector<double> >("pileupWeights");
+
     bTaggers_       = iConfig.getParameter<std::vector<std::string> >("jetBTaggers");
+    hltPaths_       = iConfig.getParameter<std::vector<std::string> >("hltPaths");
     
 
     if( iConfig.existsAs<edm::InputTag>("ptWeightSrc") ) {
@@ -174,6 +180,9 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
     Handle<std::vector<reco::Vertex> > vertexes;
     iEvent.getByLabel(vertexSrc_, vertexes);
+
+    Handle<pat::strbitset> hltBits;
+    iEvent.getByLabel(hltSummarySrc_,hltBits);
 
     // leptons: maybe here I can use directly a pat::ElectronCollection and a pat::MuonCollection
     edm::Handle<edm::View<reco::RecoCandidate> > electrons;
@@ -207,14 +216,11 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     // pileup
     int nPileUp = -1;
     
-    //  _    _      _       _     _       
-    // | |  | |    (_)     | |   | |      
-    // | |  | | ___ _  __ _| |__ | |_ ___ 
-    // | |/\| |/ _ \ |/ _` | '_ \| __/ __|
-    // \  /\  /  __/ | (_| | | | | |_\__ \
-    //  \/  \/ \___|_|\__, |_| |_|\__|___/
-    //                 __/ |              
-    //                |___/         
+    //  __      __    _      _   _      
+    //  \ \    / /___(_)__ _| |_| |_ ___
+    //   \ \/\/ // -_) / _` | ' \  _(_-<
+    //    \_/\_/ \___|_\__, |_||_\__/__/
+    //                 |___/   
          
     if ( !iEvent.isRealData() ) {
         // pileup weights
@@ -280,6 +286,11 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
 	event_->NEles            = electrons->size();
 	event_->NMus             = muons->size();
+
+
+    event_->HltPaths.resize( hltPaths_.size() );
+    for( uint k(0); k<hltPaths_.size(); ++k) 
+        event_->HltPaths[k] = hltBits->test(hltPaths_[k]);
 
     // fill electrons
 	event_->Els.resize(event_->NEles);
@@ -364,8 +375,7 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 	}
     event_->PFNJets = event_->PFJets.size();
 
-
-    math::XYZTLorentzVector sumP;
+    // collction of reduced pd candidates
     reco::CandidateCollection::const_iterator iCand, bC = reducedPfCandidates->begin(), eC = reducedPfCandidates->end();
     for( iCand = bC; iCand != eC; ++iCand )
         event_->ReducedPFMomenta.push_back(iCand->p4());
@@ -386,18 +396,27 @@ HWWTreeProducer::book()
 
     // store the btagger labels as userinfo
     std::vector<std::string>::const_iterator iBtag, bBt = bTaggers_.begin(), eBt = bTaggers_.end();
-    TObjArray* array = new TObjArray;
-    array->SetName("BtagLabels");
+    TObjArray* bLabels = new TObjArray;
+    bLabels->SetName("BtagLabels");
     for( iBtag = bBt; iBtag != eBt; ++iBtag) {
-        array->Add(new TObjString(iBtag->c_str()));
+        bLabels->Add(new TObjString(iBtag->c_str()));
     }
+    tree_->GetUserInfo()->Add(bLabels);
 
-    tree_->GetUserInfo()->Add(array);
+    // store the hlt path summary
+    vector<std::string>::const_iterator iPath, bP = hltPaths_.begin(), eP = hltPaths_.end();
+    TObjArray* hltLabels = new TObjArray;
+    hltLabels->SetName("hltPathLabels");
+    for( iPath = bP; iPath != eP; ++iPath) {
+        hltLabels->Add(new TObjString(iPath->c_str()));
+    }
+    tree_->GetUserInfo()->Add(hltLabels);
+
 
     std::map<int,std::string> scalarLabels;
     scalarLabels[0] = "Selected Entries";
     scalarLabels[1] = "Selected Weighted Entries";
-    scalars_ = hww::makeLabelHistogram(here, "entries","HWW selection entries",scalarLabels);
+    scalars_ = hww::makeLabelHistogram(here, "scalars","HWW preselection scalars",scalarLabels);
     
 //     scalars_ = fs->make<TH1D>("scalars","scalars",2,0,2);
 //     scalars_->GetXaxis()->SetBinLabel(1,"selected");
