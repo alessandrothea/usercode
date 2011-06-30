@@ -26,11 +26,11 @@ options.register ('skipEvents',
                   opts.VarParsing.varType.int,          # string, int, or float
                   'Number of events to skip')
 
-options.register ( 'triggerFilter',
+options.register ( 'dataPath',
                   None,
                   opts.VarParsing.multiplicity.singleton,
                   opts.VarParsing.varType.string,
-                  'Data type to be processed, default: no filtering. available: mc, doubleEl, doubleMu, singleMu, egMu')
+                  'Data type to be processed, default: no filtering. available: mc, data, doubleEl, doubleMu, singleMu, egMu')
 
 options.register ('debugLevel',
                   0, # default value
@@ -215,8 +215,8 @@ process.load('HWWAnalysis.DileptonSelector.hltFilter_cff')
 process.thePath *= process.hltSummary
 
 # if defined in the command line apply the filtering
-if options.triggerFilter:
-    process.hltFilter.mode = cms.string(options.triggerFilter)
+if options.dataPath:
+    process.hltFilter.mode = cms.string(options.dataPath)
     process.thePath *= process.hltFilter
 
 

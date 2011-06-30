@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Jun 23 15:18:30 CEST 2011
-// $Id$
+// $Id: HltSummaryProducer.cc,v 1.1 2011/06/29 22:16:06 thea Exp $
 //
 //
 
@@ -52,7 +52,8 @@ class HltSummaryProducer : public edm::EDProducer {
       virtual void endLuminosityBlock(edm::LuminosityBlock&, edm::EventSetup const&);
 
       // ----------member data ---------------------------
-      edm::InputTag triggerSrc_;
+      edm::InputTag mcTrgSrc_;
+      edm::InputTag dataTrgSrc_;
       std::vector<std::pair<std::string, HltBitChecker> > checkers_;
 
 };
@@ -78,7 +79,8 @@ HltSummaryProducer::HltSummaryProducer(const edm::ParameterSet& iConfig)
     produces<pat::strbitset>();
 
     //now do what ever other initialization is needed
-    triggerSrc_ = iConfig.getParameter<edm::InputTag>("triggerSrc");
+    dataTrgSrc_ = iConfig.getParameter<edm::InputTag>("dataTrgSrc");
+    mcTrgSrc_   = iConfig.getParameter<edm::InputTag>("mcTrgSrc");
 
     std::vector< std::string > pathNames = iConfig.getParameterNamesForType<std::vector<std::string> >();
     std::vector<std::string>::iterator iName, bp = pathNames.begin(), ep = pathNames.end();
@@ -115,7 +117,10 @@ HltSummaryProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
     std::auto_ptr<pat::strbitset> pBits(new pat::strbitset);
 
     Handle<edm::TriggerResults> results; 
-    iEvent.getByLabel(triggerSrc_,results);
+    if ( iEvent.isRealData() ) 
+        iEvent.getByLabel(dataTrgSrc_, results);
+    else 
+        iEvent.getByLabel(mcTrgSrc_, results); 
 
     std::vector<std::pair<std::string, HltBitChecker> >::const_iterator iChk, bc = checkers_.begin(), ec = checkers_.end();
     for ( iChk = bc; iChk != ec; ++iChk ){
