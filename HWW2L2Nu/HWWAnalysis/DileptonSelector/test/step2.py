@@ -340,8 +340,18 @@ process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
                                'jetBProbabilityBJetTags',
                                'jetProbabilityBJetTags',
                                'trackCountingHighEffBJetTags',
-                               'trackCountingHighPurBJetTags'),
-    hltPaths      = cms.vstring('singleMuDataPaths','doubleMuDataPaths','doubleElDataPaths','muEGDataPaths'),
+                               'trackCountingHighPurBJetTags'
+                               ),
+    hltPaths      = cms.vstring('singleMuDataPaths',
+                                'doubleMuDataPaths',
+                                'doubleElDataPaths',
+                                'muEGDataPaths',
+                                'singleMuMCPaths',
+                                'singleElMCPaths',
+                                'doubleMuMCPaths',
+                                'doubleElMCPaths',
+                                'muEGMCPaths',
+                               ),
 
     
 )
