@@ -19,6 +19,7 @@
   <class name="edm::Ptr<reco::RecoCandidate>"/>
   <class name="std::vector<edm::Ptr<reco::RecoCandidate> >"/>
 
+  <class name="edm::Wrapper<std::map<std::string, int> >"/>
 <!--
   <class name="hww::EventView"/>
   <class name="std::vector<hww::EventView>"/>

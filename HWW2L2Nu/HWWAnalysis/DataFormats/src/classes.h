@@ -5,6 +5,7 @@
 #include "HWWAnalysis/DataFormats/interface/HWWNtuple.h"
 #include "HWWAnalysis/DataFormats/interface/DileptonView.h"
 #include <vector>
+#include <map>
 #include <TLorentzVector.h>
 
 namespace {
@@ -33,7 +34,10 @@ namespace {
        
        edm::Ptr<reco::RecoCandidate>  dummyRecoPtr;
        std::vector<edm::Ptr<reco::RecoCandidate> > dummyRecoPtrVec;
-      //add 'dummy' Wrapper variable for each class type you put into the Event
+
+   
+      edm::Wrapper<std::map<std::string,int> > dummyStrIntMap;
+//add 'dummy' Wrapper variable for each class type you put into the Event
 //       edm::Wrapper<YOUR_CLASS_GOES_HERE> dummy1;
 //       std::vector<YOUR_CLASS_GOES_HERE> dummy2;
 //       edm::Wrapper<std::vector<YOUR_CLASS_GOES_HERE> > dummy3;

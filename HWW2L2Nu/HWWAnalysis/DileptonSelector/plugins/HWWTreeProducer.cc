@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Fri Jun 24 12:10:37 CEST 2011
-// $Id: HWWTreeProducer.cc,v 1.1 2011/06/29 22:16:06 thea Exp $
+// $Id: HWWTreeProducer.cc,v 1.2 2011/06/30 14:25:57 thea Exp $
 //
 //
 
@@ -75,6 +75,7 @@ class HWWTreeProducer : public edm::EDAnalyzer {
 
         // ----------member data ---------------------------
 
+        edm::InputTag weightSrc_;
         edm::InputTag hltSummarySrc_;
         edm::InputTag puInfoSrc_;
 
@@ -98,7 +99,6 @@ class HWWTreeProducer : public edm::EDAnalyzer {
 
         std::vector<std::string> bTaggers_;
         std::vector<std::string> hltPaths_;
-        double weight_;
 
         std::string treeName_;
         TTree*      tree_;
@@ -122,14 +122,15 @@ using namespace std;
 // constructors and destructor
 //
 HWWTreeProducer::HWWTreeProducer(const edm::ParameterSet& iConfig)
-: weight_(1.), tree_(0x0), event_(0x0), jetSelector_(iConfig.getParameter<std::string>("jetCut"))
+: tree_(0x0), event_(0x0), jetSelector_(iConfig.getParameter<std::string>("jetCut"))
 {
     //now do what ever initialization is needed
     
     treeName_       = iConfig.getParameter<std::string>("treeName");
 
+    weightSrc_      = iConfig.getParameter<edm::InputTag>("weightSrc");
     hltSummarySrc_  = iConfig.getParameter<edm::InputTag>("hltSummarySrc");
-    puInfoSrc_      = iConfig.getParameter<edm::InputTag>("puInfo");
+    puInfoSrc_      = iConfig.getParameter<edm::InputTag>("puInfoSrc");
 
     electronSrc_	= iConfig.getParameter<edm::InputTag>("electronSrc");
     muonSrc_	    = iConfig.getParameter<edm::InputTag>("muonSrc");
@@ -145,15 +146,15 @@ HWWTreeProducer::HWWTreeProducer(const edm::ParameterSet& iConfig)
     sptSrc_	        = iConfig.getParameter<edm::InputTag>("sptSrc");
     spt2Src_	    = iConfig.getParameter<edm::InputTag>("spt2Src");
 
-    puWeights_      = iConfig.getParameter<std::vector<double> >("pileupWeights");
+//     puWeights_      = iConfig.getParameter<std::vector<double> >("pileupWeights");
 
     bTaggers_       = iConfig.getParameter<std::vector<std::string> >("jetBTaggers");
     hltPaths_       = iConfig.getParameter<std::vector<std::string> >("hltPaths");
     
 
-    if( iConfig.existsAs<edm::InputTag>("ptWeightSrc") ) {
-        ptWeightSrc_ = iConfig.getParameter<edm::InputTag> ("ptWeightSrc");
-    } 
+//     if( iConfig.existsAs<edm::InputTag>("ptWeightSrc") ) {
+//         ptWeightSrc_ = iConfig.getParameter<edm::InputTag> ("ptWeightSrc");
+//     } 
 }
 
 
@@ -170,6 +171,8 @@ HWWTreeProducer::~HWWTreeProducer()
 // member functions
 //
 
+using namespace std;
+
 // ------------ method called for each event  ------------
 void
 HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
@@ -177,6 +180,9 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     using namespace edm;
 
     clear();
+
+    Handle<std::vector<double> > weights;
+    iEvent.getByLabel(weightSrc_, weights);
 
     Handle<std::vector<reco::Vertex> > vertexes;
     iEvent.getByLabel(vertexSrc_, vertexes);
@@ -213,15 +219,22 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     iEvent.getByLabel(chCandSrc_,reducedPfCandidates);
     
 
-    // pileup
-    int nPileUp = -1;
-    
     //  __      __    _      _   _      
     //  \ \    / /___(_)__ _| |_| |_ ___
     //   \ \/\/ // -_) / _` | ' \  _(_-<
     //    \_/\_/ \___|_\__, |_||_\__/__/
     //                 |___/   
-         
+   
+    double weight = 1.;
+    vector<double>::const_iterator iW;
+    for( iW = weights->begin(); iW != weights->end(); ++iW ) {
+        weight *= *iW;    
+    } 
+
+
+    // pileup info, get them only if the event is MC
+    int nPileUp = -1;
+    
     if ( !iEvent.isRealData() ) {
         // pileup weights
         Handle<std::vector<PileupSummaryInfo> > puInfo;
@@ -242,18 +255,18 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
         if ( nPileUp < 0 )
             THROW_RUNTIME(" nPU = " << nPileUp << " what's going on?!?");
-        if ( nPileUp > (int)puWeights_.size() )
-            THROW_RUNTIME("Simulated Pu [" << nPileUp <<"] larger than available puFactors");
+//         if ( nPileUp > (int)puWeights_.size() )
+//             THROW_RUNTIME("Simulated Pu [" << nPileUp <<"] larger than available puFactors");
 
-        weight_ *= puWeights_[ nPileUp ];
+//         weight *= puWeights_[ nPileUp ];
 
-        // get the ptWeight if required
-        if ( !(ptWeightSrc_ == edm::InputTag()) ) {
-            edm::Handle<double> ptWeightHandle;
-            iEvent.getByLabel(ptWeightSrc_, ptWeightHandle);
+//         // get the ptWeight if required
+//         if ( !(ptWeightSrc_ == edm::InputTag()) ) {
+//             edm::Handle<double> ptWeightHandle;
+//             iEvent.getByLabel(ptWeightSrc_, ptWeightHandle);
 
-            weight_ *= *ptWeightHandle;
-        }
+//             weight *= *ptWeightHandle;
+//         }
     }
 
     // to do
@@ -266,7 +279,7 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     event_->Run          = iEvent.id().run();
 	event_->Event        = iEvent.id().event();
 	event_->LumiSection  = iEvent.id().luminosityBlock();
-	event_->Weight       = weight_;
+	event_->Weight       = weight;
 
 	event_->PrimVtxPosition  = (*vertexes)[0].position();
 	event_->PrimVtxx     = (*vertexes)[0].position().x();
@@ -382,7 +395,7 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
     tree_->Fill(); 
     scalars_->Fill(0);
-    scalars_->Fill(1,weight_);
+    scalars_->Fill(1,weight);
 
 }
 
@@ -427,8 +440,6 @@ HWWTreeProducer::book()
 void
 HWWTreeProducer::clear() 
 {
-   weight_ = 1.;
-
    if ( event_ ) event_->Clear();
 }
 

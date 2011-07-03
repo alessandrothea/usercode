@@ -23,12 +23,12 @@ f = ROOT.TFile(args[1])
 fStates = ['mm','me','em','ee','ll']
 
 d = {}
-prefix='fullSelection/'
+prefix='yieldAnalyzer/'
 # prefix='diLepSel/'
 for s in fStates:
     d[s] = odict.OrderedDict()
 #     print '\n-',s+'Counters'
-    name = prefix+s+'Counters'
+    name = prefix+s+'Yield'
     counters = f.Get(name)
     if not counters.__nonzero__():
         raise NameError('histogram '+name+' not found in '+args[1])

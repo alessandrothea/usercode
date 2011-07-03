@@ -143,6 +143,31 @@ if options.higgsPtWeights:
     process.selectionPath += process.higgsPtWeights
 
 
+#  _    _      _       _     _       
+# | |  | |    (_)     | |   | |      
+# | |  | | ___ _  __ _| |__ | |_ ___ 
+# | |/\| |/ _ \ |/ _` | '_ \| __/ __|
+# \  /\  /  __/ | (_| | | | | |_\__ \
+#  \/  \/ \___|_|\__, |_| |_|\__|___/
+#                 __/ |              
+#                |___/               
+
+
+process.eventWeights = cms.EDProducer('WeightsCollector',
+    puInfoSrc = cms.InputTag('addPileupInfo'),
+    pileupWeights = cms.vdouble(puWeights['certifiedLatinos_May11']),
+)
+
+if options.flatPuWeights:
+    print ' - Weights: Forcing all the PU eventWeights to 1.'
+    process.eventWeights.pileupWeights = cms.vdouble(puWeights['Flat'])
+
+if options.higgsPtWeights:
+    print ' - Weights: Adding the pt eventWeights for mass '+options.higgsPtWeights
+    process.eventWeights.ptWeightSrc = cms.InputTag('higgsPtWeights')
+
+process.selectionPath += process.eventWeights
+
 #  _                _              _____      _           _   _             
 # | |              | |            /  ___|    | |         | | (_)            
 # | |     ___ _ __ | |_ ___  _ __ \ `--.  ___| | ___  ___| |_ _  ___  _ __  
@@ -213,12 +238,6 @@ process.selectionPath *= process.hwwCleanJets
 process.load('HWWAnalysis.DileptonSelector.hltFilter_cff')
 
 process.selectionPath *= process.hltSummary
-
-# if defined in the command line apply the filtering
-if options.dataPath:
-    process.hltFilter.mode = cms.string(options.dataPath)
-    process.selectionPath *= process.hltFilter
-
 
 #---------------------------------------------------------
 # ______ _ _            _                  
@@ -305,6 +324,20 @@ process.pairSequence = cms.Sequence(
 
 process.selectionPath *= process.pairSequence
 
+# ______     _   _      ______ _ _ _            
+# | ___ \   | | | |     |  ___(_) | |           
+# | |_/ /_ _| |_| |__   | |_   _| | |_ ___ _ __ 
+# |  __/ _` | __| '_ \  |  _| | | | __/ _ \ '__|
+# | | | (_| | |_| | | | | |   | | | ||  __/ |   
+# \_|  \__,_|\__|_| |_| \_|   |_|_|\__\___|_|   
+                                              
+# if defined in the command line apply the filterin
+if options.dataPath:
+    process.hltFilter.mode = cms.string(options.dataPath)
+    process.selectionPath *= process.hltFilter
+
+
+
 #--------------------------------------------------------------------
 #  _____            ______              _                     
 # |_   _|           | ___ \            | |                    
@@ -317,7 +350,8 @@ process.selectionPath *= process.pairSequence
 process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
 
     treeName      = cms.string('hwwStep2'),
-    puInfo        = cms.InputTag('addPileupInfo'),
+    weightSrc     = cms.InputTag('eventWeights'),
+    puInfoSrc     = cms.InputTag('addPileupInfo'),
     hltSummarySrc = cms.InputTag('hltSummary'),
 
     electronSrc   = cms.InputTag('hwwEleIPMerge'),
@@ -333,7 +367,7 @@ process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
     sptSrc        = cms.InputTag('vertexMapProd','sumPt'),
     spt2Src       = cms.InputTag('vertexMapProd','sumPt2'),
 
-    pileupWeights = cms.vdouble(puWeights['certifiedLatinos_May11']),
+#     pileupWeights = cms.vdouble(puWeights['certifiedLatinos_May11']),
     jetCut        = cms.string('pt > 15.'),
     jetBTaggers   = cms.vstring('combinedSecondaryVertexBJetTags',
                                'combinedSecondaryVertexMVABJetTags',
@@ -357,13 +391,13 @@ process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
 
     
 )
-if options.flatPuWeights:
-    print ' - Forcing all the PU weights to 1.'
-    process.treeproducer.pileupWeights = cms.vdouble(puWeights['Flat'])
+# if options.flatPuWeights:
+#     print ' - Forcing all the PU weights to 1.'
+#     process.treeproducer.pileupWeights = cms.vdouble(puWeights['Flat'])
 
-if options.higgsPtWeights:
-    print ' - Adding the pt weights for mass '+options.higgsPtWeights
-    process.treeproducer.ptWeightSrc = cms.InputTag('higgsPtWeights')
+# if options.higgsPtWeights:
+#     print ' - Adding the pt weights for mass '+options.higgsPtWeights
+#     process.treeproducer.ptWeightSrc = cms.InputTag('higgsPtWeights')
 
 
 #--------------------------------------------------------------------
@@ -387,6 +421,7 @@ process.selectionPath *= cms.Sequence(
 #   \_/ |_|\___|_|\__,_|___/ |___/\___/  |_| \__,_|_|   
                                                       
 process.yieldAnalyzer = cms.EDAnalyzer('LeptonYieldAnalyzer',
+    weightSrc = cms.InputTag('eventWeights'),
     categories = cms.vstring('ll','ee','em','me','mm'),
     bins = cms.VPSet(
         cms.PSet( name = cms.string('fiducial'),    src = cms.InputTag('monPairMatch') ),

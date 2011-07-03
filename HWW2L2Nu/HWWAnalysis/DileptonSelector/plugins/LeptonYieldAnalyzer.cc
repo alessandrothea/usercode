@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Fri Jun 24 22:23:11 CEST 2011
-// $Id: LeptonYieldAnalyzer.cc,v 1.1 2011/06/29 22:16:06 thea Exp $
+// $Id: LeptonYieldAnalyzer.cc,v 1.2 2011/07/03 15:26:17 thea Exp $
 //
 //
 
@@ -67,6 +67,7 @@ class LeptonYieldAnalyzer : public edm::EDAnalyzer {
           TH1D*       yield;
       };
 
+      edm::InputTag             weightSrc_;
       std::vector<Category>     categories_;
       std::vector<YieldBin>     bins_;
 };
@@ -88,6 +89,7 @@ LeptonYieldAnalyzer::LeptonYieldAnalyzer(const edm::ParameterSet& iConfig)
 {
     //now do what ever initialization is needed
 
+    weightSrc_      = iConfig.getParameter<edm::InputTag>("weightSrc");
     vector<string> cats = iConfig.getParameter< vector< string > >("categories");
     for( uint i(0); i < cats.size(); ++i)
         categories_.push_back( Category(cats[i] ) );
@@ -124,10 +126,25 @@ LeptonYieldAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 {
     using namespace edm;
 
+    //  __      __    _      _   _      
+    //  \ \    / /___(_)__ _| |_| |_ ___
+    //   \ \/\/ // -_) / _` | ' \  _(_-<
+    //    \_/\_/ \___|_\__, |_||_\__/__/
+    //                 |___/   
+   
+    Handle<std::vector<double> > weights;
+    iEvent.getByLabel(weightSrc_, weights);
+    
+    double weight = 1.;
+    vector<double>::const_iterator iW;
+    for( iW = weights->begin(); iW != weights->end(); ++iW ) {
+        weight *= *iW;    
+    } 
+
     vector<Category>::const_iterator iCat, bC = categories_.begin(), eC = categories_.end();
     // fill the 0 bin
     for( iCat = bC; iCat != eC; ++iCat )
-        iCat->yield->Fill(0);
+        iCat->yield->Fill(0., weight);
 
     std::vector<YieldBin>::const_iterator iBin, bB = bins_.begin(), eB = bins_.end();
     for( iBin = bB; iBin != eB; ++iBin ) {
@@ -145,7 +162,7 @@ LeptonYieldAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
         for( iCat = bC; iCat != eC; ++iCat ) {
             if ( monSummary->count( iCat->name ) != 0 ) {
                 // what about the weights?
-                iCat->yield->Fill( iBin->index );
+                iCat->yield->Fill( iBin->index, weight );
             }
         }
     }
