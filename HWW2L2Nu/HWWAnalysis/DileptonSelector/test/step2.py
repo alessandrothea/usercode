@@ -30,7 +30,7 @@ options.register ( 'dataPath',
                   None,
                   opts.VarParsing.multiplicity.singleton,
                   opts.VarParsing.varType.string,
-                  'Data type to be processed, default: no filtering. available: mc, data, doubleEl, doubleMu, singleMu, egMu')
+                  'Data type to be processed, default: no filtering. available: mc, data, doubleEl, doubleMu, singleMu, muEG')
 
 options.register ('debugLevel',
                   0, # default value
@@ -120,7 +120,7 @@ process.maxEvents = cms.untracked.PSet(
             )
 
 
-process.thePath = cms.Path()
+process.selectionPath = cms.Path()
 
 #-------------------------------------------------------------------------------
 #  _   _                    _   ________         _                 
@@ -140,7 +140,7 @@ if options.higgsPtWeights:
         Debug =cms.untracked.bool(False)
     )
     print 'Rescaling pt for higgs mass '+options.higgsPtWeights+' using '+ scaleFile
-    process.thePath += process.higgsPtWeights
+    process.selectionPath += process.higgsPtWeights
 
 
 #  _                _              _____      _           _   _             
@@ -156,7 +156,7 @@ process.load('HWWAnalysis.DileptonSelector.electronSelection_cff')
 process.load('HWWAnalysis.DileptonSelector.muonSelection_cff')
 process.load('HWWAnalysis.DileptonSelector.jetSelection_cff')
 
-process.thePath += (process.hwwElectronSequence
+process.selectionPath += (process.hwwElectronSequence
                     + process.hwwMuonSequence
                     + process.hwwJetSequence)
 
@@ -198,7 +198,7 @@ process.hwwCleanJets = cms.EDProducer('PATJetCleaner',
 )
 
 
-process.thePath *= process.hwwCleanJets
+process.selectionPath *= process.hwwCleanJets
 
 #---------------------------------------------------------
 #  _____    _                       
@@ -212,12 +212,12 @@ process.thePath *= process.hwwCleanJets
 
 process.load('HWWAnalysis.DileptonSelector.hltFilter_cff')
 
-process.thePath *= process.hltSummary
+process.selectionPath *= process.hltSummary
 
 # if defined in the command line apply the filtering
 if options.dataPath:
     process.hltFilter.mode = cms.string(options.dataPath)
-    process.thePath *= process.hltFilter
+    process.selectionPath *= process.hltFilter
 
 
 #---------------------------------------------------------
@@ -265,8 +265,8 @@ process.oppPairFilterCONV = process.oppPairMatchFilter.clone( src = cms.InputTag
 process.oppPairFilterIP   = process.oppPairMatchFilter.clone( src = cms.InputTag('oppPairsIP') )
 
 #--------------------------------------------------------------------
-
-process.yieldAnalyzer = cms.EDAnalyzer('LeptonYieldAnalyzer',
+process.pairMonitor = cms.EDProducer('DileptonMonitor',
+    src     = cms.InputTag(''),
     categories = cms.PSet(
         ll = cms.string(''),
         ee = cms.string('isElEl()'),
@@ -274,16 +274,13 @@ process.yieldAnalyzer = cms.EDAnalyzer('LeptonYieldAnalyzer',
         me = cms.string('isMuEl()'),
         mm = cms.string('isMuMu()'),
     ),
-    cuts = cms.VPSet(
-        cms.PSet( name = cms.string('fiducial'),    pairs = cms.InputTag('oppPairsMatch') ),
-        cms.PSet( name = cms.string('id'),          pairs = cms.InputTag('oppPairsID') ),
-        cms.PSet( name = cms.string('iso'),         pairs = cms.InputTag('oppPairsISO') ),
-        cms.PSet( name = cms.string('conv'),        pairs = cms.InputTag('oppPairsCONV') ),
-        cms.PSet( name = cms.string('ip'),          pairs = cms.InputTag('oppPairsIP') ),
-    )
 )
 
-
+process.monPairMatch = process.pairMonitor.clone( src = cms.InputTag('oppPairsMatch' ) )
+process.monPairID    = process.pairMonitor.clone( src = cms.InputTag('oppPairsID' ) )
+process.monPairISO   = process.pairMonitor.clone( src = cms.InputTag('oppPairsISO' ) )
+process.monPairCONV  = process.pairMonitor.clone( src = cms.InputTag('oppPairsCONV' ) )
+process.monPairIP    = process.pairMonitor.clone( src = cms.InputTag('oppPairsIP' ) )
 
 #--------------------------------------------------------------------
 
@@ -293,15 +290,20 @@ process.pairSequence = cms.Sequence(
     + process.oppPairsISO
     + process.oppPairsCONV
     + process.oppPairsIP)
-    * process.yieldAnalyzer
+
     * process.oppPairMatchFilter
+    * process.monPairMatch
     * process.oppPairFilterID
+    * process.monPairID
     * process.oppPairFilterISO
+    * process.monPairISO
     * process.oppPairFilterCONV
+    * process.monPairCONV
     * process.oppPairFilterIP
+    * process.monPairIP
 )
 
-process.thePath *= process.pairSequence
+process.selectionPath *= process.pairSequence
 
 #--------------------------------------------------------------------
 #  _____            ______              _                     
@@ -372,13 +374,32 @@ process.testStuff = cms.EDAnalyzer('TestStuffAnalyzer',
     cleanJetSrc = cms.InputTag('hwwCleanJets'),
 )
 
-process.thePath *= cms.Sequence(
+process.selectionPath *= cms.Sequence(
     process.treeproducer
-#     + process.testStuff
 )
 
+#--------------------------------------------------------------------
+# __   ___      _     _                    __           
+# \ \ / (_)    | |   | |                  / _|          
+#  \ V / _  ___| | __| |___   ___  ___   | |_ __ _ _ __ 
+#   \ / | |/ _ \ |/ _` / __| / __|/ _ \  |  _/ _` | '__|
+#   | | | |  __/ | (_| \__ \ \__ \ (_) | | || (_| | |   
+#   \_/ |_|\___|_|\__,_|___/ |___/\___/  |_| \__,_|_|   
+                                                      
+process.yieldAnalyzer = cms.EDAnalyzer('LeptonYieldAnalyzer',
+    categories = cms.vstring('ll','ee','em','me','mm'),
+    bins = cms.VPSet(
+        cms.PSet( name = cms.string('fiducial'),    src = cms.InputTag('monPairMatch') ),
+        cms.PSet( name = cms.string('id'),          src = cms.InputTag('monPairID') ),
+        cms.PSet( name = cms.string('iso'),         src = cms.InputTag('monPairISO') ),
+        cms.PSet( name = cms.string('conv'),        src = cms.InputTag('monPairCONV') ),
+        cms.PSet( name = cms.string('ip'),          src = cms.InputTag('monPairIP') ),
+    )
+)
 
-process.schedule = cms.Schedule( process.thePath );
+process.yieldSummary = cms.Path(process.yieldAnalyzer)
+
+process.schedule = cms.Schedule( process.selectionPath, process.yieldSummary );
 
 # apply json mask if defined
 #     process.DileptonSelector.ptWeightSrc = cms.InputTag('higgsPt')
