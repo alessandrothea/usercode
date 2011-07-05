@@ -104,7 +104,7 @@ class Session:
 
 class Job:
     
-    def __init__(self, sessionName, jid, script=None, firstEvent=0, nEvents=0,
+    def __init__(self, sessionName, jid, script=None, firstEvent=0, nEvents=-1,
                  inputFile=None, outputFile=None,
                  fileList=None, scriptPath=None, stdOutPath=None, exitPath=None,
                  stdErrPath=None):
