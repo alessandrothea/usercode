@@ -108,7 +108,8 @@ public:
     math::XYZTLorentzVector PFMet;
     math::XYZTLorentzVector ChargedMet;
 
-    std::vector<math::XYZTLorentzVector> ReducedPFMomenta;
+    math::XYZTLorentzVector              PfMomentaSumNoLep;
+    std::vector<math::XYZTLorentzVector> PfMomentaLep;
 
 	Int_t    NSoftMus;
 	Int_t	 NBTaggedJets;

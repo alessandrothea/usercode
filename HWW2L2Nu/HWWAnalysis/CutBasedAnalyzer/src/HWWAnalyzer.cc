@@ -58,7 +58,8 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
     _higgsMass        = _config.getParameter<int>("higgsMass");
 
     _cutFile          = _config.getParameter<std::string>("cutFile");
-    _minJetPT         = _config.getParameter<double>("jetPtMin");
+    _minJetPt         = _config.getParameter<double>("jetPtMin");
+    _maxJetEta        = _config.getParameter<double>("jetEtaMax");
     _minMet           = _config.getParameter<double>("minMet");
     _minMll           = _config.getParameter<double>("minMll");
     _zVetoWidth       = _config.getParameter<double>("zVetoWidth");
@@ -228,12 +229,12 @@ void HWWAnalyzer::Process( Long64_t iEvent ) {
 
 
 //_____________________________________________________________________________
-uint HWWAnalyzer::countJets( double ptmin ) {
+uint HWWAnalyzer::countJets( double ptmin, double etamax ) {
 
     uint nJets = 0;
     vector<HWWPFJet>::const_iterator iJet, bJ = _event->PFJets.begin(), eJ = _event->PFJets.end();
     for( iJet = bJ; iJet != eJ; ++iJet ) 
-        if ( iJet->P.pt() >= ptmin ) ++nJets;
+        if ( iJet->P.pt() > ptmin && iJet->P.eta() < etamax ) ++nJets;
 
     return nJets;
 }
@@ -583,22 +584,23 @@ void HWWAnalyzer::buildNtuple(){
 //     double mll = (pA+pB).Mag();
     double mll = (pA+pB).mass();
 
-    math::XYZTLorentzVector& pfMet4 = _event->PFMet;
-    math::XYZTLorentzVector& tcMet4 = _event->TCMet;
+    math::XYZTLorentzVector& pfMet4     = _event->PFMet;
+    math::XYZTLorentzVector& tcMet4     = _event->TCMet;
     math::XYZTLorentzVector& chargedMet4 = _event->ChargedMet;
 
     // calculate the smurf met
     math::XYZTLorentzVector pSum;
-    vector<math::XYZTLorentzVector>::iterator iP4, bP = _event->ReducedPFMomenta.begin(), eP = _event->ReducedPFMomenta.end();
+    vector<math::XYZTLorentzVector>::iterator iP4, bP = _event->PfMomentaLep.begin(), eP = _event->PfMomentaLep.end();
     for( iP4 = bP; iP4 != eP; ++iP4) {
-        if ( TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(*iP4,pA)) > 0.1 ) continue;
-        if ( TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(*iP4,pB)) > 0.1 ) continue;
+        if ( TMath::Abs(ROOT::Math::VectorUtil::DeltaR(*iP4,pA)) <= 0.1 ) continue;
+        if ( TMath::Abs(ROOT::Math::VectorUtil::DeltaR(*iP4,pB)) <= 0.1 ) continue;
         pSum += *iP4;
     }
-    pSum += thePair.first->P;
-    pSum += thePair.second->P;
+    pSum += pA;
+    pSum += pB;
+    pSum += _event->PfMomentaSumNoLep;
 
-    math::XYZTLorentzVector smurfChargedMet4(-pSum);
+    math::XYZTLorentzVector chargedMetSmurf4(-pSum);
 
 
     // 4a pfMet
@@ -608,7 +610,7 @@ void HWWAnalyzer::buildNtuple(){
     // 4c - chargedMet
     double chargedMet = chargedMet4.Pt();
     // 4d - smuf charged
-    double smurfChargedMet = smurfChargedMet4.pt();
+    double chargedMetSmurf = chargedMetSmurf4.pt();
     
 //     _event->ChargedPFCandidatesTotalP
 
@@ -639,16 +641,16 @@ void HWWAnalyzer::buildNtuple(){
 
     double projChargedMet = chargedMet*(chargedMetDphi < TMath::PiOver2() ? TMath::Sin(chargedMetDphi) : 1.);
     
-    // 5d - smurfChargedMet
-    double smurfChargedMetDphi = TMath::Min(
-            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(smurfChargedMet4, pA)),
-            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(smurfChargedMet4, pB))
+    // 5d - chargedMetSmurf
+    double chargedMetSmurfDphi = TMath::Min(
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(chargedMetSmurf4, pA)),
+            TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(chargedMetSmurf4, pB))
             );
 
-    double projChargedSmurfMet = chargedMet*(smurfChargedMetDphi < TMath::PiOver2() ? TMath::Sin(smurfChargedMetDphi) : 1.);
+    double projChargedMetSmurf = chargedMetSmurf*(chargedMetSmurfDphi < TMath::PiOver2() ? TMath::Sin(chargedMetSmurfDphi) : 1.);
 
     // 6 - nJets 
-    uint nJets         = countJets( _minJetPT );
+    uint nJets         = countJets( _minJetPt, _maxJetEta );
     // 7 - dPhiEE
     double dPhiLL = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pA, pB));
 
@@ -683,18 +685,19 @@ void HWWAnalyzer::buildNtuple(){
     _ntuple->pfMet           = pfMet;
     _ntuple->tcMet           = tcMet;
     _ntuple->chargedMet      = chargedMet;
-    _ntuple->smurfChargedMet = smurfChargedMet;
+    _ntuple->chargedMetSmurf = chargedMetSmurf;
 
-    _ntuple->pfMetDphi     = pfMetDphi;
-    _ntuple->tcMetDphi     = tcMetDphi;
-    _ntuple->chargedMetDphi = chargedMetDphi;
+    _ntuple->pfMetDphi              = pfMetDphi;
+    _ntuple->tcMetDphi              = tcMetDphi;
+    _ntuple->chargedMetDphi         = chargedMetDphi;
+    _ntuple->chargedMetSmurfDphi    = chargedMetSmurfDphi;
 
-    _ntuple->projPfMet     = projPfMet;
-    _ntuple->projTcMet     = projTcMet;
-    _ntuple->projChargedMet  = projChargedMet;
-    _ntuple->projChargedSmurfMet  = projChargedSmurfMet;
+    _ntuple->projPfMet              = projPfMet;
+    _ntuple->projTcMet              = projTcMet;
+    _ntuple->projChargedMet         = projChargedMet;
+    _ntuple->projChargedMetSmurf    = projChargedMetSmurf;
 
-    _ntuple->minProjMet    = TMath::Min(_ntuple->projPfMet, _ntuple->projChargedSmurfMet);
+    _ntuple->minProjMet    = TMath::Min(_ntuple->projPfMet, _ntuple->projChargedMet);
 
     _ntuple->met           = _ntuple->pfMet;
     _ntuple->projMet       = _ntuple->minProjMet;

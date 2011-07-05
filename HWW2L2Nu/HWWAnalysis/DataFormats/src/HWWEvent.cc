@@ -37,8 +37,8 @@ void HWWEvent::Clear( Option_t* option ){
     PFMet          = math::XYZTLorentzVector(); //TLorentzVector();
     ChargedMet     = math::XYZTLorentzVector(); //TLorentzVector();
 
-
-    ReducedPFMomenta.clear();
+    PfMomentaSumNoLep = math::XYZTLorentzVector();
+    PfMomentaLep.clear();
 
 	NSoftMus       = 0;
 	NBTaggedJets   = 0;

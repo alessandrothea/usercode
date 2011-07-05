@@ -130,7 +130,7 @@ protected:
     // main functions 
 	void buildNtuple();
 	void cutAndFill();
-    uint countJets( double ptMin );
+    uint countJets( double ptMin, double etaMax );
     uint countBtags( double thres, double ptMin = 0.);
     std::pair<HWWLepton*,HWWLepton*> buildPair();
     
@@ -176,7 +176,8 @@ protected:
 
  
     // cuts
-    double _minJetPT;
+    double _minJetPt;
+    double _maxJetEta;
 	double _minMet;
 	double _minMll;
 	double _zVetoWidth;

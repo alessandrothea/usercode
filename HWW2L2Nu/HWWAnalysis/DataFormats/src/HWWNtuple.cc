@@ -48,14 +48,17 @@ void HWWNtuple::clear(){
 	pfMet = 0;
 	tcMet = 0;
 	chargedMet = 0;
+    chargedMetSmurf = 0;
 
 	pfMetDphi = 0;
 	tcMetDphi = 0;
 	chargedMetDphi = 0;
+	chargedMetSmurfDphi = 0;
 
 	projPfMet = 0;
 	projTcMet = 0;
 	projChargedMet = 0;
+    projChargedMetSmurf = 0;
     minProjMet = 0;
 
 	mll = 0;

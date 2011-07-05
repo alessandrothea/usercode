@@ -123,17 +123,19 @@ int main( int argc, char **argv ) {
     */     
 
 
-    bool doMonitor = config.getParameter<bool>("monitor");
-    long long maxEvents      = config.getParameter<long long>("maxEvents");
-    vector<string> copyHistograms = config.getParameter<vector<string> >("copyObjects");
+    bool doMonitor                  = config.getParameter<bool>("monitor");
+    long long maxEvents             = config.getParameter<long long>("maxEvents");
+    vector<string> copyHistograms   = config.getParameter<vector<string> >("copyObjects");
+    bool useWeights                 = config.getParameter<bool>("useWeights");
 
+    string treeName = config.getParameter<string>("treeName");
     // update
-    TChain c("hwwAnalysis");
+    TChain c(treeName.c_str());
 
     vector<string>::iterator iFileName;
     for ( iFileName = inputFiles.begin(); iFileName != inputFiles.end(); ++iFileName ) {
         c.Add(iFileName->c_str());
-        cout << *iFileName << endl;
+        cout << "Added " << *iFileName << endl;
     }
 //     cout << "A " << inputFiles.size() << "   " << TH1::AddDirectoryStatus() << endl;
 
@@ -328,6 +330,7 @@ int main( int argc, char **argv ) {
 
     Long64_t selected = 0;
     double weighted = 0.;
+    double weight = 1.;
     boost::dynamic_bitset<> cutBits(cutflow.size());
     boost::dynamic_bitset<> nm1Mask(cutflow.size());
     ChVector::iterator chan;
@@ -361,6 +364,8 @@ int main( int argc, char **argv ) {
 
         c.GetEntry(i);
 
+        weight = useWeights ? nt->weight : 1.;
+
         if ( !doMonitor && (i==0 || ( TMath::FloorNint(i*100/(double)nEntries) == TMath::CeilNint( (i-1)*100/(double)nEntries) )) ) {
             if ( i!=0 ) cout << '\r';
             int barLen = 100;
@@ -386,9 +391,9 @@ int main( int argc, char **argv ) {
                 if ( accepted ){ 
                     vector<pair<VarPtr,TH1D*> >::iterator iHist;
                     for ( iHist = chan->histograms[k].begin(); iHist != chan->histograms[k].end(); ++iHist ) {
-                        if ( iHist->second ) iHist->second->Fill( iHist->first->value(*nt),nt->weight );
+                        if ( iHist->second ) iHist->second->Fill( iHist->first->value(*nt),weight );
                     }
-                    chan->yield->Fill(k, nt->weight);
+                    chan->yield->Fill(k, weight);
                 }
             }
             // re-loop for nm1 plots
@@ -403,7 +408,7 @@ int main( int argc, char **argv ) {
                     // fill all the nm1 histogram associated with the cut
                     vector<pair<VarPtr,TH1D*> >::iterator iHist;
                     for ( iHist = chan->nm1Histograms[k].begin(); iHist != chan->nm1Histograms[k].end(); ++iHist ) {
-                        if ( iHist->second ) iHist->second->Fill( iHist->first->value(*nt),nt->weight );
+                        if ( iHist->second ) iHist->second->Fill( iHist->first->value(*nt),weight );
                     }
                 }
             }
@@ -415,7 +420,7 @@ int main( int argc, char **argv ) {
         if ( !eventAccepted ) continue;
         
         selected++;
-        weighted += nt->weight;
+        weighted += weight;
         if ( doMonitor ) {
             stringstream theStr;
             theStr << sep 

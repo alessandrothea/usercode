@@ -55,16 +55,16 @@ public:
 	double pfMet;
 	double tcMet;
 	double chargedMet;
-    double smurfChargedMet;
+    double chargedMetSmurf;
 	double pfMetDphi;
 	double tcMetDphi;
 	double chargedMetDphi;
-    double smurfChargedMetDphi;
+    double chargedMetSmurfDphi;
 
 	double projPfMet;
 	double projTcMet;
 	double projChargedMet;
-	double projChargedSmurfMet;
+	double projChargedMetSmurf;
     double minProjMet;
 
 	double mll;

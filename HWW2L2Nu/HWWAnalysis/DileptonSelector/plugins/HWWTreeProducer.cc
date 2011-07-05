@@ -48,6 +48,8 @@
 #include <TTree.h>
 #include "HWWAnalysis/Misc/interface/Tools.h"
 #include "HWWAnalysis/Misc/interface/RootUtils.h"
+#include "Math/VectorUtil.h"
+
 //
 // class declaration
 //
@@ -255,18 +257,6 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
         if ( nPileUp < 0 )
             THROW_RUNTIME(" nPU = " << nPileUp << " what's going on?!?");
-//         if ( nPileUp > (int)puWeights_.size() )
-//             THROW_RUNTIME("Simulated Pu [" << nPileUp <<"] larger than available puFactors");
-
-//         weight *= puWeights_[ nPileUp ];
-
-//         // get the ptWeight if required
-//         if ( !(ptWeightSrc_ == edm::InputTag()) ) {
-//             edm::Handle<double> ptWeightHandle;
-//             iEvent.getByLabel(ptWeightSrc_, ptWeightHandle);
-
-//             weight *= *ptWeightHandle;
-//         }
     }
 
     // to do
@@ -275,6 +265,12 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     // btagged jets
 
     if ( !event_ || !tree_ ) return;
+
+    // some useful iterators
+    edm::View<reco::RecoCandidate>::const_iterator iMu, bMu = muons->begin(),     eMu = muons->end();
+    edm::View<reco::RecoCandidate>::const_iterator iEl, bEl = electrons->begin(), eEl = electrons->end();
+    edm::View<pat::Muon>::const_iterator           iSoftMu, bSMu = softMuons->begin(), eSMu = softMuons->end();
+
 
     event_->Run          = iEvent.id().run();
 	event_->Event        = iEvent.id().event();
@@ -293,7 +289,6 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     event_->PFMet = (*pfMet)[0].p4();
     event_->ChargedMet = chargedMet->get(0).p4();
 
-    event_->NSoftMus         = softMuons->size();
 
     event_->NBTaggedJets     = -1;
 
@@ -354,6 +349,19 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
         hwwMu.D0PV 						= patMu.userFloat("dxyPV");
         hwwMu.DzPV 						= patMu.userFloat("dzPV");
     }
+    
+
+    // count the soft muons after the removal of the good ones
+    uint nSoftMus = 0;
+    for ( iSoftMu = bSMu; iSoftMu != eSMu; ++iSoftMu ) {
+        bool overlap = false;
+        for ( iMu = bMu; iMu != eMu; ++iMu ) {
+            overlap |= ( iSoftMu->p4().pt() == iMu->p4().pt() ) && ( iSoftMu->p4().pt() == iMu->p4().pt() );          
+        }
+        if  ( !overlap ) ++nSoftMus;
+    }
+
+    event_->NSoftMus         = nSoftMus;
 
     // prefilter jets;
     // fill jets (already cleaned
@@ -389,9 +397,39 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     event_->PFNJets = event_->PFJets.size();
 
     // collction of reduced pd candidates
+    math::XYZTLorentzVector pfSum;
+    math::XYZTLorentzVector pfP4;
+
+
     reco::CandidateCollection::const_iterator iCand, bC = reducedPfCandidates->begin(), eC = reducedPfCandidates->end();
-    for( iCand = bC; iCand != eC; ++iCand )
-        event_->ReducedPFMomenta.push_back(iCand->p4());
+    for( iCand = bC; iCand != eC; ++iCand ) {
+        bool isLepton = false;
+        pfP4 = iCand->p4();
+
+        // overlap check with muons
+        for( iMu = bMu; iMu != eMu; ++iMu ) 
+           if ( TMath::Abs(ROOT::Math::VectorUtil::DeltaR(pfP4,iMu->p4())) <= 0.1 ) {
+               isLepton = true;
+               break;
+           } 
+
+        // overlao check with electrons
+        for( iEl = bEl; iEl != eEl; ++iEl ) 
+           if ( TMath::Abs(ROOT::Math::VectorUtil::DeltaR(pfP4,iEl->p4())) <= 0.1 ) {
+               isLepton = true;
+               break;
+           } 
+
+        if (isLepton) {
+        // if lepton, store the momenta
+            event_->PfMomentaLep.push_back(iCand->p4());
+        } else {
+        // else, only the sum
+            pfSum += iCand->p4();
+        }
+    }
+
+    event_->PfMomentaSumNoLep = pfSum;
 
     tree_->Fill(); 
     scalars_->Fill(0);
