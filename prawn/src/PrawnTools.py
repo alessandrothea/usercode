@@ -476,14 +476,15 @@ class Manager:
             filesPerJob = int(float(nFiles)/nJobs+0.5)
             fileList =  [rootFiles[i:i+filesPerJob] for i in range(0, len(rootFiles), filesPerJob)]
             nJobs = len(fileList)
-            eventsPerJob = -1
+            eventsPerJob = [-1]*nJobs
             firstEvent = [0]*nJobs
         elif session.mode == 'events':
             nJobs = int(session.nJobs)
             filesPerJob = 0 # all
             fileList = [rootFiles]*nJobs
             nTotEvents = getEntries(session.treeName, rootFiles) 
-            eventsPerJob = int(nTotEvents/nJobs)
+            eventsPerJob = [int(nTotEvents/nJobs)]*nJobs
+            eventsPerJob[-1] = -1
             firstEvent = range(0,nTotEvents,eventsPerJob)
             firstEvent[-1]=nTotEvents-eventsPerJob*(nJobs-1)
         else:
@@ -509,7 +510,7 @@ class Manager:
 #            print job.fileList
             job.firstEvent = firstEvent[i]
             # set nEvents to 0 (= all) for the last event
-            job.nEvents    = i is not nJobs-1 and eventsPerJob or session.nTotEvents-job.firstEvent
+            job.nEvents    = eventsPerJob[i] # i is not nJobs-1 and eventsPerJob or session.nTotEvents-job.firstEvent
             job.inputFile  = session.outputDir+'/input/'+job.name()+'.input'
             job.outputFile = session.outputDir+'/res/'+job.name()+'.root'
             job.scriptPath = session.outputDir+'/scripts/'+job.name()+'.sh'
