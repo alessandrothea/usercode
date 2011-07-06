@@ -336,6 +336,7 @@ if options.dataPath:
     process.hltFilter.mode = cms.string(options.dataPath)
     process.selectionPath *= process.hltFilter
 
+process.pairSequence *= process.monPairHLT
 
 
 #--------------------------------------------------------------------
@@ -429,6 +430,7 @@ process.yieldAnalyzer = cms.EDAnalyzer('LeptonYieldAnalyzer',
         cms.PSet( name = cms.string('iso'),         src = cms.InputTag('monPairISO') ),
         cms.PSet( name = cms.string('conv'),        src = cms.InputTag('monPairCONV') ),
         cms.PSet( name = cms.string('ip'),          src = cms.InputTag('monPairIP') ),
+        cms.PSet( name = cms.string('trgbits'),     src = cms.InputTag('monPairHLT') ),
     )
 )
 

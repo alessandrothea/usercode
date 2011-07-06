@@ -3,8 +3,8 @@ csvFile="$HOME/higgsWW/samples/R42X_S1_V04_S2_V00_S3_V00.csv"
 # optArgs="flatPuWeights=true summary=1"
 optArgs="summary=1"
 
- crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_step2.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 1-50    -a "$optArgs" -g 2011:Summer11:bkg
-#  crab2prawn.py -c $csvFile -j 100    -t ../prawn_step2.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 26            -a "$optArgs" -g 2011:Summer11:bkg
+ crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_step2.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 1-25,27-50    -a "$optArgs" -g 2011:Summer11:bkg
+ crab2prawn.py -c $csvFile -j 100    -t ../prawn_step2.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 26            -a "$optArgs" -g 2011:Summer11:bkg
  crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_step2.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 101120-101600 -a "$optArgs" -g 2011:Summer11:ggH:2l2v
  crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_step2.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 102120-102600 -a "$optArgs" -g 2011:Summer11:ggH:lvtau
  crab2prawn.py -c $csvFile -j $nJobs -t ../prawn_step2.sh -o /shome/thea/higgsWW/Summer11/jobs -w ../../ -i 103120-103600 -a "$optArgs" -g 2011:Summer11:ggH:tautau
