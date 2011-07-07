@@ -4,6 +4,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/Parse.h"
 #include <sstream>
+#include "boost/algorithm/string/predicate.hpp"
 
 //______________________________________________________________________________
 PsetReader::PsetReader( const std::string& name ) {
@@ -16,9 +17,9 @@ edm::ParameterSet PsetReader::read( int argc, char**argv ) {
     if ( argc < 2 )
         THROW_RUNTIME("No Python config file defined"); 
 
-    if ( argv[1][1] == '-' )
+    if ( !boost::algorithm::ends_with(argv[1],".py") )
         THROW_RUNTIME("Usage " << argv[0] << " config.py opts")
- 
+
     std::string cfgStr = edm::read_whole_file( argv[1] );
 
     std::vector<std::string> args;
@@ -34,8 +35,11 @@ edm::ParameterSet PsetReader::read( int argc, char**argv ) {
     
 
     cfgStr = header.str()+cfgStr;
-
     boost::shared_ptr<edm::ParameterSet> _pyConfig = edm::readPSetsFrom(cfgStr);
+
+// for CMSSW >  4_1_4
+//     boost::shared_ptr<edm::ParameterSet> _pyConfig =  edm::readConfig(argv[0],argc,argv);	
+    
     if( !_pyConfig->existsAs<edm::ParameterSet>( _psetName ) ){
         THROW_RUNTIME(" ERROR: ParametersSet 'process' is missing in your configuration file");
     }

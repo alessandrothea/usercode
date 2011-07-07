@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-import FWCore.ParameterSet.VarParsing as VarParsing
+import HWWAnalysis.Misc.VarParsing as VarParsing
 
 import math
 

@@ -1,5 +1,5 @@
 import FWCore.ParameterSet.Config as cms
-from PhysicsTools.PatAlgos.patSequences_cff import *
+# from PhysicsTools.PatAlgos.patSequences_cff import *
 from HWWAnalysis.DileptonSelector.electronCuts_cff import *
 
 selectedRefPatElectrons = cms.EDFilter("PATElectronRefSelector",

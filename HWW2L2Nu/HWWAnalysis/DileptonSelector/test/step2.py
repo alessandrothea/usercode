@@ -1,5 +1,6 @@
 import FWCore.ParameterSet.Config as cms
-import FWCore.ParameterSet.VarParsing as opts
+# import FWCore.ParameterSet.VarParsing as opts
+import HWWAnalysis.Misc.VarParsing as opts
 
 from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import puWeights
 from HWWAnalysis.DileptonSelector.higgsPtWeights_cfi import *
@@ -75,7 +76,7 @@ process = cms.Process('Step2')
 # | |/ /|  __/| | | (_| || |_| || || |_ \__ \
 # |___/  \___||_|  \__,_| \__,_||_| \__||___/
 
-pileupTag = 'certifiedLatinos.42X_Jun24'
+pileUpLabel = 'certifiedLatinos.42X_Jun24'
 
 #-------------------------------------------------------------------------------
 #  _____                  _   
@@ -120,7 +121,7 @@ process.maxEvents = cms.untracked.PSet(
             )
 
 
-process.selectionPath = cms.Path()
+process.pLep = cms.Path()
 
 #-------------------------------------------------------------------------------
 #  _   _                    _   ________         _                 
@@ -140,7 +141,7 @@ if options.higgsPtWeights:
         Debug =cms.untracked.bool(False)
     )
     print 'Rescaling pt for higgs mass '+options.higgsPtWeights+' using '+ scaleFile
-    process.selectionPath += process.higgsPtWeights
+    process.pLep += process.higgsPtWeights
 
 
 #  _    _      _       _     _       
@@ -155,7 +156,7 @@ if options.higgsPtWeights:
 
 process.eventWeights = cms.EDProducer('WeightsCollector',
     puInfoSrc = cms.InputTag('addPileupInfo'),
-    pileupWeights = cms.vdouble(puWeights['certifiedLatinos_May11']),
+    pileupWeights = cms.vdouble(puWeights[pileUpLabel]),
 )
 
 if options.flatPuWeights:
@@ -166,8 +167,7 @@ if options.higgsPtWeights:
     print ' - Weights: Adding the pt eventWeights for mass '+options.higgsPtWeights
     process.eventWeights.ptWeightSrc = cms.InputTag('higgsPtWeights')
 
-process.selectionPath += process.eventWeights
-
+process.pLep += process.eventWeights
 #  _                _              _____      _           _   _             
 # | |              | |            /  ___|    | |         | | (_)            
 # | |     ___ _ __ | |_ ___  _ __ \ `--.  ___| | ___  ___| |_ _  ___  _ __  
@@ -181,7 +181,7 @@ process.load('HWWAnalysis.DileptonSelector.electronSelection_cff')
 process.load('HWWAnalysis.DileptonSelector.muonSelection_cff')
 process.load('HWWAnalysis.DileptonSelector.jetSelection_cff')
 
-process.selectionPath += (process.hwwElectronSequence
+process.pLep += (process.hwwElectronSequence
                     + process.hwwMuonSequence
                     + process.hwwJetSequence)
 
@@ -223,7 +223,7 @@ process.hwwCleanJets = cms.EDProducer('PATJetCleaner',
 )
 
 
-process.selectionPath *= process.hwwCleanJets
+process.pLep *= process.hwwCleanJets
 
 #---------------------------------------------------------
 #  _____    _                       
@@ -237,7 +237,7 @@ process.selectionPath *= process.hwwCleanJets
 
 process.load('HWWAnalysis.DileptonSelector.hltFilter_cff')
 
-process.selectionPath *= process.hltSummary
+process.pLep *= process.hltSummary
 
 #---------------------------------------------------------
 # ______ _ _            _                  
@@ -300,6 +300,7 @@ process.monPairID    = process.pairMonitor.clone( src = cms.InputTag('oppPairsID
 process.monPairISO   = process.pairMonitor.clone( src = cms.InputTag('oppPairsISO' ) )
 process.monPairCONV  = process.pairMonitor.clone( src = cms.InputTag('oppPairsCONV' ) )
 process.monPairIP    = process.pairMonitor.clone( src = cms.InputTag('oppPairsIP' ) )
+process.monPairHLT    = process.pairMonitor.clone( src = cms.InputTag('oppPairsIP' ) )
 
 #--------------------------------------------------------------------
 
@@ -322,7 +323,7 @@ process.pairSequence = cms.Sequence(
     * process.monPairIP
 )
 
-process.selectionPath *= process.pairSequence
+process.pLep *= process.pairSequence
 
 # ______     _   _      ______ _ _ _            
 # | ___ \   | | | |     |  ___(_) | |           
@@ -334,9 +335,9 @@ process.selectionPath *= process.pairSequence
 # if defined in the command line apply the filterin
 if options.dataPath:
     process.hltFilter.mode = cms.string(options.dataPath)
-    process.selectionPath *= process.hltFilter
+    process.pLep *= process.hltFilter
 
-process.pairSequence *= process.monPairHLT
+process.pLep *= process.monPairHLT
 
 
 #--------------------------------------------------------------------
@@ -409,9 +410,7 @@ process.testStuff = cms.EDAnalyzer('TestStuffAnalyzer',
     cleanJetSrc = cms.InputTag('hwwCleanJets'),
 )
 
-process.selectionPath *= cms.Sequence(
-    process.treeproducer
-)
+process.pLep *= process.treeproducer
 
 #--------------------------------------------------------------------
 # __   ___      _     _                    __           
@@ -434,9 +433,9 @@ process.yieldAnalyzer = cms.EDAnalyzer('LeptonYieldAnalyzer',
     )
 )
 
-process.yieldSummary = cms.Path(process.yieldAnalyzer)
+process.pYield = cms.Path(process.yieldAnalyzer)
 
-process.schedule = cms.Schedule( process.selectionPath, process.yieldSummary );
+process.schedule = cms.Schedule( process.pLep, process.pYield );
 
 # apply json mask if defined
 #     process.DileptonSelector.ptWeightSrc = cms.InputTag('higgsPt')

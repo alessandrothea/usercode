@@ -1,5 +1,5 @@
 import FWCore.ParameterSet.Config as cms
-from PhysicsTools.PatAlgos.patSequences_cff import *
+# from PhysicsTools.PatAlgos.patSequences_cff import *
 from HWWAnalysis.DileptonSelector.muonCuts_cff import *
 
 selectedRefPatMuons = cms.EDFilter("PATMuonRefSelector",

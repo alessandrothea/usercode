@@ -107,7 +107,6 @@ int main( int argc, char **argv ) {
     edm::ParameterSet config = reader.read( argc, argv );
 //     cout << config << endl;
 
-
     vector<string> inputFiles = config.getParameter<vector<string> >("inputFiles");
     string outputFile = config.getParameter<string>("outputFile");
 
