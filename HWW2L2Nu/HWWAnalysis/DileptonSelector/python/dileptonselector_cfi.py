@@ -15,7 +15,7 @@ DileptonSelector = cms.EDAnalyzer('DileptonSelector',
         pfMetSrc    = cms.InputTag('pfMet'),
         chMetSrc    = cms.InputTag('chargedMetProducer'),
 
-        pileupFactors = cms.vdouble(puWeights[:]),
+        pileupFactors = cms.vdouble(puWeights['Flat']),
         elCutBasedId = elVBTF2011,
         elLikelihood = elLH2011,
         hltMode = cms.string('all'),
