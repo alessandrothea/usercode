@@ -62,9 +62,11 @@ def printSummary( sessions ):
     hline = '-'*80
     table = []
     padding = 0
+    maxLabLen = 20
     table.append(['name','status','label','groups','nJobs'])
     for s in sessions:
-        table.append([s.name,PrawnTools.colState(s.status),s.label,s.groups,str(s.nJobs)])
+        shortLabel = s.label if len(s.label) <= maxLabLen else s.label[:maxLabLen]+'...'
+        table.append([s.name,PrawnTools.colState(s.status),shortLabel,s.groups,str(s.nJobs)])
  
     
     widths = [0]*len(table[0])
