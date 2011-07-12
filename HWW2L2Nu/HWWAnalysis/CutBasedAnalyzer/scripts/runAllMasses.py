@@ -46,7 +46,7 @@ higgs=[
 'id101160.ggToH160toWWto2L2Nu',
 ]
 
-data2011PromptReco=[
+data2011PromptRecov1v2=[
         'id074.SingleMuon2011A',
         'id075.DoubleElectron2011A',
         'id076.DoubleMuon2011A',
@@ -58,13 +58,20 @@ data2011PromptReco=[
         ]
 
 data2011ReReco=[
-         'id090.SingleMu2011AReRecoMay10',
-         'id091.DoubleMu2011AReRecoMay10',
-         'id092.DoubleElectron2011AReRecoMay10',
-         'id093.MuEG2011AReRecoMay10',
+         'id090.SingleMuon2011AMay10',
+         'id091.DoubleMuon2011AMay10',
+         'id092.DoubleElectron2011AMay10',
+         'id093.MuEG2011AMay10',
          ]
 
-data2011 = data2011PromptReco
+data2011PromptRecov4=[
+    'id084.SingleMuon2011Av4',
+    'id085.DoubleElectron2011Av4',
+    'id086.DoubleMuon2011Av4',
+    'id087.MuEG2011Av4',
+    ]
+
+data2011 = data2011PromptRecov4
 
 background = []
 background.extend(bkg_dy)
@@ -77,10 +84,8 @@ samples.extend(higgs)
 # samples.extend(data2011)
 
 samples = []
-# samples.extend(data2011ReReco)
-samples.extend(data2011PromptReco)
 samples.extend(data2011ReReco)
-samples.extend(data2011PromptReco)
+samples.extend(data2011PromptRecov4)
 # samples = []
 
 masses = [120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 250, 300, 350, 400, 450, 500, 550, 600]
@@ -101,25 +106,25 @@ parser.add_option('--noMakePlots', dest='makePlots', help='don\'t run makePlots'
 (opt, args) = parser.parse_args()
 
 
-spring11Dir=os.getenv('HOME')+'/higgsWW/Spring11'
+spring11Dir=os.getenv('HOME')+'/higgsWW/Summer11'
 workdir=os.getenv('CMSSW_BASE')+'/src/HWWAnalysis/CutBasedAnalyzer'
 print 'Working in',workdir
 os.chdir(workdir)
 
-skimPath=spring11Dir+'/skimmed'
+step2Path=spring11Dir+'/step2'
 for mass in masses:
-    ntuplePath=spring11Dir+'/step3/h'+str(mass)
+    step3Path=spring11Dir+'/step3/h'+str(mass)
     finalPath=spring11Dir+'/final/h'+str(mass)
 
-    os.system('mkdir -p %s' % ntuplePath)
+    os.system('mkdir -p %s' % step3Path)
     print 'Running on:'
     print ' -',','.join(samples)
 
     if opt.runHWW:
         for sample in samples:
-            inSample = skimPath+'/'+sample+'.root'
-            outSample = ntuplePath+'/step3_'+sample+'.root'
-            cmd = 'runHWW.exe test/analysisHWW.config -UserAnalyzer.inputFile '+inSample+' -UserAnalyzer.outputFile '+outSample 
+            inSample = step2Path+'/'+sample+'.root'
+            outSample = step3Path+'/step3_'+sample+'.root'
+            cmd = 'runHWW.exe test/hwwAnalysis.py inputFiles='+inSample+' outputFile='+outSample 
             print cmd
             code = os.system(cmd)
             if code != 0:
@@ -127,14 +132,14 @@ for mass in masses:
                 sys.exit(code)
 
     if opt.hadd:
-        sumData(samples,data2011PromptReco,ntuplePath,'Data2011PromptReco')
-        sumData(samples,data2011ReReco,ntuplePath,'Data2011ReReco')
+        sumData(samples,data2011PromptRecov4,step3Path,'Data2011PromptRecov4')
+        sumData(samples,data2011ReReco,step3Path,'Data2011ReReco')
 
-    dataTags = ['Data2011PromptReco','Data2011ReReco']
-#     dataTags = ['Data2011PromptReco']
+    dataTags = ['Data2011PromptRecov4','Data2011ReReco']
+#     dataTags = ['Data2011PromptRecov4']
     for tag in dataTags:
-        if not os.path.exists(ntuplePath+'/step3_'+tag+'.root'):
-            print ntuplePath+'/step3_'+tag+'.root  not found'
+        if not os.path.exists(step3Path+'/step3_'+tag+'.root'):
+            print step3Path+'/step3_'+tag+'.root not found'
             continue
 
     if opt.makePlots:
@@ -142,16 +147,16 @@ for mass in masses:
         optVars = 'higgsMass='+str(mass)+' dataTag='+tag+ ' prefix="step3_"'
         cmds = []
         cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_yield.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_yield.root'
+            'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_yield.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_yield.root'
         )
         cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_dileptons.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_dileptons.root'
+            'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_dileptons.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_dileptons.root'
         )
         cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_cuts.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_cuts.root'
+            'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_cuts.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_cuts.root'
         )
         cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+ntuplePath+' --optVars="'+optVars+'" -p macros/plots/hww_extra.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_extra.root'
+            'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_extra.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_extra.root'
         )
 
         for cmd in cmds:
