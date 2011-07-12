@@ -22,7 +22,7 @@
 #include <THashList.h>
 #include <TH2D.h>
 #include <TObjArray.h>
-
+#include "HWWAnalysis/CutBasedAnalyzer/interface/Davismt2.h"
 
 const double HWWAnalyzer::_Z0Mass = 9.11869999999999976e+01;
 
@@ -584,6 +584,13 @@ void HWWAnalyzer::buildNtuple(){
 //     double mll = (pA+pB).Mag();
     double mll = (pA+pB).mass();
 
+    // shopping list variables
+    double ptA = pA.pt();
+    double ptB = pB.pt();
+    // delta R between leptons
+    double deltaRll = ROOT::Math::VectorUtil::DeltaR(pA, pB);
+    double dileptonPt = (pA+pB).pt();
+
     math::XYZTLorentzVector& pfMet4     = _event->PFMet;
     math::XYZTLorentzVector& tcMet4     = _event->TCMet;
     math::XYZTLorentzVector& chargedMet4 = _event->ChargedMet;
@@ -605,12 +612,15 @@ void HWWAnalyzer::buildNtuple(){
 
     // 4a pfMet
     double pfMet = pfMet4.pt();
+    double pfMetPhi = pfMet4.Phi();
     // 4b - tcMet
     double tcMet = tcMet4.pt();
     // 4c - chargedMet
     double chargedMet = chargedMet4.Pt();
+    double tcMetPhi = tcMet4.Phi(); 
     // 4d - smuf charged
     double chargedMetSmurf = chargedMetSmurf4.pt();
+    double chargedMetPhi = chargedMet4.Phi();
     
 //     _event->ChargedPFCandidatesTotalP
 
@@ -664,6 +674,43 @@ void HWWAnalyzer::buildNtuple(){
     }
 
 
+    // jets 
+    int nj = _event->PFNJets;
+    // store a vector with all jets pt. eta, phi
+    std::vector<double> jetPt;
+    std::vector<double> jetPhi;
+    std::vector<double> jetEta;
+    // store only vars for first two jets (to maintain flat N-tuple for TMVA)
+    double jet1pt = -99.9;
+    double jet2pt = -99.9;
+    double jet1phi = -99.9;
+    double jet2phi = -99.9;
+    double jet1eta = -99.9;
+    double jet2eta = -99.9;
+    for(int i=0; i<nj; i++) {
+      math::XYZTLorentzVector jet = _event->PFJets[i].P;
+      jetPt.push_back(jet.Pt());
+      jetPhi.push_back(jet.Phi());
+      jetEta.push_back(jet.Eta());
+    }
+    //FIXME: need to find a good solution for the jet vars in terms of TMVA
+    if(jetPt.size()>0) {
+      jet1pt  = jetPt[0];
+      jet1phi = jetPhi[0];
+      jet1eta = jetEta[0];
+    }
+    if(jetPt.size()>1) {
+      jet2pt  = jetPt[1];
+      jet2phi = jetPhi[1];
+      jet2eta = jetEta[1];
+    }
+
+    // transverse masses
+    double mtA = transverseMass(pA, pfMet4);
+    double mtB = transverseMass(pB, pfMet4);
+
+    double mt2 = CalcMT2(0., false, pA, pB, pfMet4);
+
     _ntuple->type = type;
 
     _ntuple->run           = _event->Run;
@@ -681,10 +728,21 @@ void HWWAnalyzer::buildNtuple(){
     _ntuple->pB.SetXYZT(pB.X(),pB.Y(),pB.Z(),pB.T());
     
     _ntuple->mll           = mll;
+    _ntuple->ptA           = ptA;
+    _ntuple->ptB           = ptB;
+    _ntuple->mtA           = mtA;
+    _ntuple->mtB           = mtB;
+    _ntuple->mt2           = mt2;
+
+    _ntuple->deltaRll      = deltaRll;
+    _ntuple->dileptonPt    = dileptonPt;
 
     _ntuple->pfMet           = pfMet;
+    _ntuple->pfMetPhi      = pfMetPhi;
     _ntuple->tcMet           = tcMet;
+    _ntuple->tcMetPhi      = tcMetPhi;
     _ntuple->chargedMet      = chargedMet;
+    _ntuple->chargedMetPhi = chargedMetPhi;
     _ntuple->chargedMetSmurf = chargedMetSmurf;
 
     _ntuple->pfMetDphi              = pfMetDphi;
@@ -710,15 +768,90 @@ void HWWAnalyzer::buildNtuple(){
 
     _ntuple->dPhi          = dPhiLL;
 
+//     _ntuple->nCentralJets = 0;
+//     std::vector<HWWPFJet>::iterator iJet;
+//     for( iJet = _event->PFJets.begin(); iJet != _event->PFJets.end(); ++iJet)
+//         if ( iJet->P.eta() <  2.5 ) {
+//             ++_ntuple->nCentralJets;
+//             if ( iJet->P.pt() > 40. ) {
+//                 ++_ntuple->nCentralJets40;
+//             }
+//         }
+
+    // scalar & vectorial sum of jet pt
+    double sumPtJetsScalar = 0.;    
+    double sumPtCentralJetsScalar = 0.;    
+    double sumPtCentralJets40Scalar = 0.;    
+    double sumPJetsScalar = 0.;    //
+    math::XYZTLorentzVector sumPtJetsVectorial;
+    math::XYZTLorentzVector sumPtCentralJetsVectorial;
+    math::XYZTLorentzVector sumPtCentralJets40Vectorial;
+    std::vector<double> bTagProb;
+    double jet1bTagProb = -99.9;
+    double jet2bTagProb = -99.9;
+    double sumJet12bTagProb = -99.9;
+    double maxbtagProb = -99.9;
+
     _ntuple->nCentralJets = 0;
     std::vector<HWWPFJet>::iterator iJet;
-    for( iJet = _event->PFJets.begin(); iJet != _event->PFJets.end(); ++iJet)
-        if ( iJet->P.eta() <  2.5 ) {
-            ++_ntuple->nCentralJets;
-            if ( iJet->P.pt() > 40. ) {
-                ++_ntuple->nCentralJets40;
-            }
-        }
+    for( iJet = _event->PFJets.begin(); iJet != _event->PFJets.end(); ++iJet) {
+      bTagProb.push_back(iJet->BTagProbTkCntHighEff);
+      maxbtagProb = TMath::Max(maxbtagProb, iJet->BTagProbTkCntHighEff);
+      sumPtJetsScalar    += iJet->P.pt();
+      sumPJetsScalar    += iJet->P.e(); //
+      sumPtJetsVectorial += iJet->P;
+      if ( iJet->P.eta() <  2.5 ) {
+	++_ntuple->nCentralJets;
+	sumPtCentralJetsScalar    += iJet->P.pt();
+	sumPtCentralJetsVectorial += iJet->P;
+	if ( iJet->P.pt() > 40. ) {
+	  ++_ntuple->nCentralJets40;
+	  sumPtCentralJets40Scalar    += iJet->P.pt();
+	  sumPtCentralJets40Vectorial += iJet->P;
+	}
+      }
+    }
+    if(bTagProb.size()>0) {
+      jet1bTagProb = bTagProb[0];
+    }
+    if(bTagProb.size()>1) {
+      jet2bTagProb = bTagProb[1];
+      sumJet12bTagProb = bTagProb[0] + bTagProb[1];
+    }
+
+    _ntuple->sumPtJetsScalar             = sumPtJetsScalar;    
+    _ntuple->sumPtCentralJetsScalar      = sumPtCentralJetsScalar;    
+    _ntuple->sumPtCentralJets40Scalar    = sumPtCentralJets40Scalar;    
+    _ntuple->sumPtJetsVectorial          = sumPtJetsVectorial.Pt();    
+    _ntuple->sumPtCentralJetsVectorial   = sumPtCentralJetsVectorial.Pt();    
+    _ntuple->sumPtCentralJets40Vectorial = sumPtCentralJets40Vectorial.Pt();    
+
+    _ntuple->centralityJetsScalar             = sumPtJetsScalar/sumPJetsScalar;    
+    _ntuple->centralityJetsVectorial          = sumPtJetsVectorial.Pt()/sumPJetsScalar;    
+
+    double centralityLeptonsScalar = (pA.pt() + pB.pt()) / (pA.e() + pB.e());
+    _ntuple->centralityLeptonsScalar          = centralityLeptonsScalar;
+
+    double centralityLeptonsVectorial = (pA + pB).pt() / (pA + pB).e();
+    _ntuple->centralityLeptonsVectorial       = centralityLeptonsVectorial;
+
+
+    // FIXME: check if it is possible to use a vector in MVA
+    _ntuple->jetPt        = jetPt;
+    _ntuple->jetPhi       = jetPhi;
+    _ntuple->jetEta       = jetEta;
+    _ntuple->jet1pt       = jet1pt;
+    _ntuple->jet2pt       = jet2pt;
+    _ntuple->jet1phi      = jet1phi;
+    _ntuple->jet2phi      = jet2phi;
+    _ntuple->jet1eta      = jet1eta;
+    _ntuple->jet2eta      = jet2eta;
+
+    _ntuple->jet1bTagProb = jet1bTagProb;
+    _ntuple->jet2bTagProb = jet2bTagProb;
+    _ntuple->sumJet12bTagProb = sumJet12bTagProb;
+    _ntuple->maxbtagProb  = maxbtagProb;
+
 
     _ntuple->nJets         = nJets;
     _ntuple->nSoftMus      = _event->NSoftMus;
@@ -1270,3 +1403,29 @@ double HWWAnalyzer::transverseMass(math::XYZTLorentzVector lep, math::XYZTLorent
     return mt;
 }
 
+double HWWAnalyzer::CalcMT2(double testmass, bool massive, math::XYZTLorentzVector visible1, math::XYZTLorentzVector visible2, math::XYZTLorentzVector MET )
+{  
+  double pa[3];
+  double pb[3];
+  double pmiss[3];
+  
+  pmiss[0] = 0;
+  pmiss[1] = MET.Px();
+  pmiss[2] = MET.Py();
+  
+  pa[0] = massive ? visible1.M() : 0;
+  pa[1] = visible1.Px();
+  pa[2] = visible1.Py();
+  
+  pb[0] = massive ? visible2.M() : 0;
+  pb[1] = visible2.Px();
+  pb[2] = visible2.Py();
+  
+  Davismt2 *mt2 = new Davismt2();
+  mt2->set_momenta(pa, pb, pmiss);
+  mt2->set_mn(testmass);
+  Double_t MT2=mt2->get_mt2();
+  delete mt2;
+  return MT2;
+
+}

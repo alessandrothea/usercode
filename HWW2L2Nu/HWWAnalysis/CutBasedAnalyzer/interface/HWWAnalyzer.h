@@ -165,6 +165,8 @@ protected:
     
     // transverse mass calculator
     double transverseMass(math::XYZTLorentzVector lep, math::XYZTLorentzVector met);
+    // mt2 calculator
+    double CalcMT2(double, bool, math::XYZTLorentzVector, math::XYZTLorentzVector, math::XYZTLorentzVector);
 
     // helper methods for the analysis
 
