@@ -9,6 +9,7 @@
 #define HWWNTUPLE_H_
 
 #include "DataFormats/Math/interface/LorentzVector.h"
+#include <vector>
 
 class HWWNtuple {
 public:
@@ -53,8 +54,11 @@ public:
     double projMet;
 
 	double pfMet;
+	double pfMetPhi;
 	double tcMet;
+	double tcMetPhi;
 	double chargedMet;
+	double chargedMetPhi;
     double chargedMetSmurf;
 	double pfMetDphi;
 	double tcMetDphi;
@@ -68,12 +72,39 @@ public:
     double minProjMet;
 
 	double mll;
+	// di-lepton vars from the shopping list
+	double ptA;
+	double ptB;
+	double mtA;
+	double mtB;
+	double mt2;
+	double deltaRll;
+	double dileptonPt;
+
 	double dPhi;
     double mrStar;
     double gammaMRstar;
     double razor;
 
 	unsigned nJets;
+	// for all jets
+	std::vector<double> jetPt;
+	std::vector<double> jetPhi;
+	std::vector<double> jetEta;
+	// single jets
+	double jet1pt;
+	double jet2pt;
+	double jet1phi;
+	double jet2phi;
+	double jet1eta;
+	double jet2eta;
+	// btag prob
+	double jet1bTagProb;
+	double jet2bTagProb;
+	double sumJet12bTagProb;
+	double maxbtagProb;
+
+
 	unsigned nSoftMus;
 	unsigned nBJets;
     // 1 jet only
@@ -84,6 +115,19 @@ public:
     // additional
 	unsigned nCentralJets;
 	unsigned nCentralJets40;
+
+	double sumPtJetsScalar;
+	double sumPtCentralJetsScalar;
+	double sumPtCentralJets40Scalar;
+	double sumPtJetsVectorial;
+	double sumPtCentralJetsVectorial;
+	double sumPtCentralJets40Vectorial;
+
+	double centralityJetsScalar;
+	double centralityJetsVectorial;
+	double centralityLeptonsScalar;
+	double centralityLeptonsVectorial;
+
 
 //     ClassDef(HWWNtuple,1)
 };

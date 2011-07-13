@@ -45,19 +45,19 @@ void HWWNtuple::clear(){
     met = 0;
     projMet = 0;
 
-	pfMet = 0;
-	tcMet = 0;
-	chargedMet = 0;
+    pfMet = 0;
+    tcMet = 0;
+    chargedMet = 0;
     chargedMetSmurf = 0;
 
-	pfMetDphi = 0;
-	tcMetDphi = 0;
-	chargedMetDphi = 0;
-	chargedMetSmurfDphi = 0;
-
-	projPfMet = 0;
-	projTcMet = 0;
-	projChargedMet = 0;
+    pfMetDphi = 0;
+    tcMetDphi = 0;
+    chargedMetDphi = 0;
+    chargedMetSmurfDphi = 0;
+    
+    projPfMet = 0;
+    projTcMet = 0;
+    projChargedMet = 0;
     projChargedMetSmurf = 0;
     minProjMet = 0;
 
@@ -75,4 +75,36 @@ void HWWNtuple::clear(){
     dPhillj = 0.;
 
     mtll    = 0.;
+
+    // from here on the new shopping list variables
+    ptA = 0;
+    ptB = 0;
+    deltaRll = 0;
+    dileptonPt = 0;
+    pfMetPhi = 0;
+    tcMetPhi = 0;
+    chargedMetPhi = 0;
+    jet1pt = -99.9;
+    jet2pt = -99.9;
+    jet1phi = -99.9;
+    jet2phi = -99.9;
+    jet1eta = -99.9;
+    jet2eta = -99.9;
+    jetPt.clear();
+    jetPhi.clear();
+    jetEta.clear();
+    mtA = 0;
+    mtB = 0;
+    mt2 = 0;
+    sumPtJetsScalar = 0;
+    sumPtCentralJetsScalar = 0.;    
+    sumPtCentralJets40Scalar = 0.;    
+    jet1bTagProb = -99.9;
+    jet2bTagProb = -99.9;
+    sumJet12bTagProb = -99.9;
+    maxbtagProb = -99.9;
+    centralityLeptonsScalar = -99.9;
+    centralityLeptonsVectorial = -99.9;
+
+
 }
