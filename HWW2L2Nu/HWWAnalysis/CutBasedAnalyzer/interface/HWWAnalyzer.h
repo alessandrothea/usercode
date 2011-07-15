@@ -179,6 +179,7 @@ protected:
  
     // cuts
     double _minJetPt;
+    double _minJetPtDY;
     double _maxJetEta;
 	double _minMet;
 	double _minMll;

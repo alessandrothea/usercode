@@ -49,6 +49,7 @@ struct PairLessByPtSum {
     }
 };
 
+
 //_____________________________________________________________________________
 HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthMask(kCutsSize),
          _analysisTree(0x0), _event(0x0), _ntuple(0x0), _hScalars(0x0) {
@@ -59,6 +60,7 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
 
     _cutFile          = _config.getParameter<std::string>("cutFile");
     _minJetPt         = _config.getParameter<double>("jetPtMin");
+    _minJetPtDY       = _config.getParameter<double>("jetPtMinDYcut");
     _maxJetEta        = _config.getParameter<double>("jetEtaMax");
     _minMet           = _config.getParameter<double>("minMet");
     _minMll           = _config.getParameter<double>("minMll");
@@ -89,6 +91,8 @@ HWWAnalyzer::HWWAnalyzer(int argc, char** argv) : UserAnalyzer(argc,argv), _nthM
     }
 
 }
+
+
 
 //_____________________________________________________________________________
 HWWAnalyzer::~HWWAnalyzer() {
@@ -673,6 +677,19 @@ void HWWAnalyzer::buildNtuple(){
         dPhiLLJet                    = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));
     }
 
+    // get the delta phi between the leading jet and the dilepton for 0 jet DY cut
+    double dPhiLLJet0jet = -TMath::TwoPi();    if (countJets( _minJetPtDY, _maxJetEta ) > 0 ) {
+      // get the hardest jet below threshold
+      math::XYZTLorentzVector pJet;
+      for(int j=0; j<_event->PFNJets; j++) {
+	double pt = _event->PFJets[j].P.Pt();
+	if (pt < _minJetPt && pt > _minJetPtDY) {
+	  pJet = _event->PFJets[j].P;	
+	}
+      }
+      math::XYZTLorentzVector pLL  = pA+pB;
+      dPhiLLJet0jet                    = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));      
+    }
 
     // jets 
     int nj = _event->PFNJets;
@@ -858,6 +875,7 @@ void HWWAnalyzer::buildNtuple(){
     _ntuple->nBJets        = countBtags( _bThreshold ); 
 
     _ntuple->dPhillj       = dPhiLLJet;
+    _ntuple->dPhillj0jet   = dPhiLLJet0jet;
     _ntuple->mtll          = transverseMass( pA+pB ,pfMet4 );
 
 }
