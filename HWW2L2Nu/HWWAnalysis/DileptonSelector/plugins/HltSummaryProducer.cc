@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Jun 23 15:18:30 CEST 2011
-// $Id: HltSummaryProducer.cc,v 1.1 2011/06/29 22:16:06 thea Exp $
+// $Id: HltSummaryProducer.cc,v 1.2 2011/06/30 13:24:46 thea Exp $
 //
 //
 
@@ -30,6 +30,7 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "HWWAnalysis/DileptonSelector/interface/HltBitChecker.h"
+#include "PhysicsTools/SelectorUtils/interface/strbitset.h"
 //
 // class declaration
 //
@@ -68,7 +69,6 @@ class HltSummaryProducer : public edm::EDProducer {
 //
 
 
-#include "PhysicsTools/SelectorUtils/interface/strbitset.h"
 using namespace std;
 //
 // constructors and destructor

@@ -27,6 +27,11 @@ void HWWNtuple::clear(){
     selected = false;
     weight = 1.,
 
+    singleMuBit = false;
+    doubleMuBit = false;
+    doubleElBit = false;
+    muEGBit     = false;
+
     tags = 0;
 
     nExtra = 0;
@@ -34,10 +39,6 @@ void HWWNtuple::clear(){
 	pB = math::XYZTLorentzVector();
 	cA = 0;
 	cB = 0;
-//     d0A = 0;
-//     d0B = 0;
-//     dZA = 0;
-//     dZB = 0;
 
     nVrtx = 0;
     nPileUp = 0;
@@ -68,11 +69,11 @@ void HWWNtuple::clear(){
     razor = 0;
 	nJets = 0;
 	nCentralJets    = 0;
-	nCentralJets40  = 0;
 	nSoftMus = 0;
 	nBJets  = 0;
 
     dPhillj = 0.;
+    dPhillj0jet = 0.;
 
     mtll    = 0.;
 
@@ -90,15 +91,11 @@ void HWWNtuple::clear(){
     jet2phi = -99.9;
     jet1eta = -99.9;
     jet2eta = -99.9;
-    jetPt.clear();
-    jetPhi.clear();
-    jetEta.clear();
     mtA = 0;
     mtB = 0;
     mt2 = 0;
     sumPtJetsScalar = 0;
     sumPtCentralJetsScalar = 0.;    
-    sumPtCentralJets40Scalar = 0.;    
     jet1bTagProb = -99.9;
     jet2bTagProb = -99.9;
     sumJet12bTagProb = -99.9;

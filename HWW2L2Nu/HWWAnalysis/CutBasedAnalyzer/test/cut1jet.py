@@ -4,6 +4,23 @@ import FWCore.ParameterSet.VarParsing as VarParsing
 
 import math
 
+def cut(name, label, cut):
+    return cms.PSet(
+        name = cms.string(name),
+        label = cms.string(label),
+        cut = cms.string(cut)
+        )
+
+def variable( name, title, formula,bins, min, max ):
+    return cms.PSet(
+        name     = cms.string(name),
+        title    = cms.string(title),
+        formula  = cms.string(formula),
+        min      = cms.double(min),
+        max      = cms.double(max),
+        bins     = cms.int32(bins),
+    )
+
 radToDeg = str(180./math.pi)
 
 # setup 'analysis'  options
@@ -14,6 +31,11 @@ options.register ( 'monitor',
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.bool,
                   "monitor informations for every selected event")
+options.register ( 'useWeights',
+                  True,
+                  VarParsing.VarParsing.multiplicity.singleton,
+                  VarParsing.VarParsing.varType.bool,
+                  "Apply event weights")
 
 
 # setup any defaults you want
@@ -26,100 +48,58 @@ options.parseArguments()
 
 
 process = cms.PSet(
+        treeName   = cms.string('ntupleproducer/hwwStep3'),
         inputFiles = cms.vstring(options.inputFiles),
         outputFile = cms.string(options.outputFile),
         maxEvents  = cms.int64(options.maxEvents),
         monitor    = cms.bool(options.monitor),
-        copyObjects = cms.vstring(['entries']),
+#         copyObjects = cms.vstring(['entries']),
+        copyObjects = cms.vstring([]),
+        useWeights = cms.bool(options.useWeights),
 )
 
 process.channels = cms.VPSet(
+#     cms.PSet(
+#         name = cms.string('ll'),
+#         selection = cms.string('1 == 1 '),
+#     ),
     cms.PSet(
-        name = cms.string('ll'),
-        selection = cms.string('1 == 1 '),
-    ),
-    cms.PSet(
-        name = cms.string('ee'),
-        selection = cms.string('is(\'elel\')'),
-    ),
-    cms.PSet(
-        name = cms.string('em'),
-        selection = cms.string('is(\'elmu\')'),
+        name = cms.string('mm'),
+        selection = cms.string('is(\'mumu\')'),
     ),
     cms.PSet(
         name = cms.string('me'),
         selection = cms.string('is(\'muel\')'),
     ),
     cms.PSet(
-        name = cms.string('mm'),
-        selection = cms.string('is(\'mumu\')'),
+        name = cms.string('em'),
+        selection = cms.string('is(\'elmu\')'),
     ),
+    cms.PSet(
+        name = cms.string('ee'),
+        selection = cms.string('is(\'elel\')'),
+    ),
+
 )
+
+process.monitored = cms.vstring(['mll','nJets','dPhillj0jet','nBJets']) 
 
 process.cuts = cms.VPSet(
-    cms.PSet(
-        name = cms.string('skim'),
-        cut = cms.string('1 == 1'),
-    ),
-    cms.PSet(
-        name = cms.string('minMet'),
-        cut = cms.string('met > 20'),
-    ),
-    cms.PSet(
-        name = cms.string('minMll'),
-        cut = cms.string('mll > 12.'),
-    ),
-    cms.PSet(
-        name = cms.string('Zveto'),
-        cut = cms.string('different() || (abs(mll - 91.18699) > 15.)'),
-    ),
-    cms.PSet(
-        name = cms.string('projMet'),
-        cut = cms.string('( same() &&  projMet > 35 ) || ( different() && projMet > 20 ) '),
-    ),
-    cms.PSet(
-        name = cms.string('Jet Veto'),
-        cut = cms.string('nJets == 1'),
-    ),
-    cms.PSet(
-        name = cms.string('dPhi(ll,j)'),
-        cut = cms.string('different() || dPhillj*'+radToDeg+' < 165.'),
-    ),
-    cms.PSet(
-        name = cms.string('Soft mu'),
-        cut = cms.string('nSoftMus == 0'),
-    ),
-    cms.PSet(
-        name = cms.string('Top Veto'),
-        cut = cms.string('nBJets == 0'),
-    ),
-    cms.PSet(
-        name = cms.string('maxMll'),
-        cut = cms.string('mll < 50'),
-    ),
-    cms.PSet(
-        name = cms.string('pT lead'),
-        cut = cms.string('pA.pt() > 30'),
-    ),
-    cms.PSet(
-        name = cms.string('pT trail'),
-        cut = cms.string('pB.pt() > 25'),
-    ),
-    cms.PSet(
-        name = cms.string('dPhi'),
-        cut = cms.string('dPhi*'+radToDeg+' < 60'),
-    ),
-
-)
-
-def variable( name, title, formula,bins, min, max ):
-    return cms.PSet(
-        name     = cms.string(name),
-        title    = cms.string(title),
-        formula  = cms.string(formula),
-        min      = cms.double(min),
-        max      = cms.double(max),
-        bins     = cms.int32(bins),
+    cut('skim',       'skim',               ''),
+#    cut('minMet',     'min #slash{E}_{T}','met > 20'),
+    cut('minMll',     'min M_{ll}',         'mll > 12.'),
+    cut('Zveto',      'Zveto',              'different() || (abs(mll - 91.18699) > 15.)'),
+    cut('projMet',    'projMet',            '( same() && min(projPfMet,projChargedMetSmurf) > 40. ) || ( different() && min(projPfMet,projChargedMetSmurf) > 20. ) '),
+    cut('jetVeto',    'Jet Veto',           'nJets == 1'),
+    cut('dPhiJll',    'DY jet veto',        '( same() && dPhillj0jet*'+radToDeg+'< 165.) || different()'),
+    cut('softMu',     'Soft mu',            'nSoftMus == 0'),
+    cut('extraLep',   'Extra Lepton Veto',  'nExtra == 0'),
+    cut('antiB',      'Anti B',             'nBJets == 0'),
+    cut('maxMll',     'max M_{ll}',         'mll < 50'),
+    cut('pTLead',     'p_{T} lead',         'pA.pt() > 30'),
+    cut('pTTrail',    'p_{T} trail',        'pB.pt() > 25'),
+    cut('dPhi',       'd#Phi',              'dPhi*'+radToDeg+' < 60.'),
+    cut('mT',         'm_{T}',              'mtll > 90. && mtll < 160.'),
     )
 
 
@@ -133,12 +113,4 @@ process.variables = cms.VPSet(
     variable('ptLead',  'p_{T}^{lead}',             'pA.pt()',50,0,200.),
     variable('ptTrail', 'p_{T}^{trail}',            'pB.pt()',50,0,200.),
 )
-
-process.monitored = cms.vstring([]) 
-
-process.xxx = cms.PSet(
-        a = cms.string('a'),
-        b = cms.int32(10),
-        c = cms.double(1E-3),
-        )
 

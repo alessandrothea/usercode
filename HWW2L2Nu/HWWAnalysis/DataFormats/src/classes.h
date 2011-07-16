@@ -4,6 +4,7 @@
 #include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
 #include "HWWAnalysis/DataFormats/interface/HWWNtuple.h"
 #include "HWWAnalysis/DataFormats/interface/DileptonView.h"
+#include "HWWAnalysis/DataFormats/interface/EventView.h"
 #include <vector>
 #include <map>
 #include <TLorentzVector.h>
@@ -22,19 +23,24 @@ namespace {
        std::vector<HWWSlimBTags>    dummy14;
        HWWNtuple dummy5;
 
-//        hww::EventView               dummy20;
-//        edm::Wrapper<hww::EventView> dummy21;
-//        std::vector<hww::EventView>  dummy22;
-//        edm::Wrapper<std::vector<hww::EventView> > dummy23;
-
        hww::DileptonView               dummy30;
        edm::Wrapper<hww::DileptonView> dummy31;
        std::vector<hww::DileptonView>  dummy32;
        edm::Wrapper<std::vector<hww::DileptonView> > dummy33;
+
+       hww::EventView                  dummyEventView;
+       edm::Wrapper<hww::EventView>    dummyWrapperEventView;
+       std::vector<hww::EventView>     dummyVectorEventView;
+       edm::Wrapper<std::vector<hww::EventView> > dummyWrapperVectorEventView;
        
        edm::Ptr<reco::RecoCandidate>  dummyRecoPtr;
        std::vector<edm::Ptr<reco::RecoCandidate> > dummyRecoPtrVec;
+       std::vector<edm::Ptr<pat::Electron> >   dummyElectronPtrVec;
+       std::vector<edm::Ptr<pat::Muon> >       dummyMuonPtrVec;
+       std::vector<edm::Ptr<pat::Jet> >         dummyJetPtrVec;
 
+       edm::Ptr<hww::DileptonView>    dummyDileptonViewPtr;
+       std::vector<edm::Ptr<hww::DileptonView> > dummyDileptonViewPtrVec;
    
       edm::Wrapper<std::map<std::string,int> > dummyStrIntMap;
 //add 'dummy' Wrapper variable for each class type you put into the Event

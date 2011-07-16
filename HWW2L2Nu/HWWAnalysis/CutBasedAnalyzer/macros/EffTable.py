@@ -2,10 +2,18 @@
 import sys
 import optparse
 import math
-import odict
+import HWWAnalysis.Misc.odict
+import string
 
+usage = 'usage: %prog [options]'
+parser = optparse.OptionParser(usage)
 
-args = sys.argv[:]
+parser.add_option('-k', '--kfactor', dest='kfactor', help='Normalization factor', default='1.')
+ 
+(opt, args) = parser.parse_args()
+
+kfact = string.atof(opt.kfactor)
+
 sys.argv.append( '-b' )
 import ROOT
 ROOT.gROOT.SetBatch()
@@ -16,8 +24,6 @@ if len(args) is not 2:
     print '   Usage: %prog <path>'
     sys.exit(0)
 
-# ROOT.gSystem.Load('lib/libHWWNtuple.so')
-
 f = ROOT.TFile(args[1])
 
 fStates = ['mm','me','em','ee','ll']
@@ -27,13 +33,14 @@ prefix='yieldAnalyzer/'
 # prefix='diLepSel/'
 for s in fStates:
     d[s] = odict.OrderedDict()
-#     print '\n-',s+'Counters'
+
     name = prefix+s+'Yield'
     counters = f.Get(name)
+    counters.Scale(kfact)
     if not counters.__nonzero__():
         raise NameError('histogram '+name+' not found in '+args[1])
     lastBin = counters.GetNbinsX()
-#     print 'Entries:',counters.GetBinContent(1)
+
     d[s]['entries'] = '%.2f' % counters.GetBinContent(1)
     for i in range(2,lastBin+1):
         ax = counters.GetXaxis()
@@ -57,7 +64,8 @@ for s in fStates:
         
 print '+ Cut'.ljust(34),' | '.join([ s.ljust(20) for s in fStates ])
 
-for lab in d['ll'].iterkeys():
+# loop over the labels of the first column
+for lab in d.iteritems().next().iterkeys():
     print '-',lab.ljust(30),'=',' | '.join( [ d[s][lab].ljust(20) for s in fStates ]) 
 
 print r'\begin{tabular}{'+'l'*(len(fStates)+1)+'}'

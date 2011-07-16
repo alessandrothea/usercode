@@ -11,21 +11,29 @@
   <class name="std::vector<HWWPFJet>"/>
   <class name="std::vector<HWWSlimBTags>"/>
   <class name="HWWNtuple"/>
+
   <class name="hww::DileptonView"/>
   <class name="std::vector<hww::DileptonView>"/>
   <class name="edm::Wrapper<hww::DileptonView>"/>
   <class name="edm::Wrapper<std::vector<hww::DileptonView> >"/>
 
-  <class name="edm::Ptr<reco::RecoCandidate>"/>
-  <class name="std::vector<edm::Ptr<reco::RecoCandidate> >"/>
-
-  <class name="edm::Wrapper<std::map<std::string, int> >"/>
-<!--
   <class name="hww::EventView"/>
   <class name="std::vector<hww::EventView>"/>
   <class name="edm::Wrapper<hww::EventView>"/>
   <class name="edm::Wrapper<std::vector<hww::EventView> >"/>
--->
+
+  <class name="edm::Ptr<reco::RecoCandidate>"/>
+  <class name="std::vector<edm::Ptr<reco::RecoCandidate> >"/>
+  <class name="std::vector<edm::Ptr<pat::Electron> >"/>
+  <class name="std::vector<edm::Ptr<pat::Muon> >"/>
+  <class name="std::vector<edm::Ptr<pat::Jet> >"/>
+
+  <class name="edm::Ptr<hww::DileptonView>"/>
+  <class name="std::vector<edm::Ptr<hww::DileptonView> >"/>
+
+  <class name="edm::Wrapper<std::map<std::string, int> >"/>
+
+
 <!--   <class name="std::vector<YOUR_CLASS_GOES_HERE>" /> -->
 <!--   <class pattern="edm::Wrapper<YOUR_CLASS_GOES_HERE>"/> -->
 <!--   <class name="edm::Wrapper<std::vector<YOUR_CLASS_GOES_HERE> >" /> -->

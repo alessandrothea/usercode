@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Fri Jun 24 16:27:01 CEST 2011
-// $Id$
+// $Id: DileptonProducer.cc,v 1.1 2011/06/29 22:16:06 thea Exp $
 //
 //
 
@@ -32,7 +32,7 @@
 #include "CommonTools/Utils/interface/StringCutObjectSelector.h"
 #include "HWWAnalysis/DataFormats/interface/DileptonView.h"
 #include "HWWAnalysis/Misc/interface/Tools.h"
-
+#include "Math/VectorUtil.h"
 
 //
 // class declaration
@@ -123,7 +123,12 @@ DileptonProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
             if ( !selector_(p) ) continue;
 
             for( uint k(0); k < leptons.size(); ++k ) {
+                // no double counting
                 if ( k == i || k == j ) continue;
+                // and overlap removal
+                double dRi = ROOT::Math::VectorUtil::DeltaR(leptons[i]->p4(),leptons[k]->p4());
+                double dRj = ROOT::Math::VectorUtil::DeltaR(leptons[j]->p4(),leptons[k]->p4());
+                if ( dRi < 0.1 || dRj < 0.1 ) continue;
                 p.addExtra(leptons[k]);
             }
             pairs->push_back(p);
@@ -131,6 +136,7 @@ DileptonProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 //             cout << "all " << leptons.size() << " | " << p.getLeptons().size() << " | " << p.getExtra().size() << " | " << endl;
         }
 
+    sort(pairs->begin(), pairs->end(), hww::helper::greaterByPtSum() );
     iEvent.put(pairs);
     
 }

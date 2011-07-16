@@ -670,7 +670,7 @@ void HWWAnalyzer::buildNtuple(){
 
     double dPhiLLJet = -TMath::TwoPi();
     // 8 1-jet case
-    if ( nJets == 1 ) {
+    if ( nJets > 0 && _event->PFJets[0].P.pt() > _minJetPt ) {
         // tocheck, is [0] the higest pt jet?
         math::XYZTLorentzVector pJet = _event->PFJets[0].P;
         math::XYZTLorentzVector pLL  = pA+pB;
@@ -679,16 +679,17 @@ void HWWAnalyzer::buildNtuple(){
 
     // get the delta phi between the leading jet and the dilepton for 0 jet DY cut
     double dPhiLLJet0jet = -TMath::TwoPi();    if (countJets( _minJetPtDY, _maxJetEta ) > 0 ) {
-      // get the hardest jet below threshold
-      math::XYZTLorentzVector pJet;
-      for(int j=0; j<_event->PFNJets; j++) {
-	double pt = _event->PFJets[j].P.Pt();
-	if (pt < _minJetPt && pt > _minJetPtDY) {
-	  pJet = _event->PFJets[j].P;	
-	}
-      }
-      math::XYZTLorentzVector pLL  = pA+pB;
-      dPhiLLJet0jet                    = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));      
+        // get the hardest jet below threshold
+        math::XYZTLorentzVector pJet;
+        for(int j=0; j<_event->PFNJets; j++) {
+            double pt = _event->PFJets[j].P.Pt();
+            if (pt < _minJetPt && pt > _minJetPtDY) {
+                pJet = _event->PFJets[j].P;	
+                break;
+            }
+        }
+        math::XYZTLorentzVector pLL  = pA+pB;
+        dPhiLLJet0jet                    = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));      
     }
 
     // jets 
@@ -705,21 +706,21 @@ void HWWAnalyzer::buildNtuple(){
     double jet1eta = -99.9;
     double jet2eta = -99.9;
     for(int i=0; i<nj; i++) {
-      math::XYZTLorentzVector jet = _event->PFJets[i].P;
-      jetPt.push_back(jet.Pt());
-      jetPhi.push_back(jet.Phi());
-      jetEta.push_back(jet.Eta());
+        math::XYZTLorentzVector jet = _event->PFJets[i].P;
+        jetPt.push_back(jet.Pt());
+        jetPhi.push_back(jet.Phi());
+        jetEta.push_back(jet.Eta());
     }
     //FIXME: need to find a good solution for the jet vars in terms of TMVA
     if(jetPt.size()>0) {
-      jet1pt  = jetPt[0];
-      jet1phi = jetPhi[0];
-      jet1eta = jetEta[0];
+        jet1pt  = jetPt[0];
+        jet1phi = jetPhi[0];
+        jet1eta = jetEta[0];
     }
     if(jetPt.size()>1) {
-      jet2pt  = jetPt[1];
-      jet2phi = jetPhi[1];
-      jet2eta = jetEta[1];
+        jet2pt  = jetPt[1];
+        jet2phi = jetPhi[1];
+        jet2eta = jetEta[1];
     }
 
     // transverse masses
@@ -798,11 +799,9 @@ void HWWAnalyzer::buildNtuple(){
     // scalar & vectorial sum of jet pt
     double sumPtJetsScalar = 0.;    
     double sumPtCentralJetsScalar = 0.;    
-    double sumPtCentralJets40Scalar = 0.;    
     double sumPJetsScalar = 0.;    //
     math::XYZTLorentzVector sumPtJetsVectorial;
     math::XYZTLorentzVector sumPtCentralJetsVectorial;
-    math::XYZTLorentzVector sumPtCentralJets40Vectorial;
     std::vector<double> bTagProb;
     double jet1bTagProb = -99.9;
     double jet2bTagProb = -99.9;
@@ -812,36 +811,29 @@ void HWWAnalyzer::buildNtuple(){
     _ntuple->nCentralJets = 0;
     std::vector<HWWPFJet>::iterator iJet;
     for( iJet = _event->PFJets.begin(); iJet != _event->PFJets.end(); ++iJet) {
-      bTagProb.push_back(iJet->BTagProbTkCntHighEff);
-      maxbtagProb = TMath::Max(maxbtagProb, iJet->BTagProbTkCntHighEff);
-      sumPtJetsScalar    += iJet->P.pt();
-      sumPJetsScalar    += iJet->P.e(); //
-      sumPtJetsVectorial += iJet->P;
-      if ( iJet->P.eta() <  2.5 ) {
-	++_ntuple->nCentralJets;
-	sumPtCentralJetsScalar    += iJet->P.pt();
-	sumPtCentralJetsVectorial += iJet->P;
-	if ( iJet->P.pt() > 40. ) {
-	  ++_ntuple->nCentralJets40;
-	  sumPtCentralJets40Scalar    += iJet->P.pt();
-	  sumPtCentralJets40Vectorial += iJet->P;
-	}
-      }
+        bTagProb.push_back(iJet->BTagProbTkCntHighEff);
+        maxbtagProb = TMath::Max(maxbtagProb, iJet->BTagProbTkCntHighEff);
+        sumPtJetsScalar    += iJet->P.pt();
+        sumPJetsScalar    += iJet->P.e(); //
+        sumPtJetsVectorial += iJet->P;
+        if ( iJet->P.eta() <  2.5 ) {
+            ++_ntuple->nCentralJets;
+            sumPtCentralJetsScalar    += iJet->P.pt();
+            sumPtCentralJetsVectorial += iJet->P;
+        }
     }
     if(bTagProb.size()>0) {
-      jet1bTagProb = bTagProb[0];
+        jet1bTagProb = bTagProb[0];
     }
     if(bTagProb.size()>1) {
-      jet2bTagProb = bTagProb[1];
-      sumJet12bTagProb = bTagProb[0] + bTagProb[1];
+        jet2bTagProb = bTagProb[1];
+        sumJet12bTagProb = bTagProb[0] + bTagProb[1];
     }
 
     _ntuple->sumPtJetsScalar             = sumPtJetsScalar;    
     _ntuple->sumPtCentralJetsScalar      = sumPtCentralJetsScalar;    
-    _ntuple->sumPtCentralJets40Scalar    = sumPtCentralJets40Scalar;    
     _ntuple->sumPtJetsVectorial          = sumPtJetsVectorial.Pt();    
     _ntuple->sumPtCentralJetsVectorial   = sumPtCentralJetsVectorial.Pt();    
-    _ntuple->sumPtCentralJets40Vectorial = sumPtCentralJets40Vectorial.Pt();    
 
     _ntuple->centralityJetsScalar             = sumPtJetsScalar/sumPJetsScalar;    
     _ntuple->centralityJetsVectorial          = sumPtJetsVectorial.Pt()/sumPJetsScalar;    
@@ -854,9 +846,6 @@ void HWWAnalyzer::buildNtuple(){
 
 
     // FIXME: check if it is possible to use a vector in MVA
-    _ntuple->jetPt        = jetPt;
-    _ntuple->jetPhi       = jetPhi;
-    _ntuple->jetEta       = jetEta;
     _ntuple->jet1pt       = jet1pt;
     _ntuple->jet2pt       = jet2pt;
     _ntuple->jet1phi      = jet1phi;

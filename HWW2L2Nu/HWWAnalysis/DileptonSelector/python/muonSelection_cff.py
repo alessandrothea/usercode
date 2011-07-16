@@ -1,8 +1,13 @@
 import FWCore.ParameterSet.Config as cms
-# from PhysicsTools.PatAlgos.patSequences_cff import *
 from HWWAnalysis.DileptonSelector.muonCuts_cff import *
 
 selectedRefPatMuons = cms.EDFilter("PATMuonRefSelector",
+   src = cms.InputTag("boostedMuons"),
+   filter = cms.bool(False),
+   cut = cms.string("")
+)
+
+selectedPatMuons = cms.EDFilter("PATMuonSelector",
    src = cms.InputTag("boostedMuons"),
    filter = cms.bool(False),
    cut = cms.string("")
@@ -25,6 +30,9 @@ hwwMuonsMergeCONV    = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID
 hwwMuonsMergeIP      = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT +"&&"+ MUON_MERGE_ISO+"&&"+MUON_MERGE_IP )
 hwwMuons4Veto        = selectedRefPatMuons.clone( cut = "pt > 3 && " + MUON_ID_CUT_4VETO )
 
+# object copy for final storage
+# dont' add them to the sequence by default
+hwwSelectedMuons     = selectedPatMuons.clone( cut = hwwMuonsMergeIP.cut )
 
 hwwMuonSequence = cms.Sequence( 
     hwwMuMatch * 

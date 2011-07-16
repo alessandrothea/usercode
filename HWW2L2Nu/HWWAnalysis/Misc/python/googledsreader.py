@@ -5,12 +5,39 @@ import gdata.spreadsheet.service
 
 from HWWAnalysis.Misc.dataset import GDataset
 
+defaultWSKey = '0AmbqMj_rTADpdEZWRnU1TjZ5N3AtdVFqb0tMVUpqb1E'
+
+class GoogleDatasetCellReader:
+    '''GoogleDatasetCellReader'''
+    def __init__(self,tab):
+        self._tab     = tab
+        self._client  = gdata.spreadsheet.service.SpreadsheetsService()  
+        self._skey    = defaultWSKey
+
+    def feedUrl(self):
+        return 'https://spreadsheet.google.com/feeds/worksheets/'+self._skey+'/public/values'
+
+    def read(self, manager):
+        spreadsheet_feed = self._client.GetFeed( self.feedUrl() )
+        tabList = [ entry.title.text  for (i,entry) in enumerate(spreadsheet_feed.entry) ]
+        try:
+            tabIndex = tabList.index(self._tab)
+        except:
+            return None
+
+        ws_entry = spreadsheet_feed.entry[tabIndex]  
+        wskey = ws_entry.id.text.rsplit('/')[-1]  
+
+        # can be retrieved from the entry itself
+        ws_feedurl = 'https://spreadsheet.google.com/feeds/cells/'+self._skey+'/'+wskey+'/public/values'
+        # to be continued
+ 
 class GoogleDatasetReader:
     '''GoogleDatasetReader'''
     def __init__(self, tab):
         self._tab     = tab
         self._client  = gdata.spreadsheet.service.SpreadsheetsService()  
-        self._skey    = '0AmbqMj_rTADpdEZWRnU1TjZ5N3AtdVFqb0tMVUpqb1E'
+        self._skey    = defaultWSKey
     
     def feedUrl(self):
         return 'https://spreadsheet.google.com/feeds/worksheets/'+self._skey+'/public/values'

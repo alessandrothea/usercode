@@ -28,6 +28,7 @@ process = cms.PSet(
     higgsMass       = cms.int32(160),
     cutFile         = cms.string('test/HmassCuts.cfg'),
     jetPtMin        = cms.double(30.),
+    jetPtMinDYcut   = cms.double(15.),
     jetEtaMax       = cms.double(5.),
     bDiscriminator  = cms.string('trackCountingHighEffBJetTags'),
     bThreshold      = cms.double(2.1),

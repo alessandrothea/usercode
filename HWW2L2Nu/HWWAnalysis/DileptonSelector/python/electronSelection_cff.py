@@ -1,5 +1,4 @@
 import FWCore.ParameterSet.Config as cms
-# from PhysicsTools.PatAlgos.patSequences_cff import *
 from HWWAnalysis.DileptonSelector.electronCuts_cff import *
 
 selectedRefPatElectrons = cms.EDFilter("PATElectronRefSelector",
@@ -8,6 +7,11 @@ selectedRefPatElectrons = cms.EDFilter("PATElectronRefSelector",
    cut = cms.string(""),
 )
 
+selectedPatElectrons = cms.EDFilter("PATElectronSelector",
+   src = cms.InputTag("boostedElectrons"),
+   filter = cms.bool(False),
+   cut = cms.string(""),
+)
 
 ELE_BASE = "( pt > 10 && abs(eta)<2.5 )"
 hwwEleMatch = selectedRefPatElectrons.clone( cut = ELE_BASE )
@@ -54,6 +58,9 @@ hwwEleISOMerge2  = selectedRefPatElectrons.clone( cut = ELE_BASE + " && " + ELE_
 hwwEleCONVMerge2 = selectedRefPatElectrons.clone( cut = ELE_BASE + " && " + ELE_MERGE_ID2 + " && " + ELE_MERGE_ISO + " && " + ELE_MERGE_CONV ) 
 hwwEleIPMerge2   = selectedRefPatElectrons.clone( cut = ELE_BASE + " && " + ELE_MERGE_ID2 + " && " + ELE_MERGE_ISO + " && " + ELE_MERGE_CONV + " && " + ELE_MERGE_IP ) 
 
+# object copy for final storage
+hwwSelectedElectrons = selectedPatElectrons.clone( cut = hwwEleIPMerge.cut )
+
 hwwElectronSequence = cms.Sequence(  
     hwwEleMatch *
 
@@ -65,5 +72,4 @@ hwwElectronSequence = cms.Sequence(
     hwwEleISOMerge2 *
     hwwEleCONVMerge2 *
     hwwEleIPMerge2 
-
 )

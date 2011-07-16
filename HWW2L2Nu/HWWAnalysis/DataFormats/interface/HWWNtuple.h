@@ -36,6 +36,11 @@ public:
     bool selected;
     double weight;
 
+    bool singleMuBit;
+    bool doubleMuBit;
+    bool doubleElBit;
+    bool muEGBit;
+
     unsigned long tags;
 
     unsigned int nExtra;
@@ -60,12 +65,13 @@ public:
 	double chargedMet;
 	double chargedMetPhi;
     double chargedMetSmurf;
+    double chargedMetSmurfPhi;
 	double pfMetDphi;
 	double tcMetDphi;
 	double chargedMetDphi;
     double chargedMetSmurfDphi;
 
-	double projPfMet;
+    double projPfMet;
 	double projTcMet;
 	double projChargedMet;
 	double projChargedMetSmurf;
@@ -87,10 +93,6 @@ public:
     double razor;
 
 	unsigned nJets;
-	// for all jets
-	std::vector<double> jetPt;
-	std::vector<double> jetPhi;
-	std::vector<double> jetEta;
 	// single jets
 	double jet1pt;
 	double jet2pt;
@@ -109,19 +111,17 @@ public:
 	unsigned nBJets;
     // 1 jet only
     double dPhillj;
+    double dPhillj0jet;
 
     double mtll;
 
     // additional
 	unsigned nCentralJets;
-	unsigned nCentralJets40;
 
 	double sumPtJetsScalar;
 	double sumPtCentralJetsScalar;
-	double sumPtCentralJets40Scalar;
 	double sumPtJetsVectorial;
 	double sumPtCentralJetsVectorial;
-	double sumPtCentralJets40Vectorial;
 
 	double centralityJetsScalar;
 	double centralityJetsVectorial;

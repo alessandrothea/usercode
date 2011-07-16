@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Fri Jun 24 12:10:37 CEST 2011
-// $Id: HWWTreeProducer.cc,v 1.2 2011/06/30 14:25:57 thea Exp $
+// $Id: HWWTreeProducer.cc,v 1.4 2011/07/05 17:00:59 thea Exp $
 //
 //
 
@@ -413,7 +413,7 @@ HWWTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
                break;
            } 
 
-        // overlao check with electrons
+        // overlap check with electrons
         for( iEl = bEl; iEl != eEl; ++iEl ) 
            if ( TMath::Abs(ROOT::Math::VectorUtil::DeltaR(pfP4,iEl->p4())) <= 0.1 ) {
                isLepton = true;
