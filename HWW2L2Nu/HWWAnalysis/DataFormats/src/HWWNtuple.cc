@@ -29,6 +29,7 @@ void HWWNtuple::clear(){
 
     singleMuBit = false;
     doubleMuBit = false;
+    singleElBit = false;
     doubleElBit = false;
     muEGBit     = false;
 

@@ -156,10 +156,12 @@ HWWNtupleTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
     ntuple_->singleMuBit                = v.bit("singleMuDataPaths");               
     ntuple_->doubleMuBit                = v.bit("doubleMuDataPaths");               
+    ntuple_->singleElBit                = v.bit("singleElDataPaths");               
     ntuple_->doubleElBit                = v.bit("doubleElDataPaths");               
     ntuple_->muEGBit                    = v.bit("muEGDataPaths");               
 
     ntuple_->type                       = type;
+    ntuple_->nExtra                     = v.pair()->nExtra();
 
     ntuple_->pA                         = v.pair()->leading()->p4();
     ntuple_->pB                         = v.pair()->trailing()->p4();

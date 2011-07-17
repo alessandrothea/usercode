@@ -38,6 +38,7 @@ public:
 
     bool singleMuBit;
     bool doubleMuBit;
+    bool singleElBit;
     bool doubleElBit;
     bool muEGBit;
 

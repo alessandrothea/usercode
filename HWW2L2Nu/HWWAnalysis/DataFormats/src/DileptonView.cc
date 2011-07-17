@@ -219,6 +219,11 @@ namespace hww {
     }
 
     int
+    DileptonView::nExtra() const {
+        return extra_.size();
+    }
+
+    int
     DileptonView::nElectrons() const {
         return electrons_.size();
     }

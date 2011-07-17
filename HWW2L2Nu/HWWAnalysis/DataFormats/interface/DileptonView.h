@@ -37,6 +37,7 @@ namespace hww {
         int  chargeSum() const;
         
         double mll() const;
+        int    nExtra() const;
         int    nLeptons() const;
         int    nElectrons() const;
         int    nMuons() const;
