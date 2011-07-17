@@ -86,7 +86,7 @@ process.monitored = cms.vstring(['mll','nJets','dPhillj0jet','nBJets'])
 
 process.cuts = cms.VPSet(
     cut('skim',       'skim',               ''),
-#    cut('minMet',     'min #slash{E}_{T}','met > 20'),
+    cut('minMet',     'min #slash{E}_{T}','met > 20'),
     cut('minMll',     'min M_{ll}',         'mll > 12.'),
     cut('Zveto',      'Zveto',              'different() || (abs(mll - 91.18699) > 15.)'),
     cut('projMet',    'projMet',            '( same() && min(projPfMet,projChargedMetSmurf) > 40. ) || ( different() && min(projPfMet,projChargedMetSmurf) > 20. ) '),
@@ -101,7 +101,6 @@ process.cuts = cms.VPSet(
     cut('dPhi',       'd#Phi',              'dPhi*'+radToDeg+' < 60.'),
     cut('mT',         'm_{T}',              'mtll > 90. && mtll < 160.'),
     )
-
 
 
 process.variables = cms.VPSet(

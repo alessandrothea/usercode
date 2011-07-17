@@ -75,12 +75,16 @@ hltFilter = cms.EDFilter('HltDatasetFilter',
         reject = cms.vstring(),
     ),
     data       = cms.PSet(
-        accept = cms.vstring('singleMuDataPaths','doubleMuDataPaths','doubleElDataPaths','muEGDataPaths'),
+        accept = cms.vstring('singleElDataPaths','singleMuDataPaths','doubleMuDataPaths','doubleElDataPaths','muEGDataPaths'),
         reject = cms.vstring(),
+    ),
+    singleEl = cms.PSet(
+        accept = cms.vstring('singleElDataPaths'),
+        reject = cms.vstring('doubleElDataPaths','muEGDataPaths'),
     ),
     singleMu = cms.PSet(
         accept = cms.vstring('singleMuDataPaths'),
-        reject = cms.vstring('doubleMuDataPaths'),
+        reject = cms.vstring('doubleMuDataPaths','muEGDataPaths'),
     ),
     doubleMu = cms.PSet(
         accept = cms.vstring('doubleMuDataPaths'),
@@ -92,7 +96,7 @@ hltFilter = cms.EDFilter('HltDatasetFilter',
     ),
     muEG = cms.PSet(
         accept = cms.vstring('muEGDataPaths'),
-        reject = cms.vstring('singleMuDataPaths'),
+        reject = cms.vstring(),
     )
 )
 

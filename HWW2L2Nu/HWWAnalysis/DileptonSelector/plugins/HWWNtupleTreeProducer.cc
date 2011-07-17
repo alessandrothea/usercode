@@ -65,6 +65,7 @@ class HWWNtupleTreeProducer : public edm::EDAnalyzer {
       HWWNtuple*  ntuple_;
       TH1D*       scalars_;
 
+      edm::InputTag weightSrc_;
       edm::InputTag viewSrc_;
       
 };
@@ -85,6 +86,7 @@ HWWNtupleTreeProducer::HWWNtupleTreeProducer(const edm::ParameterSet& iConfig)
 {
     //now do what ever initialization is needed
     treeName_       = iConfig.getParameter<std::string>("treeName");
+    weightSrc_      = iConfig.getParameter<edm::InputTag>("weightSrc");
     viewSrc_        = iConfig.getParameter<edm::InputTag>("viewSrc");
 
 }
@@ -113,12 +115,21 @@ HWWNtupleTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     // trigger info
     using namespace edm;
 
+    Handle<std::vector<double> > weights;
+    iEvent.getByLabel(weightSrc_, weights);
+
     edm::Handle<edm::View<hww::EventView> > eventViews;
     iEvent.getByLabel(viewSrc_,eventViews);
 
     if ( eventViews->size() == 0 ) return;
     ntuple_->clear();
 
+
+    double weight(1.);
+    for( uint i(0); i<weights->size(); ++i)
+        weight *= weights->at(i);
+
+    // use the view with the highest pt sum
     const hww::EventView& v = eventViews->front();
     
     uint idA = TMath::Abs(v.pair()->leading()->pdgId());
@@ -140,6 +151,8 @@ HWWNtupleTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     ntuple_->run                        = iEvent.id().run();
     ntuple_->lumiSection                = iEvent.id().luminosityBlock();
     ntuple_->event                      = iEvent.id().event();
+
+    ntuple_->weight                     = weight;
 
     ntuple_->singleMuBit                = v.bit("singleMuDataPaths");               
     ntuple_->doubleMuBit                = v.bit("doubleMuDataPaths");               

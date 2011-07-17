@@ -453,6 +453,7 @@ process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
 
 process.ntupleproducer = cms.EDAnalyzer('HWWNtupleTreeProducer',
     treeName      = cms.string('hwwStep3'),
+    weightSrc     = cms.InputTag('eventWeights'),
     viewSrc       = cms.InputTag('hwwViews'),
 )
 
