@@ -526,7 +526,8 @@ if options.saveStep2:
            'keep *_goodPrimaryVertices_*_*',
            'drop edmTriggerResults_*_*_Yield',
            'drop edmTriggerResults_*_*_Step2',
-       )
+       ),
+       dropMetaData = cms.untracked.string('ALL'),
     )
 
     process.outpath = cms.EndPath(process.out)
