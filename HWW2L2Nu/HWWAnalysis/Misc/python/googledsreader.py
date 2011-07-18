@@ -56,15 +56,14 @@ class GoogleDatasetCellReader:
             c = int(element.attributes['col'])
             r = int(element.attributes['row'])
 
-#             print r-1,c-1,element.text
             table[r-1][c-1] = element.text
 
         # the header is the first row. This might change
         columns = table.pop(0)
-        if not 'uid' in columns or not 'nevents' in columns:
-            raise RuntimeError('The columns uid and nevents are required. Add them to the table')
+        required = ['uid','events']
+        if not all([ key in columns for key in required ]):
+            raise RuntimeError('The columns '+', '.join(required) +' are required. Add them to the table')
         manager._columns = columns
-#         header = odict.OrderedDict(zip(hrow,range(len(hrow))))
         header = dict(enumerate(columns))
 
         for r,row in enumerate(table):
@@ -72,8 +71,9 @@ class GoogleDatasetCellReader:
             for c,cell in enumerate(row):
                 ds[header[c]] = cell
             
-            print ds
-            if not ds['uid'] or not ds['nevents']:
+#             print ds
+            if any( [ not ds[key] for key in required ]):
+#             if not ds['uid'] or not ds['events']:
                 # skip rows with not uid or no nEvents
                 continue
             gds = GDataset()

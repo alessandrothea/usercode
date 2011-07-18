@@ -112,7 +112,6 @@ public:
 	unsigned nBJets;
     // 1 jet only
     double dPhillj;
-    double dPhillj0jet;
 
     double mtll;
 

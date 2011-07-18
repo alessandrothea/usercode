@@ -214,8 +214,8 @@ HWWNtupleTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     ntuple_->nJets                      = v.nJets(30.,5.);
     ntuple_->nCentralJets               = v.nJets(30.,2.5);
 
-    ntuple_->dPhillj                    = v.dPhiJll(30.,5.);
-    ntuple_->dPhillj0jet                = v.dPhiJll(15.,5.);
+    ntuple_->dPhillj                    = v.dPhiJll(15.,5.);
+//     ntuple_->dPhillj0jet                = v.dPhiJll(15.,5.);
 
     ntuple_->sumPtJetsScalar            = v.jetPtSum(30.,5.);
     ntuple_->sumPtCentralJetsScalar     = v.jetPtSum(30.,2.5);

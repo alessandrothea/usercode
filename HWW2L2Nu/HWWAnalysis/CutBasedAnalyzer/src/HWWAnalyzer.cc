@@ -670,27 +670,27 @@ void HWWAnalyzer::buildNtuple(){
 
     double dPhiLLJet = -TMath::TwoPi();
     // 8 1-jet case
-    if ( nJets > 0 && _event->PFJets[0].P.pt() > _minJetPt ) {
+    if ( nJets > 0 && _event->PFJets[0].P.pt() > _minJetPtDY ) {
         // tocheck, is [0] the higest pt jet?
         math::XYZTLorentzVector pJet = _event->PFJets[0].P;
         math::XYZTLorentzVector pLL  = pA+pB;
         dPhiLLJet                    = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));
     }
 
-    // get the delta phi between the leading jet and the dilepton for 0 jet DY cut
-    double dPhiLLJet0jet = -TMath::TwoPi();    if (countJets( _minJetPtDY, _maxJetEta ) > 0 ) {
-        // get the hardest jet below threshold
-        math::XYZTLorentzVector pJet;
-        for(int j=0; j<_event->PFNJets; j++) {
-            double pt = _event->PFJets[j].P.Pt();
-            if (pt < _minJetPt && pt > _minJetPtDY) {
-                pJet = _event->PFJets[j].P;	
-                break;
-            }
-        }
-        math::XYZTLorentzVector pLL  = pA+pB;
-        dPhiLLJet0jet                    = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));      
-    }
+//     // get the delta phi between the leading jet and the dilepton for 0 jet DY cut
+//     double dPhiLLJet0jet = -TMath::TwoPi();    if (countJets( _minJetPtDY, _maxJetEta ) > 0 ) {
+//         // get the hardest jet below threshold
+//         math::XYZTLorentzVector pJet;
+//         for(int j=0; j<_event->PFNJets; j++) {
+//             double pt = _event->PFJets[j].P.Pt();
+//             if (pt < _minJetPt && pt > _minJetPtDY) {
+//                 pJet = _event->PFJets[j].P;	
+//                 break;
+//             }
+//         }
+//         math::XYZTLorentzVector pLL  = pA+pB;
+//         dPhiLLJet0jet                    = TMath::Abs(ROOT::Math::VectorUtil::DeltaPhi(pJet,pLL));      
+//     }
 
     // jets 
     int nj = _event->PFNJets;
@@ -864,7 +864,7 @@ void HWWAnalyzer::buildNtuple(){
     _ntuple->nBJets        = countBtags( _bThreshold ); 
 
     _ntuple->dPhillj       = dPhiLLJet;
-    _ntuple->dPhillj0jet   = dPhiLLJet0jet;
+//     _ntuple->dPhillj0jet   = dPhiLLJet0jet;
     _ntuple->mtll          = transverseMass( pA+pB ,pfMet4 );
 
 }

@@ -74,7 +74,6 @@ void HWWNtuple::clear(){
 	nBJets  = 0;
 
     dPhillj = 0.;
-    dPhillj0jet = 0.;
 
     mtll    = 0.;
 

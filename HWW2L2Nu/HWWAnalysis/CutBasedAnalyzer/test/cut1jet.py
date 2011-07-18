@@ -82,7 +82,7 @@ process.channels = cms.VPSet(
 
 )
 
-process.monitored = cms.vstring(['mll','nJets','dPhillj0jet','nBJets']) 
+process.monitored = cms.vstring(['mll','nJets','dPhillj','nBJets']) 
 
 process.cuts = cms.VPSet(
     cut('skim',       'skim',               ''),
@@ -91,7 +91,7 @@ process.cuts = cms.VPSet(
     cut('Zveto',      'Zveto',              'different() || (abs(mll - 91.18699) > 15.)'),
     cut('projMet',    'projMet',            '( same() && min(projPfMet,projChargedMetSmurf) > 40. ) || ( different() && min(projPfMet,projChargedMetSmurf) > 20. ) '),
     cut('jetVeto',    'Jet Veto',           'nJets == 1'),
-    cut('dPhiJll',    'DY jet veto',        '( same() && dPhillj0jet*'+radToDeg+'< 165.) || different()'),
+    cut('dPhiJll',    'DY jet veto',        '( same() && dPhillj*'+radToDeg+'< 165.) || different()'),
     cut('softMu',     'Soft mu',            'nSoftMus == 0'),
     cut('extraLep',   'Extra Lepton Veto',  'nExtra == 0'),
     cut('antiB',      'Anti B',             'nBJets == 0'),

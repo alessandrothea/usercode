@@ -82,7 +82,7 @@ process.channels = cms.VPSet(
 
 )
 
-process.monitored = cms.vstring(['mll','nJets','dPhillj0jet','nBJets']) 
+process.monitored = cms.vstring(['mll','nJets','dPhillj','nBJets']) 
 
 process.cuts = cms.VPSet(
     cut('skim',       'skim',               ''),
@@ -91,7 +91,7 @@ process.cuts = cms.VPSet(
     cut('Zveto',      'Zveto',              'different() || (abs(mll - 91.18699) > 15.)'),
     cut('projMet',    'projMet',            '( same() && min(projPfMet,projChargedMetSmurf) > 40. ) || ( different() && min(projPfMet,projChargedMetSmurf) > 20. ) '),
     cut('jetVeto',    'Jet Veto',           'nJets == 0'),
-    cut('dPhiJll',    'DY jet veto',        '( same() && dPhillj0jet*'+radToDeg+'< 165.) || different()'),
+    cut('dPhiJll',    'DY jet veto',        '( same() && dPhillj*'+radToDeg+'< 165.) || different()'),
     cut('softMu',     'Soft mu',            'nSoftMus == 0'),
     cut('extraLep',   'Extra Lepton Veto',  'nExtra == 0'),
     cut('antiB',      'Anti B',             'nBJets == 0'),
@@ -123,7 +123,6 @@ process.variables = cms.VPSet(
 ##      variable('dPt',     '#Delta p_{T, ll};GeV',                     'pA.pt()-pB.pt()',200,0.,200.),
 ##      variable('dRll',    '#DeltaR{ll}:#DeltaR{ll}',                  'deltaRll',100,0.,5.),
     variable('dileptonPt', 'p_{T, ll};GeV',                         'dileptonPt',50,0,50.),
-    variable('dPhillj0jet', '#Delta#phi_{ll,jet}',                         'dPhillj0jet*'+radToDeg,36,0,180.),
 
 #      variable('PfMetPhi', '#phi_{#slash{E}_{T}};',                   'pfMetPhi',30,-3.14159,3.14159),
 
