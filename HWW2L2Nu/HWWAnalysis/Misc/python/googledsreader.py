@@ -2,6 +2,7 @@ import gdata
 import gdata.docs  
 import gdata.spreadsheet  
 import gdata.spreadsheet.service  
+import HWWAnalysis.Misc.odict as odict
 
 from HWWAnalysis.Misc.dataset import GDataset
 
@@ -30,6 +31,70 @@ class GoogleDatasetCellReader:
 
         # can be retrieved from the entry itself
         ws_feedurl = 'https://spreadsheet.google.com/feeds/cells/'+self._skey+'/'+wskey+'/public/values'
+
+        cell_feed = self._client.GetFeed(ws_feedurl)  
+
+        # scan the table, find max col and max row
+        cols = set()
+        rows = set()
+        for entry in cell_feed.entry:
+            element = entry.extension_elements[0]
+            c = int(element.attributes['col'])
+            r = int(element.attributes['row'])
+            cols.add(c)
+            rows.add(r)
+
+        ncols = max(cols)
+        nrows = max(rows)
+        # build an empty table
+        table = [[None]*ncols for i in xrange(nrows)]
+ 
+        # reloop to fill
+        for entry in cell_feed.entry:
+            element = entry.extension_elements[0]
+
+            c = int(element.attributes['col'])
+            r = int(element.attributes['row'])
+
+#             print r-1,c-1,element.text
+            table[r-1][c-1] = element.text
+
+        # the header is the first row. This might change
+        columns = table.pop(0)
+        if not 'uid' in columns or not 'nevents' in columns:
+            raise RuntimeError('The columns uid and nevents are required. Add them to the table')
+        manager._columns = columns
+#         header = odict.OrderedDict(zip(hrow,range(len(hrow))))
+        header = dict(enumerate(columns))
+
+        for r,row in enumerate(table):
+            ds = {}
+            for c,cell in enumerate(row):
+                ds[header[c]] = cell
+            
+            print ds
+            if not ds['uid'] or not ds['nevents']:
+                # skip rows with not uid or no nEvents
+                continue
+            gds = GDataset()
+            gds._fields = ds
+            manager.add(r,gds)
+
+
+        # find the header somehow
+#         print header
+#         print len(table),len(table[0]),'---',' '.join(table[0])
+
+#         print table
+#         print 'r:',max(rows),rows
+#         print 'c:',max(cols),cols
+            
+#         for i, entry in enumerate(cell_feed.entry):
+# #             print entry
+#             print entry.title.text,
+#             print len(entry.extension_elements),
+#             for (j,elem) in enumerate(entry.extension_elements):
+#                 print j,elem.tag, elem.attributes['row'], elem.attributes['col'], elem.text
         # to be continued
  
 class GoogleDatasetReader:

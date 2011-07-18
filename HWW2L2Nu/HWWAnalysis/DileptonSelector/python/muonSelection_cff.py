@@ -15,9 +15,7 @@ selectedPatMuons = cms.EDFilter("PATMuonSelector",
 
 MUON_BASE=("pt > 10 && abs(eta)<2.4")
 
-hwwMuMatch = selectedRefPatMuons.clone()
-hwwMuMatch.cut = (MUON_BASE)
-
+hwwMuMatch           = selectedRefPatMuons.clone( cut = MUON_BASE )
 
 hwwMuonsID           = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT )
 hwwMuonsMergeID      = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT )
@@ -25,8 +23,8 @@ hwwMuonsISO          = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID
 hwwMuonsISOT         = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT +"&&"+ MUON_ISO_CUT_TIGHT )
 hwwMuonsMergeISO     = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT +"&&"+ MUON_MERGE_ISO )
 hwwMuonsISOPF        = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT +"&&"+ MUON_ISOPF_CUT )
-hwwMuonsIP           = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT +"&&"+ MUON_IP_CUT )
 hwwMuonsMergeCONV    = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT +"&&"+ MUON_MERGE_ISO )
+hwwMuonsIP           = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT +"&&"+ MUON_IP_CUT )
 hwwMuonsMergeIP      = selectedRefPatMuons.clone( cut = MUON_BASE +"&&"+ MUON_ID_CUT +"&&"+ MUON_MERGE_ISO+"&&"+MUON_MERGE_IP )
 hwwMuons4Veto        = selectedRefPatMuons.clone( cut = "pt > 3 && " + MUON_ID_CUT_4VETO )
 

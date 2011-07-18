@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Fri Jun 24 16:27:01 CEST 2011
-// $Id: DileptonMonitor.cc,v 1.1 2011/06/29 22:16:06 thea Exp $
+// $Id: DileptonMonitor.cc,v 1.1 2011/07/03 17:04:49 thea Exp $
 //
 //
 
@@ -58,8 +58,9 @@ class DileptonMonitor : public edm::EDProducer {
       
 
       struct DileptonCategory {
-          DileptonCategory( const std::string& name, const std::string& cut) : name(name), selector(cut) {}
-              std::string name;
+		  DileptonCategory( const std::string& name, const std::string& cut) : name(name), selector(cut) {}
+
+		  std::string								  name;
           StringCutObjectSelector<hww::DileptonView > selector;
       };
       std::vector<DileptonCategory> categories_;

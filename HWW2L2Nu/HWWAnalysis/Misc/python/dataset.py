@@ -11,7 +11,7 @@ class GDataset:
 
     def __str__(self):
 
-        theStr = 'Dataset '+self.uid+'\n' 
+        theStr = 'Dataset '+self._fields['uid']+'\n' 
         for (key,val) in self._fields.iteritems():
             theStr += '   '+key+' '+str(val)+'\n'
         return theStr
