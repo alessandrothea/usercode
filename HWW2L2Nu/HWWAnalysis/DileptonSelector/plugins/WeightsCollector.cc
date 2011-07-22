@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Jun 23 15:18:30 CEST 2011
-// $Id: WeightsCollector.cc,v 1.2 2011/06/30 13:24:46 thea Exp $
+// $Id: WeightsCollector.cc,v 1.1 2011/07/03 17:04:49 thea Exp $
 //
 //
 
@@ -132,13 +132,16 @@ WeightsCollector::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
         nPileUp = puIt->getPU_NumInteractions();
 
+        puWeight = 1.;
         if ( nPileUp < 0 )
             THROW_RUNTIME(" nPU = " << nPileUp << " what's going on?!?");
         if ( nPileUp > (int)puWeights_.size() )
-            THROW_RUNTIME("Simulated Pu [" << nPileUp <<"] larger than available puFactors [" << puWeights_.size()  << "]" );
+//             THROW_RUNTIME("Simulated Pu [" << nPileUp <<"] larger than available puFactors [" << puWeights_.size()  << "]" );
+            puWeight = 0.;
+        else
+            puWeight = puWeights_[ nPileUp ];
 
-//         weight_ *= puWeights_[ nPileUp ];
-        pWeights->push_back( puWeights_[ nPileUp ] );
+        pWeights->push_back( puWeight );
 
         // get the ptWeight if required
         if ( !(ptWeightSrc_ == edm::InputTag()) ) {
