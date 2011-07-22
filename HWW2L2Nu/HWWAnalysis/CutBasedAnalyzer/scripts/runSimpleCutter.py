@@ -44,26 +44,30 @@ bkg_dibos=[
 ]
 
 signals=[
-'id101%(mass)d.ggToH160toWWto2L2Nu',
+'id101%(mass)d.ggToH130toWWto2L2Nu',
 ]
 
 data2011PromptReco=[
-        'id074.SingleMuon2011A',
-        'id075.DoubleElectron2011A',
-        'id076.DoubleMuon2011A',
-        'id077.MuEG2011A',
-        'id079.SingleMuon2011Av2',
-        'id080.DoubleElectron2011Av2',
-        'id081.DoubleMuon2011Av2',
-        'id082.MuEG2011Av2',
+        'id084.SingleMuon2011Av4',
+        'id085.DoubleElectron2011Av4',
+        'id086.DoubleMuon2011Av4',
+        'id087.MuEG2011Av4',
+##         'id084b.SingleMuon2011Av4',
+##         'id085b.DoubleElectron2011Av4',
+##         'id086b.DoubleMuon2011Av4',
+##         'id087b.MuEG2011Av4',
         ]
 
 data2011ReReco=[
-         'id090.SingleMu2011AReRecoMay10',
-         'id091.DoubleMu2011AReRecoMay10',
-         'id092.DoubleElectron2011AReRecoMay10',
-         'id093.MuEG2011AReRecoMay10',
-         ]
+    'id090.SingleMuon2011AMay10',
+    'id091.DoubleMuon2011AMay10',
+    'id092.DoubleElectron2011AMay10',
+    'id093.MuEG2011AMay10',
+##     'id090.SingleMu2011AReRecoMay10',
+##     'id091.DoubleMu2011AReRecoMay10',
+##     'id092.DoubleElectron2011AReRecoMay10',
+##     'id093.MuEG2011AReRecoMay10',
+    ]
 
 data2011 = data2011PromptReco
 
@@ -77,22 +81,24 @@ samples.extend(background)
 # samples.extend(higgs)
 # samples.extend(data2011)
 
-# samples = []
+#samples = []
 samples.extend(data2011ReReco)
 samples.extend(data2011PromptReco)
 # samples = []
 
 masses = [120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 250, 300, 350, 400, 450, 500, 550, 600]
-masses = [ 160 ]
+masses = [ 130 ]
 
 for mass in masses:
     xxx = [ signal % { 'mass' : mass } for signal in signals ]
 #     print '-'.join(xxx)
     samples.extend(xxx)
 
-mass=160
+mass=130
 # lumi=133.5
-lumi=187.6
+#lumi=187.6
+lumi=710.0
+#lumi=1079.0
 
 usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
@@ -110,14 +116,15 @@ cfg = args[0]
 # use the cfg basename to define the output
 (basename,ext) = os.path.splitext( os.path.basename(cfg) )
 
-spring11Dir=os.getenv('HOME')+'/higgsWW/Spring11'
+spring11Dir=os.getenv('HOME')+'/higgsWW/Summer11'
 workdir=os.getenv('CMSSW_BASE')+'/src/HWWAnalysis/CutBasedAnalyzer'
 print 'Working in',workdir
 os.chdir(workdir)
 
 
 # the ntuples don't depend on the specific cuts. We're using the 160 ones
-ntuplePath = spring11Dir+'/step3/h160'
+ntuplePath = spring11Dir+'/step3/h'+str(mass)
+#ntuplePath = spring11Dir+'/step3/h130'
 outputPath = spring11Dir+'/other'
 
 plotPath   = outputPath+'/plots/'+basename
@@ -146,7 +153,8 @@ if opt.hadd:
     sumData(samples,data2011ReReco,plotPath,'Data2011ReReco')
 
 if opt.makePlots:
-    dataTags = ['Data2011PromptReco','Data2011ReReco']
+#    dataTags = ['Data2011PromptReco','Data2011ReReco']
+    dataTags = ['Data2011PromptReco']
     for tag in dataTags:
         if not os.path.exists(plotPath+'/plot_'+tag+'.root'):
             print plotPath+'/plot_'+tag+'.root  not found'

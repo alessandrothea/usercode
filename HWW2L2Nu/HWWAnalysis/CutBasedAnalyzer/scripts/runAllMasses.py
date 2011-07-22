@@ -27,51 +27,56 @@ bkg_dy=[
 ]
 
 bkg_top=[
-'id010.sTtoBLNu',
-'id011.tTtoBLNu',
-'id012.tWTtoBLNu',
-'id023.TTJetsMad',
-]
+    'id010.sTtoBLNu',
+    'id011.tTtoBLNu',
+    'id012.tWTtoBLNu',
+    'id023.TTJetsMad',
+    ]
 
 bkg_dibos=[
-'id022.GluGluToWWTo4L',
-'id014.VVJetsTo4L',
-'id021.PhotonVJets',
-'id026.WJetsToLNuMad',
-'id002.ZZtoAny',
-'id001.WZtoAny',
-]
+    'id022.GluGluToWWTo4L',
+    'id014.VVJetsTo4L',
+    'id021.PhotonVJets',
+    'id026.WJetsToLNuMad',
+    'id002.ZZtoAny',
+    'id001.WZtoAny',
+    ]
 
 higgs=[
-'id101160.ggToH160toWWto2L2Nu',
-]
+    'id101130.ggToH130toWWto2L2Nu',
+    'id101160.ggToH160toWWto2L2Nu',
+    ]
 
 data2011PromptRecov1v2=[
-        'id074.SingleMuon2011A',
-        'id075.DoubleElectron2011A',
-        'id076.DoubleMuon2011A',
-        'id077.MuEG2011A',
-        'id079.SingleMuon2011Av2',
-        'id080.DoubleElectron2011Av2',
-        'id081.DoubleMuon2011Av2',
-        'id082.MuEG2011Av2',
-        ]
+    'id084.SingleMuon2011Av4',
+    'id085.DoubleElectron2011Av4',
+    'id086.DoubleMuon2011Av4',
+    'id087.MuEG2011Av4',
+    'id084b.SingleMuon2011Av4',
+    'id085b.DoubleElectron2011Av4',
+    'id086b.DoubleMuon2011Av4',
+    'id087b.MuEG2011Av4',
+    ]
 
 data2011ReReco=[
-         'id090.SingleMuon2011AMay10',
-         'id091.DoubleMuon2011AMay10',
-         'id092.DoubleElectron2011AMay10',
-         'id093.MuEG2011AMay10',
-         ]
+    'id090.SingleMuon2011AMay10',
+    'id091.DoubleMuon2011AMay10',
+    'id092.DoubleElectron2011AMay10',
+    'id093.MuEG2011AMay10',
+    ]
 
 data2011PromptRecov4=[
     'id084.SingleMuon2011Av4',
     'id085.DoubleElectron2011Av4',
     'id086.DoubleMuon2011Av4',
     'id087.MuEG2011Av4',
+    'id084b.SingleMuon2011Av4',
+    'id085b.DoubleElectron2011Av4',
+    'id086b.DoubleMuon2011Av4',
+    'id087b.MuEG2011Av4',
     ]
 
-data2011 = data2011PromptRecov4
+#data2011 = data2011PromptRecov4
 
 background = []
 background.extend(bkg_dy)
@@ -83,13 +88,13 @@ samples.extend(background)
 samples.extend(higgs)
 # samples.extend(data2011)
 
-samples = []
+#samples = []
 samples.extend(data2011ReReco)
 samples.extend(data2011PromptRecov4)
 # samples = []
 
 masses = [120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 250, 300, 350, 400, 450, 500, 550, 600]
-masses = [ 160 ]
+masses = [ 130, 160 ]
 lumi=187.6
 #lumi=168.9
 # lumi=133.5
@@ -150,10 +155,10 @@ for mass in masses:
             'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_yield.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_yield.root'
         )
         cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_dileptons.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_dileptons.root'
+            'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_dileptons.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_dileptons.root'
         )
         cmds.append(
-            'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_cuts.cfg  -s macros/samples/hww_data11_vars.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_cuts.root'
+            'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_cuts.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_cuts.root'
         )
         cmds.append(
             'makePlots.py --luminosity='+str(lumi)+' --path='+step3Path+' --optVars="'+optVars+'" -p macros/plots/hww_extra.cfg  -s macros/samples/hww_data11.cfg -o '+finalPath+'/h'+str(mass)+'_'+tag+'_extra.root'
