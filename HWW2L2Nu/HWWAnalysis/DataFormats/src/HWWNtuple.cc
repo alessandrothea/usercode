@@ -103,5 +103,58 @@ void HWWNtuple::clear(){
     centralityLeptonsScalar = -99.9;
     centralityLeptonsVectorial = -99.9;
 
+    // qualtiy variables
+    
+    sigmaIetaIetaA = -99.9;
+    sigmaIetaIetaB = -99.9;
+    deltaEtaSuperClusterAtVtxA = -99.9;
+    deltaEtaSuperClusterAtVtxB = -99.9;
+    deltaPhiSuperClusterAtVtxA = -99.9;
+    deltaPhiSuperClusterAtVtxB = -99.9;
+    caloEnergyA = -99.9;
+    caloEnergyB = -99.9;
+    hcalOverEcalA = -99.9;
+    hcalOverEcalB = -99.9;
+    numberOfMissingInnerHitsA = -99;
+    numberOfMissingInnerHitsB = -99;
+    convPartnerTrkDCotA = -99.9;
+    convPartnerTrkDCotB = -99.9;
+    convPartnerTrkDistA = -99.9;
+    convPartnerTrkDistB = -99.9;
+    dr03EcalRecHitSumEtA = -99.9;
+    dr03EcalRecHitSumEtB = -99.9;
+    dr03HcalTowerSumEtA = -99.9;
+    dr03HcalTowerSumEtB = -99.9;
+    dr03TkSumPtA = -99.9;
+    dr03TkSumPtB = -99.9;
+    dR03HcalFullA = -99.9;
+    dR03HcalFullB = -99.9;
+    pAtVtxA = -99.9;
+    pAtVtxB = -99.9;
+
+
+
+
+
+    dzPVA = -99.9;
+    dzPVB = -99.9;
+    d0PVA = -99.9;
+    d0PVB = -99.9;
+    nMatchesA = 99;
+    nMatchesB = 99;
+    nChi2A = -99.9;
+    nChi2B = -99.9;
+    nMuHitsA = -99.9;
+    nMuHitsB = -99.9;
+    nNPxHitsA = 99;
+    nNPxHitsB = 99;
+    nTkHitsA = 99;
+    nTkHitsB = 99;
+    muIso03EmEtA = -99.9;
+    muIso03EmEtB = -99.9;
+    muIso03HadEtA = -99.9;
+    muIso03HadEtB = -99.9;
+    muIso03SumPtA = -99.9;
+    muIso03SumPtB = -99.9;
 
 }

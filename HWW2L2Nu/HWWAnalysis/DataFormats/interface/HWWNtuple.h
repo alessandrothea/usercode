@@ -128,6 +128,64 @@ public:
 	double centralityLeptonsScalar;
 	double centralityLeptonsVectorial;
 
+    // adding some quality variables...
+    // electrons
+    double sigmaIetaIetaA;
+    double sigmaIetaIetaB;
+    double deltaEtaSuperClusterAtVtxA;
+    double deltaEtaSuperClusterAtVtxB;
+    double deltaPhiSuperClusterAtVtxA;
+    double deltaPhiSuperClusterAtVtxB;
+    double caloEnergyA;
+    double caloEnergyB;
+    double hcalOverEcalA;
+    double hcalOverEcalB;
+    int    numberOfMissingInnerHitsA;
+    int    numberOfMissingInnerHitsB;
+    double convPartnerTrkDCotA;
+    double convPartnerTrkDCotB;
+    double convPartnerTrkDistA;
+    double convPartnerTrkDistB;
+    double dr03EcalRecHitSumEtA;
+    double dr03EcalRecHitSumEtB;
+    double dr03HcalTowerSumEtA;
+    double dr03HcalTowerSumEtB;
+    double dr03TkSumPtA;
+    double dr03TkSumPtB;
+    double dR03HcalFullA;
+    double dR03HcalFullB;
+    double pAtVtxA;
+    double pAtVtxB;
+
+
+    // both
+    double dzPVA;
+    double dzPVB;
+    double d0PVA;
+    double d0PVB;
+
+    // muons
+    int    nMatchesA;
+    int    nMatchesB;
+    double nChi2A;
+    double nChi2B;
+    int    nMuHitsA;
+    int    nMuHitsB;
+    int    nNPxHitsA;
+    int    nNPxHitsB;
+    int    nTkHitsA;
+    int    nTkHitsB;
+    double muIso03EmEtA;
+    double muIso03EmEtB;
+    double muIso03HadEtA;
+    double muIso03HadEtB;
+    double muIso03SumPtA;
+    double muIso03SumPtB;
+
+
+
+
+
 
 //     ClassDef(HWWNtuple,1)
 };

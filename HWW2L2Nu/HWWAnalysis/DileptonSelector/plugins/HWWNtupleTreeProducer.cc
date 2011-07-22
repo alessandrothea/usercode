@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Wed Jul 13 11:03:24 CEST 2011
-// $Id$
+// $Id: HWWNtupleTreeProducer.cc,v 1.4 2011/07/18 13:26:45 thea Exp $
 //
 //
 
@@ -250,6 +250,165 @@ HWWNtupleTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
         }
         ntuple_->maxbtagProb                = *max_element(btagProb.begin(), btagProb.end());
     }
+
+
+    // quality variables
+    
+    // first check what type of event it is
+    if (type == HWWNtuple::elel) {
+        const pat::Electron* elA = dynamic_cast<const pat::Electron*>(v.pair()->leading());
+        const pat::Electron* elB = dynamic_cast<const pat::Electron*>(v.pair()->trailing());
+        ntuple_->sigmaIetaIetaA = elA->sigmaIetaIeta();
+        ntuple_->sigmaIetaIetaB = elB->sigmaIetaIeta();
+        ntuple_->deltaEtaSuperClusterAtVtxA = elA->deltaEtaSuperClusterTrackAtVtx();
+        ntuple_->deltaEtaSuperClusterAtVtxB = elB->deltaEtaSuperClusterTrackAtVtx();
+        ntuple_->deltaPhiSuperClusterAtVtxA = elA->deltaPhiSuperClusterTrackAtVtx();
+        ntuple_->deltaPhiSuperClusterAtVtxB = elB->deltaPhiSuperClusterTrackAtVtx();
+        ntuple_->caloEnergyA = elA->caloEnergy();
+        ntuple_->caloEnergyB = elB->caloEnergy();
+        ntuple_->hcalOverEcalA = elA->hcalOverEcal();
+        ntuple_->hcalOverEcalB = elB->hcalOverEcal();
+        ntuple_->numberOfMissingInnerHitsA = elA->gsfTrack()->trackerExpectedHitsInner().numberOfHits();
+        ntuple_->numberOfMissingInnerHitsB = elB->gsfTrack()->trackerExpectedHitsInner().numberOfHits();
+        ntuple_->convPartnerTrkDCotA = elA->userFloat("convValueMapProd:dcot");
+        ntuple_->convPartnerTrkDCotB = elB->userFloat("convValueMapProd:dcot");
+        ntuple_->convPartnerTrkDistA = elA->userFloat("convValueMapProd:dist");
+        ntuple_->convPartnerTrkDistB = elB->userFloat("convValueMapProd:dist");
+        ntuple_->dr03EcalRecHitSumEtA = elA->dr03EcalRecHitSumEt();
+        ntuple_->dr03EcalRecHitSumEtB = elB->dr03EcalRecHitSumEt();
+        ntuple_->dr03HcalTowerSumEtA = elA->dr03HcalTowerSumEt();
+        ntuple_->dr03HcalTowerSumEtB = elB->dr03HcalTowerSumEt();
+        ntuple_->dr03TkSumPtA = elA->dr03TkSumPt();
+        ntuple_->dr03TkSumPtB = elB->dr03TkSumPt();
+        ntuple_->dR03HcalFullA = elA->userFloat("hcalFull");
+        ntuple_->dR03HcalFullB = elB->userFloat("hcalFull");
+        ntuple_->pAtVtxA = elA->trackMomentumAtVtx().R();
+        ntuple_->pAtVtxB = elB->trackMomentumAtVtx().R();
+
+
+        ntuple_->dzPVA = elA->userFloat("dzPV");
+        ntuple_->dzPVB = elB->userFloat("dzPV");
+        ntuple_->d0PVA = elA->userFloat("d0PV");
+        ntuple_->d0PVB = elB->userFloat("d0PV");
+
+
+        }
+    else if (type == HWWNtuple::elmu) {
+        const pat::Electron* el = dynamic_cast<const pat::Electron*>(v.pair()->leading());
+        const pat::Muon* mu = dynamic_cast<const pat::Muon*>(v.pair()->trailing());
+        ntuple_->sigmaIetaIetaA = el->sigmaIetaIeta();
+        ntuple_->deltaEtaSuperClusterAtVtxA = el->deltaEtaSuperClusterTrackAtVtx();
+        ntuple_->deltaPhiSuperClusterAtVtxA = el->deltaPhiSuperClusterTrackAtVtx();
+        ntuple_->caloEnergyA = el->caloEnergy();
+        ntuple_->hcalOverEcalA = el->hcalOverEcal();
+        ntuple_->numberOfMissingInnerHitsA = el->gsfTrack()->trackerExpectedHitsInner().numberOfHits();
+        ntuple_->convPartnerTrkDCotA = el->userFloat("convValueMapProd:dcot");
+        ntuple_->convPartnerTrkDistA = el->userFloat("convValueMapProd:dist");
+        ntuple_->dr03EcalRecHitSumEtA = el->dr03EcalRecHitSumEt();
+        ntuple_->dr03HcalTowerSumEtA = el->dr03HcalTowerSumEt();
+        ntuple_->dr03TkSumPtA = el->dr03TkSumPt();
+        ntuple_->dR03HcalFullA = el->userFloat("hcalFull");
+
+
+
+
+        ntuple_->dzPVA = el->userFloat("dzPV");
+        ntuple_->dzPVB = mu->userFloat("dzPV");
+        ntuple_->d0PVA = el->userFloat("d0PV");
+        ntuple_->d0PVB = mu->userFloat("d0PV");
+
+        ntuple_->nMatchesB = mu->numberOfMatches();
+        ntuple_->nChi2B = mu->isGlobalMuon() ? mu->globalTrack()->normalizedChi2() : -99.9;
+        ntuple_->nMuHitsB = mu->isGlobalMuon() ? mu->globalTrack()->hitPattern().numberOfValidMuonHits() : 0.;
+        ntuple_->nNPxHitsB = mu->innerTrack()->hitPattern().numberOfValidPixelHits();
+        ntuple_->nTkHitsB = mu->innerTrack()->found();
+        ntuple_->muIso03EmEtB = mu->isolationR03().emEt;
+        ntuple_->muIso03HadEtB = mu->isolationR03().hadEt;
+        ntuple_->muIso03SumPtB = mu->isolationR03().sumPt;
+
+
+
+
+
+
+    }
+    else if (type == HWWNtuple::muel) {
+        const pat::Muon* mu = dynamic_cast<const pat::Muon*>(v.pair()->leading());
+        const pat::Electron* el = dynamic_cast<const pat::Electron*>(v.pair()->trailing());
+        ntuple_->sigmaIetaIetaB = el->sigmaIetaIeta();
+        ntuple_->deltaEtaSuperClusterAtVtxB = el->deltaEtaSuperClusterTrackAtVtx();
+        ntuple_->deltaPhiSuperClusterAtVtxB = el->deltaPhiSuperClusterTrackAtVtx();
+        ntuple_->caloEnergyB = el->caloEnergy();
+        ntuple_->hcalOverEcalB = el->hcalOverEcal();
+        ntuple_->numberOfMissingInnerHitsB = el->gsfTrack()->trackerExpectedHitsInner().numberOfHits();
+        ntuple_->convPartnerTrkDCotB = el->userFloat("convValueMapProd:dcot");
+        ntuple_->convPartnerTrkDistB = el->userFloat("convValueMapProd:dist");
+        ntuple_->dr03EcalRecHitSumEtB = el->dr03EcalRecHitSumEt();
+        ntuple_->dr03HcalTowerSumEtB = el->dr03HcalTowerSumEt();
+        ntuple_->dr03TkSumPtB = el->dr03TkSumPt();
+        ntuple_->dR03HcalFullB = el->userFloat("hcalFull");
+
+
+
+
+
+        ntuple_->dzPVA = mu->userFloat("dzPV");
+        ntuple_->dzPVB = el->userFloat("dzPV");
+        ntuple_->d0PVA = mu->userFloat("d0PV");
+        ntuple_->d0PVB = el->userFloat("d0PV");
+
+        ntuple_->nMatchesA = mu->numberOfMatches();
+        ntuple_->nChi2A = mu->isGlobalMuon() ? mu->globalTrack()->normalizedChi2() : -99.9;
+        ntuple_->nMuHitsA = mu->isGlobalMuon() ? mu->globalTrack()->hitPattern().numberOfValidMuonHits() : 0.;
+        ntuple_->nNPxHitsA = mu->innerTrack()->hitPattern().numberOfValidPixelHits();
+        ntuple_->nTkHitsA = mu->innerTrack()->found();
+        ntuple_->muIso03EmEtA = mu->isolationR03().emEt;
+        ntuple_->muIso03HadEtA = mu->isolationR03().hadEt;
+        ntuple_->muIso03SumPtA = mu->isolationR03().sumPt;
+
+
+
+
+
+    }
+
+    if (type == HWWNtuple::mumu) {
+        const pat::Muon* muA = dynamic_cast<const pat::Muon*>(v.pair()->leading());
+        const pat::Muon* muB = dynamic_cast<const pat::Muon*>(v.pair()->trailing());
+        ntuple_->nMatchesA = muA->numberOfMatches();
+        ntuple_->nMatchesB = muB->numberOfMatches();
+        ntuple_->nChi2A = muA->isGlobalMuon() ? muA->globalTrack()->normalizedChi2() : -99.9;
+        ntuple_->nChi2B = muB->isGlobalMuon() ? muB->globalTrack()->normalizedChi2() : -99.9;
+        ntuple_->nMuHitsA = muA->isGlobalMuon() ? muA->globalTrack()->hitPattern().numberOfValidMuonHits() : 0.;
+        ntuple_->nMuHitsB = muB->isGlobalMuon() ? muB->globalTrack()->hitPattern().numberOfValidMuonHits() : 0.;
+        ntuple_->nNPxHitsA = muA->innerTrack()->hitPattern().numberOfValidPixelHits();
+        ntuple_->nNPxHitsB = muB->innerTrack()->hitPattern().numberOfValidPixelHits();
+        ntuple_->nTkHitsA = muA->innerTrack()->found();
+        ntuple_->nTkHitsB = muB->innerTrack()->found();
+        ntuple_->muIso03EmEtA = muA->isolationR03().emEt;
+        ntuple_->muIso03EmEtB = muB->isolationR03().emEt;
+        ntuple_->muIso03HadEtA = muA->isolationR03().hadEt;
+        ntuple_->muIso03HadEtB = muB->isolationR03().hadEt;
+        ntuple_->muIso03SumPtA = muA->isolationR03().sumPt;
+        ntuple_->muIso03SumPtB = muB->isolationR03().sumPt;
+
+
+
+
+
+        ntuple_->dzPVA = muA->userFloat("dzPV");
+        ntuple_->dzPVB = muB->userFloat("dzPV");
+        ntuple_->d0PVA = muA->userFloat("d0PV");
+        ntuple_->d0PVB = muB->userFloat("d0PV");
+        
+
+    }
+
+    // common variables
+    
+
+
+
     tree_->Fill();
 
 }
