@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Jun 23 15:18:30 CEST 2011
-// $Id: WeightsCollector.cc,v 1.1 2011/07/03 17:04:49 thea Exp $
+// $Id: WeightsCollector.cc,v 1.2 2011/07/22 08:28:53 thea Exp $
 //
 //
 
@@ -132,7 +132,7 @@ WeightsCollector::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
         nPileUp = puIt->getPU_NumInteractions();
 
-        puWeight = 1.;
+        double puWeight = 1.;
         if ( nPileUp < 0 )
             THROW_RUNTIME(" nPU = " << nPileUp << " what's going on?!?");
         if ( nPileUp > (int)puWeights_.size() )
