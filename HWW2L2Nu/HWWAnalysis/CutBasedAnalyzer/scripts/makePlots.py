@@ -525,6 +525,159 @@ class Plotter:
 
         c.Write()
         oldDir.cd()
+
+
+    def makeDataMCPlotNoStack(self,name):
+
+        # save the old dir
+        oldDir = ROOT.gDirectory
+        #and go to the new one
+        path = os.path.dirname(name)
+        self.getTDir(path).cd()
+
+        # but don't write the plots
+        sentry = utils.TH1AddDirSentry()
+        pl = self.plots[name]
+        data = self.getDataHistograms(name)
+        mc   = self.getMCHistograms(name)
+        
+        self.normalize(mc) #, self.mcSamples)
+        
+        mc   = self.sum(mc) #,self.mcSamples)
+        data = self.sum(data)
+#         print data
+        (data0, sample0) = data[0]
+        baseName = os.path.basename(name)
+##         stack = ROOT.THStack('mcstack_'+baseName,data0.GetTitle())
+            
+        if pl.rebin != 1:
+            data0.Rebin(pl.rebin)
+
+        #nornmalize the histos
+        nbins = data0.GetNbinsX()
+        int = data0.Integral(0,nbins+1)
+        if int!=0:
+            data0.Scale(1./int)
+        
+        for (h,s) in mc:
+            nbins = h.GetNbinsX();
+            int = h.Integral(0,nbins+1)
+            if int!=0:
+                h.Scale(1./int)
+        
+        # find the minima, move the following in a separate function
+        mcMinima = []    
+        mcMaxima = []
+        for (h,s) in mc:
+            if pl.rebin != 1:
+                h.Rebin(pl.rebin)
+            mcMinima.append(h.GetMinimum())
+            mcMaxima.append(h.GetMaximum())
+#             print h.GetName(),mcMinima[-1],mcMinimaNonZero[-1]
+##             stack.Add(h,'hist')
+
+        # find the absolute minimum
+##         minima = [ h.GetMinimum() for h in stack.GetStack() ]
+        minima = mcMinima
+        minima.append(data0.GetMinimum())
+        maxima = mcMaxima
+        maxima.append(data0.GetMaximum())
+
+
+        # find the 
+##         minimaNonZero = [ h.GetMinimum(0) for h in stack.GetStack() ]
+##         FIXME!!
+        minimaNonZero = mcMinima
+        minimaNonZero.append(data0.GetMinimum(0))
+
+
+        #         minYMc = min(mcMinima)
+##         maxY = ROOT.TMath.Max(data0.GetMaximum(),stack.GetMaximum())
+##         minY = ROOT.TMath.Min(data0.GetMinimum(),min(mcMinima))
+#         minY = ROOT.TMath.Min(data0.GetMinimum(),stack.GetStack().First().GetMinimum())
+        maxY = max(maxima)
+        minY = min(minima)
+            
+        cName = 'c_'+baseName
+        c = ROOT.TCanvas(cName,cName,2)
+#         print c.GetWw(),c.GetWh()
+        c.SetTicks();
+#         c.Size(30,30)
+#         print '- logx =', pl.logX, ': logy =',pl.logY
+        
+        if pl.logX is 1:
+            c.SetLogx()
+            
+        if pl.logY is 1 and not (maxY == minY == 0):
+            c.SetLogy()
+            if minY==0.:
+                minY = min(minimaNonZero)
+                # don't allow the min to go below 0.1 data min
+                minY = max([minY, 0.1*data0.GetMinimum(0)])
+#             maxY *= ROOT.TMath.Power(maxY/minY,0.1)
+#             minY /= ROOT.TMath.Power(maxY/minY,0.1)
+#         else:
+#             maxY += (maxY-minY)*0.1
+#             minY -= (maxY-minY)*0.1 if minY != 0. else 0;#-1111.
+
+#         print 'minmax',minY, maxY
+
+        maxY += (maxY-minY)*0.1
+#         minY -= (maxY-minY)*0.1 if minY != 0. else 0
+    
+        minX = data0.GetXaxis().GetXmin()
+        maxX = data0.GetXaxis().GetXmax()
+
+#         frame = c.DrawFrame(minX, minY, maxX, maxY)
+        frame = data0.Clone('frame')
+        frame.SetFillStyle(0)
+        frame.SetLineColor(ROOT.gStyle.GetFrameFillColor())
+        frame.Reset()
+        frame.SetBinContent(1,maxY)
+        frame.SetBinContent(frame.GetNbinsX(),minY)
+#         frame.SetMaximum(maxY)
+#         frame.SetMinimum(minY)
+        
+#         frame.GetYaxis().SetLimits(minY,maxY)
+        frame.SetBit(ROOT.TH1.kNoStats)
+        frame.SetTitle(pl.title if pl.title != 'self' else data0.GetTitle())
+        frame.SetXTitle(pl.xtitle if pl.xtitle != 'self' else data0.GetXaxis().GetTitle())
+        frame.SetYTitle(pl.ytitle if pl.ytitle != 'self' else data0.GetYaxis().GetTitle())
+        frame.Draw()
+#         frame.GetPainter().PaintTitle()
+
+        for d,s in data:
+            d.SetFillColor(1);
+            d.SetMarkerColor(1);
+            d.SetMarkerStyle(20);
+            d.SetMarkerSize(0.7);
+        
+##         stack.Draw('same')
+        for (h,s) in mc:
+            h.SetFillColor(0)
+            if s.fillColor !=0:
+                color = s.fillColor
+            else:
+                color = ROOT.kRed
+            h.SetLineColor(color)
+            h.Draw("hist same")
+            
+        for d,s in data:
+            d.Draw('e1 same')
+
+        title = self.makeTitle(frame.GetTitle() )
+        title.Draw()
+
+        legend = self.makeLegend(data,mc)
+        legend.Draw()
+
+        txt = self.makeCMSText()
+        txt.Draw()
+
+        c.Write()
+        oldDir.cd()
+
+        
         
     def makeMCStackPlot(self,name,nostack):
         raise ValueError('I\'m broken')
@@ -576,7 +729,7 @@ def main():
     parser.add_option('--path', dest='basePath', help='path to root files')
     parser.add_option('--luminosity', dest='luminosity', help='luminosity')
     parser.add_option('--optVars',dest='optVars',help='Optional variables')
-    parser.add_option('--nostack', dest='nostack', help='nostack', action="store_true")
+    parser.add_option('--nostack', dest='nostack', help='nostack', action="store_true",)
 
     (opt, args) = parser.parse_args()
 
@@ -631,14 +784,21 @@ def main():
 #         sys.exit(0)
         #name = 'fullSelection/llCounters'
 #         out.cd()
-        if opt.mode=='data':
+
+        if opt.nostack==True:
+            for name in sorted(p.plots.iterkeys()):
+                print 'Making',name
+                p.makeDataMCPlotNoStack(name)
+
+        elif opt.mode=='data':
             for name in sorted(p.plots.iterkeys()):
                 print 'Making',name
                 p.makeDataMCPlot(name)
         elif opt.mode=='mc':
             for name in p.plots.iterkeys():
                 print name
-                p.makeMCStackPlot(name,opt.nostack)
+                p.makeDataMCPlotNoStack(name)
+##                 p.makeMCStackPlot(name,opt.nostack)
        
     except ValueError as e:
         print 'ValueError',e
