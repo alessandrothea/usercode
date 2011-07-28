@@ -1,5 +1,5 @@
 <lcgdict>
-  <class name="HWWEvent" />
+    <!--  <class name="HWWEvent" />
   <class name="HWWLepton" />
   <class name="HWWElectron" />
   <class name="HWWMuon" />
@@ -10,6 +10,7 @@
   <class name="std::vector<HWWMuon>" />
   <class name="std::vector<HWWPFJet>"/>
   <class name="std::vector<HWWSlimBTags>"/>
+-->
   <class name="HWWNtuple"/>
 
   <class name="hww::DileptonView"/>

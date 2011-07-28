@@ -1,7 +1,6 @@
 // #include "DataFormats/Common/interface/Wrapper.h"
 
 //Add includes for your classes here
-#include "HWWAnalysis/DataFormats/interface/HWWEvent.h"
 #include "HWWAnalysis/DataFormats/interface/HWWNtuple.h"
 #include "HWWAnalysis/DataFormats/interface/DileptonView.h"
 #include "HWWAnalysis/DataFormats/interface/EventView.h"
@@ -11,16 +10,16 @@
 
 namespace {
    struct HWWAnalysis_DataFormats {
-       HWWEvent     dummyEvent;
-       HWWLepton    dummyLepton;
-       HWWElectron  dummyElectron;
-       HWWMuon      dummyMuon;
-       HWWPFJet     dummyJet;
-       HWWSlimBTags dummySlimBtags;
-       std::vector<HWWElectron>     dummy11;
-       std::vector<HWWMuon>         dummy12;
-       std::vector<HWWPFJet>        dummy13;
-       std::vector<HWWSlimBTags>    dummy14;
+//        HWWEvent     dummyEvent;
+//        HWWLepton    dummyLepton;
+//        HWWElectron  dummyElectron;
+//        HWWMuon      dummyMuon;
+//        HWWPFJet     dummyJet;
+//        HWWSlimBTags dummySlimBtags;
+//        std::vector<HWWElectron>     dummy11;
+//        std::vector<HWWMuon>         dummy12;
+//        std::vector<HWWPFJet>        dummy13;
+//        std::vector<HWWSlimBTags>    dummy14;
        HWWNtuple dummy5;
 
        hww::DileptonView               dummy30;
