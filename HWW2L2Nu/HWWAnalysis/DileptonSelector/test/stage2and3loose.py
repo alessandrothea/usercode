@@ -144,8 +144,8 @@ process.load('HWWAnalysis.DileptonSelector.hltFilter_cff')
 
 process.pLep *= process.hltSummary
 
-process.load('HWWAnalysis.DileptonSelector.electronSelection_cff')
-process.load('HWWAnalysis.DileptonSelector.muonSelection_cff')
+# process.load('HWWAnalysis.DileptonSelector.electronSelection_cff')
+# process.load('HWWAnalysis.DileptonSelector.muonSelection_cff')
 process.load('HWWAnalysis.DileptonSelector.jetSelection_cff')
 process.load('HWWAnalysis.DileptonSelector.dileptons_cff')
 process.load('HWWAnalysis.DileptonSelector.looseTagged_cff')
@@ -160,6 +160,8 @@ process.load('HWWAnalysis.DileptonSelector.looseTagged_cff')
 #                                               | |        
 #                                               |_|        
 
+from HWWAnalysis.DileptonSelector.eventViewProducer_cfi import makeEventViews
+
 process.hwwElectrons = process.hwwLooseTaggedElectrons.clone()
 process.hwwMuons     = process.hwwLooseTaggedMuons.clone()
 
@@ -167,7 +169,7 @@ process.hwwMuons     = process.hwwLooseTaggedMuons.clone()
 process.hwwCleanJets.checkOverlaps.muons.src     = cms.InputTag('hwwMuons')
 process.hwwCleanJets.checkOverlaps.electrons.src = cms.InputTag('hwwElectrons')
 
-process.hwwDilep     = process.hwwLooseDileptons.clone(
+process.hwwDilep     = process.dileptonProducer.clone(
     electronSrc = cms.InputTag('hwwElectrons'),
     muonSrc     = cms.InputTag('hwwMuons'),
 )
@@ -176,9 +178,13 @@ process.hwwOneOrMoreDilep = process.dilepFilter.clone(
     src = cms.InputTag( 'hwwDilep' ),
 )
 
-process.hwwLeptons = cms.Sequence((process.hwwElectrons+process.hwwMuons)*process.hwwDilep*process.hwwOneOrMoreDilep)
+process.hwwLeptons = cms.Sequence(
+    (process.hwwElectrons+process.hwwMuons)
+    *process.hwwDilep
+    *process.hwwOneOrMoreDilep
+)
 
-process.hwwViews   = process.hwwLooseViews.clone( dileptonSrc = cms.InputTag('hwwDilep') )
+process.hwwViews = makeEventViews.clone( dileptonSrc = cms.InputTag('hwwDilep') )
 
 process.pLep *= ( process.hwwLeptons 
                  * process.selectCleanHwwJets

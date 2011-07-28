@@ -4,25 +4,30 @@ import gdata.spreadsheet
 import gdata.spreadsheet.service  
 import HWWAnalysis.Misc.odict as odict
 
-from HWWAnalysis.Misc.dataset import GDataset
+from HWWAnalysis.Misc.dataset import GDataset,GDatasetList
 
 defaultWSKey = '0AmbqMj_rTADpdEZWRnU1TjZ5N3AtdVFqb0tMVUpqb1E'
 
 class GoogleDatasetCellReader:
     '''GoogleDatasetCellReader'''
-    def __init__(self,tab):
-        self._tab     = tab
+    def __init__(self,key = defaultWSKey):
         self._client  = gdata.spreadsheet.service.SpreadsheetsService()  
-        self._skey    = defaultWSKey
+        self._skey    = key
 
     def feedUrl(self):
         return 'https://spreadsheet.google.com/feeds/worksheets/'+self._skey+'/public/values'
-
-    def read(self, manager):
+    
+    def worksheets(self):
         spreadsheet_feed = self._client.GetFeed( self.feedUrl() )
-        tabList = [ entry.title.text  for (i,entry) in enumerate(spreadsheet_feed.entry) ]
+        wsList = [ entry.title.text  for entry in spreadsheet_feed.entry ]
+        return wsList
+
+
+    def read(self, wsname):
+        spreadsheet_feed = self._client.GetFeed( self.feedUrl() )
+        tabList = [ entry.title.text  for entry in spreadsheet_feed.entry ]
         try:
-            tabIndex = tabList.index(self._tab)
+            tabIndex = tabList.index(wsname)
         except:
             return None
 
@@ -63,7 +68,8 @@ class GoogleDatasetCellReader:
         required = ['uid','events']
         if not all([ key in columns for key in required ]):
             raise RuntimeError('The columns '+', '.join(required) +' are required. Add them to the table')
-        manager._columns = columns
+        list = GDatasetList(wsname)
+        list._columns = columns
         header = dict(enumerate(columns))
 
         for r,row in enumerate(table):
@@ -78,24 +84,10 @@ class GoogleDatasetCellReader:
                 continue
             gds = GDataset()
             gds._fields = ds
-            manager.add(r,gds)
+            list.add(r,gds)
 
+        return list
 
-        # find the header somehow
-#         print header
-#         print len(table),len(table[0]),'---',' '.join(table[0])
-
-#         print table
-#         print 'r:',max(rows),rows
-#         print 'c:',max(cols),cols
-            
-#         for i, entry in enumerate(cell_feed.entry):
-# #             print entry
-#             print entry.title.text,
-#             print len(entry.extension_elements),
-#             for (j,elem) in enumerate(entry.extension_elements):
-#                 print j,elem.tag, elem.attributes['row'], elem.attributes['col'], elem.text
-        # to be continued
  
 class GoogleDatasetReader:
     '''GoogleDatasetReader'''
@@ -107,11 +99,16 @@ class GoogleDatasetReader:
     def feedUrl(self):
         return 'https://spreadsheet.google.com/feeds/worksheets/'+self._skey+'/public/values'
 
-    def read(self, manager):
+    def worksheets(self):
+        spreadsheet_feed = self._client.GetFeed( self.feedUrl() )
+        wsList = [ entry.title.text  for entry in spreadsheet_feed.entry ]
+        return wsList
+
+    def read(self, wsname):
         spreadsheet_feed = self._client.GetFeed( self.feedUrl() )
         tabList = [ entry.title.text  for (i,entry) in enumerate(spreadsheet_feed.entry) ]
         try:
-            tabIndex = tabList.index(self._tab)
+            tabIndex = tabList.index(wsname)
         except:
             return None
 
@@ -122,7 +119,7 @@ class GoogleDatasetReader:
 
         worksheets_feed = self._client.GetFeed(ws_feedurl)  
 
-        dsList = {}
+        list = GDatasetList(wsname)
         # check for non
         header = {}
         # remember the order
@@ -137,7 +134,7 @@ class GoogleDatasetReader:
 
                 if not elem.tag in header.iterkeys():
                     header[elem.tag] = columnId
-                    manager._columns.append(elem.tag)
+                    list._columns.append(elem.tag)
                 elif columnId != header[elem.tag]:
                     raise ValueError('Corrupted Table: tag/column '+elem.tag+' index mismatch! j = '+str(columnId)+' header[tag] = '+str(header[elem.tag])+'. Missing column name' )
                 
@@ -148,4 +145,6 @@ class GoogleDatasetReader:
                 raise ValueError('Unique id not defined for in row '+str(i))
             gds = GDataset()
             gds._fields = ds
-            manager.add(i,gds)
+            list.add(i,gds)
+
+        return list

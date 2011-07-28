@@ -130,7 +130,6 @@ process.maxEvents = cms.untracked.PSet(
 
 process.pLep = cms.Path()
 
-
 #---------------------------------------------------------
 #  _____    _                       
 # |_   _|  (_)                      
@@ -160,6 +159,8 @@ process.load('HWWAnalysis.DileptonSelector.dileptons_cff')
 #                                               | |        
 #                                               |_|        
 
+from HWWAnalysis.DileptonSelector.eventViewProducer_cfi import makeEventViews
+
 process.hwwElectrons = process.hwwSelectedElectrons.clone()
 process.hwwMuons     = process.hwwSelectedMuons.clone()
 
@@ -168,27 +169,21 @@ process.hwwCleanJets.checkOverlaps.muons.src     = cms.InputTag('hwwMuons')
 process.hwwCleanJets.checkOverlaps.electrons.src = cms.InputTag('hwwElectrons')
 
 process.hwwDilep     = process.dileptonProducer.clone(
-    electronSrc = cms.InputTag( 'hwwElectrons' ),
-    muonSrc     = cms.InputTag( 'hwwMuons' ),
+    electronSrc = cms.InputTag('hwwElectrons'),
+    muonSrc     = cms.InputTag('hwwMuons'),
 )
 
 process.hwwOneOrMoreDilep = process.dilepFilter.clone(
     src = cms.InputTag( 'hwwDilep' ),
 )
 
-process.hwwLeptons = cms.Sequence((process.hwwElectrons+process.hwwMuons)*process.hwwDilep*process.hwwOneOrMoreDilep)
-
-process.hwwViews  = cms.EDProducer('EventViewProducer',
-    hltSummarySrc = cms.InputTag('hltSummary'),
-    dileptonSrc   = cms.InputTag('hwwDilep'),
-    jetSrc        = cms.InputTag('hwwCleanJets'), 
-    softMuonSrc   = cms.InputTag('hwwMuons4Veto'),
-    pfMetSrc      = cms.InputTag('pfMet'),
-    tcMetSrc      = cms.InputTag('tcMet'),
-    chargedMetSrc = cms.InputTag('trackMetProducer'),
-    vertexSrc     = cms.InputTag('goodPrimaryVertices'),
-    pfChCandSrc   = cms.InputTag('reducedPFCands'),
+process.hwwLeptons = cms.Sequence(
+    (process.hwwElectrons+process.hwwMuons)
+    *process.hwwDilep
+    *process.hwwOneOrMoreDilep
 )
+
+process.hwwViews = makeEventViews.clone( dileptonSrc = cms.InputTag('hwwDilep') )
 
 process.pLep *= ( process.hwwLeptons 
                  * process.selectCleanHwwJets
