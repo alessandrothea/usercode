@@ -1,9 +1,7 @@
 import FWCore.ParameterSet.Config as cms
-# from PhysicsTools.PatAlgos.patSequences_cff import *
-from HWWAnalysis.DileptonSelector.muonCuts_cff import *
 
-selectedRefPatJets = cms.EDFilter('PATJetRefSelector',
-   src = cms.InputTag('slimPatJetsTriggerMatch'),
+selectedRefPatJets = cms.EDFilter("PATJetRefSelector",
+   src = cms.InputTag("slimPatJetsTriggerMatch"),
    filter = cms.bool(False),
    cut = cms.string("")
 )
@@ -21,6 +19,35 @@ JET_LOOSE_ID = '''neutralEmEnergyFraction() < 0.99
 
 hwwJetLooseId = selectedRefPatJets.clone( cut = JET_LOOSE_ID )
 
-hwwJetSequence = cms.Sequence( 
-    hwwJetLooseId
+
+# Clean the Jets from the seleted leptons
+hwwCleanJets = cms.EDProducer('PATJetCleaner',
+    src = cms.InputTag('hwwJetLooseId'),
+    preselection = cms.string(''), 
+    checkOverlaps = cms.PSet(
+      muons = cms.PSet(
+          src = cms.InputTag('hwwMuons'),
+          algorithm = cms.string('byDeltaR'),
+          preselection = cms.string(''),
+          deltaR = cms.double(0.3),
+          checkRecoComponents = cms.bool(False),
+          pairCut = cms.string(''),
+          requireNoOverlaps = cms.bool(True),
+      ),
+      electrons = cms.PSet(
+          src = cms.InputTag('hwwElectrons'),
+          algorithm = cms.string('byDeltaR'),
+          preselection = cms.string(''),
+          deltaR = cms.double(0.3),
+          checkRecoComponents = cms.bool(False),
+          pairCut = cms.string(''),
+          requireNoOverlaps = cms.bool(True),
+      )
+    ),
+    finalCut = cms.string('')
+)
+
+
+selectCleanHwwJets = cms.Sequence( 
+    hwwJetLooseId*hwwCleanJets
 )

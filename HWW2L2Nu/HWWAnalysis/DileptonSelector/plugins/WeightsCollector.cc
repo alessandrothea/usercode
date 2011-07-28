@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Jun 23 15:18:30 CEST 2011
-// $Id: WeightsCollector.cc,v 1.2 2011/07/22 08:28:53 thea Exp $
+// $Id: WeightsCollector.cc,v 1.1 2011/07/03 17:04:49 thea Exp $
 //
 //
 
@@ -29,6 +29,8 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "DataFormats/Common/interface/ValueMap.h"
+#include "DataFormats/Candidate/interface/Candidate.h"
 #include <SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h>
 #include "HWWAnalysis/Misc/interface/Tools.h"
 
@@ -38,22 +40,26 @@
 //
 
 class WeightsCollector : public edm::EDProducer {
-   public:
-      explicit WeightsCollector(const edm::ParameterSet&);
-      ~WeightsCollector();
+    public:
+        explicit WeightsCollector(const edm::ParameterSet&);
+        ~WeightsCollector();
 
-      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+        static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-   private:
-      virtual void beginJob() ;
-      virtual void produce(edm::Event&, const edm::EventSetup&);
-      virtual void endJob() ;
-      
-      // ----------member data ---------------------------
-      edm::InputTag puInfoSrc_;
-      edm::InputTag ptWeightSrc_;
+    private:
+        virtual void beginJob() ;
+        virtual void produce(edm::Event&, const edm::EventSetup&);
+        virtual void endJob() ;
 
-      std::vector<double> puWeights_;
+        // ----------member data ---------------------------
+        bool doMap_;
+        bool doPu_;
+        bool doPt_; 
+
+        edm::InputTag candidateSrc_;
+        edm::InputTag puInfoSrc_;
+        std::vector<double> puWeights_;
+        edm::InputTag ptWeightSrc_;
 };
 
 //
@@ -71,16 +77,21 @@ using namespace std;
 //
 // constructors and destructor
 //
-WeightsCollector::WeightsCollector(const edm::ParameterSet& iConfig)
-{
+WeightsCollector::WeightsCollector(const edm::ParameterSet& iConfig) :
+    doMap_( iConfig.existsAs<edm::InputTag>("src") ),
+    doPu_( iConfig.existsAs<edm::InputTag>("puInfoSrc") ),
+    doPt_( iConfig.existsAs<edm::InputTag>("ptWeightSrc") ),
+
+    candidateSrc_(  doMap_ ? iConfig.getParameter<edm::InputTag>("src")       : edm::InputTag()),
+    puInfoSrc_(     doPu_  ? iConfig.getParameter<edm::InputTag>("puInfoSrc") : edm::InputTag()),
+    puWeights_(     doPu_  ? iConfig.getParameter<std::vector<double> >("pileupWeights") : std::vector<double>() ),
+    ptWeightSrc_(   doPt_  ? iConfig.getParameter<edm::InputTag>("ptWeightSrc_") : edm::InputTag()) {
+    
     //register your products
     produces< vector<double> >();
-
-    puInfoSrc_      = iConfig.getParameter<edm::InputTag>("puInfoSrc");
-    puWeights_      = iConfig.getParameter<std::vector<double> >("pileupWeights");
-    if( iConfig.existsAs<edm::InputTag>("ptWeightSrc") ) {
-        ptWeightSrc_ = iConfig.getParameter<edm::InputTag> ("ptWeightSrc");
-    } 
+    if ( doMap_ ) {
+        produces< edm::ValueMap<float> >();
+    }
 }
 
 
@@ -98,15 +109,16 @@ WeightsCollector::~WeightsCollector()
 //
 
 // ------------ method called to produce the data  ------------
-    void
+void
 WeightsCollector::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
     using namespace edm;
 
     std::auto_ptr<vector<double> > pWeights( new vector<double> );
 
-        // pileup
+    // pileup
     int nPileUp = -1;
+    double weight = 1.;
     
     //  __      __    _      _   _      
     //  \ \    / /___(_)__ _| |_| |_ ___
@@ -116,44 +128,58 @@ WeightsCollector::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
          
     if ( !iEvent.isRealData() ) {
         // pileup weights
-        Handle<std::vector<PileupSummaryInfo> > puInfo;
-        iEvent.getByLabel(puInfoSrc_, puInfo);
+        if ( doPu_ ) {
+            Handle<std::vector<PileupSummaryInfo> > puInfo;
+            iEvent.getByLabel(puInfoSrc_, puInfo);
 
-        std::vector<PileupSummaryInfo>::const_iterator puIt;
-        // search for in-time pu and to the weight
-        for(puIt = puInfo->begin(); puIt != puInfo->end(); ++puIt)
-            // in time pu
-            if ( puIt->getBunchCrossing() == 0 ) 
-                break;
+            std::vector<PileupSummaryInfo>::const_iterator puIt;
+            // search for in-time pu and to the weight
+            for(puIt = puInfo->begin(); puIt != puInfo->end(); ++puIt)
+                // in time pu
+                if ( puIt->getBunchCrossing() == 0 ) 
+                    break;
 
 
-        if ( puIt == puInfo->end() ) 
-            THROW_RUNTIME("-- Event " << iEvent.id().event() << " didn't find the in time pileup info");
+            if ( puIt == puInfo->end() ) 
+                THROW_RUNTIME("-- Event " << iEvent.id().event() << " didn't find the in time pileup info");
 
-        nPileUp = puIt->getPU_NumInteractions();
+            nPileUp = puIt->getPU_NumInteractions();
 
-        double puWeight = 1.;
-        if ( nPileUp < 0 )
-            THROW_RUNTIME(" nPU = " << nPileUp << " what's going on?!?");
-        if ( nPileUp > (int)puWeights_.size() )
-//             THROW_RUNTIME("Simulated Pu [" << nPileUp <<"] larger than available puFactors [" << puWeights_.size()  << "]" );
-            puWeight = 0.;
-        else
-            puWeight = puWeights_[ nPileUp ];
+            double puWeight = 1.;
+            if ( nPileUp < 0 )
+                THROW_RUNTIME(" nPU = " << nPileUp << " what's going on?!?");
+            if ( nPileUp > (int)puWeights_.size() )
+                puWeight = 0.;
+            else
+                puWeight = puWeights_[ nPileUp ];
 
-        pWeights->push_back( puWeight );
+            pWeights->push_back( puWeight );
+            weight *= puWeight;
+        }
 
         // get the ptWeight if required
-        if ( !(ptWeightSrc_ == edm::InputTag()) ) {
+        if ( doPt_ ) {
             edm::Handle<double> ptWeight;
             iEvent.getByLabel(ptWeightSrc_, ptWeight);
 
-//             weight_ *= *ptWeight;
             pWeights->push_back( *ptWeight );
+            weight *= *ptWeight;
         }
     }
 
     iEvent.put(pWeights);
+    
+    if ( doMap_ ) {
+        edm::Handle<edm::View<reco::Candidate> > cands;
+        iEvent.getByLabel(candidateSrc_ ,cands);
+        std::auto_ptr<edm::ValueMap<float> > floatMap(new edm::ValueMap<float>);
+        std::vector<float> floatVec(cands->size(),weight);
+        edm::ValueMap<float>::Filler filler(*floatMap);
+        filler.insert(cands, floatVec.begin(), floatVec.end());
+        filler.fill();
+        iEvent.put(floatMap);
+
+    }
 
 }
 

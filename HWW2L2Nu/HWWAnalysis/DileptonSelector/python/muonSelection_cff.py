@@ -32,7 +32,7 @@ hwwMuons4Veto        = selectedRefPatMuons.clone( cut = "pt > 3 && " + MUON_ID_C
 # dont' add them to the sequence by default
 hwwSelectedMuons     = selectedPatMuons.clone( cut = hwwMuonsMergeIP.cut )
 
-hwwMuonSequence = cms.Sequence( 
+selectHwwMuons = cms.Sequence( 
     hwwMuMatch * 
     hwwMuonsID * 
     hwwMuonsISO * 

@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Wed Jul 13 11:03:24 CEST 2011
-// $Id: HWWNtupleTreeProducer.cc,v 1.4 2011/07/18 13:26:45 thea Exp $
+// $Id: HWWNtupleTreeProducer.cc,v 1.5 2011/07/22 13:41:58 jueugste Exp $
 //
 //
 
@@ -86,7 +86,7 @@ HWWNtupleTreeProducer::HWWNtupleTreeProducer(const edm::ParameterSet& iConfig)
 {
     //now do what ever initialization is needed
     treeName_       = iConfig.getParameter<std::string>("treeName");
-    weightSrc_      = iConfig.getParameter<edm::InputTag>("weightSrc");
+//     weightSrc_      = iConfig.getParameter<edm::InputTag>("weightSrc");
     viewSrc_        = iConfig.getParameter<edm::InputTag>("viewSrc");
 
 }
@@ -115,8 +115,8 @@ HWWNtupleTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     // trigger info
     using namespace edm;
 
-    Handle<std::vector<double> > weights;
-    iEvent.getByLabel(weightSrc_, weights);
+//     Handle<std::vector<double> > weights;
+//     iEvent.getByLabel(weightSrc_, weights);
 
     edm::Handle<edm::View<hww::EventView> > eventViews;
     iEvent.getByLabel(viewSrc_,eventViews);
@@ -126,8 +126,8 @@ HWWNtupleTreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
 
     double weight(1.);
-    for( uint i(0); i<weights->size(); ++i)
-        weight *= weights->at(i);
+//     for( uint i(0); i<weights->size(); ++i)
+//         weight *= weights->at(i);
 
     // use the view with the highest pt sum
     const hww::EventView& v = eventViews->front();

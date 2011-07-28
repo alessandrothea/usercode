@@ -2,8 +2,8 @@ import FWCore.ParameterSet.Config as cms
 # import FWCore.ParameterSet.VarParsing as opts
 import HWWAnalysis.Misc.VarParsing as opts
 
-from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import puWeights
-from HWWAnalysis.DileptonSelector.higgsPtWeights_cfi import *
+# from HWWAnalysis.DileptonSelector.pileupSpring2011_cfi import puWeights
+# from HWWAnalysis.DileptonSelector.higgsPtWeights_cfi import *
 #
 import PhysicsTools.PythonAnalysis.LumiList as LumiList
 #
@@ -68,7 +68,7 @@ options.register ( 'saveStep2',
 
 #-------------------------------------------------------------------------------
 # defaults
-options.outputFile = 'diSelection.root'
+options.outputFile = 'stage2.root'
 options.maxEvents  = -1 #all events
 #-------------------------------------------------------------------------------
 
@@ -84,7 +84,7 @@ process = cms.Process('Step2')
 # | |/ /|  __/| | | (_| || |_| || || |_ \__ \
 # |___/  \___||_|  \__,_| \__,_||_| \__||___/
 
-pileUpLabel = 'certifiedLatinos.42X_Jun24'
+pileUpLabel = 'certifiedLatinos.42X_Jun24' if not options.flatPuWeights else 'Flat'
 
 #-------------------------------------------------------------------------------
 #  _____                  _   
@@ -128,29 +128,7 @@ process.maxEvents = cms.untracked.PSet(
             input = cms.untracked.int32 (options.maxEvents),
             )
 
-
 process.pLep = cms.Path()
-
-#-------------------------------------------------------------------------------
-#  _   _                    _   ________         _                 
-# | | | |                  | | / /|  ___|       | |                
-# | |_| |_      ____      _| |/ / | |_ __ _  ___| |_ ___  _ __ ___ 
-# |  _  \ \ /\ / /\ \ /\ / /    \ |  _/ _` |/ __| __/ _ \| '__/ __|
-# | | | |\ V  V /  \ V  V /| |\  \| || (_| | (__| || (_) | |  \__ \
-# \_| |_/ \_/\_/    \_/\_/ \_| \_/\_| \__,_|\___|\__\___/|_|  |___/
-
-
-if options.higgsPtWeights: 
-    scaleFile = higgsPtKFactorFile( options.higgsPtWeights )
-    process.higgsPtWeights = cms.EDProducer('HWWKFactorProducer',
-        genParticlesTag = cms.InputTag('prunedGen'),
-        inputFilename = cms.untracked.string( scaleFile ),
-        ProcessID = cms.untracked.int32(10010),
-        Debug =cms.untracked.bool(False)
-    )
-    print 'Rescaling pt for higgs mass '+options.higgsPtWeights+' using '+ scaleFile
-    process.pLep += process.higgsPtWeights
-
 
 #--------------------------------------------------------------------
 #  _    _      _       _     _       
@@ -162,79 +140,11 @@ if options.higgsPtWeights:
 #                 __/ |              
 #                |___/               
 
+from HWWAnalysis.DileptonSelector.weights_cff import addWeights
 
-process.eventWeights = cms.EDProducer('WeightsCollector',
-    puInfoSrc = cms.InputTag('addPileupInfo'),
-    pileupWeights = cms.vdouble(puWeights[pileUpLabel]),
-)
+addWeights( process, pileUpLabel, higgsMass=options.higgsPtWeights )
 
-if options.flatPuWeights:
-    print ' - Weights: Forcing all the PU eventWeights to 1.'
-    process.eventWeights.pileupWeights = cms.vdouble(puWeights['Flat'])
-
-if options.higgsPtWeights:
-    print ' - Weights: Adding the pt eventWeights for mass '+options.higgsPtWeights
-    process.eventWeights.ptWeightSrc = cms.InputTag('higgsPtWeights')
-
-process.pLep += process.eventWeights
-#--------------------------------------------------------------------
-#  _                _              _____      _           _   _             
-# | |              | |            /  ___|    | |         | | (_)            
-# | |     ___ _ __ | |_ ___  _ __ \ `--.  ___| | ___  ___| |_ _  ___  _ __  
-# | |    / _ \ '_ \| __/ _ \| '_ \ `--. \/ _ \ |/ _ \/ __| __| |/ _ \| '_ \ 
-# | |___|  __/ |_) | || (_) | | | /\__/ /  __/ |  __/ (__| |_| | (_) | | | |
-# \_____/\___| .__/ \__\___/|_| |_\____/ \___|_|\___|\___|\__|_|\___/|_| |_|
-#            | |                                                            
-#            |_|                                                            
-
-process.load('HWWAnalysis.DileptonSelector.electronSelection_cff')
-process.load('HWWAnalysis.DileptonSelector.muonSelection_cff')
-process.load('HWWAnalysis.DileptonSelector.jetSelection_cff')
-
-process.pLep += (process.hwwElectronSequence
-                    + process.hwwMuonSequence
-                    + process.hwwJetSequence)
-
-#--------------------------------------------------------------------
-#    ___      _     _____ _                  _             
-#   |_  |    | |   /  __ \ |                (_)            
-#     | | ___| |_  | /  \/ | ___  __ _ _ __  _ _ __   __ _ 
-#     | |/ _ \ __| | |   | |/ _ \/ _` | '_ \| | '_ \ / _` |
-# /\__/ /  __/ |_  | \__/\ |  __/ (_| | | | | | | | | (_| |
-# \____/ \___|\__|  \____/_|\___|\__,_|_| |_|_|_| |_|\__, |
-#                                                     __/ |
-#                                                    |___/ 
-
-# Clean the Jets from the seleted leptons
-process.hwwCleanJets = cms.EDProducer('PATJetCleaner',
-#     src = cms.InputTag('slimPatJetsTriggerMatch'),
-    src = cms.InputTag('hwwJetLooseId'),
-    preselection = cms.string(''), 
-    checkOverlaps = cms.PSet(
-      muons = cms.PSet(
-          src = cms.InputTag('hwwMuonsMergeIP'),
-          algorithm = cms.string('byDeltaR'),
-          preselection = cms.string(''),
-          deltaR = cms.double(0.3),
-          checkRecoComponents = cms.bool(False),
-          pairCut = cms.string(''),
-          requireNoOverlaps = cms.bool(True),
-      ),
-      electrons = cms.PSet(
-          src = cms.InputTag('hwwEleIPMerge'),
-          algorithm = cms.string('byDeltaR'),
-          preselection = cms.string(''),
-          deltaR = cms.double(0.3),
-          checkRecoComponents = cms.bool(False),
-          pairCut = cms.string(''),
-          requireNoOverlaps = cms.bool(True),
-      )
-    ),
-    finalCut = cms.string('')
-)
-
-
-process.pLep *= process.hwwCleanJets
+process.pLep *= process.weightSequence
 
 #---------------------------------------------------------
 #  _____    _                       
@@ -250,6 +160,24 @@ process.load('HWWAnalysis.DileptonSelector.hltFilter_cff')
 
 process.pLep *= process.hltSummary
 
+#--------------------------------------------------------------------
+#  _                _              _____      _           _   _             
+# | |              | |            /  ___|    | |         | | (_)            
+# | |     ___ _ __ | |_ ___  _ __ \ `--.  ___| | ___  ___| |_ _  ___  _ __  
+# | |    / _ \ '_ \| __/ _ \| '_ \ `--. \/ _ \ |/ _ \/ __| __| |/ _ \| '_ \ 
+# | |___|  __/ |_) | || (_) | | | /\__/ /  __/ |  __/ (__| |_| | (_) | | | |
+# \_____/\___| .__/ \__\___/|_| |_\____/ \___|_|\___|\___|\__|_|\___/|_| |_|
+#            | |                                                            
+#            |_|                                                            
+
+process.load('HWWAnalysis.DileptonSelector.electronSelection_cff')
+process.load('HWWAnalysis.DileptonSelector.muonSelection_cff')
+process.load('HWWAnalysis.DileptonSelector.jetSelection_cff')
+
+process.pLep += (process.selectHwwElectrons
+                    + process.selectHwwMuons)
+
+
 #---------------------------------------------------------
 # ______ _ _            _                  
 # |  _  (_) |          | |                 
@@ -260,79 +188,10 @@ process.pLep *= process.hltSummary
 #                | |                       
 #                |_|                       
 
-process.hwwPairsMatch = cms.EDProducer('DileptonProducer',
-    electronSrc = cms.InputTag('hwwEleMatch'),
-    muonSrc     = cms.InputTag('hwwMuMatch'),
-    cut         = cms.string('oppositeSign() && leading().pt() > 20.'),
-)
+process.load('HWWAnalysis.DileptonSelector.dileptons_cff')
 
-process.hwwPairsID = process.hwwPairsMatch.clone(
-    electronSrc = cms.InputTag('hwwEleIDMerge'),
-    muonSrc     = cms.InputTag('hwwMuonsMergeID'),
-)
-process.hwwPairsISO = process.hwwPairsMatch.clone(
-    electronSrc = cms.InputTag('hwwEleISOMerge'),
-    muonSrc     = cms.InputTag('hwwMuonsMergeISO'),
-)
-process.hwwPairsCONV = process.hwwPairsMatch.clone(
-    electronSrc = cms.InputTag('hwwEleCONVMerge'),
-    muonSrc     = cms.InputTag('hwwMuonsMergeCONV'),
-)
-process.hwwPairsIP = process.hwwPairsMatch.clone(
-    electronSrc = cms.InputTag('hwwEleIPMerge'),
-    muonSrc     = cms.InputTag('hwwMuonsMergeIP'),
-)
-#--------------------------------------------------------------------
-process.oppPairMatchFilter  = cms.EDFilter('DileptonCounter',
-    src = cms.InputTag('hwwPairsMatch'),
-    min = cms.int32(1),
-)
+process.pLep *= process.makeDileptons
 
-process.oppPairFilterID   = process.oppPairMatchFilter.clone( src = cms.InputTag('hwwPairsID') )
-process.oppPairFilterISO  = process.oppPairMatchFilter.clone( src = cms.InputTag('hwwPairsISO') )
-process.oppPairFilterCONV = process.oppPairMatchFilter.clone( src = cms.InputTag('hwwPairsCONV') )
-process.oppPairFilterIP   = process.oppPairMatchFilter.clone( src = cms.InputTag('hwwPairsIP') )
-
-#--------------------------------------------------------------------
-process.pairMonitor = cms.EDProducer('DileptonMonitor',
-    src     = cms.InputTag(''),
-    categories = cms.PSet(
-        ll = cms.string(''),
-        ee = cms.string('isElEl()'),
-        em = cms.string('isElMu()'),
-        me = cms.string('isMuEl()'),
-        mm = cms.string('isMuMu()'),
-    ),
-)
-
-process.monPairMatch = process.pairMonitor.clone( src = cms.InputTag('hwwPairsMatch' ) )
-process.monPairID    = process.pairMonitor.clone( src = cms.InputTag('hwwPairsID' ) )
-process.monPairISO   = process.pairMonitor.clone( src = cms.InputTag('hwwPairsISO' ) )
-process.monPairCONV  = process.pairMonitor.clone( src = cms.InputTag('hwwPairsCONV' ) )
-process.monPairIP    = process.pairMonitor.clone( src = cms.InputTag('hwwPairsIP' ) )
-
-#--------------------------------------------------------------------
-
-process.pairSequence = cms.Sequence(
-      ( process.hwwPairsMatch
-    + process.hwwPairsID
-    + process.hwwPairsISO
-    + process.hwwPairsCONV
-    + process.hwwPairsIP)
-
-    * process.oppPairMatchFilter
-    * process.monPairMatch
-    * process.oppPairFilterID
-    * process.monPairID
-    * process.oppPairFilterISO
-    * process.monPairISO
-    * process.oppPairFilterCONV
-    * process.monPairCONV
-    * process.oppPairFilterIP
-    * process.monPairIP
-)
-
-process.pLep *= process.pairSequence
 
 #--------------------------------------------------------------------
 # ______     _   _      ______ _ _ _            
@@ -342,14 +201,25 @@ process.pLep *= process.pairSequence
 # | | | (_| | |_| | | | | |   | | | ||  __/ |   
 # \_|  \__,_|\__|_| |_| \_|   |_|_|\__\___|_|   
                                               
-process.monPairHLT   = process.pairMonitor.clone( src = cms.InputTag('hwwPairsIP' ) )
+process.dilepMonHLT   = process.dilepMonitor.clone( src = cms.InputTag('hwwDilepIP' ) )
 
 # if defined in the command line apply the filterin
 if options.dataPath:
     process.hltFilter.mode = cms.string(options.dataPath)
     process.pLep *= process.hltFilter
 
-process.pLep *= process.monPairHLT
+process.pLep *= process.dilepMonHLT
+
+#--------------------------------------------------------------------
+# __   ___      _     _                    __           
+# \ \ / (_)    | |   | |                  / _|          
+#  \ V / _  ___| | __| |___   ___  ___   | |_ __ _ _ __ 
+#   \ / | |/ _ \ |/ _` / __| / __|/ _ \  |  _/ _` | '__|
+#   | | | |  __/ | (_| \__ \ \__ \ (_) | | || (_| | |   
+#   \_/ |_|\___|_|\__,_|___/ |___/\___/  |_| \__,_|_|   
+
+process.pYield = cms.Path(process.yieldAnalyzer)
+
 
 #--------------------------------------------------------------------
 #  _____             _            _   _                    
@@ -364,19 +234,22 @@ process.pLep *= process.monPairHLT
 process.hwwElectrons = process.hwwSelectedElectrons.clone()
 process.hwwMuons     = process.hwwSelectedMuons.clone()
 
-process.hwwPairs = cms.EDProducer('DileptonProducer',
-    electronSrc = cms.InputTag('hwwMuons'),
-    muonSrc     = cms.InputTag('hwwElectrons'),
-    cut         = cms.string('oppositeSign() && leading().pt() > 20.'),
+# set the input lepton collections
+process.hwwCleanJets.checkOverlaps.muons.src     = cms.InputTag('hwwMuons')
+process.hwwCleanJets.checkOverlaps.electrons.src = cms.InputTag('hwwElectrons')
+
+process.hwwDilep     = process.dileptonProducer.clone(
+    electronSrc = cms.InputTag( 'hwwElectrons' ),
+    muonSrc     = cms.InputTag( 'hwwMuons' )
 )
 
-process.hwwLeptons = cms.Sequence((process.hwwElectrons+process.hwwMuons)*process.hwwPairs)
+process.hwwLeptons = cms.Sequence((process.hwwElectrons+process.hwwMuons)*process.hwwDilep)
 
-process.pLep *= process.hwwLeptons
+process.pLep *= process.hwwLeptons*process.selectCleanHwwJets
 
 process.hwwViews = cms.EDProducer('EventViewProducer',
     hltSummarySrc = cms.InputTag('hltSummary'),
-    dileptonSrc   = cms.InputTag('hwwPairs'),
+    dileptonSrc   = cms.InputTag('hwwDilep'),
     jetSrc        = cms.InputTag('hwwCleanJets'), 
     softMuonSrc   = cms.InputTag('hwwMuons4Veto'),
     pfMetSrc      = cms.InputTag('pfMet'),
@@ -388,58 +261,6 @@ process.hwwViews = cms.EDProducer('EventViewProducer',
 
 process.pLep *= process.hwwViews
 
-#--------------------------------------------------------------------
-#  _____            ______              _                     
-# |_   _|           | ___ \            | |                    
-#   | |_ __ ___  ___| |_/ / __ ___   __| |_   _  ___ ___ _ __ 
-#   | | '__/ _ \/ _ \  __/ '__/ _ \ / _` | | | |/ __/ _ \ '__|
-#   | | | |  __/  __/ |  | | | (_) | (_| | |_| | (_|  __/ |   
-#   \_/_|  \___|\___\_|  |_|  \___/ \__,_|\__,_|\___\___|_|   
-#                                                             
-
-process.treeproducer = cms.EDAnalyzer('HWWTreeProducer',
-
-    treeName      = cms.string('hwwStep2'),
-    weightSrc     = cms.InputTag('eventWeights'),
-    puInfoSrc     = cms.InputTag('addPileupInfo'),
-    hltSummarySrc = cms.InputTag('hltSummary'),
-
-    electronSrc   = cms.InputTag('hwwEleIPMerge'),
-    muonSrc       = cms.InputTag('hwwMuonsMergeIP'),
-    jetSrc        = cms.InputTag('hwwCleanJets'), 
-    softMuonSrc   = cms.InputTag('hwwMuons4Veto'),
-
-    pfMetSrc      = cms.InputTag('pfMet'),
-    tcMetSrc      = cms.InputTag('tcMet'),
-    chargedMetSrc = cms.InputTag('trackMetProducer'),
-    vertexSrc     = cms.InputTag('goodPrimaryVertices'),
-    chCandSrc     = cms.InputTag('reducedPFCands'),
-    sptSrc        = cms.InputTag('vertexMapProd','sumPt'),
-    spt2Src       = cms.InputTag('vertexMapProd','sumPt2'),
-
-    jetCut        = cms.string('pt > 15.'),
-    jetBTaggers   = cms.vstring('combinedSecondaryVertexBJetTags',
-                               'combinedSecondaryVertexMVABJetTags',
-                               'simpleSecondaryVertexHighEffBJetTags',
-                               'simpleSecondaryVertexHighPurBJetTags',
-                               'jetBProbabilityBJetTags',
-                               'jetProbabilityBJetTags',
-                               'trackCountingHighEffBJetTags',
-                               'trackCountingHighPurBJetTags'
-                               ),
-    hltPaths      = cms.vstring('singleMuDataPaths',
-                                'doubleMuDataPaths',
-                                'doubleElDataPaths',
-                                'muEGDataPaths',
-                                'singleMuMCPaths',
-                                'singleElMCPaths',
-                                'doubleMuMCPaths',
-                                'doubleElMCPaths',
-                                'muEGMCPaths',
-                               ),
-
-    
-)
 #--------------------------------------------------------------------
 #  _   _ _____           _      
 # | \ | |_   _|         | |     
@@ -465,6 +286,8 @@ process.ntupleproducer = cms.EDAnalyzer('HWWNtupleTreeProducer',
 # \_| \_\___/|_|_|\___|_|  \_|   |_|_| |_|
 
 process.load("HWWAnalysis.DileptonSelector.roller_cff")
+
+process.weightsMap = process.eventWeights.clone( src = cms.InputTag("hwwViews") )
 process.stage3flat = process.rollerPin.clone(
     src = cms.InputTag("hwwViews"),
 )
@@ -480,32 +303,9 @@ process.testStuff = cms.EDAnalyzer('TestStuffAnalyzer',
 
 # process.pLep *= process.testStuff
 # process.pLep *= process.treeproducer
-# process.pLep *= process.ntupleproducer
-process.pLep *= process.stage3flat
+process.pLep *= process.ntupleproducer
+process.pLep *= (process.weightsMap*process.stage3flat)
 
-
-#--------------------------------------------------------------------
-# __   ___      _     _                    __           
-# \ \ / (_)    | |   | |                  / _|          
-#  \ V / _  ___| | __| |___   ___  ___   | |_ __ _ _ __ 
-#   \ / | |/ _ \ |/ _` / __| / __|/ _ \  |  _/ _` | '__|
-#   | | | |  __/ | (_| \__ \ \__ \ (_) | | || (_| | |   
-#   \_/ |_|\___|_|\__,_|___/ |___/\___/  |_| \__,_|_|   
-                                                      
-process.yieldAnalyzer = cms.EDAnalyzer('LeptonYieldAnalyzer',
-    weightSrc = cms.InputTag('eventWeights'),
-    categories = cms.vstring('ll','ee','em','me','mm'),
-    bins = cms.VPSet(
-        cms.PSet( name = cms.string('fiducial'),    src = cms.InputTag('monPairMatch') ),
-        cms.PSet( name = cms.string('id'),          src = cms.InputTag('monPairID') ),
-        cms.PSet( name = cms.string('iso'),         src = cms.InputTag('monPairISO') ),
-        cms.PSet( name = cms.string('conv'),        src = cms.InputTag('monPairCONV') ),
-        cms.PSet( name = cms.string('ip'),          src = cms.InputTag('monPairIP') ),
-        cms.PSet( name = cms.string('trgbits'),     src = cms.InputTag('monPairHLT') ),
-    )
-)
-
-process.pYield = cms.Path(process.yieldAnalyzer)
 
 
 #  _____       _               _   
@@ -528,7 +328,7 @@ if options.saveStep2:
            'keep *_hwwElectrons_*_*',
            'keep *_hwwMuons_*_*',
            'keep *_hwwCleanJets_*_*',
-           'keep *_hwwPairs_*_*',
+           'keep *_hwwDilep_*_*',
            'keep *_hwwViews_*_*',
            'keep GenEventInfoProduct_generator__*',
            'keep edmTriggerResults_*_*_*',

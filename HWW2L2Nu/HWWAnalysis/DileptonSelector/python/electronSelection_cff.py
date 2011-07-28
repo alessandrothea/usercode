@@ -61,7 +61,7 @@ hwwEleIPMerge2   = selectedRefPatElectrons.clone( cut = ELE_BASE + " && " + ELE_
 # object copy for final storage
 hwwSelectedElectrons = selectedPatElectrons.clone( cut = hwwEleIPMerge.cut )
 
-hwwElectronSequence = cms.Sequence(  
+selectHwwElectrons = cms.Sequence(  
     hwwEleMatch *
 
     hwwEleIDMerge *
