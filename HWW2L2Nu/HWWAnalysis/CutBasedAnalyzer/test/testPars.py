@@ -31,13 +31,15 @@ options.parseArguments()
 
 
 process = cms.PSet(
-        treeName   = cms.string('hwwStep3'),
+        treeName   = cms.string('stage3flat/probe_tree'),
         inputFiles = cms.vstring(options.inputFiles),
         outputFile = cms.string(options.outputFile),
         maxEvents  = cms.int64(options.maxEvents),
         monitor    = cms.bool(options.monitor),
-        copyObjects = cms.vstring(['entries']),
-        useWeights = cms.bool(options.useWeights),
+        copyObjects = cms.vstring([]),
+#         useWeights = cms.bool(options.useWeights),
+        weight     = cms.string("weight"),
+        monitored = cms.vstring([]),
 )
 
 process.channels = cms.VPSet(
@@ -47,19 +49,19 @@ process.channels = cms.VPSet(
 #     ),
     cms.PSet(
         name = cms.string('mm'),
-        selection = cms.string('is(\'mumu\')'),
+        selection = cms.string('channel == 0'),
     ),
     cms.PSet(
         name = cms.string('me'),
-        selection = cms.string('is(\'muel\')'),
+        selection = cms.string('channel == 3'),
     ),
     cms.PSet(
         name = cms.string('em'),
-        selection = cms.string('is(\'elmu\')'),
+        selection = cms.string('channel == 2'),
     ),
     cms.PSet(
         name = cms.string('ee'),
-        selection = cms.string('is(\'elel\')'),
+        selection = cms.string('channel == 1'),
     ),
 
 )
@@ -72,20 +74,21 @@ def cut(name, label, cut):
         )
 
 process.cuts = cms.VPSet(
-    cut('skim',       'skim', ''),
-#    cut('minMet',     'min #slash{E}_{T}','met > 20'),
+    cut('trigger',    'trigger', ''),
+    cut('minMet',     'min #slash{E}_{T}','met > 20'),
     cut('minMll',     'min M_{ll}','mll > 12.'),
-    cut('Zveto',      'Zveto','different() || (abs(mll - 91.18699) > 15.)'),
-    cut('projMet',    'projMet','( same() && min(projPfMet,projChargedMetSmurf) > 40. ) || ( different() && min(projPfMet,projChargedMetSmurf) > 20. ) '),
-    cut('jetVeto',    'Jet Veto','nJets == 0'),
-    cut('softMu',     'Soft mu','nSoftMus == 0'),
-    cut('extraLep',   'Extra Lepton Veto','nExtra == 0'),
-    cut('antiB',      'Anti B','nBJets == 0'),
-    cut('maxMll',     'max M_{ll}','mll < 45'),
-    cut('pTLead',     'p_{T} lead','pA.pt() > 25'),
-    cut('pTTrail',    'p_{T} trail','pB.pt() > 10'),
-    cut('dPhi',       'd#Phi','dPhi*'+radToDeg+' < 90'),
-    cut('mT',         'm_{T}','mtll > 75. && mtll < 125.'),
+    cut('Zveto',      'Zveto','sameflav == 0 || (TMath::Abs(mll - 91.18699) > 15.)'),
+    cut('projMet',    'projMet','( sameflav == 1 && TMath::Min(pmet,pchmet) > 40. ) || ( sameflav == 0 && TMath::Min(pmet,pchmet) > 20. ) '),
+    cut('jetVeto',    'Jet Veto','njet == 0'),
+    cut('dphiJll',    'd#Phi_{jll}','sameflav == 0 || dphilljet*TMath::RadToDeg() < 165.'),
+    cut('softMu',     'Soft mu','bveto_mu == 1'),
+    cut('extraLep',   'Extra Lepton Veto','nextra == 0'),
+    cut('antiB',      'Anti B','bveto_ip == 1'),
+    cut('maxMll',     'max M_{ll}','mll < 50'),
+    cut('pTLead',     'p_{T} lead','pt1 > 30'),
+    cut('pTTrail',    'p_{T} trail','pt2 > 25'),
+    cut('dPhi',       'd#Phi','dphill*'+radToDeg+' < 60'),
+    cut('mT',         'm_{T}','mth > 90. && mth < 160.'),
     )
 
 
@@ -103,12 +106,12 @@ def variable( name, title, formula,bins, min, max ):
 process.variables = cms.VPSet(
     variable('mll',     'm_{ll};GeV',               'mll',50,0.,200.),
     variable('met',     '#slash{E}_{T};GeV',        'met',50,0.,100.),
-    variable('projMet', 'proj#slash{E}_{T};GeV',    'projMet',50,0.,100.),
-    variable('nJets',   'N_{jets}',                 'nJets',10,0.,10.),
-    variable('dPhillj', '#Delta#Phi_{ll,j};deg',    'dPhillj*'+radToDeg,36,0.,180.),
-    variable('dPhi',    '#Delta#phi',               'dPhi*'+radToDeg,36,0.,180.),
-    variable('ptLead',  'p_{T}^{lead}',             'pA.pt()',50,0,200.),
-    variable('ptTrail', 'p_{T}^{trail}',            'pB.pt()',50,0,200.),
+    variable('projMet', 'proj#slash{E}_{T};GeV',    'pmet',50,0.,100.),
+    variable('nJets',   'N_{jets}',                 'njet',10,0.,10.),
+    variable('dPhillj', '#Delta#Phi_{ll,j};deg',    'dphilljet*'+radToDeg,36,0.,180.),
+    variable('dPhi',    '#Delta#phi',               'dphill*'+radToDeg,36,0.,180.),
+    variable('ptLead',  'p_{T}^{lead}',             'pt1',50,0,200.),
+    variable('ptTrail', 'p_{T}^{trail}',            'pt2',50,0,200.),
     
     ## variables from Maiko's shopping list
 
@@ -119,8 +122,8 @@ process.variables = cms.VPSet(
 ##      variable('dEta',    '#Delta#eta_{ll};#Delta#eta_{ll}',          'pA.eta()-pB.eta()',120,-6.,6.),
 ##      variable('dPt',     '#Delta p_{T, ll};GeV',                     'pA.pt()-pB.pt()',200,0.,200.),
 ##      variable('dRll',    '#DeltaR{ll}:#DeltaR{ll}',                  'deltaRll',100,0.,5.),
-    variable('dileptonPt', 'p_{T, ll};GeV',                         'dileptonPt',50,0,50.),
-    variable('dPhillj0jet', '#Delta#phi_{ll,jet}',                         'dPhillj0jet*'+radToDeg,36,0,180.),
+#     variable('dileptonPt', 'p_{T, ll};GeV',                         'dileptonPt',50,0,50.),
+#     variable('dPhillj0jet', '#Delta#phi_{ll,jet}',                         'dPhillj0jet*'+radToDeg,36,0,180.),
 
 ##      variable('PfMetPhi', '#phi_{#slash{E}_{T}};',                   'pfMetPhi',30,-3.14159,3.14159),
     
@@ -155,7 +158,6 @@ process.variables = cms.VPSet(
 
 )
 
-process.monitored = cms.vstring([]) 
 
 process.xxx = cms.PSet(
         a = cms.string('a'),

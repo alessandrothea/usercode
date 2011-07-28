@@ -9,6 +9,7 @@
 <use name="rootrflx"/>
 <use name="rootphysics"/>
 <use name="rootcintex"/>
+<use name="rootgraphics"/>
 <flags cxxflags="-g -ggdb" />
-<bin file="runHWW.cc" name="runHWW.exe"/>
 <bin file="simpleCutter.cc" name="simpleCutter.exe"/>
+<bin file="treeCutter.cc" name="treeCutter.exe"/>
