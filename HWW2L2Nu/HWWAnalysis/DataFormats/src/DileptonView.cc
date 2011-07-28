@@ -6,6 +6,8 @@
 using namespace std;
 
 namespace hww {
+    const double DileptonView::kNotFound = -9999.;
+
     DileptonView::DileptonView( const RecoCandPtr& l1, const RecoCandPtr& l2 ) {
         dilepton_.push_back(l1);
         dilepton_.push_back(l2);
@@ -62,33 +64,35 @@ namespace hww {
  *  
  */                                                
     
+    bool
+    DileptonView::isEl( uint i ) const {
+        return ( i < dilepton_.size() && abs(dilepton_[i]->pdgId()) == 11 );
+    }
+
+    bool
+    DileptonView::isMu( uint i ) const {
+        return ( i < dilepton_.size() && abs(dilepton_[i]->pdgId()) == 13 );
+    }
+
 
     bool
     DileptonView::isElEl() const {
-        return dilepton_.size() == 2 
-            && abs(dilepton_[0]->pdgId()) == 11
-            && abs(dilepton_[1]->pdgId()) == 11;
+        return isEl(0) && isEl(1);
     }
 
     bool
     DileptonView::isElMu() const {
-        return dilepton_.size() == 2 
-            && abs(dilepton_[0]->pdgId()) == 11
-            && abs(dilepton_[1]->pdgId()) == 13;
+        return isEl(0) && isMu(1);
     }
 
     bool
     DileptonView::isMuEl() const {
-        return dilepton_.size() == 2 
-            && abs(dilepton_[0]->pdgId()) == 13
-            && abs(dilepton_[1]->pdgId()) == 11;
+        return isMu(0) && isEl(1);
     }
 
     bool
     DileptonView::isMuMu() const {
-        return dilepton_.size() == 2 
-            && abs(dilepton_[0]->pdgId()) == 13
-            && abs(dilepton_[1]->pdgId()) == 13;
+        return isMu(0) && isMu(1);
     }
     
     bool
@@ -152,7 +156,6 @@ namespace hww {
     }
 
 
-#define TVector3 math::XYZVector
 //     MRstar(const math::XYZTLorentzVector& ja, const math::XYZTLorentzVector& jb){
     double
     DileptonView::mRstar() const {
@@ -166,7 +169,7 @@ namespace hww {
         double B = jb.P();
         double az = ja.Pz();
         double bz = jb.Pz();
-        TVector3 jaT, jbT;
+        math::XYZVector jaT, jbT;
         jaT.SetXYZ(ja.Px(),ja.Py(),0.0);
         jbT.SetXYZ(jb.Px(),jb.Py(),0.0);
 
@@ -188,7 +191,7 @@ namespace hww {
         double B = jb.P();
         double az = ja.Pz();
         double bz = jb.Pz();
-        TVector3 jaT, jbT;
+        math::XYZVector jaT, jbT;
         jaT.SetXYZ(ja.Px(),ja.Py(),0.0);
         jbT.SetXYZ(jb.Px(),jb.Py(),0.0);
         double ATBT = (jaT+jbT).Mag2();
@@ -233,6 +236,22 @@ namespace hww {
         return muons_.size();
     }
 
+    double
+    DileptonView::worstEGammaLikelihood() const {
+        const pat::Electron* el1 = dynamic_cast<const pat::Electron*>(dilepton_[0].get());
+        const pat::Electron* el2 = dynamic_cast<const pat::Electron*>(dilepton_[1].get());
+        if ( isElEl() ) 
+            return TMath::Min( 
+                    el1->electronID("egammaIDLikelihood"),
+                    el2->electronID("egammaIDLikelihood")
+                    );
+        else if ( isElMu() ) 
+            return el1->electronID("egammaIDLikelihood");
+        else if ( isElMu() ) 
+            return el2->electronID("egammaIDLikelihood");
+        else 
+            return kNotFound;
+    }
 
 /*
  *  _____      _   _                

@@ -22,8 +22,13 @@ namespace hww {
         softMuons_.push_back( mu );
     }
     void
-    EventView::addJets( const JetPtr& jet ) {
+    EventView::addJet( const JetPtr& jet ) {
         jets_.push_back( jet );
+    }
+
+    void
+    EventView::addVrtx( const VertexPtr& vrtx ) {
+        vertexes_.push_back( vrtx );
     }
 
     void
@@ -74,13 +79,20 @@ namespace hww {
 
     double 
     EventView::dPhiMet( MET_t type ) const {
-        return minDPhi( metByType(type)->p4() ); 
+        return minDPhil( metByType(type)->p4() ); 
     }
+
 
     double
     EventView::projMet( MET_t type ) const {
         return projMet( metByType(type)->p4() );
     }
+
+    double
+    EventView::dPhilMet( uint i, MET_t type ) const {
+        return TMath::Abs(VectorUtil::DeltaPhi( (*dilep())[i]->p4(),  metByType(type)->p4()));
+    }
+
 
     // straight mets
     double
@@ -125,23 +137,23 @@ namespace hww {
 
     double
     EventView::dPhiTcMet() const {
-        return minDPhi( tcMet_.p4() );
+        return minDPhil( tcMet_.p4() );
     }
 
     double
     EventView::dPhiPfMet() const {
-        return minDPhi( pfMet_.p4() ) ;
+        return minDPhil( pfMet_.p4() ) ;
     
     }
 
     double
     EventView::dPhiChargedMet() const {
-        return minDPhi( chargedMet_.p4() ); 
+        return minDPhil( chargedMet_.p4() ); 
     }
     
     double
     EventView::dPhiChargedMetSmurf() const {
-        return minDPhi( chargedMetSmurf_.p4() ); 
+        return minDPhil( chargedMetSmurf_.p4() ); 
     }
     
 
@@ -168,7 +180,10 @@ namespace hww {
     // ... transverse masses ...
     double
     EventView::mtl( uint i, MET_t type )  const {
-        return transverseMass( (*dilep_)[i]->p4(), this->metByType(type)->p4());
+        const reco::RecoCandidate* lepton = (*dilep_)[i];
+        if ( !lepton ) return kNotFound;
+
+        return transverseMass( lepton->p4(), this->metByType(type)->p4());
     }
 
     double
@@ -178,34 +193,28 @@ namespace hww {
 
     double
     EventView::mt2( MET_t type )  const {
-        return transverseMass2(0., false, (*dilep())[0]->p4(), (*dilep())[1]->p4(), this->metByType(type)->p4() );
+        return transverseMass2(0., false, (*dilep_)[0]->p4(), (*dilep())[1]->p4(), this->metByType(type)->p4() );
     }
 
     // --- jets stuff ---
     double
+    EventView::dPhiJl( uint i, double pt, double eta ) const {
+        const reco::RecoCandidate* lepton = (*dilep_)[i];
+        if ( !lepton ) return kNotFound;
+        
+        const pat::Jet* leading = leadingJet( pt, eta );
+        return leading != 0x0 ? TMath::Abs(VectorUtil::DeltaPhi( lepton->p4(), leading->p4() )) : kNotFound ; 
+    }
+
+    double
     EventView::dPhiJll( double pt, double eta ) const {
         // dPhi between the highest pt jet above pt and the ll system;
         // returns kNotFound if the jet doesn't exist
-        
-//         if ( jets_.size() == 0. 
-//                 || jets_.front()->p4().pt() < pt ) return kNotFound;
-        
-        math::XYZTLorentzVector p4;
-        bool found = false;
-        for( uint i(0); i<jets_.size(); ++i ) {
-            const pat::Jet& jet = *(jets_[i]);
-            if ( jet.p4().pt() < pt )
-                // jets sorted by pt
-                // TODO: check!!
-                return kNotFound;
-            if ( TMath::Abs(jet.p4().eta()) > eta ) continue;
 
-            p4 = jet.p4();
-            found = true;
-            break;
-        }
+        const pat::Jet* leading = leadingJet( pt, eta );
 
-        return found ? TMath::Abs(VectorUtil::DeltaPhi( dilep_->p4ll(), p4 )) : kNotFound ; 
+
+        return leading != 0x0 ? TMath::Abs(VectorUtil::DeltaPhi( dilep_->p4ll(), leading->p4() )) : kNotFound ; 
     }
 
     double
@@ -281,6 +290,20 @@ namespace hww {
      * |_|_| |_|_| \___/  |_|_| |_|\__|
      *
      */
+
+    int
+    EventView::channel() const {
+       if ( dilep_->isMuMu() ) return 0;
+       else if ( dilep_->isElEl() ) return 1;
+       else if ( dilep_->isElMu() ) return 2;
+       else if ( dilep_->isMuEl() ) return 3;
+       else return kNotFound;
+    }
+    
+    int
+    EventView::nVrtx() const {
+        return vertexes_.size();
+    }
 
     int
     EventView::nSoftMuons() const {
@@ -414,9 +437,29 @@ namespace hww {
         return jets_[i].get();
     }
 
+    const pat::Jet*
+    EventView::leadingJet( double pt, double eta) const {
+
+        const pat::Jet* leading = 0x0;
+        for( uint i(0); i<jets_.size(); ++i ) {
+            const pat::Jet* jet = jets_[i].get();
+            if ( jet->p4().pt() < pt )
+                // jets sorted by pt
+                // TODO: check!!
+                return 0x0;
+            if ( TMath::Abs(jet->p4().eta()) > eta ) continue;
+
+            leading = jet;
+            break;
+        }
+
+        return leading;
+
+    }
+
     // TODO: move it to DileptonView
     double
-    EventView::minDPhi( const math::XYZTLorentzVector& p4 ) const {
+    EventView::minDPhil( const math::XYZTLorentzVector& p4 ) const {
         return TMath::Min(
                 TMath::Abs(VectorUtil::DeltaPhi( pair()->leptons()[0]->p4(), p4)),
                 TMath::Abs(VectorUtil::DeltaPhi( pair()->leptons()[1]->p4(), p4))
@@ -426,7 +469,7 @@ namespace hww {
     // TODO: move it to DileptonView
     double
     EventView::projMet( const math::XYZTLorentzVector& p4Met ) const {
-        double minDPhill  = minDPhi(p4Met);
+        double minDPhill  = minDPhil(p4Met);
         return ( minDPhill < TMath::PiOver2() ? p4Met.pt()*TMath::Sin(minDPhill) : p4Met.pt()) ;
     }
 

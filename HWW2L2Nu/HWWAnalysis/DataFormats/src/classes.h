@@ -34,10 +34,12 @@ namespace {
        edm::Wrapper<std::vector<hww::EventView> > dummyWrapperVectorEventView;
        
        edm::Ptr<reco::RecoCandidate>  dummyRecoPtr;
+       edm::Ptr<reco::Vertex>		  dummyRecoVrtx;
        std::vector<edm::Ptr<reco::RecoCandidate> > dummyRecoPtrVec;
        std::vector<edm::Ptr<pat::Electron> >   dummyElectronPtrVec;
        std::vector<edm::Ptr<pat::Muon> >       dummyMuonPtrVec;
        std::vector<edm::Ptr<pat::Jet> >         dummyJetPtrVec;
+       std::vector<edm::Ptr<reco::Vertex> >         dummyVrtxPtrVec;
 
        edm::Ptr<hww::DileptonView>    dummyDileptonViewPtr;
        std::vector<edm::Ptr<hww::DileptonView> > dummyDileptonViewPtrVec;

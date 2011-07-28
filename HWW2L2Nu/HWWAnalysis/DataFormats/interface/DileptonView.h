@@ -14,6 +14,8 @@ namespace hww {
     class DileptonView {
         public:
         
+        // --- static stuff ---
+        static const double kNotFound;
         
         DileptonView(){}
         DileptonView( const RecoCandPtr& l1, const RecoCandPtr& l2 );
@@ -27,6 +29,9 @@ namespace hww {
         const reco::RecoCandidate* operator[]( uint i ) const;
 
         // --- info methonds -- (double, int, bool, const)
+        bool isEl( uint i ) const;
+        bool isMu( uint i ) const;
+
         bool isElEl() const;
         bool isElMu() const;
         bool isMuEl() const;
@@ -34,6 +39,8 @@ namespace hww {
 
         bool oppositeSign() const;
         bool sameSign() const;
+        
+
         int  chargeSum() const;
         
         double mll() const;
@@ -51,6 +58,7 @@ namespace hww {
         double gammaMRstar() const;
         double mRstar() const;
 
+        double worstEGammaLikelihood() const;
         math::XYZTLorentzVector p4ll() const;
 
         // --- getters ---

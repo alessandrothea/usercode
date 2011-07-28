@@ -23,10 +23,12 @@
   <class name="edm::Wrapper<std::vector<hww::EventView> >"/>
 
   <class name="edm::Ptr<reco::RecoCandidate>"/>
+  <class name="edm::Ptr<reco::Vertex>"/>
   <class name="std::vector<edm::Ptr<reco::RecoCandidate> >"/>
   <class name="std::vector<edm::Ptr<pat::Electron> >"/>
   <class name="std::vector<edm::Ptr<pat::Muon> >"/>
   <class name="std::vector<edm::Ptr<pat::Jet> >"/>
+  <class name="std::vector<edm::Ptr<reco::Vertex> >"/>
 
   <class name="edm::Ptr<hww::DileptonView>"/>
   <class name="std::vector<edm::Ptr<hww::DileptonView> >"/>

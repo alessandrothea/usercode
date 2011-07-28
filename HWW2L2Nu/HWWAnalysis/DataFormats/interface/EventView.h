@@ -11,6 +11,7 @@
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/PatCandidates/interface/Electron.h"
 #include "PhysicsTools/SelectorUtils/interface/strbitset.h"
+#include "DataFormats/Candidate/interface/LeafCandidate.h"
 
 
 #include <memory>
@@ -23,8 +24,9 @@ namespace hww {
     typedef edm::Ptr<pat::Muon>           MuonPtr;
     typedef edm::Ptr<pat::Jet>            JetPtr;
     typedef edm::Ptr<hww::DileptonView>   DileptonPtr;
+    typedef edm::Ptr<reco::Vertex>        VertexPtr;
 
-    class EventView {
+    class EventView : public reco::LeafCandidate {
         public:
             enum MET_t {
                 kTcMET,
@@ -42,7 +44,9 @@ namespace hww {
         void setDilepton( const DileptonPtr& pair );
 
         void addSoftMuon( const MuonPtr& );
-        void addJets( const JetPtr& );
+        void addJet( const JetPtr& );
+        void addVrtx( const VertexPtr& );
+        
         
         void setHltBits( const pat::strbitset& bitmap );
         void setTcMet( const reco::MET& tcMet );
@@ -59,6 +63,7 @@ namespace hww {
         double met( MET_t t ) const;
         double phiMet( MET_t t ) const;
         double dPhiMet( MET_t t ) const;
+        double dPhilMet( uint i, MET_t t ) const;
         double projMet( MET_t t ) const;
 
 
@@ -88,17 +93,19 @@ namespace hww {
         double mt2( MET_t type ) const;
 
         // ... jet stuff ...
+        double dPhiJl( uint i, double pt = 0., double eta = kEtaMax ) const;
         double dPhiJll( double pt = 0., double eta = kEtaMax ) const;
         double jetBtagger( uint i, const std::string& tag = "trackCountingHighEffBJetTags" ) const;
 
         double jetCentrality( double pt = 0., double eta = kEtaMax ) const;
         double jetCentralityScal( double pt = 0., double eta = kEtaMax ) const;
 
-
         double jetPtSum( double pt = 0., double eta = kEtaMax ) const;
         double jetESum( double pt = 0., double eta = kEtaMax ) const;
 
         // -- int --
+        int channel() const;
+        int nVrtx() const;
         int nSoftMuons() const;
         int nJets( double pt = 0, double eta = kEtaMax) const;
         int nBJetsAbove( const std::string& tag, double threshold, double pt=0., double eta=kEtaMax ) const;
@@ -113,9 +120,10 @@ namespace hww {
         const std::vector<JetPtr>&  jets() const { return jets_; }
         const reco::MET* metByType( MET_t type ) const;
         const pat::Jet* jet( uint i ) const;
+        const pat::Jet* leadingJet( double pt=0., double eta=kEtaMax ) const;
         math::XYZTLorentzVector jetSumP4( double pt=0., double eta=kEtaMax ) const;
         double projMet( const math::XYZTLorentzVector& p4Met ) const; 
-        double minDPhi( const math::XYZTLorentzVector& p4 ) const;
+        double minDPhil( const math::XYZTLorentzVector& p4 ) const;
         double transverseMass(const math::XYZTLorentzVector& p4, const math::XYZTLorentzVector& met) const;
         double transverseMass2(double testmass, bool massive, const math::XYZTLorentzVector& visible1, const math::XYZTLorentzVector& visible2, const math::XYZTLorentzVector& MET ) const;
 
@@ -125,6 +133,7 @@ namespace hww {
 
         private:
         DileptonPtr                 dilep_;
+        std::vector<VertexPtr>      vertexes_;
         std::vector<MuonPtr>        softMuons_;
         std::vector<JetPtr>         jets_;
 
