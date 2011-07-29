@@ -236,21 +236,6 @@ process.stage3flat = process.rollerPin.clone(
 )
 
 #--------------------------------------------------------------------
-#  _   _ _____           _      
-# | \ | |_   _|         | |     
-# |  \| | | |_   _ _ __ | | ___ 
-# | . ` | | | | | | '_ \| |/ _ \
-# | |\  | | | |_| | |_) | |  __/
-# \_| \_/ \_/\__,_| .__/|_|\___|
-#                 | |           
-#                 |_|          
-
-process.ntupleproducer = cms.EDAnalyzer('HWWNtupleTreeProducer',
-    treeName      = cms.string('hwwStep3'),
-#     weightSrc     = cms.InputTag('eventWeights'),
-    viewSrc       = cms.InputTag('hwwViews'),
-)
-#--------------------------------------------------------------------
 process.testStuff = cms.EDAnalyzer('TestStuffAnalyzer',
     viewSrc     = cms.InputTag('hwwViews'),
     electronSrc = cms.InputTag('hwwEleIPMerge'),
@@ -260,7 +245,6 @@ process.testStuff = cms.EDAnalyzer('TestStuffAnalyzer',
 )
 
 # process.pLep *= process.testStuff
-process.pLep *= process.ntupleproducer
 process.pLep *= process.stage3flat
 
 
