@@ -61,6 +61,7 @@ def addLatinos( roller ):
         dphilljet = cms.string('dPhiJll(15.,5.)'),                                    # wrt to leading jet
         dphillmet = cms.string('dPhiMet("kPfMET")'),                                  # min(dphilmet1,dphilmet2)     (optional)
 
+        nextra    = cms.string('dilep.nExtra()'),
         njet      = cms.string('nJets(30.,5.)'),                                      # 30./5.
         met       = cms.string('met("kPfMET")'),                                      # pfMET
         met2      = cms.string('met("kChargedMETSmurf")'),                            # tkMET
@@ -89,6 +90,7 @@ def addLatinos( roller ):
 
     addVarFlags(roller, vars, flags )
 
+#------------------------------------------------------------------------------
 def addLeptonQuality(roller ):
 
     lepVars = dict(

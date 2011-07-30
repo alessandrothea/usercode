@@ -14,7 +14,7 @@ options.register ( 'monitor',
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.bool,
                   "monitor informations for every selected event")
-options.register ( 'useWeights',
+options.register ( 'applyWeights',
                   True,
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.bool,
@@ -37,9 +37,10 @@ process = cms.PSet(
         maxEvents  = cms.int64(options.maxEvents),
         monitor    = cms.bool(options.monitor),
         copyObjects = cms.vstring([]),
-#         useWeights = cms.bool(options.useWeights),
-        weight     = cms.string("weight"),
-        monitored = cms.vstring([]),
+        applyWeights = cms.bool(options.applyWeights),
+        weight     = cms.string("puW*kfW"),
+        monitored  = cms.vstring(['channel']),
+        filter     = cms.string('isTight1 == 1 && isTight2')
 )
 
 process.channels = cms.VPSet(
@@ -78,7 +79,7 @@ process.cuts = cms.VPSet(
     cut('minMet',     'min #slash{E}_{T}','met > 20'),
     cut('minMll',     'min M_{ll}','mll > 12.'),
     cut('Zveto',      'Zveto','sameflav == 0 || (TMath::Abs(mll - 91.18699) > 15.)'),
-    cut('projMet',    'projMet','( sameflav == 1 && TMath::Min(pmet,pchmet) > 40. ) || ( sameflav == 0 && TMath::Min(pmet,pchmet) > 20. ) '),
+    cut('projMet',    'projMet','( sameflav == 1 && TMath::Min(pmet,pmet2) > 40. ) || ( sameflav == 0 && TMath::Min(pmet,pmet2) > 20. ) '),
     cut('jetVeto',    'Jet Veto','njet == 0'),
     cut('dphiJll',    'd#Phi_{jll}','sameflav == 0 || dphilljet*TMath::RadToDeg() < 165.'),
     cut('softMu',     'Soft mu','bveto_mu == 1'),

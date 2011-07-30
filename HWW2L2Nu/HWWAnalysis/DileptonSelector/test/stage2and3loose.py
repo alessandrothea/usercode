@@ -238,8 +238,18 @@ process.stage3flat = process.rollerPin.clone(
 
 from HWWAnalysis.DileptonSelector.roller_cff import addLeptonQuality
 addLeptonQuality( process.stage3flat )
-process.stage3flat.flags.isTight1 = cms.string('dilep[0].userInt("tight") == 1')
-process.stage3flat.flags.isTight2 = cms.string('dilep[1].userInt("tight") == 1')
+process.stage3flat.flags.isTight1  = cms.string('dilep[0].userInt("tight")   = 1')
+process.stage3flat.flags.isTight2  = cms.string('dilep[1].userInt("tight")   = 1')
+process.stage3flat.flags.isBase1   = cms.string('dilep[0].userInt("base")    = 1')
+process.stage3flat.flags.isBase2   = cms.string('dilep[1].userInt("base")    = 1')
+process.stage3flat.flags.isIso1    = cms.string('dilep[0].userInt("iso")     = 1')
+process.stage3flat.flags.isIso2    = cms.string('dilep[1].userInt("iso")     = 1')
+process.stage3flat.flags.isId1     = cms.string('dilep[0].userInt("id")      = 1')
+process.stage3flat.flags.isId2     = cms.string('dilep[1].userInt("id")      = 1')
+process.stage3flat.flags.isNoConv1 = cms.string('dilep[0].userInt("noconv")  = 1')
+process.stage3flat.flags.isNoConv2 = cms.string('dilep[1].userInt("noconv")  = 1')
+process.stage3flat.flags.isIp1     = cms.string('dilep[0].userInt("ip")      = 1')
+process.stage3flat.flags.isIp2     = cms.string('dilep[1].userInt("ip")      = 1')
 
 #--------------------------------------------------------------------
 process.testStuff = cms.EDAnalyzer('TestStuffAnalyzer',
