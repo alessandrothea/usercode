@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Sat Jul  9 16:39:20 CEST 2011
-// $Id: EventViewFiller.cc,v 1.1 2011/07/16 22:57:06 thea Exp $
+// $Id: EventViewFiller.cc,v 1.1 2011/07/28 16:11:14 thea Exp $
 //
 //
 
@@ -50,6 +50,11 @@ EventViewFiller::EventViewFiller(const edm::ParameterSet& iConfig)
     chargedMetSrc_ = iConfig.getParameter<edm::InputTag>("chargedMetSrc");
     vertexSrc_     = iConfig.getParameter<edm::InputTag>("vertexSrc");
     pfChCandSrc_   = iConfig.getParameter<edm::InputTag>("pfChCandSrc");
+
+	// additional not-so-plain features
+	checkLeptonJetOverlap_ = iConfig.existsAs<double>("ljOverlapByDr");
+	leptonJetDr_      = checkLeptonJetOverlap_ ? iConfig.getParameter<double>("ljOverlapByDr") : -9999.;
+
 }
 
 
@@ -91,6 +96,7 @@ EventViewFiller::doFill(std::vector<hww::EventView*> views, const edm::Event& iE
 	// theVec->resize( filler.size() )
 	//
     using namespace edm;
+	using namespace ROOT::Math;
 
     Handle<edm::View<hww::DileptonView> > dileptons;
     iEvent.getByLabel(dileptonSrc_,dileptons);
@@ -139,8 +145,28 @@ EventViewFiller::doFill(std::vector<hww::EventView*> views, const edm::Event& iE
 			view.addVrtx(vertexes->ptrAt(i));
 
         // add jets
-        for ( uint i(0); i<jets->size(); ++i )
-            view.addJet(jets->ptrAt(i));
+		if ( !checkLeptonJetOverlap_ ) {
+			for ( uint i(0); i<jets->size(); ++i )
+				view.addJet(jets->ptrAt(i));
+		} else {
+			const std::vector<RecoCandPtr>& extra = dilepton->extra();
+			for ( uint i(0); i<jets->size(); ++i ) {
+				edm::Ptr<pat::Jet> jet = jets->ptrAt(i);
+				double dRl1 = VectorUtil::DeltaR(jet->p4(), (*dilepton)[0]->p4());
+				double dRl2 = VectorUtil::DeltaR(jet->p4(), (*dilepton)[1]->p4());
+
+				if ( dRl1 < leptonJetDr_ || dRl2 < leptonJetDr_ ) continue;
+
+				bool overlap = false;
+				for( uint k(0); k<extra.size(); ++k) {
+					overlap = VectorUtil::DeltaR(jet->p4(), extra[k]->p4()) < leptonJetDr_; 
+					if ( overlap ) break;
+				}
+				if ( overlap ) continue;
+
+				view.addJet(jet);
+			}
+		}
 
         // add muons
         for( uint i(0); i<softMuons->size(); ++i ) {

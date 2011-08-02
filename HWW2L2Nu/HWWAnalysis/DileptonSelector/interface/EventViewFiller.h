@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Sat Jul  9 16:39:20 CEST 2011
-// $Id: EventViewFiller.cc,v 1.1 2011/07/16 22:57:06 thea Exp $
+// $Id: EventViewFiller.h,v 1.1 2011/07/28 16:11:13 thea Exp $
 //
 //
 
@@ -76,6 +76,8 @@ class EventViewFiller {
 		edm::InputTag vertexSrc_;
 		edm::InputTag pfChCandSrc_;
 
+		bool checkLeptonJetOverlap_;
+		double leptonJetDr_;
 };
 
 }

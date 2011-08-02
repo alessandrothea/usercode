@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Fri Jun 24 16:27:01 CEST 2011
-// $Id: DileptonProducer.cc,v 1.1 2011/06/29 22:16:06 thea Exp $
+// $Id: DileptonProducer.cc,v 1.2 2011/07/16 22:57:06 thea Exp $
 //
 //
 
@@ -56,6 +56,8 @@ class DileptonProducer : public edm::EDProducer {
       edm::InputTag muonSrc_;
 
       StringCutObjectSelector<hww::DileptonView > selector_;
+      StringCutObjectSelector<reco::RecoCandidate, true > extraSelector_;
+
 };
 
 //
@@ -71,7 +73,8 @@ class DileptonProducer : public edm::EDProducer {
 // constructors and destructor
 //
 DileptonProducer::DileptonProducer(const edm::ParameterSet& iConfig) :
-    selector_( iConfig.getParameter<std::string>("cut") )
+    selector_( iConfig.getParameter<std::string>("cut") ),
+	extraSelector_( (iConfig.existsAs<std::string>("extraCut") ? iConfig.getParameter<std::string>("extraCut") : "" ) ) 
 {
     //register your products
     produces<std::vector<hww::DileptonView> >();
@@ -101,6 +104,7 @@ DileptonProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
     using namespace edm;
     using namespace std;
+	using namespace ROOT::Math;
 
     std::auto_ptr<hww::DileptonViewVec > pairs(new std::vector<hww::DileptonView> );
 
@@ -119,16 +123,17 @@ DileptonProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
     for( uint i(0); i<leptons.size(); ++i)
         for( uint j(i+1); j<leptons.size(); ++j) {
             hww::DileptonView p( leptons[i], leptons[j]);
-            if ( i == j ) THROW_RUNTIME("Porcazzoccola")
+            if ( i == j ) THROW_RUNTIME("Warning!!! i == j")
             if ( !selector_(p) ) continue;
 
             for( uint k(0); k < leptons.size(); ++k ) {
                 // no double counting
                 if ( k == i || k == j ) continue;
                 // and overlap removal
-                double dRi = ROOT::Math::VectorUtil::DeltaR(leptons[i]->p4(),leptons[k]->p4());
-                double dRj = ROOT::Math::VectorUtil::DeltaR(leptons[j]->p4(),leptons[k]->p4());
+                double dRi = VectorUtil::DeltaR(leptons[i]->p4(),leptons[k]->p4());
+                double dRj = VectorUtil::DeltaR(leptons[j]->p4(),leptons[k]->p4());
                 if ( dRi < 0.1 || dRj < 0.1 ) continue;
+				if ( !extraSelector_(*leptons[k]) ) continue;
                 p.addExtra(leptons[k]);
             }
             pairs->push_back(p);

@@ -25,17 +25,17 @@ hwwDilepIP    = dileptonProducer.clone(
 )
 
 # filters implementation
-dilepFilterMatch = dilepFilter.clone( src = cms.InputTag('hwwDilepMatch') )
-dilepFilterID    = dilepFilter.clone( src = cms.InputTag('hwwDilepID') )
-dilepFilterISO   = dilepFilter.clone( src = cms.InputTag('hwwDilepISO') )
-dilepFilterCONV  = dilepFilter.clone( src = cms.InputTag('hwwDilepCONV') )
-dilepFilterIP    = dilepFilter.clone( src = cms.InputTag('hwwDilepIP') )
+dilepFilterMatch = dilepFilter.clone( src  = cms.InputTag('hwwDilepMatch') )
+dilepFilterID    = dilepFilter.clone( src  = cms.InputTag('hwwDilepID') )
+dilepFilterISO   = dilepFilter.clone( src  = cms.InputTag('hwwDilepISO') )
+dilepFilterCONV  = dilepFilter.clone( src  = cms.InputTag('hwwDilepCONV') )
+dilepFilterIP    = dilepFilter.clone( src  = cms.InputTag('hwwDilepIP') )
 
-dilepMonMatch = dilepMonitor.clone( src = cms.InputTag('hwwDilepMatch' ) )
-dilepMonID    = dilepMonitor.clone( src = cms.InputTag('hwwDilepID' ) )
-dilepMonISO   = dilepMonitor.clone( src = cms.InputTag('hwwDilepISO' ) )
-dilepMonCONV  = dilepMonitor.clone( src = cms.InputTag('hwwDilepCONV' ) )
-dilepMonIP    = dilepMonitor.clone( src = cms.InputTag('hwwDilepIP' ) )
+dilepMonMatch    = dilepMonitor.clone( src = cms.InputTag('hwwDilepMatch' ) )
+dilepMonID       = dilepMonitor.clone( src = cms.InputTag('hwwDilepID' ) )
+dilepMonISO      = dilepMonitor.clone( src = cms.InputTag('hwwDilepISO' ) )
+dilepMonCONV     = dilepMonitor.clone( src = cms.InputTag('hwwDilepCONV' ) )
+dilepMonIP       = dilepMonitor.clone( src = cms.InputTag('hwwDilepIP' ) )
 
 
 makeDileptons = cms.Sequence(

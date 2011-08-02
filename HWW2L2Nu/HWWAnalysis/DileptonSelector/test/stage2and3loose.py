@@ -169,10 +169,22 @@ process.hwwMuons     = process.hwwLooseTaggedMuons.clone()
 process.hwwCleanJets.checkOverlaps.muons.src     = cms.InputTag('hwwMuons')
 process.hwwCleanJets.checkOverlaps.electrons.src = cms.InputTag('hwwElectrons')
 
+# remove the tight leptons from the jets
+process.hwwCleanJets.checkOverlaps.muons.preselection = cms.string('userInt("tight") == 1')
+process.hwwCleanJets.checkOverlaps.electrons.preselection = cms.string('userInt("tight") == 1')
+
+# additional cut on the extra leptons, tight only
 process.hwwDilep     = process.dileptonProducer.clone(
     electronSrc = cms.InputTag('hwwElectrons'),
     muonSrc     = cms.InputTag('hwwMuons'),
+    extraCut    = cms.string('userInt("tight") == 1')
 )
+# tweak the cut to have tight tight pairs
+# process.hwwDilep.cut = cms.string( process.hwwDilep.cut.value() + ' && leading.userInt("tight") == 1 && trailing.userInt("tight") == 1' )
+# tweak the cut to have tight tight || tight loose pairs
+# process.hwwDilep.cut = cms.string( process.hwwDilep.cut.value() + ' && leading.userInt("tight") == 1 || trailing.userInt("tight") == 1' )
+# tweak the cut to have tight loose pairs
+# process.hwwDilep.cut = cms.string( process.hwwDilep.cut.value() + ' && leading.userInt("tight") == 1')
 
 process.hwwOneOrMoreDilep = process.dilepFilter.clone(
     src = cms.InputTag( 'hwwDilep' ),
@@ -184,7 +196,11 @@ process.hwwLeptons = cms.Sequence(
     *process.hwwOneOrMoreDilep
 )
 
-process.hwwViews = makeEventViews.clone( dileptonSrc = cms.InputTag('hwwDilep') )
+# switch on the additional overlap check as the two dileptons are not necessarily tight
+process.hwwViews = makeEventViews.clone(
+    dileptonSrc   = cms.InputTag('hwwDilep'),
+    ljOverlapByDr = cms.double(0.3),
+)
 
 process.pLep *= ( process.hwwLeptons 
                  * process.selectCleanHwwJets
