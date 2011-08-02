@@ -55,7 +55,7 @@ class DileptonProducer : public edm::EDProducer {
       edm::InputTag electronSrc_;
       edm::InputTag muonSrc_;
 
-      StringCutObjectSelector<hww::DileptonView > selector_;
+      StringCutObjectSelector<hww::DileptonView, true> selector_;
       StringCutObjectSelector<reco::RecoCandidate, true > extraSelector_;
 
 };
