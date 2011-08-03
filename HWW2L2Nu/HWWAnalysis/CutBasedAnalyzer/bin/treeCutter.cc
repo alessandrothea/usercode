@@ -36,19 +36,27 @@
 using namespace std;
 
 struct TreeBaseVariable {
-    TreeBaseVariable(const string& nm, const string& formula, TTree* tree ) : name(nm.c_str()),functor(nm.c_str(),formula.c_str(), tree) {}
+    TreeBaseVariable(const string& nm, const string& formula, TTree* tree ) : name(nm.c_str()),functor(nm.c_str(),formula.c_str(), tree) { instances_.push_back(this); }
     string name;
     TTreeFormula functor;
 
     double value( int instance=0 ) { _last = functor.EvalInstance(instance); return _last; }
     double last() { return _last; }
+    void update() { functor.UpdateFormulaLeaves(); }
+
+    static std::vector<TreeBaseVariable*> instances_;
+    static void updateAll() { for( uint i(0); i<instances_.size(); ++i) instances_[i]->update(); }
+
     private:
     double _last;
 
 };
 
+std::vector<TreeBaseVariable*> TreeBaseVariable::instances_;
+
 typedef boost::shared_ptr<TreeBaseVariable> BaseVarPtr;
 typedef vector<BaseVarPtr>         BaseVarVector;
+
 
 //_____________________________________________________________________________
 struct TreeVariable : public TreeBaseVariable {
@@ -65,13 +73,19 @@ typedef vector<VarPtr>         VarVector;
 
 //_____________________________________________________________________________
 struct TreeCut {
-    TreeCut( const string& nm, const string& lbl, const string& cut, TTree* tree ) : name(nm), label(lbl), selector(name.c_str(),cut.size() != 0 ? cut.c_str() : "1.", tree) {}
+    TreeCut( const string& nm, const string& lbl, const string& cut, TTree* tree ) : name(nm), label(lbl), selector(name.c_str(),cut.size() != 0 ? cut.c_str() : "1.", tree) { instances_.push_back(this); }
     string name;
     string label;
     TTreeFormula selector;
 
+    void update() { selector.UpdateFormulaLeaves(); }
     bool select( int instance=0 ) { return selector.EvalInstance( instance ) != 0.; }
+
+    static std::vector<TreeCut*> instances_;
+    static void updateAll() { for( uint i(0); i<instances_.size(); ++i) instances_[i]->update(); }
 };
+
+std::vector<TreeCut*> TreeCut::instances_;
 
 typedef boost::shared_ptr<TreeCut>  CutPtr;
 typedef vector<CutPtr>     CutVector;
@@ -82,15 +96,22 @@ struct Channel {
     typedef vector< pair<VarPtr, TH1D*> >  HVector;
     typedef vector< HVector > HMatrix;
 
-    Channel( const string& nm, const string& selection, TTree* tree ) : name(nm), selector( nm.c_str(), selection.c_str(), tree ), yield(0x0) {}
+    Channel( const string& nm, const string& selection, TTree* tree ) : name(nm), selector( nm.c_str(), selection.c_str(), tree ), yield(0x0) { instances_.push_back(this); }
     string name;
     TTreeFormula selector;
+
+    void update() { selector.UpdateFormulaLeaves(); }
     bool matches( int instance=0 ) { return selector.EvalInstance(instance) != 0.; }
 
     HMatrix histograms;
     HMatrix nm1Histograms;
     TH1D* yield;
+
+    static std::vector<Channel*> instances_;
+    static void updateAll() { for( uint i(0); i<instances_.size(); ++i) instances_[i]->update(); }
 };
+
+std::vector<Channel*> Channel::instances_;
 
 // typedef vector<Channel> ChVector;
 typedef boost::shared_ptr<Channel> ChannelPtr;
@@ -135,13 +156,15 @@ int main( int argc, char **argv ) {
     string treeName = config.getParameter<string>("treeName");
     // update
     TChain c(treeName.c_str());
-    TTree* theTree = &c;
 
     vector<string>::iterator iFileName;
     for ( iFileName = inputFiles.begin(); iFileName != inputFiles.end(); ++iFileName ) {
         c.Add(iFileName->c_str());
         cout << "Added " << *iFileName << endl;
     }
+    c.LoadTree(0);
+
+    TTree* theTree = &c;
 //     cout << "A " << inputFiles.size() << "   " << TH1::AddDirectoryStatus() << endl;
 
     // output
@@ -334,7 +357,7 @@ int main( int argc, char **argv ) {
     cout << " - " << theTree->GetEntries() << " entries found" << endl;
 
     Long64_t nEntries = theTree->GetEntriesFast();
-    
+    int currentTree = -1;
     
     nEntries = min(nEntries,maxEvents != -1 ? maxEvents : nEntries );
 
@@ -373,8 +396,16 @@ int main( int argc, char **argv ) {
     }
 
     for ( Long64_t i(0); i<nEntries; ++i) {
-
         theTree->GetEntry(i);
+        if ( currentTree != theTree->GetTreeNumber() ) {
+//             cout << "Updating leaves " << theTree->GetTreeNumber() << endl;
+            
+            TreeBaseVariable::updateAll();
+            TreeCut::updateAll();
+            Channel::updateAll();
+
+            currentTree = theTree->GetTreeNumber();
+        }
 
         if ( !cutFilter.select() ) continue; 
         ++processed;
