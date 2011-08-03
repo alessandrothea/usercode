@@ -10,7 +10,7 @@ import FWCore.ParameterSet.Config as cms
 
 hltSummary = cms.EDProducer('HltSummaryProducer',
     dataTrgSrc = cms.InputTag('TriggerResults','','HLT'),
-    mcTrgSrc   = cms.InputTag('TriggerResults','','REDIGI311X'),
+    mcTrgSrc   = cms.InputTag('TriggerResults'),
 
 #     singleMuDataPaths = cms.vstring(
 #         '1-163261:HLT_Mu15_v*',
