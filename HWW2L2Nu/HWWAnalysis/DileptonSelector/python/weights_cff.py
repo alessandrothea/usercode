@@ -27,7 +27,7 @@ def addWeightsOptions( options ):
                   'if not none apply the pt weights for the corresponding higgs mass')
 
 
-def addWeights( process, pileUpLabel, higgsMass=None  ):
+def addWeights( process, pileUpLabel, higgsMass=None, summary=None  ):
     if pileUpLabel == 'Flat':
         print ' - Weights: Forcing all the PU eventWeights to 1.'
     else:
@@ -49,4 +49,16 @@ def addWeights( process, pileUpLabel, higgsMass=None  ):
         process.ptWeights.ptWeightSrc = cms.InputTag('higgsPtWeights')
         # put the ptweight in front of the collector
         process.weightSequence.replace(process.ptWeights, process.higgsPtWeights*process.ptWeights)
+
+    if summary:
+        process.eventWeights = process.weightsCollector.clone(
+            puInfoSrc     = process.puWeights.puInfoSrc,
+            pileupWeights = process.puWeights.pileupWeights,
+        )
+
+        if higgsMass:
+            process.eventWeights.ptWeights.ptWeightSrc
+
+        process.weightSequence += process.eventWeights
+
 
