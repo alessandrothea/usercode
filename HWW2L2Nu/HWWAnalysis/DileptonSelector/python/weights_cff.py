@@ -59,6 +59,5 @@ def addWeights( process, pileUpLabel, higgsMass=None, summary=None  ):
         if higgsMass:
             process.eventWeights.ptWeights.ptWeightSrc
 
-        process.weightSequence += process.eventWeights
 
 
