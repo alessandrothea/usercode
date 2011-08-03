@@ -142,9 +142,10 @@ process.pLep = cms.Path()
 
 from HWWAnalysis.DileptonSelector.weights_cff import addWeights
 
-addWeights( process, pileUpLabel, higgsMass=options.higgsPtWeights )
+addWeights( process, pileUpLabel, higgsMass=options.higgsPtWeights, summary = True )
 
-process.pLep *= process.weightSequence
+
+process.pLep *= process.eventWeights
 
 #---------------------------------------------------------
 #  _____    _                       

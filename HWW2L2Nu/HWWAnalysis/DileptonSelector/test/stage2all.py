@@ -174,23 +174,10 @@ process.pLep *= process.hltSummary
 process.load('HWWAnalysis.DileptonSelector.electronSelection_cff')
 process.load('HWWAnalysis.DileptonSelector.muonSelection_cff')
 process.load('HWWAnalysis.DileptonSelector.jetSelection_cff')
+process.load('HWWAnalysis.DileptonSelector.dileptons_cff')
 
 process.pLep += (process.selectHwwElectrons
                     + process.selectHwwMuons)
-
-
-#---------------------------------------------------------
-# ______ _ _            _                  
-# |  _  (_) |          | |                 
-# | | | |_| | ___ _ __ | |_ ___  _ __  ___ 
-# | | | | | |/ _ \ '_ \| __/ _ \| '_ \/ __|
-# | |/ /| | |  __/ |_) | || (_) | | | \__ \
-# |___/ |_|_|\___| .__/ \__\___/|_| |_|___/
-#                | |                       
-#                |_|                       
-
-process.load('HWWAnalysis.DileptonSelector.dileptons_cff')
-
 process.pLep *= process.makeDileptons
 
 
