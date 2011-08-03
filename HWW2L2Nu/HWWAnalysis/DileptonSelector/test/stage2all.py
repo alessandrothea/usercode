@@ -144,7 +144,8 @@ from HWWAnalysis.DileptonSelector.weights_cff import addWeights
 
 addWeights( process, pileUpLabel, higgsMass=options.higgsPtWeights, summary = True )
 
-process.pLep *= process.weightSequence
+# process.pLep *= process.weightSequence
+process.pLep *= (process.puWeights*ptWeights)
 
 #---------------------------------------------------------
 #  _____    _                       
@@ -287,7 +288,7 @@ process.ntupleproducer = cms.EDAnalyzer('HWWNtupleTreeProducer',
 
 process.load("HWWAnalysis.DileptonSelector.roller_cff")
 
-process.weightsMap = process.eventWeights.clone( src = cms.InputTag("hwwViews") )
+process.eventWeights.src = cms.InputTag("hwwViews") )
 process.stage3flat = process.rollerPin.clone(
     src = cms.InputTag("hwwViews"),
 )
@@ -302,9 +303,9 @@ process.testStuff = cms.EDAnalyzer('TestStuffAnalyzer',
 )
 
 # process.pLep *= process.testStuff
-# process.pLep *= process.treeproducer
+process.pLep *= process.eventWeights
 process.pLep *= process.ntupleproducer
-process.pLep *= (process.weightsMap*process.stage3flat)
+process.pLep *= process.stage3flat)
 
 
 
