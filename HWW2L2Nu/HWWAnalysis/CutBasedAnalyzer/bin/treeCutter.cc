@@ -44,6 +44,7 @@ struct TreeBaseVariable {
     double last() { return _last; }
     void update() { functor.UpdateFormulaLeaves(); }
 
+    // replace it with a ttreeformulamanager
     static std::vector<TreeBaseVariable*> instances_;
     static void updateAll() { for( uint i(0); i<instances_.size(); ++i) instances_[i]->update(); }
 
@@ -475,9 +476,9 @@ int main( int argc, char **argv ) {
             theStr << sep 
                 << setw(10) << i << sep
                 //                 TODO
-                << setw(10) << varRun.value() << sep
-                << setw(10) << varLumi.value() << sep
-                << setw(10) << varEvent.value() << sep; 
+                << setw(10) << (long)varRun.value() << sep
+                << setw(10) << (long)varLumi.value() << sep
+                << setw(10) << (long long)varEvent.value() << sep; 
                 ;
             for( monVar = monitored.begin(); monVar != monitored.end(); ++monVar) {
                 theStr << setw(10) << (*monVar)->value() << sep;
