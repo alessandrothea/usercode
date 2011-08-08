@@ -58,31 +58,31 @@ def addLatinos( roller ):
         mll       = cms.string('dilep.mll'),
         ptll      = cms.string('dilep.p4ll.pt'),
         drll      = cms.string('dilep.dR'),
-        dphilljet = cms.string('dPhiJll(15.,5.)'),                                    # wrt to leading jet
-        dphillmet = cms.string('dPhiMet("kPfMET")'),                                  # min(dphilmet1,dphilmet2)     (optional)
+        dphilljet = cms.string('dPhiJll(15.,5.)'),                                        # wrt to leading jet
+        dphillmet = cms.string('dPhiMet("kPfMET")'),                                      # min(dphilmet1,dphilmet2)     (optional)
 
         nextra    = cms.string('dilep.nExtra()'),
-        njet      = cms.string('nJets(30.,5.)'),                                      # 30./5.
-        met       = cms.string('met("kPfMET")'),                                      # pfMET
-        met2      = cms.string('met("kChargedMETSmurf")'),                            # tkMET
-        met3      = cms.string('1.'),                                                 # reduced-MET
-        pmet      = cms.string('projMet("kPfMET")'),                                  # projected pfMET (default MET)
-        pmet2     = cms.string('projMet("kChargedMETSmurf")'),                        # projected tkMET (2nd kind of MET)
-        mpmet     = cms.string('min(projMet("kPfMET"),projMet("kChargedMETSmurf"))'), # min(pmet,pmet2)     (optional)
+        njet      = cms.string('nJets(30.,5.)'),                                          # 30./5.
+        met       = cms.string('met("kPfMET")'),                                          # pfMET
+        met2      = cms.string('met("kChargedMETSmurf")'),                                # tkMET
+        met3      = cms.string('1.'),                                                     # reduced-MET
+        pmet      = cms.string('projMet("kPfMET")'),                                      # projected pfMET (default MET)
+        pmet2     = cms.string('projMet("kChargedMETSmurf")'),                            # projected tkMET (2nd kind of MET)
+        mpmet     = cms.string('min(projMet("kPfMET"),projMet("kChargedMETSmurf"))'),     # min(pmet,pmet2)     (optional)
 
-        mth       = cms.string('mtll("kPfMET")'),                                     # transverse mass from both leptons
-        nvtx      = cms.string('nVrtx'),                                              # number of vertices
-        mtw1      = cms.string('mtl(0,"kPfMET")'),                                    # transverse mass from lepton1
-        mtw2      = cms.string('mtl(1,"kPfMET")'),                                    # transverse mass from lepton2
-        ellh      = cms.string('dilep.worstEGammaLikelihood()'),                      # likelihood of the electron (or worst likelihood  if 2 electrons in the elel event)
-        razor     = cms.string('dilep.gammaMRstar()'),                                # gammaMRStar variable
-        hardbdisc = cms.string('1.'),                                                 # worst b-discriminator value for the jets above the pt cut (optional)
-        softbdisc = cms.string('1.'),                                                 # worst b-discriminator value for the jets with pt in [15,30]   (optional)
+        mth       = cms.string('mtll("kPfMET")'),                                         # transverse mass from both leptons
+        nvtx      = cms.string('nVrtx'),                                                  # number of vertices
+        mtw1      = cms.string('mtl(0,"kPfMET")'),                                        # transverse mass from lepton1
+        mtw2      = cms.string('mtl(1,"kPfMET")'),                                        # transverse mass from lepton2
+        ellh      = cms.string('dilep.worstEGammaLikelihood()'),                          # likelihood of the electron (or worst likelihood  if 2 electrons in the elel event)
+        razor     = cms.string('dilep.gammaMRstar()'),                                    # gammaMRStar variable
+        hardbdisc = cms.string('highestBtagger("trackCountingHighEffBJetTags",30.,2.5)'), # worst b-discriminator value for the jets above the pt cut (optional)
+        softbdisc = cms.string('highestBtagger("trackCountingHighEffBJetTags",15.,2.5)'), # worst b-discriminator value for the jets with pt in [15,30]   (optional)
     )
 
     flags = dict(
         sameflav  = cms.string('dilep.isElEl || dilep.isMuMu'),
-        zveto     = cms.string('abs(dilep.mll-91.1876)>15 || dilep.isElEl || dilep.isMuMu'), # 
+        zveto     = cms.string('abs(dilep.mll-91.1876)>15 || dilep.isElMu || dilep.isMuEl'), # 
         bveto_ip  = cms.string('nBJetsAbove("trackCountingHighEffBJetTags",2.1,0.)== 0'), #
         bveto_mu  = cms.string('nSoftMuons() == 0'), #
         bveto     = cms.string('nBJetsAbove("trackCountingHighEffBJetTags",2.1,0.)== 0 && nSoftMuons() == 0'), #     bveto_ip && bveto_mu (optional)
@@ -206,4 +206,4 @@ def addOldVars(roller):
     
 addTrgBits( rollerPin ) 
 addLatinos( rollerPin ) 
-addLeptonQuality( rollerPin )
+# addLeptonQuality( rollerPin )
