@@ -95,7 +95,8 @@ namespace hww {
         // ... jet stuff ...
         double dPhiJl( uint i, double pt = 0., double eta = kEtaMax ) const;
         double dPhiJll( double pt = 0., double eta = kEtaMax ) const;
-        double jetBtagger( uint i, const std::string& tag = "trackCountingHighEffBJetTags" ) const;
+        double jetBtagger( uint i, const std::string& algo = "trackCountingHighEffBJetTags" ) const;
+        double highestBtagger( const std::string& algo = "trackCountingHighEffBJetTags", double pt = 0., double eta = kEtaMax ) const;
 
         double jetCentrality( double pt = 0., double eta = kEtaMax ) const;
         double jetCentralityScal( double pt = 0., double eta = kEtaMax ) const;
@@ -108,8 +109,9 @@ namespace hww {
         int nVrtx() const;
         int nSoftMuons() const;
         int nJets( double pt = 0, double eta = kEtaMax) const;
-        int nBJetsAbove( const std::string& tag, double threshold, double pt=0., double eta=kEtaMax ) const;
-        int nBJetsBelow( const std::string& tag, double threshold, double pt=0., double eta=kEtaMax ) const;
+        int nBJetsAbove( const std::string& algo, double threshold, double pt=0., double eta=kEtaMax ) const;
+        int nBJetsBelow( const std::string& algo, double threshold, double pt=0., double eta=kEtaMax ) const;
+
 
         bool bit( const std::string& name ) const;
         // --- helpers ---

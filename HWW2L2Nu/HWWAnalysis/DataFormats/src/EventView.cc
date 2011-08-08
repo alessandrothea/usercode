@@ -218,12 +218,35 @@ namespace hww {
     }
 
     double
-    EventView::jetBtagger( uint i, const std::string& tag  ) const {
+    EventView::jetBtagger( uint i, const std::string& algo  ) const {
         if ( i >= jets_.size() ) return kNotFound;
 
-        return jets_[i]->bDiscriminator( tag );
+        return jets_[i]->bDiscriminator( algo );
     }
     
+    double
+    EventView::highestBtagger( const std::string& algo, double pt, double eta ) const {
+
+        if ( jets_.size() == 0 )
+            return kNotFound;
+
+        double highestBtag = jets_[0]->bDiscriminator(algo);
+
+        for( uint i(1); i<jets_.size(); ++i ) {
+            const pat::Jet& jet = *(jets_[i]);
+            if ( jet.p4().pt() < pt )
+                // jets sorted by pt
+                // TODO: check!!
+                break;
+            if ( TMath::Abs(jet.p4().eta()) > eta ) continue; 
+            
+            highestBtag = TMath::Max(highestBtag, (double)jet.bDiscriminator(algo));
+        }
+
+        return highestBtag;
+
+    }
+
     double
     EventView::jetPtSum( double pt, double eta ) const {
         double ptSum(0);
@@ -329,7 +352,7 @@ namespace hww {
     }
 
     int
-    EventView::nBJetsAbove( const std::string& tagger, double threshold, double pt, double eta ) const {
+    EventView::nBJetsAbove( const std::string& algo, double threshold, double pt, double eta ) const {
         int bcounts(0);
 
         for( uint i(0); i<jets_.size(); ++i ) {
@@ -339,7 +362,7 @@ namespace hww {
                 // TODO: check!!
                 break;
             if ( TMath::Abs(jet.p4().eta()) > eta 
-                    || jet.bDiscriminator(tagger) < threshold ) continue;
+                    || jet.bDiscriminator(algo) < threshold ) continue;
             ++bcounts;
         }
         return bcounts;
@@ -347,7 +370,7 @@ namespace hww {
     }
 
     int
-    EventView::nBJetsBelow( const std::string& tagger, double threshold, double pt, double eta ) const {
+    EventView::nBJetsBelow( const std::string& algo, double threshold, double pt, double eta ) const {
         int bcounts(0);
 
         for( uint i(0); i<jets_.size(); ++i ) {
@@ -357,7 +380,7 @@ namespace hww {
                 // TODO: check!!
                 break;
             if ( TMath::Abs(jet.p4().eta()) > eta 
-                    || jet.bDiscriminator(tagger) > threshold ) continue; 
+                    || jet.bDiscriminator(algo) > threshold ) continue; 
             ++bcounts;
         }
         return bcounts;
