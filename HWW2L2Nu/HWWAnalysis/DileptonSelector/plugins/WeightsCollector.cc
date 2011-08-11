@@ -13,7 +13,7 @@
 //
 // Original Author:  
 //         Created:  Thu Jun 23 15:18:30 CEST 2011
-// $Id: WeightsCollector.cc,v 1.1 2011/07/03 17:04:49 thea Exp $
+// $Id: WeightsCollector.cc,v 1.4 2011/07/28 16:11:13 thea Exp $
 //
 //
 
@@ -85,7 +85,7 @@ WeightsCollector::WeightsCollector(const edm::ParameterSet& iConfig) :
     candidateSrc_(  doMap_ ? iConfig.getParameter<edm::InputTag>("src")       : edm::InputTag()),
     puInfoSrc_(     doPu_  ? iConfig.getParameter<edm::InputTag>("puInfoSrc") : edm::InputTag()),
     puWeights_(     doPu_  ? iConfig.getParameter<std::vector<double> >("pileupWeights") : std::vector<double>() ),
-    ptWeightSrc_(   doPt_  ? iConfig.getParameter<edm::InputTag>("ptWeightSrc_") : edm::InputTag()) {
+    ptWeightSrc_(   doPt_  ? iConfig.getParameter<edm::InputTag>("ptWeightSrc") : edm::InputTag()) {
     
     //register your products
     produces< vector<double> >();
