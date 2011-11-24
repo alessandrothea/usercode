@@ -1,0 +1,5 @@
+lumi:4.63
+rebin:20
+var:bdts
+tag:bdts_zero
+ddpath:/shome/thea/HWW/ShapeAnalysis/data/AnalFull2011_BDT/
