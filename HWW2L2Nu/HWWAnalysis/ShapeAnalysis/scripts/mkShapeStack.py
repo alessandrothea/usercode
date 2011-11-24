@@ -142,7 +142,7 @@ def makeNominalPlots(file,outputdir):
 
 
     cName = 'c_'+file.split('/')[-1].replace('.root','')
-    c = ROOT.TCanvas(cName,cName,2)
+    c = ROOT.TCanvas(cName,cName)
     plot.setMass(mass)
     plot.setLumi(4.63)
     plot.Draw(c,1,True)
@@ -242,7 +242,7 @@ def printUpDown( cName, fName, exts, syst, vars ):
 
     # new canvas
 #     cName = 'c_'+baseName
-    c = ROOT.TCanvas(cName,cName,2)
+    c = ROOT.TCanvas(cName,cName)
     c.SetTicks()
 
     frame = h_n.Clone('frame')

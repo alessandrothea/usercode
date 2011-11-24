@@ -24,6 +24,12 @@ if len(args) > 1:
     else:
         bins = [ args[1] ] if args[1] not in datacards else datacards[args[1]]
 
+logfile = open('qexe.log','a')
+print >> logfile,'-'*100
+print >> logfile,'choochoo! It\'s ',datetime.datetime.today()
+print >> logfile,'-'*100
+logfile.close()
+
 for bin in bins:
     for mass in hwwinfo.masses:
         os.system('qexe.py -t '+bin+'_'+str(mass)+' "runLimits.py -s -m '+str(mass)+' '+bin+' -p '+args[0]+'"')
