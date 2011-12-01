@@ -12,6 +12,7 @@
 #include "TFrame.h"
 #include "TROOT.h"
 #include "TStyle.h"
+#include "TPaveText.h"
 #endif
 
 #include <iostream>
@@ -397,6 +398,13 @@ class MWLPlot {
             luminosity->SetTextSize(_legendTextSize*0.95);
             luminosity->Draw("same");
             if(_extraLabel) _extraLabel->Draw("same");
+
+            TPaveText* title = (TPaveText*)gPad->FindObject("title");
+            if (title) {
+                gPad->Modified();
+                gPad->Update();
+                title->SetFillStyle(0);
+            }
         }
 
         //------------------------------------------------------------------------------

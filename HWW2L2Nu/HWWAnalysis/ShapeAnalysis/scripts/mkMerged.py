@@ -91,6 +91,7 @@ class ShapeMerger:
                     continue
 #                 h_tmp = h.Clone()
 #                 h_tmp = h.Rebin(nBins,h.GetName(),lowEdges)
+                # ->> ninja
                 dummy = h.Rebin(nBins,h.GetName(),lowEdges) if ninja else h.Clone()
 
                 dummy.Reset()

@@ -7,6 +7,7 @@ import optparse
 import hwwinfo
 import shutil
 import tarfile
+import os
 
 def pack():
     usage = 'usage: %prog -p path'
@@ -23,6 +24,11 @@ def pack():
     
     tmppath = tempfile.mkdtemp('_pack_'+prefix)
     shutil.copytree(prefix+'/datacards',tmppath+'/datacards')
+    if opt.var == 'mll':
+        os.system('rename _shape _mllShape '+tmppath+'/datacards/*_shape.txt')
+    elif opt.var == 'bdts':
+        os.system('rename _shape _bdtShape '+tmppath+'/datacards/*_shape.txt')
+
     
     tarname = tmppath+'/'+prefix+'.tgz'
     tar = tarfile.open(tarname,mode='w:gz')

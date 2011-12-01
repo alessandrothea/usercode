@@ -6,6 +6,7 @@ import ROOT
 from ROOT import *
 import HWWAnalysis.Misc.odict as odict
 import optparse
+import re
 
 
  
@@ -85,12 +86,7 @@ def printTable(file, table):
     print >> file, r'\hline'
     print >> file, r'\hline'
     for mass in table:
-        myline = {}
-        myline.update(table[mass])
-        myline['mass'] = mass.replace('mH','')
-#         print myline
-        print >> file, r' {mass} & {observed:.2f} & {median:.2f} & [{minus1sigma:.2f}, {plus1sigma:.2f}] & [{minus2sigma:.2f}, {plus2sigma:.2f}] \\'.format(**myline)
-#         print >> file, mass.replace('mH','')+' & '+str('%.2f' % table[mass]['minus2sigma'])+' & '+str('%.2f' % table[mass]['minus1sigma'])+' & '+str('%.2f' % table[mass]['mean'])+' & '+str('%.2f' % table[mass]['plus1sigma'])+' & '+str('%.2f' % table[mass]['plus2sigma'])+r' \\'
+        print >> file, r' {mass} & {observed:.2f} & {median:.2f} & [{minus1sigma:.2f}, {plus1sigma:.2f}] & [{minus2sigma:.2f}, {plus2sigma:.2f}] \\'.format(mass=mass,**(table[mass]))
     print >> file, r'\hline'
     print >> file, r'\end{tabular}'
     print >> file, r'\end{document}'  
@@ -101,8 +97,8 @@ def main():
     (opt, args) = parser.parse_args()
     
     tags = {
-        'allcomb':'allcomb',
-        'comb':'comb',
+        'comb_0j1j2j':'comb_0j1j2j',
+        'comb_0j1j':'comb_0j1j',
         'comb_0j':'comb_0j',
         'comb_1j':'comb_1j',
         'of_0j':'of_0j',
@@ -126,6 +122,7 @@ def main():
 #     print samplename
     print tagname
 
+    reMass = re.compile('.+\.mH(\d+)\.(.*)root')
     table = odict.OrderedDict()
     #table = {}
     for sample in samplename:
@@ -143,22 +140,15 @@ def main():
 #             print point, value
             line[point] = value
 
-        mass = sample.split('.')[-2]
-        table[mass] = line
+#         mass = sample.split('.')[-2]
 
-    ## latex table
-#     print r'\documentclass[a4paper]{article}'
-#     print r'\begin{document}'
-#     print r'\begin{tabular}{|c|c|c|c|c|c|}'
-#     print r'\hline'
-#     print r'mass [$\mathrm{GeV/c^2}$] & $-95\%$ & $-68\%$ & mean & $+68\%$ & $+95\%$ \\'
-#     print r'\hline'
-#     print r'\hline'
-#     for mass in table:
-#         print mass.replace('mH','')+' & '+str('%.3f' % table[mass]['minus2sigma'])+' & '+str('%.3f' % table[mass]['minus1sigma'])+' & '+str('%.3f' % table[mass]['mean'])+' & '+str('%.3f' % table[mass]['plus1sigma'])+' & '+str('%.3f' % table[mass]['plus2sigma'])+r' \\'
-#     print r'\hline'
-#     print r'\end{tabular}'
-#     print r'\end{document}'     
+        m = reMass.match(sample)
+        if not m: 
+            raise ValueError('Mass label not found in '+sample)
+
+        mass = int(m.group(1))
+
+        table[mass] = line
 
     printTable(sys.stdout, table)
     latex = open(basepath+'/'+tagname+'.tex','w')
@@ -169,8 +159,7 @@ def main():
     ## summary file
     summary = open(basepath+'/'+tagname+'.summary', 'w')
     for mass in table:
-#        summary.write(mass.replace('mH','')+' '+str('%.3f' % table[mass]['observed'])+' 99. '+str('%.3f' % table[mass]['mean'])+' '+str('%.3f' % table[mass]['minus2sigma'])+' '+str('%.3f' % table[mass]['plus1sigma'])+' '+str('%.3f' % table[mass]['minus1sigma'])+' '+str('%.3f' % table[mass]['plus2sigma'])+'\n')
-        summary.write(mass.replace('mH','')+' '+str('%.4f' % table[mass]['observed'])+' 99. '+str('%.4f' % table[mass]['median'])+' '+str('%.4f' % table[mass]['minus1sigma'])+' '+str('%.4f' % table[mass]['plus1sigma'])+' '+str('%.4f' % table[mass]['minus2sigma'])+' '+str('%.4f' % table[mass]['plus2sigma'])+'\n')
+        summary.write('{mass} {observed:.3f} 99 {median:.3f} {minus1sigma:.3f} {plus1sigma:.3f} {minus2sigma:.3f} {plus2sigma:.3f}\n'.format( mass=mass, **(table[mass]) ) )
 
     summary.close()
 

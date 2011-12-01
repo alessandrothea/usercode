@@ -28,11 +28,13 @@ channelCuts['of']  = 'channel>1.5'
 # |_|  |_\__,_/__/__/  \___\_,_|\__/__/
 #                                      
 
+# old bdt cuts
+# _cuts['mllmax_bdt']  = [ 50  , 60  , 70  , 80  , 90  , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600  ]
 
 # masses             = [110  , 115 , 120 , 130 , 140 , 150 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
 
 _cuts = {}
-_cuts['mllmax_bdt']  = [ 50  , 60  , 70  , 80  , 90  , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600  ]
+_cuts['mllmax_bdt']  = [ 70  , 70  , 70  , 80  , 90  , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600  ]
 _cuts['pt1min']      = [ 20  , 20  , 20  , 25  , 25  , 27  , 30  , 34  , 36  , 38  , 40  , 55  , 70  , 80  , 90  , 110 , 120 , 130 , 140 ]
 _cuts['pt2min']      = [ 10  , 10  , 10  , 10  , 15  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  ]
 _cuts['mllmax']      = [ 40  , 40  , 40  , 45  , 45  , 50  , 50  , 50  , 60  , 80  , 90  , 150 , 200 , 250 , 300 , 350 , 400 , 450 , 500 ]
@@ -123,7 +125,8 @@ backgrounds['Vg']        = ['latino_082_WgammaToElNuMad.root',
                             'latino_085_WGstarToLNu2Mu.root',
                             'latino_086_WGstarToLNu2E.root',
                             ]
-backgrounds['WJet']      = ['latino_WJets_Full2011.root']
+# backgrounds['WJet']      = ['latino_WJets_Full2011.root']
+backgrounds['WJet']      = ['latino_WJets_LP.root']
 backgrounds['Top']       = ['latino_011_TtWFullDR.root',
                             'latino_012_TbartWFullDR.root',
                             'latino_013_TtFull.root',
@@ -149,17 +152,30 @@ backgrounds['WWnloDown'] = ['latino_004_WWto2L2NuMCatNLODown.root']
 
 data = {}
 data['2011A'] = [
+    'latino_150_SingleElectron2011AMay10.root',
+    'latino_151_SingleMuon2011AMay10.root',
+    'latino_152_DoubleMuon2011AMay10.root',
+    'latino_153_DoubleElectron2011AMay10.root',
+    'latino_154_MuEG2011AMay10.root',
+
     'latino_100_SingleElectron2011Av4.root',
     'latino_101_SingleMuon2011Av4.root',
     'latino_102_DoubleElectron2011Av4.root',
     'latino_103_DoubleMuon2011Av4.root',
     'latino_104_MuEG2011Av4.root',
 
+    'latino_160_SingleElectron2011AAug05.root',
+    'latino_161_SingleMuon2011AAug05.root',
+    'latino_162_DoubleElectron2011AAug05.root',
+    'latino_163_DoubleMuon2011AAug05.root',
+    'latino_164_MuEG2011AAug05.root',
+
     'latino_120_SingleElectron2011Av6.root',
     'latino_121_SingleMuon2011Av6.root',
     'latino_122_DoubleElectron2011Av6.root',
     'latino_123_DoubleMuon2011Av6.root',
     'latino_124_MuEG2011Av6.root',
+
 ]
 
 data['2011B'] = [
@@ -169,17 +185,6 @@ data['2011B'] = [
     'latino_143_DoubleMuon2011Bv1a.root',
     'latino_144_MuEG2011Bv1a.root',
 
-    'latino_150_SingleElectron2011AMay10.root',
-    'latino_151_SingleMuon2011AMay10.root',
-    'latino_152_DoubleMuon2011AMay10.root',
-    'latino_153_DoubleElectron2011AMay10.root',
-    'latino_154_MuEG2011AMay10.root',
-
-    'latino_160_SingleElectron2011AAug05.root',
-    'latino_161_SingleMuon2011AAug05.root',
-    'latino_162_DoubleElectron2011AAug05.root',
-    'latino_163_DoubleMuon2011AAug05.root',
-    'latino_164_MuEG2011AAug05.root',
 ]
 data['2011'] =  data['2011A']+data['2011B']
 

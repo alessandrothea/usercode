@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-import os
+import os.path
 import hwwinfo
 import optparse
 import fnmatch
@@ -24,8 +24,8 @@ def main():
     
 
     tags = {
-        'comb':'comb',
-        'allcomb':'allcomb',
+        'comb_0j1j2j':'comb_0j1j2j',
+        'comb_0j1j':'comb_0j1j',
         'comb_0j':'comb_0j',
         'comb_1j':'comb_1j',
         'of_0j':'of_0j',
@@ -36,19 +36,6 @@ def main():
 
     constraints = {
         '*':'--rMin=0.01'
-#         '110':'--rMax ',
-#         '115':'--rMax 50',
-#         '120':'--rMax 40',
-#         '130':'--rMin 0.01 --rMax 20',
-#         '140':'--rMax 8',
-#         '150':'--rMax 8',
-#         '160':'--rMax 8',
-#         '170':'--rMax 8',
-#         '180':'--rMax 8 --rMin 0.1',
-# #         '190':'--rMax 8 --rMin 0.1',
-#         '200':'--rMax 10 --rMin 0.1',
-# #         '300':'--rMax 10 --rMin=0.5',
-#         '400':'--rMin=0.1',
     }
 
     if len(args) < 1 or args[0] not in tags:
@@ -77,7 +64,7 @@ def main():
     for card in allcards:
         mass = card.split('.')[-3].replace('mH','')
         exe  = 'combine -v 2 -M Asymptotic'
-        flags = ' -n '+tagname+' -m '+mass+' '+inputDir+'/'+card
+        flags = ' -n '+tagname+' -m '+mass+' '+os.path.join(inputDir,card)
         if opt.stepping:
             flags = ' --minosAlgo stepping'+flags
         if opt.minuit1:

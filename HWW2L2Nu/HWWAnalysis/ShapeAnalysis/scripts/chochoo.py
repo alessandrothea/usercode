@@ -3,6 +3,7 @@
 import optparse
 import hwwinfo
 import os
+import datetime
 
 usage = 'usage: %prog [dir] [cmd]'
 parser = optparse.OptionParser(usage)
@@ -10,7 +11,7 @@ parser = optparse.OptionParser(usage)
 
 datacards = {}
 datacards['split'] = ['of_0j', 'of_1j', 'sf_0j', 'sf_1j']
-datacards['combined']=['comb','comb_0j','comb_1j','allcomb']
+datacards['combined']=['comb_0j1j','comb_0j','comb_1j','comb_0j1j2j']
 
 datacards['all'] = datacards['split']+datacards['combined']
 
@@ -34,21 +35,5 @@ for bin in bins:
     for mass in hwwinfo.masses:
         os.system('qexe.py -t '+bin+'_'+str(mass)+' "runLimits.py -s -m '+str(mass)+' '+bin+' -p '+args[0]+'"')
  
-os.system('watch "tail -n 30 qexe.log;echo \'Remaining jobs:\';qstat | wc -l; qstat"')
+os.system('watch \'tail -n 30 qexe.log;echo Remaining jobs: `qstat | wc -l`; qstat\'')
 
-
-# if [ $# -ne $EXPECTED_ARGS ]
-# then
-#     echo "Usage: `basename $0` dir"
-#     exit $E_BADARGS
-# fi
-
-# for bin in of_0j of_1j sf_0j sf_1j
-# # for bin in comb comb_0j comb_1j;
-# do
-#     for m in $masses;
-#     do qexe.py -t ${bin}_${m} "runLimits.py -p noshape -m ${m} $bin -p $1"
-#     done
-# done
-
-# watch 'tail -n 30 qexe.log; qstat'

@@ -140,7 +140,7 @@ class ShapeLoader:
             entries = h.GetEntries()
 
             # TODO: DYTT cleanup
-            if entries < 5: continue
+#             if entries < 5: continue
 
             self._yields[process] = Yield( N, name=process, entries=entries ) 
 #             self._yields[process] = Yield( N, name=process, entries=entries, shape=h ) 

@@ -80,6 +80,7 @@ void LatinoStyle2()
   LatinosStyle->SetTitleFontSize  (0.045);
   LatinosStyle->SetTitleX         (0.590);
   LatinosStyle->SetTitleY         (0.830);
+  LatinosStyle->SetTitleStyle     (0);
 
   LatinosStyle->SetTitleFont(42, "");
 

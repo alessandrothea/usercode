@@ -15,12 +15,13 @@ def makeHistograms():
 
 class ShapeFactory:
     def __init__(self):
-        self._baseWgt = 'baseW*puW*effW*triggW' # TODO check what to to with the triggerW
+        self._baseWgt = 'baseW*puW*effW*triggW'
         weights = {}
         weights['ggH']   = 'kfW'
         weights['vbf']   = 'kfW'
         weights['WJet']  = 'fake2W'
         weights['Data']  = '1'
+        weights['Vg']    = '(1+0.55*(dataset==85||dataset==86))' #TODO move to mkMerged, read from external scale factor file
         self._sampleWgt = weights
         ranges = {}
         ranges['bdtl']       = (400  , -1. , 1.)
@@ -65,8 +66,6 @@ class ShapeFactory:
         else:
             xmax = mass-50.
         # bins
-#         bins = 400 if njet == 0 else 200
-
         if mass < 300.:
             bins = 400 if njet == 0 else 200
         else:
@@ -127,8 +126,8 @@ class ShapeFactory:
                     if 'DYLL' in selections:
                         selections['DYLLctrZ'] = varCtrlZ+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
                         logging.debug(str(inputs))
-#                         inputs['DYLLctrZ'] = inputs['DYLL']
-                        inputs['DYLLctrZ'] = inputs['Data']
+                        inputs['DYLLctrZ'] = inputs['DYLL']
+#                         inputs['DYLLctrZ'] = inputs['Data']
 
 #                     print 'Selection:',selections
                     print '-'*80

@@ -4,6 +4,7 @@ import os
 import optparse
 import sys
 import re
+import hwwinfo
 
 
 import ROOT
@@ -95,9 +96,10 @@ def getNominalUpDown(file):
 ##     nominals['Data'] = 
 
     
-def makeNominalPlots(file,outputdir):
+def makeNominalPlots(file,outputdir, lumi, xlabel, ratio):
 
-    os.system('mkdir -p '+outputdir)
+    if not os.path.exists(outputdir):
+        os.makedirs(outputdir)
 
     # open the file
     f = openTFile(file)
@@ -105,7 +107,12 @@ def makeNominalPlots(file,outputdir):
     # in one root file,there is one set of nominal
     # histograms to plot, so get those...
 
-    mass = int(file.split('.')[2].replace('mH',''))
+    reMass = re.compile('.+\.mH(\d+)\..+\.root')
+    m = reMass.match(file)
+    if not m: 
+        raise RuntimeError('Mass label not found in '+file)
+    mass = int(m.group(1))
+#     mass = int(file.split('.')[2].replace('mH',''))
 
     nominals = getNominals(f)
 
@@ -142,10 +149,12 @@ def makeNominalPlots(file,outputdir):
 
 
     cName = 'c_'+file.split('/')[-1].replace('.root','')
-    c = ROOT.TCanvas(cName,cName)
+    c = ROOT.TCanvas(cName,cName) if ratio else ROOT.TCanvas(cName,cName,2)
     plot.setMass(mass)
-    plot.setLumi(4.63)
-    plot.Draw(c,1,True)
+    plot.setLumi(lumi)
+    plot.setLabel(xlabel)
+    plot.Draw(c,1,ratio)
+#     c.ls()
     c.Print(outputdir+'/'+cName+'.pdf')
     c.Print(outputdir+'/'+cName+'.png')
 #     c.Print(outputdir+'/'+cName+'.root')
@@ -154,7 +163,7 @@ def makeNominalPlots(file,outputdir):
 
     f.Close()
 
-def makeShapeUpDown(file,outputdir):
+def makeShapeUpDown(file,outputdir, xlabel):
 
     # open the file
     f = openTFile(file)
@@ -181,7 +190,7 @@ def makeShapeUpDown(file,outputdir):
             cName = 'c_'+root+'_'+process+'_'+syst
             fName = odir+'/'+cName
             exts = ['pdf','png']
-            c = printUpDown(cName,fName,exts,syst,vars)
+            c = printUpDown(cName,fName,exts,syst,vars,xlabel)
             
 def plotCMSText():
     lines = [ 'CMS Preliminary - #sqrt{s}=7 TeV']
@@ -214,7 +223,7 @@ def plotCMSText():
         
     return pave
 
-def printUpDown( cName, fName, exts, syst, vars ):
+def printUpDown( cName, fName, exts, syst, vars, xlabel ):
 #     nom = vars.Nom.DrawClone()
 #     nom.SetTitle('Shape systematics: '+syst)
 
@@ -285,7 +294,7 @@ def printUpDown( cName, fName, exts, syst, vars ):
     frame.SetBinContent(1,maxY)
     frame.SetBinContent(frame.GetNbinsX(),minY)
     frame.SetBit(ROOT.TH1.kNoStats)
-    frame.SetXTitle('BDT output')
+    frame.SetXTitle(xlabel)
     frame.Draw()
 
     h_n.SetMarkerStyle(21)
@@ -320,8 +329,6 @@ def printUpDown( cName, fName, exts, syst, vars ):
 
     frame2.Draw()
 
-
-
     ratios = []
     r_u = h_n.Clone()
     r_d = h_n.Clone()
@@ -354,8 +361,13 @@ def printUpDown( cName, fName, exts, syst, vars ):
     # legend
     x0 = 0.2
     x1 = 0.5
-    y0 = 0.65
-    y1 = 0.85
+    y0 = 0.60
+    y1 = 0.80
+
+    xax = h_n.GetXaxis()
+    if h_n.GetMean() < (xax.GetXmax()-xax.GetXmin())/2.:
+        x0 = 0.5
+        x1 = 0.8
 
 
     pad1.cd()
@@ -387,7 +399,12 @@ def main():
     parser.add_option('-m','--mass',dest='mass',help='Mass',default=-1)
     parser.add_option('-o','--output',dest='outputdir',help='Output dir',default='.')
     parser.add_option('-v','--variations',dest='variations',help='make the scale up/down stacks',action='store_true',default=False)
+    parser.add_option('-x','--xlabel',dest='xlabel',help='X-axis label',default='')
+    parser.add_option('-r','--ratio',dest='ratio',help='Plot the data/mc ration', action='store_false',default=True)
+    parser.add_option('-l','--lumi', dest='lumi', type='float', help='Luminosity', default=None)
+ 
 
+    hwwinfo.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
     sys.argv.append('-b')
 
@@ -412,9 +429,10 @@ def main():
         if str(mass) not in file and mass > 0:
             continue
         print 'Making',path
-        makeNominalPlots(path, outputdir)
-        if opt.variations:
-            makeShapeUpDown(path,outputdir)
+        if not opt.variations:
+            makeNominalPlots(path, outputdir, opt.lumi, opt.xlabel, opt.ratio)
+        else:
+            makeShapeUpDown(path,outputdir, opt.xlabel)
 
 
     
