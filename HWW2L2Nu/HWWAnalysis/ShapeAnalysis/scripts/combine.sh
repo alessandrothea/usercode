@@ -1,7 +1,7 @@
 #!/bin/bash
 # set -x
 
-lumi=1.58
+lumi=4.63
 head="hww-${lumi}fb.mH"
 head2j="hww-${lumi}fb.mH"
 tail="_shape.txt"

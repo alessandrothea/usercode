@@ -10,18 +10,16 @@ import string
 import logging
 from HWWAnalysis.Misc.odict import OrderedDict
 
-def makeHistograms():
-    pass
-
 class ShapeFactory:
     def __init__(self):
         self._baseWgt = 'baseW*puW*effW*triggW'
         weights = {}
-        weights['ggH']   = 'kfW'
-        weights['vbf']   = 'kfW'
-        weights['WJet']  = 'fake2W'
-        weights['Data']  = '1'
-        weights['Vg']    = '(1+0.55*(dataset==85||dataset==86))' #TODO move to mkMerged, read from external scale factor file
+        weights['ggH']          = 'kfW'
+        weights['vbf']          = 'kfW'
+        weights['WJet']         = 'fake2W'
+        weights['WJetFakeRate'] = 'fake2W'
+        weights['Data']         = '1'
+        weights['Vg']           = '(1+0.55*(dataset =  = 85||dataset =  = 86))' #TODO move to mkMerged, read from external scale factor file
         self._sampleWgt = weights
         ranges = {}
         ranges['bdtl']       = (400  , -1. , 1.)
@@ -76,10 +74,6 @@ class ShapeFactory:
         
         ROOT.TH1.SetDefaultSumw2(True)
 
-#         inputDirTmpl = string.Template(inputDir)
-#         outDirTmpl = string.Template(outDir)
-#         outFileTmpl = string.Template(self._outFileFmt)
-
         shapeFiles = []
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
@@ -92,12 +86,14 @@ class ShapeFactory:
             #inner  jet and channel loops
             for njet in self._jets:
                 for channel in self._channels:
-                    print '-'*80
                     pars = dict([
                         ('mass',mass),
                         ('jets',njet),
                         ('channel',channel)
                     ])
+                    print '-'*80
+                    print ' Processing: mass',mass,'jets',njet,'channel',channel
+                    print '-'*80
                     
                     # ----
                     activeInputPaths = ['base']
@@ -115,24 +111,28 @@ class ShapeFactory:
                     output = outPath.format(**pars)
                     outdir = os.path.dirname(output)
                     if outdir:
-                        os.system('mkdir -p '+outdir)
+                        self._ensuredir(outdir)
+
+                    print '.'*80
                     print 'Output file:',output
-                    print '-'*80
 
                     # now build the selection
                     jetSel = 'njet == {0}'.format(njet) #'njet>%.1f && njet<%.1f' % (njet-0.5,njet+0.5)
                     selection = varSelection+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
-                    if 'DYLL' in selections:
-                        selections['DYLLctrZ'] = varCtrlZ+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
-                        logging.debug(str(inputs))
-                        inputs['DYLLctrZ'] = inputs['DYLL']
+                    dyshapes = ['DYLLshape','DYLLshapesyst']
+                    for n in dyshapes:
+#                         if n in selections:
+                        selections[n] = varCtrlZ+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
+#                         selections['DYLLctrZ'] = varCtrlZ+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
+#                         logging.debug(str(inputs))
+#                         inputs['DYLLctrZ'] = inputs['DYLL']
 #                         inputs['DYLLctrZ'] = inputs['Data']
 
-#                     print 'Selection:',selections
-                    print '-'*80
+                    print '.'*80
                     rng = self.getrange(var,mass,njet) 
                     self._draw(var, rng, selections ,output,inputs)
+                    self._disconnectInputs(inputs)
                     shapeFiles.append(output)
         return shapeFiles
 
@@ -151,7 +151,7 @@ class ShapeFactory:
             for njet in self._jets:
                 for channel in self._channels:
                     print '-'*80
-                    print ' Mass',mass,'jets',njet,'channel',channel
+                    print ' Processing: mass',mass,'jets',njet,'channel',channel
                     print '-'*80
 
                     pars = dict([
@@ -178,19 +178,20 @@ class ShapeFactory:
                     output = outPath.format(**pars)
                     outdir = os.path.dirname(output)
                     if output:
-                        os.system('mkdir -p '+outdir)
+                        self._ensuredir(outdir)
+                    print '.'*80
                     print 'Output file',output
-                    print '-'*80
 
                     # now build the selection
                     jetSel = 'njet == {0}'.format(njet) #njet>%.1f && njet<%.1f' % (njet-0.5,njet+0.5)
                     selection = varSelection+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
 #                     print selections
-                    #-- hack for 
-#                     sys.exit(0)
+
+                    print '.'*80
                     rng = self.getrange(var,mass,njet) 
                     self._draw(var, rng, selections ,output,inputs)
+                    self._disconnectInputs(inputs)
                 shapeFiles.append(output)
         return shapeFiles
     
@@ -201,9 +202,10 @@ class ShapeFactory:
         output :    the output file path
         inputs :    the process-input files map
         '''
+        logging.info('Yields by process')
         outFile = ROOT.TFile.Open(output,'recreate')
         for process,tree  in inputs.iteritems():
-            print '     ',process.ljust(20),':',tree.GetEntries(),
+            print ' '*3,process.ljust(20),':',tree.GetEntries(),
             # new histogram
             shapeName = 'histo_'+process
             shape = ROOT.TH1D(shapeName,process+';'+var,
@@ -225,6 +227,16 @@ class ShapeFactory:
         outFile.Close()
         del outFile
 
+    def _ensuredir(self,directory):
+        if not os.path.exists(directory):
+            try:
+                os.makedirs(directory)
+            except OSError as e:
+                if e.errno == 17:
+                    pass
+                else:
+                    raise e
+
     def _connectInputs(self, var, samples, dirmap, mask=None):
         inputs = {}
         treeName = 'latino'
@@ -239,19 +251,28 @@ class ShapeFactory:
                 
                 if tree.GetEntries() != bdttree.GetEntries():
                     raise RuntimeError('Mismatching number of entries: '+tree.GetName()+'('+str(tree.GetEntries())+'), '+bdttree.GetName()+'('+str(bdttree.GetEntries())+')')
-                print '   master: ',tree.GetEntries(), ' friend ', bdttree.GetEntries()
+                print ' '*3,process.ljust(20),'- master: ',tree.GetEntries(), ' friend ', bdttree.GetEntries()
                 tree.AddFriend(bdttree)
 
             inputs[process] = tree
 
         return inputs
 
-
+    def _disconnectInputs(self,inputs):
+        for n in inputs.keys():
+            friends = inputs[n].GetListOfFriends()
+            if friends.__nonzero__():
+                for fe in friends:
+                    friend = fe.GetTree()
+                    inputs[n].RemoveFriend(friend)
+                    ROOT.SetOwnership(friend,True)
+                    del friend
+            del inputs[n]
     
     def _buildchain(self,treeName,files):
         tree = ROOT.TChain(treeName)
         for path in files:
-            print '     ',os.path.exists(path),path
+            logging.debug('     '+str(os.path.exists(path))+' '+path)
             if not os.path.exists(path):
                 raise RuntimeError('File '+path+' doesn\'t exists')
             tree.Add(path) 
@@ -301,7 +322,7 @@ if __name__ == '__main__':
     factory._masses   = masses
     factory._jets     = hwwinfo.jets[:]
     factory._channels = hwwinfo.channels[:]
-    factory._paths['base'] = latinoDir
+    factory._paths['base']  = latinoDir
     factory._paths['bdtl']  = bdtDir
     factory._paths['bdts']  = bdtDir
 

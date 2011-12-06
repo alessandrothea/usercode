@@ -19,7 +19,7 @@ plot_tmpl = '''
 
 
 def runTheShape():
-    usage = 'usage: %prog [dir] [cmd]'
+    usage = 'usage: %prog -t tag -p prefix channel'
     parser = optparse.OptionParser(usage)
     parser.add_option('-t','--tag',dest='tag')
     parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
@@ -29,7 +29,7 @@ def runTheShape():
     tag = opt.tag.replace(' ','_')
 
     if not args:
-        raise 'Belin!'
+        raise 'Desired channels missing: check the usage'
 
     if args[0] == 'all':
         plots = ['of_0j','of_1j','sf_0j','sf_1j','comb_0j','comb_1j','comb_0j1j','comb_0j1j2j']

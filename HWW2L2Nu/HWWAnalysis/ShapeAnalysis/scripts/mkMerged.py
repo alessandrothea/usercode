@@ -102,7 +102,7 @@ class ShapeMerger:
         for n,h in shapes.iteritems():
             for s in self.sets:
                 if n not in s.histograms:
-                    print 'Warning:',n,' is not available in set',s.label
+                    logging.info('Warning: '+n+' is not available in set '+s.label)
                     continue
 #                 h.Add(s.histograms[n])
                 dummy = s.histograms[n]
@@ -207,9 +207,12 @@ class ShapeMixer:
         self.statistical = {}
         self.experimental = {}
         self.generators = {}
+        self.fakerate = {}
+        self.templates = {}
         
         self.factors = {}
-        self.replaceDrellYan = True
+#         TODO clean up
+#         self.replaceDrellYan = True
         self.indent = 4
         self.nameMap = {}
         self.lumiMask = []
@@ -220,11 +223,12 @@ class ShapeMixer:
     
     def _connect(self):
         self.shapeFile = ROOT.TFile.Open(self.shapePath)
-        if self.replaceDrellYan:
-            self.dyYieldFile   = ROOT.TFile.Open(self.dyYieldPath)
-            self.dyShapeFile = ROOT.TFile.Open(self.dyShapePath)
+#         TODO clean up
+#         if self.replaceDrellYan:
+#             self.dyYieldFile   = ROOT.TFile.Open(self.dyYieldPath)
+#             self.dyShapeFile = ROOT.TFile.Open(self.dyShapePath)
         self.systFiles = {}
-        print self.systSearchPath
+#         print self.systSearchPath
         for file in glob.glob(self.systSearchPath):
             m = re.search('_(e|m)(e|m)_(.*).root',file)
             if m is None:
@@ -246,13 +250,33 @@ class ShapeMixer:
         h.SetAt(0.,nBins+1,)
         h.Rebin(self.rebin)
 
+
+    def _mirror(self,process, nom, shift, systName, scale2Nom = False):
+        up = shift.Clone('histo_'+process+'_'+systName+'Up')
+        up.SetTitle(process+' '+systName+' Up')
+        # rescale before mirroring, if necessary
+        if scale2Nom:
+            up.Scale(nom.Integral()/up.Integral())
+
+        down = nom.Clone('histo_'+process+'_'+systName+'Down')
+        down.SetTitle(process+' '+systName+' Down')
+        down.Scale(2.)
+        down.Add(up,-1)
+        # rescale if necessary
+        if scale2Nom:
+            down.Scale(nom.Integral()/down.Integral())
+
+        return (up, down)
+
+
+
     def mix(self, jets, flavor):
         # mixing histograms
 
         self._connect()
 
 
-        #
+        # -----------------------------------------------------------------
         # Nominal shapes
         #
         for k in self.shapeFile.GetListOfKeys():
@@ -260,11 +284,71 @@ class ShapeMixer:
             self._remodel(h)
             self.nominals[h.GetTitle()] = h
 
-        # replace the WJets histogram
-        wJets = self.nominals['WJet']
-#         self._removeNegativeBins(wJets)
+        # -----------------------------------------------------------------
+        # WJet shape syst
+        #
+        #   add the WJets shape systematics derived from miscalculated weights
+        #   down is mirrored
+        wJet = self.nominals['WJet']
+        wJetEff = self.nominals.pop('WJetFakeRate')
+        wJetSystName = 'CMS_hww_WJet_FakeRate_jet_shape'
+        wJetShapeUp = wJetEff.Clone('histo_WJet_'+wJetSystName+'Up')
+        wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
+        wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
+        self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
-        if 'DYLL' in self.nominals and 'DYLLctrZ' in self.nominals:
+        wJetShapeDown = wJetEff.Clone('histo_WJet_'+wJetSystName+'Down')
+        wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
+        wJetShapeDown.Scale(2)
+        wJetShapeDown.Add(wJetShapeUp,-1)
+        wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
+        self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
+
+        # -----------------------------------------------------------------
+        # DY shape syst
+        #
+        #   take the shape from the pfmet loosened sample
+        #   down is mirrored
+        dyLLmc = self.nominals.pop('DYLL')
+        dyLLShape = self.nominals.pop('DYLLtemplate')
+        dyLLShapeSyst = self.nominals.pop('DYLLtemplatesyst')
+        dyLLSystName = 'CMS_hww_DYLL_template_shape'
+
+#         dyLLmc.Print()
+#         dyLLShape.Print()
+#         dyLLShapeSyst.Print()
+
+        dyLLnom = dyLLShape.Clone('histo_DYLL')
+        dyLLnom.SetTitle('DYLL')
+        if dyLLnom.Integral() == 0.:
+            # no entries in the reference shape
+            # so what?
+            if dyLLmc.Integral() != 0.:
+#                 raise ValueError('DYLL shape template has 0. integral, but the standard mc is not ('+str(dyLLmc.Integral())+')')
+                logging.warn('DYLL shape template has 0. integral, but the standard mc is not ('+str(dyLLmc.Integral())+')')
+                self.nominals['DYLL'] = dyLLmc
+            else:
+                self.nominals['DYLL'] = dyLLnom
+        else:
+            dyLLnom.Scale( (dyLLmc.Integral() if dyLLmc.Integral() != 0. else 0.001)/dyLLnom.Integral() )
+            self.nominals['DYLL'] = dyLLnom
+            
+            # no shape systematic
+            if dyLLShapeSyst.Integral() != 0.:
+                dyLLShapeUp, dyLLShapeDown = self._mirror('DYLL',dyLLnom,dyLLShapeSyst, dyLLSystName,True)
+
+                self.templates[dyLLShapeUp.GetTitle()] = dyLLShapeUp
+                self.templates[dyLLShapeDown.GetTitle()] = dyLLShapeDown
+
+        # anyway put some nominal back
+
+
+        # -----------------------------------------------------------------
+        # DYLL shape systematics
+        #
+        #
+        #
+        if False and 'DYLL' in self.nominals and 'DYLLctrZ' in self.nominals:
             print ' '*self.indent+'  + Replacing DY wil DYctrZ'
             dy = self.nominals['DYLL']
             dyCtrZ = self.nominals['DYLLctrZ']
@@ -296,30 +380,32 @@ class ShapeMixer:
             print '*'*20
 
 
-        if self.replaceDrellYan:
-            print ' '*self.indent+'  + Replacing DY'
-            self.nominals.pop('DYLL')
-            self.nominals.pop('DYTT')
+#         TODO cleanup
+# outdated
+#         if self.replaceDrellYan:
+#             print ' '*self.indent+'  + Replacing DY'
+#             self.nominals.pop('DYLL')
+#             self.nominals.pop('DYTT')
 
-            # take the DY yields
-            dyYield    = self.dyYieldFile.Get('histo_DY')
-            dyTauYield = self.dyYieldFile.Get('histo_DYtau') 
-            self._remodel(dyYield)
-            self._remodel(dyTauYield)
+#             # take the DY yields
+#             dyYield    = self.dyYieldFile.Get('histo_DY')
+#             dyTauYield = self.dyYieldFile.Get('histo_DYtau') 
+#             self._remodel(dyYield)
+#             self._remodel(dyTauYield)
 
-            dyShape    = self.dyShapeFile.Get('histo_DY')
-            dyTauShape = self.dyShapeFile.Get('histo_DYtau')
-            self._remodel(dyShape)
-            self._remodel(dyTauShape)
+#             dyShape    = self.dyShapeFile.Get('histo_DY')
+#             dyTauShape = self.dyShapeFile.Get('histo_DYtau')
+#             self._remodel(dyShape)
+#             self._remodel(dyTauShape)
 
-#         print 'dyYield :',dyYield.Integral()
+# #         print 'dyYield :',dyYield.Integral()
 
-            dyShape.Scale(dyYield.Integral()/dyShape.Integral())
-            self.nominals['DYLL'] = dyShape
-#         print 'dyShape rescaled :',dyShape.Integral()
+#             dyShape.Scale(dyYield.Integral()/dyShape.Integral())
+#             self.nominals['DYLL'] = dyShape
+# #         print 'dyShape rescaled :',dyShape.Integral()
 
-            dyTauShape.Scale(dyTauYield.Integral()/dyTauShape.Integral())
-            self.nominals['DYTT'] = dyTauShape
+#             dyTauShape.Scale(dyTauYield.Integral()/dyTauShape.Integral())
+#             self.nominals['DYTT'] = dyTauShape
 
         # apply a 
 
@@ -368,7 +454,7 @@ class ShapeMixer:
             if n in ['Data']:
                 continue
             if h.GetEntries() == 0. and h.Integral() == 0.0:
-                print 'Warning: nominal shape',n,'is empty. The stat histograms won\'t be produced'
+                logging.info('Warning: nominal shape '+n+' is empty. The stat histograms won\'t be produced')
                 continue
 #             if n in ['DYTT']:
 #                 print n,h.GetEntries(),h.Integral()
@@ -401,7 +487,7 @@ class ShapeMixer:
             self.statistical[statDown.GetTitle()] = statDown
         #
         # Experimental
-        #
+       #
         udRegex = re.compile("(.+)(Up|Down)$")
 #         print self.histograms
         allSysts = {}
@@ -418,7 +504,7 @@ class ShapeMixer:
                 systShift = m.group(2)
                 # x-check on the regex match
                 if not( n.endswith('Up') or n.endswith('Down') ):
-                    raise RuntimeError('zozzamaiala')
+                    raise RuntimeError(n+' doesn\'t end with Up or Down!')
 
                 for h in histograms:
                     
@@ -451,6 +537,8 @@ class ShapeMixer:
 
         # add the nominals and the experimental to 1 container
         self.histograms.update(self.nominals)
+        self.histograms.update(self.fakerate)
+        self.histograms.update(self.templates)
         self.histograms.update(self.generators)
         self.histograms.update(self.statistical)
         self.histograms.update(self.experimental)
@@ -523,9 +611,10 @@ class ShapeMixer:
 
     def _disconnect(self):
         self.shapeFile.Close()
-        if self.replaceDrellYan:
-            self.dyYieldFile.Close()
-            self.dyShapeFile.Close()
+#         TODO clean up
+#         if self.replaceDrellYan:
+#             self.dyYieldFile.Close()
+#             self.dyShapeFile.Close()
 
         for n,f in self.systFiles.iteritems():
             f.Close()
@@ -537,7 +626,7 @@ class ShapeMixer:
 if __name__ == '__main__':
     print '-- MegaShapeMerger --'
 
-    logging.basicConfig(level=logging.DEBUG)
+#     logging.basicConfig(level=logging.DEBUG)
     mypath = os.path.dirname(os.path.abspath(__file__))
     #  ___       __           _ _      
     # |   \ ___ / _|__ _ _  _| | |_ ___
@@ -590,7 +679,7 @@ if __name__ == '__main__':
     #                                             
 
     inputDir        = opt.input+'/' 
-    outPath         = opt.output+'/'
+    outPath         = opt.output
     rebin           = int(opt.rebin)
 
 
@@ -660,7 +749,8 @@ if __name__ == '__main__':
                     ss.lumi = lumi
                     ss.rebin = rebin
 
-                    ss.replaceDrellYan = opt.replaceDY
+#         TODO clean up
+#                     ss.replaceDrellYan = opt.replaceDY
                     # run
                     print '     - mixing histograms'
                     ss.mix(njet,fl)
@@ -673,12 +763,12 @@ if __name__ == '__main__':
                 m.sum(opt.ninja)
                 
                 (estimates,dummy) = reader.get(mass,njet,fl)
-                print estimates
+#                 print estimates
 
                 m.applyDataDriven( estimates )
                 if not opt.dry:
                     output = 'hww-{lumi:.2f}fb.mH{mass}.{flav}_{jets}j_shape.root'.format(lumi=lumi,mass=mass,flav=fl,jets=njet)
-                    path = outPath+'/'+output
+                    path = os.path.join(outPath,output)
                     print '  - writing to',path
                     m.save(path)
 

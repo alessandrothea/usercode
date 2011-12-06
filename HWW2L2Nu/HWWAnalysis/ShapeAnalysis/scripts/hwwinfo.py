@@ -117,38 +117,49 @@ def massSelections(mass):
 #                 |_|            
 
 backgrounds = {}
-backgrounds['WW']        = ['latino_000_WWJets2LMad.root']
-backgrounds['ggWW']      = ['latino_001_GluGluToWWTo4L.root']
-backgrounds['Vg']        = ['latino_082_WgammaToElNuMad.root',
-                            'latino_083_WgammaToMuNuMad.root',
-                            'latino_084_WgammaToTauNuMad.root',
-                            'latino_085_WGstarToLNu2Mu.root',
-                            'latino_086_WGstarToLNu2E.root',
-                            ]
-# backgrounds['WJet']      = ['latino_WJets_Full2011.root']
-backgrounds['WJet']      = ['latino_WJets_LP.root']
-backgrounds['Top']       = ['latino_011_TtWFullDR.root',
-                            'latino_012_TbartWFullDR.root',
-                            'latino_013_TtFull.root',
-                            'latino_014_TbartFull.root',
-                            'latino_015_TsFull.root',
-                            'latino_016_TbarsFull.root',
-                            'latino_019_TTTo2L2Nu2B.root',
-                           ]
-backgrounds['VV']        = ['latino_074_WZJetsMad.root',
-                            'latino_071_ZZFull.root',
-                           ]
-backgrounds['DYTT']     = [ 'latino_032_DYtoTauTau.root',
-                            'latino_035_DY10toTauTau.root',
-                           ]
-backgrounds['DYLL']        = ['latino_030_DYtoElEl.root',
-                            'latino_031_DYtoMuMu.root',
-                            'latino_033_DY10toElEl.root',
-                            'latino_034_DY10toMuMu.root',
-                           ]
-backgrounds['WWnlo']     = ['latino_002_WWto2L2NuMCatNLO.root']
-backgrounds['WWnloUp']   = ['latino_003_WWto2L2NuMCatNLOUp.root']
-backgrounds['WWnloDown'] = ['latino_004_WWto2L2NuMCatNLODown.root']
+backgrounds['WW']               = ['latino_000_WWJets2LMad.root']
+backgrounds['ggWW']             = ['latino_001_GluGluToWWTo4L.root']
+backgrounds['Vg']               = ['latino_082_WgammaToElNuMad.root',
+                                   'latino_083_WgammaToMuNuMad.root',
+                                   'latino_084_WgammaToTauNuMad.root',
+                                   'latino_085_WGstarToLNu2Mu.root',
+                                   'latino_086_WGstarToLNu2E.root',
+                                   ]
+backgrounds['WJet']             = ['latino_WJets_Full2011.root']
+backgrounds['WJetFakeRate']     = ['latino_WJets_Full2011_Mu30El15.root']
+# backgrounds['WJet']      = ['latino_WJets_LP.root']
+backgrounds['Top']              = ['latino_011_TtWFullDR.root',
+                                   'latino_012_TbartWFullDR.root',
+                                   'latino_013_TtFull.root',
+                                   'latino_014_TbartFull.root',
+                                   'latino_015_TsFull.root',
+                                   'latino_016_TbarsFull.root',
+                                   'latino_019_TTTo2L2Nu2B.root',
+                                  ]
+backgrounds['VV']               = ['latino_074_WZJetsMad.root',
+                                   'latino_071_ZZFull.root',
+                                  ]
+backgrounds['DYTT']             = [ 'latino_032_DYtoTauTau.root',
+                                   'latino_035_DY10toTauTau.root',
+                                  ]
+backgrounds['DYLL']             = ['latino_030_DYtoElEl.root',
+                                   'latino_031_DYtoMuMu.root',
+                                   'latino_033_DY10toElEl.root',
+                                   'latino_034_DY10toMuMu.root',
+                                  ]
+backgrounds['DYLLtemplate']     = ['latino_030_DYtoElEl_pfmet20.root',
+                                   'latino_031_DYtoMuMu_pfmet20.root',
+                                   'latino_033_DY10toElEl_pfmet20.root',
+                                   'latino_034_DY10toMuMu_pfmet20.root',
+                                  ]
+backgrounds['DYLLtemplatesyst'] = ['latino_030_DYtoElEl_pfmet20jet40.root',
+                                   'latino_031_DYtoMuMu_pfmet20jet40.root',
+                                   'latino_033_DY10toElEl_pfmet20jet40.root',
+                                   'latino_034_DY10toMuMu_pfmet20jet40.root',
+                                  ]
+backgrounds['WWnlo']            = ['latino_002_WWto2L2NuMCatNLO.root']
+backgrounds['WWnloUp']          = ['latino_003_WWto2L2NuMCatNLOUp.root']
+backgrounds['WWnloDown']        = ['latino_004_WWto2L2NuMCatNLODown.root']
 
 data = {}
 data['2011A'] = [
