@@ -23,9 +23,13 @@ echo $HLINE >> qexe.log
 echo "  Baking " `date` >> qexe.log
 echo $HLINE >> qexe.log
 
+eval `shape-config.py`
+
 for m in $masses;
 do
-    qexe.py -t mkShapes_${m} "mkShapes2.py -m $m"
+CMD="qexe.py -t mkShapes_${m} -- mkShapes2.py -m $m"
+echo "Baking: $CMD"
+$CMD
 done
 
 watch 'tail -n 30 qexe.log; echo Remaining jobs: `qstat | wc -l`; qstat;'

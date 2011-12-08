@@ -297,7 +297,7 @@ class ShapeMixer:
         wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
         self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
-        wJetShapeDown = wJetEff.Clone('histo_WJet_'+wJetSystName+'Down')
+        wJetShapeDown = wJet.Clone('histo_WJet_'+wJetSystName+'Down')
         wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
         wJetShapeDown.Scale(2)
         wJetShapeDown.Add(wJetShapeUp,-1)

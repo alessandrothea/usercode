@@ -8,8 +8,8 @@
 # channels = ['all', 'mm', 'ee', 'em', 'me', 'sf', 'of']
 channels             = ['mm', 'ee', 'em', 'me']
 flavors				 = dict( sf=['ee','mm'],of=['em','me'] )
-# masses                  = ['110','115','120','130','140','150','160','170','180','190','200','210','220','230','250','300','350','400','450','500','550','600']
-masses               = [110 , 115 , 120 , 130 , 140 , 150 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
+# masses               = [ 110 , 115 , 120 , 130 , 140 , 150 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
+masses               = [ 110 , 115 , 118 , 120 , 122 , 124 , 126 , 128 , 130 , 135 , 140 , 150 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
 jets 				 = [0,1]
 
 
@@ -31,18 +31,18 @@ channelCuts['of']  = 'channel>1.5'
 # old bdt cuts
 # _cuts['mllmax_bdt']  = [ 50  , 60  , 70  , 80  , 90  , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600  ]
 
-# masses             = [110  , 115 , 120 , 130 , 140 , 150 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
+# masses             = [ 110 , 115 , 118 , 120 , 122 , 124 , 126 , 128 , 130 , 135 , 140 , 150 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
 
 _cuts = {}
-_cuts['mllmax_bdt']  = [ 70  , 70  , 70  , 80  , 90  , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600  ]
-_cuts['pt1min']      = [ 20  , 20  , 20  , 25  , 25  , 27  , 30  , 34  , 36  , 38  , 40  , 55  , 70  , 80  , 90  , 110 , 120 , 130 , 140 ]
-_cuts['pt2min']      = [ 10  , 10  , 10  , 10  , 15  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  ]
-_cuts['mllmax']      = [ 40  , 40  , 40  , 45  , 45  , 50  , 50  , 50  , 60  , 80  , 90  , 150 , 200 , 250 , 300 , 350 , 400 , 450 , 500 ]
-_cuts['dphimax']     = [ 115 , 115 , 115 , 90  , 90  , 90  , 60  , 60  , 70  , 90  , 100 , 140 , 175 , 175 , 175 , 175 , 175 , 175 , 175 ]
+_cuts['mllmax_bdt']  = [ 70  , 70  , 70  , 70  , 70  , 70  , 80  , 80  , 80  , 90  , 90  , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600  ]
+_cuts['pt1min']      = [ 20  , 20  , 20  , 20  , 21  , 22  , 23  , 24  , 25  , 25  , 25  , 27  , 30  , 34  , 36  , 38  , 40  , 55  , 70  , 80  , 90  , 110 , 120 , 130 , 140 ]
+_cuts['pt2min']      = [ 10  , 10  , 10  , 10  , 10  , 10  , 10  , 10  , 10  , 12  , 15  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  ]
+_cuts['mllmax']      = [ 40  , 40  , 40  , 40  , 41  , 42  , 43  , 44  , 45  , 45  , 45  , 50  , 50  , 50  , 60  , 80  , 90  , 150 , 200 , 250 , 300 , 350 , 400 , 450 , 500 ]
+_cuts['dphimax']     = [ 115 , 115 , 115 , 115 , 110 , 105 , 100 , 95  , 90  , 90  , 90  , 90  , 60  , 60  , 70  , 90  , 100 , 140 , 175 , 175 , 175 , 175 , 175 , 175 , 175 ]
 
 _cuts['dphimax']     = [ str(phi)+'*pi/180' for phi in _cuts['dphimax'] ]
 
-_cuts['mt']          = [(80,110), (80,115), (80,120), (80,125), (80,130), (80,150), (90,160), (110,170), (120,180), (120,190), (120,200), (120,250), (120,300), (120,350), (120,400), (120,450), (120,500), (120,550), (120,600) ]
+_cuts['mt']          = [(80,110), (80,110), (80,115), (80,120), (80,121), (80,122), (80,123), (80,124), (80,125), (80,128), (80,130), (80,150), (90,160), (110,170), (120,180), (120,190), (120,200), (120,250), (120,300), (120,350), (120,400), (120,450), (120,500), (120,550), (120,600) ]
 
 singleVarCuts = {}
 for c,list in _cuts.iteritems():
@@ -108,6 +108,8 @@ def massSelections(mass):
     sel['bdtsctrZ'] = sel['ctrZ']+' && '+sel['BDT']
 
     return sel
+
+
 
     
 #  ___                  _        
@@ -205,20 +207,28 @@ def signalSamples(mass):
            'latino_2{mass}_ggToH{mass}toWWtoLNuTauNu.root',
            'latino_3{mass}_ggToH{mass}toWWto2Tau2Nu.root',
           ]
-    vbfH= ['latino_4{mass}_vbfToH{mass}toWWto2L2Nu.root', 
-           'latino_5{mass}_vbfToH{mass}toWWtoLNuTauNu.root',
-           'latino_6{mass}_vbfToH{mass}toWWto2Tau2Nu.root', 
-          ]
-    wzttH=['latino_7{mass}_wzttH{mass}ToWW.root']
+    ggHnew = ['latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root']
+    vbfH   = ['latino_4{mass}_vbfToH{mass}toWWto2L2Nu.root', 
+              'latino_5{mass}_vbfToH{mass}toWWtoLNuTauNu.root',
+              'latino_6{mass}_vbfToH{mass}toWWto2Tau2Nu.root', 
+             ]
+    vbfHnew = ['latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root']
+    wzttH   = ['latino_7{mass}_wzttH{mass}ToWW.root']
 
-    if int(mass) > 115:
+    if int(mass)==122:
+        signals['ggH']  = [f.format(mass = mass) for f in ggHnew]
+        signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
+    elif int(mass)==118 or (int(mass)>120 and int(mass)<130) or int(mass)==135:
+        signals['ggH']  = [f.format(mass = mass) for f in ggHnew]
+        signals['vbfH'] = [f.format(mass = mass) for f in vbfHnew]
+        signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
+    elif int(mass) > 115:
         signals['ggH']  = [f.format(mass = mass) for f in ggH]
         signals['vbfH'] = [f.format(mass = mass) for f in vbfH]
         signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
     else:
         signals['ggH']  = ['latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
         signals['vbfH'] = ['latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
-
 
     return signals
 
@@ -232,7 +242,8 @@ def samples(mass, datatag='2011'):
     signals = signalSamples(mass)
     samples.update(signals)
     samples.update(backgrounds)
-    samples['Data'] = data[datatag]
+    if 'Data' in datatag:
+        samples['Data'] = data[datatag]
     return samples
 
 
@@ -257,6 +268,9 @@ def loadOptDefaults(parser,rc='shape.rc'):
             o = parser.get_option(opt_longname)
             o.default = value
             parser.defaults[opt_name] = value
+
+            print ' - new default value:',opt_name,'=',value
+
             
 
 def addOptions(parser):

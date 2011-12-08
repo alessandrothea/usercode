@@ -33,8 +33,8 @@ def runTheShape():
 
     if args[0] == 'all':
         plots = ['of_0j','of_1j','sf_0j','sf_1j','comb_0j','comb_1j','comb_0j1j','comb_0j1j2j']
-    elif args[0] == 'combined':
-        plots = ['comb_0j','comb_1j','comb_0j1j','comb_0j1j2j']
+    elif args[0] == 'shape':
+        plots = ['comb_0j','comb_1j','comb_0j1j']
     elif args[0] == 'split':
         plots = ['of_0j','of_1j','sf_0j','sf_1j']
     else:

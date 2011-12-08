@@ -13,14 +13,13 @@ from HWWAnalysis.Misc.odict import OrderedDict
 class ShapeFactory:
     def __init__(self):
         self._baseWgt = 'baseW*puW*effW*triggW'
-        weights = {}
-        weights['ggH']          = 'kfW'
-        weights['vbf']          = 'kfW'
-        weights['WJet']         = 'fake2W'
-        weights['WJetFakeRate'] = 'fake2W'
-        weights['Data']         = '1'
-        weights['Vg']           = '(1+0.55*(dataset =  = 85||dataset =  = 86))' #TODO move to mkMerged, read from external scale factor file
-        self._sampleWgt = weights
+#         weights = {}
+#         weights['ggH']          = 'kfW'
+#         weights['WJet']         = 'fake2W'
+#         weights['WJetFakeRate'] = 'fake2W'
+#         weights['Data']         = '1'
+#         weights['Vg']           = '(1+0.55*(dataset == 85||dataset == 86))' #TODO move to mkMerged, read from external scale factor file
+#         self._sampleWgt = weights
         ranges = {}
         ranges['bdtl']       = (400  , -1. , 1.)
         ranges['bdts']       = (400  , -1. , 1.)
@@ -120,7 +119,7 @@ class ShapeFactory:
                     jetSel = 'njet == {0}'.format(njet) #'njet>%.1f && njet<%.1f' % (njet-0.5,njet+0.5)
                     selection = varSelection+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
-                    dyshapes = ['DYLLshape','DYLLshapesyst']
+                    dyshapes = ['DYLLtemplate','DYLLtemplatesyst']
                     for n in dyshapes:
 #                         if n in selections:
                         selections[n] = varCtrlZ+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
@@ -128,6 +127,7 @@ class ShapeFactory:
 #                         logging.debug(str(inputs))
 #                         inputs['DYLLctrZ'] = inputs['DYLL']
 #                         inputs['DYLLctrZ'] = inputs['Data']
+                    self._addweights(mass,var,selections)
 
                     print '.'*80
                     rng = self.getrange(var,mass,njet) 
@@ -187,6 +187,7 @@ class ShapeFactory:
                     selection = varSelection+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
 #                     print selections
+                    self._addweights(mass,var,selections)
 
                     print '.'*80
                     rng = self.getrange(var,mass,njet) 
@@ -214,11 +215,14 @@ class ShapeFactory:
                               rng[2]
                              )
             outFile.cd()
-            wgt = self._baseWgt[:]
-            # correct the selection with sample depented weights
-            if process in self._sampleWgt:
-                wgt += '*'+self._sampleWgt[process]
-            cut = wgt+'*('+selections[process]+')'
+#             wgt = self._baseWgt[:]
+#             sampleweights = self._sampleWgt
+#             sampleweights = hwwinfo.weigths(mass,var)
+#             # correct the selection with sample depented weights
+#             if process in sampleweights:
+#                 wgt += '*'+self._sampleWgt[process]
+#             cut = wgt+'*('+selections[process]+')'
+            cut = selections[process]
 
             logging.debug('Applied cut: '+cut)
             entries = tree.Draw( var+'>>'+shapeName, cut, 'goff')
@@ -226,6 +230,36 @@ class ShapeFactory:
             shape.Write()
         outFile.Close()
         del outFile
+
+    # add the weights to the selection
+    def _addweights(self,mass,var,selections):
+        sampleWgts =  self._sampleWeights(mass,var)
+        print '--',selections.keys()
+        for process,cut in selections.iteritems():
+            wgt = self._baseWgt
+            if process in sampleWgts:
+                wgt += '*'+sampleWgts[process]
+
+            selections[process] = wgt+'*('+cut+')'
+
+    # this is too convoluted
+    # define here the mass-dependent weights
+    def _sampleWeights(self,mass,var):
+        weights = {}
+        weights['ggH']          = 'kfW'
+        weights['WJet']         = 'fake2W'
+        weights['WJetFakeRate'] = 'fake2W'
+        weights['Data']         = '1'
+        weights['Vg']           = '(1+0.55*(dataset == 85||dataset == 86))' #TODO move to mkMerged, read from external scale factor file
+        
+        stupidmasses = [118, 122, 124, 126, 128, 135]
+        if var in ['bdts','bdtl'] and mass in stupidmasses:
+            weights['ggH']+='*2*(event%2==0)'
+            weights['vbfH']='2*(event%2==0)'
+            weights['wzttH']='2*(event%2==0)'
+            
+        return weights
+#         sys.exit(0)
 
     def _ensuredir(self,directory):
         if not os.path.exists(directory):
@@ -282,6 +316,7 @@ class ShapeFactory:
     
 
 if __name__ == '__main__':
+#     logging.basicConfig(level=logging.DEBUG)
     
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
@@ -289,6 +324,8 @@ if __name__ == '__main__':
     parser.add_option('--noNoms', dest='makeNoms',help='Do not produce the nominal', action='store_false',default=True)
     parser.add_option('--noSyst', dest='makeSyst',help='Do not produce the systematics', action='store_false',default=True)
     parser.add_option('--doSyst', dest='doSyst',help='Do only one systematic',default=None)
+    parser.add_option('--treepath', dest='treepath',help='Root of the master trees',default=None) 
+    parser.add_option('--bdtpath', dest='bdtpath',help='Root of the friendly bdt trees',default=None) 
     hwwinfo.addOptions(parser)
     hwwinfo.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
@@ -297,17 +334,15 @@ if __name__ == '__main__':
     ROOT.gROOT.SetBatch()
 
     variable = opt.var
+    if not opt.treepath:
+        parser.print_help()
+        parser.error('Master tree path not defined')
 
-    # var replacememnt
-    # mass = mass
-    # jets = jets
-    # channel = channel
-    # syst = systematics label
-    # nick = systematics short name (if defined)
-    # /scratch/thea/shapes/MVA/syst_electronResolution/ntupleMVA_MH600_njet1/
+#     latinoDir           = '/shome/thea/HWW/ShapeAnalysis/trees/latino_skim'
+#     bdtDir              = '/shome/thea/HWW/ShapeAnalysis/trees/bdt_skim/ntupleMVA_MH{mass}_njet{jets}'
 
-    latinoDir           = '/shome/thea/HWW/ShapeAnalysis/trees/latino_skim'
-    bdtDir              = '/shome/thea/HWW/ShapeAnalysis/trees/bdt_skim/ntupleMVA_MH{mass}_njet{jets}'
+    latinoDir           = opt.treepath
+    bdtDir              = opt.bdtpath
     nominalDir          = 'all/'
     systematicsDir      = '{syst}/'
     nominalOutFile      = 'histo_H{mass}_{jets}jet_'+variable+'shapePreSel_{channel}.root'

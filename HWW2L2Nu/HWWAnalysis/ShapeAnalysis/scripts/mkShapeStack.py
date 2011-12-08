@@ -120,7 +120,8 @@ def makeNominalPlots(file,outputdir, lumi, xlabel, ratio):
 
 
     histo = nominals['ggH']
-    histo.Add(nominals['vbfH'])
+    if 'vbfH' in nominals:
+        histo.Add(nominals['vbfH'])
     nominals['HWW'] = histo
 
     histo = nominals['ggWW']
@@ -434,7 +435,8 @@ def main():
         else:
             makeShapeUpDown(path,outputdir, opt.xlabel)
 
-
+    print 'Used options'
+    print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])
     
 
 

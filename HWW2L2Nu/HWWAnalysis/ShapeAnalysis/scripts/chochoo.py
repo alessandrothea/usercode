@@ -11,9 +11,10 @@ parser = optparse.OptionParser(usage)
 
 datacards = {}
 datacards['split'] = ['of_0j', 'of_1j', 'sf_0j', 'sf_1j']
-datacards['combined']=['comb_0j1j','comb_0j','comb_1j','comb_0j1j2j']
+datacards['shape'] = ['comb_0j1j','comb_0j','comb_1j']
+datacards['full']  = ['comb_0j1j2j']
 
-datacards['all'] = datacards['split']+datacards['combined']
+datacards['all'] = datacards['split']+datacards['shape']+datacards['full']
 
 if len(args) < 1:
     parser.error('Check the usage!')
