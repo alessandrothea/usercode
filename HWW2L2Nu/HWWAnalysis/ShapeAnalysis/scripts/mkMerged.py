@@ -211,8 +211,6 @@ class ShapeMixer:
         self.templates = {}
         
         self.factors = {}
-#         TODO clean up
-#         self.replaceDrellYan = True
         self.indent = 4
         self.nameMap = {}
         self.lumiMask = []
@@ -223,10 +221,6 @@ class ShapeMixer:
     
     def _connect(self):
         self.shapeFile = ROOT.TFile.Open(self.shapePath)
-#         TODO clean up
-#         if self.replaceDrellYan:
-#             self.dyYieldFile   = ROOT.TFile.Open(self.dyYieldPath)
-#             self.dyShapeFile = ROOT.TFile.Open(self.dyShapePath)
         self.systFiles = {}
 #         print self.systSearchPath
         for file in glob.glob(self.systSearchPath):
@@ -451,7 +445,8 @@ class ShapeMixer:
         # Statistical
         #
         for n,h in self.nominals.iteritems():
-            if n in ['Data']:
+            # skip data or injected sample
+            if n in ['Data'] or '-SI' in n:
                 continue
             if h.GetEntries() == 0. and h.Integral() == 0.0:
                 logging.info('Warning: nominal shape '+n+' is empty. The stat histograms won\'t be produced')

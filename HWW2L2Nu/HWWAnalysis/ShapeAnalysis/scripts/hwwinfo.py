@@ -1,4 +1,4 @@
-
+import re
 
 #  ___                         _              
 # | _ \__ _ _ _ __ _ _ __  ___| |_ ___ _ _ ___
@@ -244,6 +244,17 @@ def samples(mass, datatag='2011'):
     samples.update(backgrounds)
     if 'Data' in datatag:
         samples['Data'] = data[datatag]
+    elif 'SI' in datatag:
+        # add the signal samples of the given mass
+        m = re.match('SI(\d+)',datatag)
+        if not m:
+            raise ValueError('Signal injection must have the format SImmm where mmm is the mass')
+        simass = int(m.group(1))
+        siSamples = signalSamples(simass)
+        # add the signal samples to the list with a _SI tag
+        for s,f in siSamples.iteritems():
+            samples[s+'-SI']=f
+
     return samples
 
 
