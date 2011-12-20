@@ -13,17 +13,10 @@ from HWWAnalysis.Misc.odict import OrderedDict
 class ShapeFactory:
     def __init__(self):
         self._baseWgt = 'baseW*puW*effW*triggW'
-#         weights = {}
-#         weights['ggH']          = 'kfW'
-#         weights['WJet']         = 'fake2W'
-#         weights['WJetFakeRate'] = 'fake2W'
-#         weights['Data']         = '1'
-#         weights['Vg']           = '(1+0.55*(dataset == 85||dataset == 86))' #TODO move to mkMerged, read from external scale factor file
-#         self._sampleWgt = weights
+
         ranges = {}
         ranges['bdtl']       = (400  , -1. , 1.)
         ranges['bdts']       = (400  , -1. , 1.)
-#         ranges["mll"]        = (1200 , 0   , 600)
         ranges["mth"]        = (400  , 0   , 200)
         ranges["dphill"]     = (400  , 0   , 3.15)
 #         ranges["gammaMRStar"]= (1200 , 0   , 600)
@@ -42,8 +35,12 @@ class ShapeFactory:
     
     def getrange(self,var,mass,njet):
         
-        if var in ['mll','gammaMRStar']:
+        if var=='mll':
+#             return (600  , 0   , 600)
             return self._getmllrange(mass,njet)
+
+        if var == 'gammaMRStar':
+            return self._getGMstarrange(mass,njet)
 
         varRange = self._ranges[var]
         if isinstance(varRange,tuple):
@@ -52,6 +49,16 @@ class ShapeFactory:
             return varRange[mass][njet]
             
     def _getmllrange(self,mass,njet):
+        
+        # TODO: cleanup
+
+
+#         xmin = 10.
+#         xmax = hwwinfo.singleVarCuts['mllmax_bdt'][mass]
+#         bins = 200 if njet == 0 else 200
+#         
+#         return (bins,xmin,xmax)
+
 
         # xmin
         xmin   = 0. if mass<300 else 0.2*mass-20      #;--> changed "(mH<300)" and "0.2*float(mH) - 20"
@@ -68,8 +75,23 @@ class ShapeFactory:
         else:
             bins = 300 if njet == 0 else 150
         return (bins,xmin,xmax)
+    
+    def _getGMstarrange(self,mass,njet):
+        # lower alwyas 50
+        # upper 100+(mH-100)*0.5
+        xmin=40
+        xmax=90.+(mass-100.)*0.6
 
-    def makeNominals(self, var, inputDir, outPath, **kwargs):
+        if njet ==1: xmax += 20
+
+        if mass < 300.:
+            bins = 200 if njet == 0 else 200
+        else:
+            bins = 150 if njet == 0 else 150
+        return (bins,xmin,xmax)
+
+
+    def makeNominals(self, var, sel, inputDir, outPath, **kwargs):
         
         ROOT.TH1.SetDefaultSumw2(True)
 
@@ -79,8 +101,8 @@ class ShapeFactory:
             samples = hwwinfo.samples(mass, self._dataTag)
             # mass and variable selection
             allCuts = hwwinfo.massSelections( mass )
-            varSelection = allCuts[var+'sel']
-            varCtrlZ     = allCuts[var+'ctrZ']
+            varSelection = allCuts[sel+'-sel']
+            varCtrlZ     = allCuts[sel+'-ctrZ']
             
             #inner  jet and channel loops
             for njet in self._jets:
@@ -116,17 +138,14 @@ class ShapeFactory:
                     print 'Output file:',output
 
                     # now build the selection
-                    jetSel = 'njet == {0}'.format(njet) #'njet>%.1f && njet<%.1f' % (njet-0.5,njet+0.5)
+                    jetSel = 'njet == {0}'.format(njet)
                     selection = varSelection+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
                     dyshapes = ['DYLLtemplate','DYLLtemplatesyst']
                     for n in dyshapes:
 #                         if n in selections:
                         selections[n] = varCtrlZ+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
-#                         selections['DYLLctrZ'] = varCtrlZ+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
-#                         logging.debug(str(inputs))
-#                         inputs['DYLLctrZ'] = inputs['DYLL']
-#                         inputs['DYLLctrZ'] = inputs['Data']
+
                     self._addweights(mass,var,selections)
 
                     print '.'*80
@@ -136,7 +155,7 @@ class ShapeFactory:
                     shapeFiles.append(output)
         return shapeFiles
 
-    def makeSystematics(self,var,syst,mask,inputDir,outPath,**kwargs):
+    def makeSystematics(self,var,sel,syst,mask,inputDir,outPath,**kwargs):
         ROOT.TH1.SetDefaultSumw2(True)
         shapeFiles = []
         nicks = kwargs['nicks'] if 'nicks' in kwargs else None
@@ -145,7 +164,7 @@ class ShapeFactory:
             samples = hwwinfo.samples(mass, self._dataTag)
             # mass and variable selection
             allCuts = hwwinfo.massSelections( mass )
-            varSelection = allCuts[var+'sel']
+            varSelection = allCuts[sel+'-sel']
             
             #inner  jet and channel loops
             for njet in self._jets:
@@ -215,13 +234,7 @@ class ShapeFactory:
                               rng[2]
                              )
             outFile.cd()
-#             wgt = self._baseWgt[:]
-#             sampleweights = self._sampleWgt
-#             sampleweights = hwwinfo.weigths(mass,var)
-#             # correct the selection with sample depented weights
-#             if process in sampleweights:
-#                 wgt += '*'+self._sampleWgt[process]
-#             cut = wgt+'*('+selections[process]+')'
+
             cut = selections[process]
 
             logging.debug('Applied cut: '+cut)
@@ -247,6 +260,7 @@ class ShapeFactory:
     def _sampleWeights(self,mass,var):
         weights = {}
         weights['ggH']          = 'kfW'
+        weights['ggH-SI']       = 'kfW'
         weights['WJet']         = 'fake2W'
         weights['WJetFakeRate'] = 'fake2W'
         weights['Data']         = '1'
@@ -257,6 +271,10 @@ class ShapeFactory:
             weights['ggH']+='*2*(event%2==0)'
             weights['vbfH']='2*(event%2==0)'
             weights['wzttH']='2*(event%2==0)'
+            # TODO Signal injection weights, if available
+            weights['ggH-SI']+='*2*(event%2==0)'
+            weights['vbfH-SI']='2*(event%2==0)'
+            weights['wzttH-SI']='2*(event%2==0)'
             
         return weights
 #         sys.exit(0)
@@ -321,11 +339,13 @@ if __name__ == '__main__':
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--noNoms', dest='makeNoms',help='Do not produce the nominal', action='store_false',default=True)
-    parser.add_option('--noSyst', dest='makeSyst',help='Do not produce the systematics', action='store_false',default=True)
-    parser.add_option('--doSyst', dest='doSyst',help='Do only one systematic',default=None)
-    parser.add_option('--treepath', dest='treepath',help='Root of the master trees',default=None) 
-    parser.add_option('--bdtpath', dest='bdtpath',help='Root of the friendly bdt trees',default=None) 
+    parser.add_option('--sel',      dest='sel',       help='selection cut',                  default=None) 
+    parser.add_option('--treepath', dest='treepath',  help='Root of the master trees',       default=None) 
+    parser.add_option('--bdtpath',  dest='bdtpath',   help='Root of the friendly bdt trees', default=None) 
+    parser.add_option('--dataset',  dest='dataset',   help='dataset to process',             default=None) 
+    parser.add_option('--noNoms',   dest='makeNoms',  help='Do not produce the nominal',     action='store_false',default=True)
+    parser.add_option('--noSyst',   dest='makeSyst',  help='Do not produce the systematics', action='store_false',default=True)
+    parser.add_option('--doSyst',   dest='doSyst',    help='Do only one systematic',         default=None)
     hwwinfo.addOptions(parser)
     hwwinfo.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
@@ -333,10 +353,20 @@ if __name__ == '__main__':
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
 
-    variable = opt.var
     if not opt.treepath:
         parser.print_help()
         parser.error('Master tree path not defined')
+
+    if not opt.dataset:
+        parser.print_help()
+        parser.error('Dataset not defined')
+
+    if not opt.sel:
+        parser.print_help()
+        parser.error('Selection not defined')
+
+    variable = opt.var
+    selection = opt.sel
 
 #     latinoDir           = '/shome/thea/HWW/ShapeAnalysis/trees/latino_skim'
 #     bdtDir              = '/shome/thea/HWW/ShapeAnalysis/trees/bdt_skim/ntupleMVA_MH{mass}_njet{jets}'
@@ -364,11 +394,11 @@ if __name__ == '__main__':
 #     print factory._masses
 #     sys.exit(0) 
 
-    factory._dataTag = '2011'
-    
+    factory._dataTag = opt.dataset    
+
     if opt.makeNoms:
         # nominal shapes
-        print factory.makeNominals(variable,nominalDir,'Nominal/'+nominalOutFile)
+        print factory.makeNominals(variable,selection,nominalDir,'Nominal/'+nominalOutFile)
 
     if opt.makeSyst: 
         # systematic shapes
@@ -394,9 +424,11 @@ if __name__ == '__main__':
             print '-'*80
             print ' Processing',s,'for samples',' '.join(mask)
             print '-'*80
-            files = factory.makeSystematics(variable,s,m,systematicsDir,'SystMC/'+systematicsOutFile, nicks=systematics)
+            files = factory.makeSystematics(variable,selection,s,m,systematicsDir,'SystMC/'+systematicsOutFile, nicks=systematics)
     #         for old in files:
     #             new = old.replace(s,systematics[s])
     #             print 'Renaming',old,'->',new
     #             os.rename(old,new)
             
+    print 'Used options'
+    print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])
