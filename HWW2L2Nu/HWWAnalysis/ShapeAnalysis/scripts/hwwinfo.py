@@ -91,21 +91,25 @@ def massSelections(mass):
     sel = selections.copy()
     sel['BDT']     = 'mll < {0} && (mth > {1:.0f} && mth < {2:.0f})'.format(masscuts['mllmax_bdt'], mthmin_bdt, int(mass)) 
 
-    sel['HWWsel']  = sel['WWsel']+' && '+' && '.join([cut for cut in hwwlvl.itervalues()])
-    sel['mllsel']  = sel['WWsel']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
-    sel['mthsel']  = sel['WWsel']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
-    sel['dphisel'] = sel['WWsel']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'dphill'])
-    sel['gammaMRStarsel']  = sel['WWsel']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
-    sel['bdtlsel'] = sel['WWsel']+' && '+sel['BDT']
-    sel['bdtssel'] = sel['WWsel']+' && '+sel['BDT']
+    sel['HWW-sel']  = sel['WWsel']+' && '+' && '.join([cut for cut in hwwlvl.itervalues()])
+    sel['mll-sel']  = sel['WWsel']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
+    sel['mth-sel']  = sel['WWsel']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
+    sel['dphi-sel'] = sel['WWsel']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'dphill'])
+    sel['gammaMRStar-sel']  = sel['WWsel']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
+    sel['bdtl-sel'] = sel['WWsel']+' && '+sel['BDT']
+    sel['bdts-sel'] = sel['WWsel']+' && '+sel['BDT']
 
-    sel['HWWctrZ']  = sel['ctrZ']+' && '+' && '.join([cut for cut in hwwlvl.itervalues()])
-    sel['mllctrZ']  = sel['ctrZ']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
-    sel['mthctrZ']  = sel['ctrZ']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
-    sel['dphictrZ'] = sel['ctrZ']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'dphill'])
-    sel['gammaMRStarctrZ']  = sel['ctrZ']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
-    sel['bdtlctrZ'] = sel['ctrZ']+' && '+sel['BDT']
-    sel['bdtsctrZ'] = sel['ctrZ']+' && '+sel['BDT']
+    sel['HWW-ctrZ']  = sel['ctrZ']+' && '+' && '.join([cut for cut in hwwlvl.itervalues()])
+    sel['mll-ctrZ']  = sel['ctrZ']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
+    sel['mth-ctrZ']  = sel['ctrZ']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
+    sel['dphi-ctrZ'] = sel['ctrZ']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'dphill'])
+    sel['gammaMRStar-ctrZ']  = sel['ctrZ']+' && '+' && '.join([cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
+    sel['bdtl-ctrZ'] = sel['ctrZ']+' && '+sel['BDT']
+    sel['bdts-ctrZ'] = sel['ctrZ']+' && '+sel['BDT']
+
+    # TODO gammastar test
+    sel['gammaMRStar-sel']  = sel['bdts-sel']
+    sel['gammaMRStar-ctrZ'] = sel['bdts-ctrZ']
 
     return sel
 
@@ -164,7 +168,7 @@ backgrounds['WWnloUp']          = ['latino_003_WWto2L2NuMCatNLOUp.root']
 backgrounds['WWnloDown']        = ['latino_004_WWto2L2NuMCatNLODown.root']
 
 data = {}
-data['2011A'] = [
+data['Data2011A'] = [
     'latino_150_SingleElectron2011AMay10.root',
     'latino_151_SingleMuon2011AMay10.root',
     'latino_152_DoubleMuon2011AMay10.root',
@@ -191,7 +195,7 @@ data['2011A'] = [
 
 ]
 
-data['2011B'] = [
+data['Data2011B'] = [
     'latino_140_SingleElectron2011Bv1a.root',
     'latino_141_SingleMuon2011Bv1a.root',
     'latino_142_DoubleElectron2011Bv1a.root',
@@ -199,7 +203,7 @@ data['2011B'] = [
     'latino_144_MuEG2011Bv1a.root',
 
 ]
-data['2011'] =  data['2011A']+data['2011B']
+data['Data2011'] =  data['Data2011A']+data['Data2011B']
 
 def signalSamples(mass):
     signals = {}
@@ -233,7 +237,7 @@ def signalSamples(mass):
     return signals
 
     
-def samples(mass, datatag='2011'):
+def samples(mass, datatag='Data2011'):
     '''
     mass: mass for the higgs samples'
     datatag: tag for the dataset to be included

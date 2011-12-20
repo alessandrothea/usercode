@@ -18,6 +18,7 @@ syst='electronResolution electronScale_down electronScale_up jetEnergyScale_down
 # done
 
 # -- v3 -- 
+
 HLINE=`printf '%.0s-' {1..100}`
 echo $HLINE >> qexe.log
 echo "  Baking " `date` >> qexe.log
@@ -27,7 +28,7 @@ eval `shape-config.py`
 
 for m in $masses;
 do
-CMD="qexe.py -t mkShapes_${m} -- mkShapes2.py -m $m"
+CMD="qexe.py -t mkShapes_${m} -- mkShapes.py -m $m $@"
 echo "Baking: $CMD"
 $CMD
 done

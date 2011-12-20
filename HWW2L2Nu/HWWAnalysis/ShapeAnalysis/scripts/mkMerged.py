@@ -34,6 +34,7 @@ class ShapeMerger:
         if len(self.sets) == 0:
             print 'No sets defined'
             return
+        signals = ['ggH', 'vbfH', 'wzttH']
         
         # build an histogram template
         shapes = {}
@@ -41,24 +42,19 @@ class ShapeMerger:
         if ninja:
             print 'Ninja mode ON'
             # take the nominals
-            signals = ['ggH', 'vbfH', 'wzttH']
 
             # check hte nominals are the same everywhere
             all_nominals = set()
             for s in self.sets:
                 all_nominals.update(set(s.nominals))
 
-    #         print all_nominals
-            
             for s in self.sets:
                 missing = all_nominals-set(s.nominals)
                 if len(missing) != 0:
                     print 'Missing histograms',
                     print '   ',', '.join(missing)
 
-
             backgrouns = [ n for n in all_nominals if n not in signals ]
-    #         print backgrouns
             allbkgs = None
             for s in self.sets:
                 for n,h in s.nominals.iteritems():
@@ -80,7 +76,6 @@ class ShapeMerger:
                 x = k*1./nBins
                 i = bisect.bisect(integral,x)
                 lowEdges[k] =  xax.GetBinLowEdge(i)
-    #             print k,x,i, xax.GetBinLowEdge(i)
             lowEdges[0] = xmin
             lowEdges[nBins] = xmax 
         
@@ -89,16 +84,12 @@ class ShapeMerger:
             for n,h in s.histograms.iteritems():
                 if n in shapes:
                     continue
-#                 h_tmp = h.Clone()
-#                 h_tmp = h.Rebin(nBins,h.GetName(),lowEdges)
                 # ->> ninja
                 dummy = h.Rebin(nBins,h.GetName(),lowEdges) if ninja else h.Clone()
 
                 dummy.Reset()
                 shapes[n] = dummy
 
-#         names = self.sets[0].histograms.keys()
-#         print ', '.join(shapes)
         for n,h in shapes.iteritems():
             for s in self.sets:
                 if n not in s.histograms:
@@ -108,11 +99,72 @@ class ShapeMerger:
                 dummy = s.histograms[n]
                 h2add = dummy.Rebin(nBins,h.GetName(),lowEdges) if ninja else dummy.Clone()
                 h.Add(h2add)
-#                 h.Add(s.histograms[n].Rebin(nBins,h.GetName(),lowEdges))
 
             # remove the negative bins before storing it
             self._removeNegativeBins(h)
             self.histograms[n] = h
+
+
+    def injectSignal(self):
+        signals = ['ggH', 'vbfH', 'wzttH']
+        if 'Data' in self.histograms:
+            return
+
+        print ' '*4+' - injecting signal!'
+        nomRegex = re.compile('^([^ ]+)$')
+
+        injected = [ n for n in self.histograms if '-SI' in n and nomRegex.match(n) ]
+        backgrounds = [ n for n in self.histograms if n not in injected and n not in signals and nomRegex.match(n) ]
+
+        if not len(injected):
+            raise RuntimeError('No injected histograms. And now?')
+
+        pseudo = self.histograms[injected[0]].Clone('histo_PseudoData')
+        pseudo.SetTitle('Data')
+        pseudo.Reset()
+        inputs = []
+        inputs.extend(injected)
+        inputs.extend(backgrounds)
+
+        print injected
+        print backgrounds
+
+        for n in inputs:
+#             self.histograms[n].Print()
+            pseudo.Add(self.histograms[n])
+
+        for n in injected:
+            self.histograms.pop(n)
+
+        nBins = pseudo.GetNbinsX()
+        xax = pseudo.GetXaxis()
+
+        data = pseudo.Clone('histo_Data')
+        data.SetTitle('Data')
+        data.Reset()
+
+        for i in xrange(1,nBins+1):
+            entries = ROOT.TMath.Nint(pseudo.GetAt(i)) 
+            for j in xrange(entries):
+                data.Fill(xax.GetBinCenter(i))
+#             data.SetAt(ROOT.TMath.Nint(pseudo.GetAt(i)),i)
+
+
+        self.histograms['Data'] = data
+#         entries = h.GetEntries()
+#         underFlow = h.GetBinContent(0)
+#         overFlow  = h.GetBinContent(nBins+1)
+#         bin1      = h.GetBinContent(1)
+#         binN      = h.GetBinContent(nBins)
+
+#         h.SetAt(0.,0)
+#         h.SetAt(underFlow+bin1,1)
+#         h.SetAt(overFlow+binN, nBins)
+#         h.SetAt(0.,nBins+1,)
+#         h.Rebin(self.rebin)
+#         print sorted(self.histograms)
+#         raise ValueError('Where are my data?')
+
 
     def _removeNegativeBins(self,h):
         # move it in the merger as last step
@@ -636,8 +688,6 @@ if __name__ == '__main__':
                                  
     defaultOutputPath = 'merged/'
     defaultNominalPath  = 'Nominal/'
-    dyYieldsPath      = '/shome/mtakahashi/HWW/Limits/Oct21/inputhisto/DYWjets_WWsel/'
-    dyShapePath       = '/shome/mtakahashi/HWW/Limits/Oct21/inputhisto/DYWjets_WWselL/'
     systPath          = 'SystMC/'
     scaleFactorPath   = '/shome/thea/HWW/ShapeAnalysis/data/datamcsf.txt'
 #     dataDrivenPath    = '/shome/thea/HWW/ShapeAnalysis/data/AnalFull2011_BDT'
@@ -654,6 +704,7 @@ if __name__ == '__main__':
     parser.add_option('-r', '--rebin', dest='rebin', help='Rebin by', default='1')
     parser.add_option('--ddpath', dest='ddpath', help='Data driven path', default=None)
     parser.add_option('--ninja', dest='ninja', help='Ninja', action='store_true', default=False )
+    parser.add_option('-s','--scale',help='Scale sample by an additional factor (overwrides previously defined factors)', action='append',default=[])
 
 
     hwwinfo.addOptions(parser)
@@ -661,6 +712,7 @@ if __name__ == '__main__':
 
 
     (opt, args) = parser.parse_args()
+
 
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
@@ -692,13 +744,24 @@ if __name__ == '__main__':
     os.system('mkdir -p '+outPath)
 
     # insert some printout HERE
-    
+    # read the scale factors from the scale factors file 
     scaleFactors = [{},{}]
     f = open(scaleFactorPath)
     for l in f.readlines():
         tokens = l.split()
         scaleFactors[0][tokens[0]] = float(tokens[1])
         scaleFactors[1][tokens[0]] = float(tokens[2])
+
+    for o in opt.scale:
+        tokens = o.split('=')
+        if len(tokens) != 2:
+            parser.print_help()
+            parser.error('Scale option syntax is -s <sample>=<value>')
+    
+        scaleFactors[0][tokens[0]] = float(tokens[1])
+        scaleFactors[1][tokens[0]] = float(tokens[1])
+
+    print scaleFactors
 
 
     ROOT.TH1.SetDefaultSumw2(True)
@@ -726,7 +789,6 @@ if __name__ == '__main__':
         for njet in [0,1]:
             for fl,chans in flavors.iteritems():
                 # open output file
-#                 reader = DDCardReader(opt.ddpath, mass,njet,fl)
                 m = ShapeMerger()
                 print '-'*100
                 print 'ooo Processing',mass, str(njet), fl
@@ -737,8 +799,6 @@ if __name__ == '__main__':
                     label = 'mH{0} {1}njet {2}'.format(mass,njet,ch)
                     ss = ShapeMixer(label)
                     ss.shapePath      = inputDir+nameTemplateMaiko.format(mass, str(njet), ch)+'.root'
-#                     ss.dyYieldPath    = dyYieldsPath+nameTemplateMaiko.format(mass, str(njet), ch)+'.root'
-#                     ss.dyShapePath    = dyShapePath+nameTemplateMaiko.format(mass, str(njet), ch)+'.root'
                     ss.systSearchPath = systPath+nameTemplateMaiko.format(mass, str(njet), ch)+'_*.root'
                     ss.lumiMask = lumiMask
                     ss.lumi = lumi
@@ -761,6 +821,7 @@ if __name__ == '__main__':
 #                 print estimates
 
                 m.applyDataDriven( estimates )
+                m.injectSignal()
                 if not opt.dry:
                     output = 'hww-{lumi:.2f}fb.mH{mass}.{flav}_{jets}j_shape.root'.format(lumi=lumi,mass=mass,flav=fl,jets=njet)
                     path = os.path.join(outPath,output)

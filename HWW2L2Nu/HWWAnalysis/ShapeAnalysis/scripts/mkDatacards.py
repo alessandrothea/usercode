@@ -68,7 +68,7 @@ class ShapeDatacardWriter:
         card.write('bin'.ljust(48)+''.join([self._bin.ljust(8)*len(keyline)])+'\n')
         card.write('process'.ljust(48)+''.join([n.ljust(8) for (i,n,N) in keyline])+'\n' )
         card.write('process'.ljust(48)+''.join([('%d' % i).ljust(8) for (i,n,N) in keyline])+'\n' )
-        card.write('rate'.ljust(48)+''.join([('%.3f' % N).ljust(8) for (i,n,N) in keyline])+'\n' )
+        card.write('rate'.ljust(48)+''.join([('%-.2f' % N).ljust(8) for (i,n,N) in keyline])+'\n' )
         card.write('-'*100+'\n')
 
 #         nuisSorted = sorted(nuisances)

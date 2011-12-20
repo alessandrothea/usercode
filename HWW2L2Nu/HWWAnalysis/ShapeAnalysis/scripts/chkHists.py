@@ -58,7 +58,9 @@ if __name__ == '__main__':
         
         for name in sorted(names):
             h = file.Get(name)
-            entries[arg][name] = (h.GetEntries(),h.Integral())
+            xax = h.GetXaxis()
+#             entries[arg][name] = [h.GetEntries(),h.Integral(),xax.GetNbins(),xax.GetXmin(), xax.GetXmax()]
+            entries[arg][name] = [h.GetEntries(),h.Integral()]
 #             print 'name {0:<20} {1:<10} {2:<10}'.format(name,h.GetEntries(),h.Integral())
 
     nomRegex  = re.compile('^histo_([^_]+)$')
@@ -66,12 +68,18 @@ if __name__ == '__main__':
    
 
     print ' '.ljust(40),entries.keys()
-    for name in sorted(allNames):
+    sortNames = sorted(allNames)
+    for name in sortNames:
         if not ( opt.all or nomRegex.match(name)):
             continue
         print name.ljust(40),
         for arg,entry in entries.iteritems():
-            tmp = (entry[name][0],entry[name][1]) if name in entry else ('-','-')
-            print "{0:<15} {1:<15}   ".format(*tmp),
+            if name in entry:
+                tmp = entry[name]
+            else:
+                tmp = ['-']*2
+
+            print ''.join(['{0:<15}'.format(x) for x in tmp]),'   ',
+
         print
 

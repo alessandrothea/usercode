@@ -155,6 +155,7 @@ def makeNominalPlots(file,outputdir, lumi, xlabel, ratio):
     plot.setLumi(lumi)
     plot.setLabel(xlabel)
     plot.Draw(c,1,ratio)
+
 #     c.ls()
     c.Print(outputdir+'/'+cName+'.pdf')
     c.Print(outputdir+'/'+cName+'.png')

@@ -213,7 +213,7 @@ void PlotLimit ( string LimitFile , string LimTitle , bool DoObsLim , bool DoExp
     cLimit->SaveAs((baseFigName+".png").c_str()) ;
     gPad->WaitPrimitive();
 
-    xax->SetRangeUser(100.,300.);
+    xax->SetRangeUser(110.,160.);
     cLimit->Modified();
     cLimit->Update();
     cLimit->SaveAs((baseFigName+"_lowmass.pdf").c_str()) ;

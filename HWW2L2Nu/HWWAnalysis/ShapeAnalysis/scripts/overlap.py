@@ -7,7 +7,6 @@ import operator
 import optparse
 from HWWAnalysis.Misc.odict import OrderedDict
 
-colors = [ROOT.kOrange+7, ROOT.kSpring-1, ROOT.kAzure-3, ROOT.kViolet-5, ROOT.kRed+1,ROOT.kCyan-3, ROOT.kPink-9,ROOT.kGreen+3, ROOT.kBlack]
     
 class limitPoint: pass
 
@@ -183,18 +182,19 @@ def setAtt(name, value, *args):
 
 def overlap( deck, tag, reference=None, prefix=None ):
     '''Overlap the limits from different working areas'''
+    colors = [ROOT.kOrange+7, ROOT.kSpring-1, ROOT.kAzure-3, ROOT.kViolet-5, ROOT.kRed+1,ROOT.kCyan-3, ROOT.kPink-9,ROOT.kGreen+3, ROOT.kBlack]
 
-    obsrvd   = ROOT.TMultiGraph('observed','Observed')
-    expctd   = ROOT.TMultiGraph('expected','Expected')
-    medExp   = ROOT.TMultiGraph('medExp','Median Expected')
-    ran68    = ROOT.TMultiGraph('ran68','68% expected range')
-    ran95    = ROOT.TMultiGraph('ran95','95% expected range')
-    width68  = ROOT.TMultiGraph('width68','68% range width')
-    width95  = ROOT.TMultiGraph('width95','95% range width')
+    obsrvd   = ROOT.TMultiGraph('observed','Observed - '+tag)
+    expctd   = ROOT.TMultiGraph('expected','Expected - '+tag)
+    medExp   = ROOT.TMultiGraph('medExp','Median Expected - '+tag)
+    ran68    = ROOT.TMultiGraph('ran68','68% expected range - '+tag)
+    ran95    = ROOT.TMultiGraph('ran95','95% expected range - '+tag)
+    width68  = ROOT.TMultiGraph('width68','68% range width - '+tag)
+    width95  = ROOT.TMultiGraph('width95','95% range width - '+tag)
 
-    diffMed      = ROOT.TMultiGraph('medExp','Median Expected difference')
-    diffWidth68  = ROOT.TMultiGraph('width68','68% range width difference')
-    diffWidth95  = ROOT.TMultiGraph('width95','95% range width difference')
+    diffMed      = ROOT.TMultiGraph('medExp','Median Expected difference - '+tag)
+    diffWidth68  = ROOT.TMultiGraph('width68','68% range width difference - '+tag)
+    diffWidth95  = ROOT.TMultiGraph('width95','95% range width difference - '+tag)
 
 
 

@@ -481,8 +481,8 @@ class MWLPlot {
         bool     _breakdown;
         int      _mass;
         int      _nbins;
-        float    _low;
-        float    _high;
+        double   _low;
+        double   _high;
         Int_t   _labelFont      ;
         Float_t _legendTextSize ;
         Float_t _xoffset        ;
