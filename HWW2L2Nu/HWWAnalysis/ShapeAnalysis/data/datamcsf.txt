@@ -1,0 +1,10 @@
+ggWW    1	    1
+Vg      1	    1
+WJet    1	    1
+Top     1       1
+WW      1       1
+VV      1	    1
+DYLL    1       1
+DYTT 	3.4	    2.4
+ggH     1	    1
+vbfH	1	    1
