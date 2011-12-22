@@ -61,9 +61,6 @@ class ShapeDatacardWriter:
         keyline.extend([ (-i,s,yields[s]._N) for i,s in enumerate(sigs) ])
         keyline.extend([ (i+1,b,yields[b]._N) for i,b in enumerate(bkgs) ])
 
-#         oldOrder = [ 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'VV', 'DYTT', 'DYLL', 'ggH', 'vbfH']
-#         ok = dict([(k[1],k) for k in keyline] )
-#         keyline = [ok[p] for p in oldOrder if p in ok]
 
         card.write('bin'.ljust(48)+''.join([self._bin.ljust(8)*len(keyline)])+'\n')
         card.write('process'.ljust(48)+''.join([n.ljust(8) for (i,n,N) in keyline])+'\n' )
@@ -71,12 +68,8 @@ class ShapeDatacardWriter:
         card.write('rate'.ljust(48)+''.join([('%-.2f' % N).ljust(8) for (i,n,N) in keyline])+'\n' )
         card.write('-'*100+'\n')
 
-#         nuisSorted = sorted(nuisances)
-#         for name in nuisSorted:
         for name in nuisances:
             (pdf,effect) = nuisances[name]
-#             print effect
-#             card.write(name.ljust(48))
             if len(pdf) == 1: card.write('{0:<31} {1:<7}         '.format(name,pdf[0]))
             else:             card.write('{0:<31} {1:<7} {2:<7} '.format(name,pdf[0],pdf[1]))
             for i,p,y in keyline:
@@ -91,8 +84,6 @@ class ShapeDatacardWriter:
 
 class Yield:
     def __init__(self,*args,**kwargs):
-#         print 'args=',args
-#         print 'kwargs=',kwargs
         if not args:
             raise RuntimeError('Specify number of entries')
         self._N = args[0]
@@ -101,8 +92,6 @@ class Yield:
         if 'entries' in kwargs:
             self._entries = kwargs['entries']
 
-#         print self.__dict__
-
 
 class ShapeLoader:
     '''Load the histogram data from the shape file
@@ -110,7 +99,6 @@ class ShapeLoader:
     + Nuisance shapes and parameters'''
 
     def __init__(self, path):
-#         self._systRegex = re.compile('^histo_([^_]+)_CMS_(.+)(Up|Down)$')
         self._systRegex = re.compile('^histo_([^_]+)_(.+)(Up|Down)$')
         self._nomRegex  = re.compile('^histo_([^_]+)$')
         self._src = ROOT.TFile.Open(path)
@@ -172,14 +160,13 @@ class ShapeLoader:
         self._effects = ups
 
 class NuisanceMapBuilder:
-    def __init__(self, ddPath, expPath=None):
+    def __init__(self, ddPath):
         self._common    = OrderedDict()
         self._0jetOnly  = OrderedDict()
         self._1jetOnly  = OrderedDict()
         self._ddEstimates = OrderedDict()
         # to options
         self.ddPath     = ddPath
-        self.expPath    = expPath
         self.statShapeVeto = []
 
         self.ddreader = datadriven.DDCardReader(ddPath)
@@ -206,7 +193,6 @@ class NuisanceMapBuilder:
         self._common['pdf_qqbar'] = (['lnN'],dict([('WW',1.0),('VV',1.04),('vbfH',1.02)]) )
         self._common['pdf_assoc'] = (['lnN'],dict([('WW',1.04)]) )
 
-#         print self._common
         dummy = {} 
         # both 0/1 jets but different
         dummy['CMS_QCDscale_WW_EXTRAP'] = ([0.95, 1.21], ['WW'])
@@ -238,52 +224,6 @@ class NuisanceMapBuilder:
         dummy['QCDscale_ggH2in'] = (0.95,['ggH']) # 1 jey only
         for k,v in dummy.iteritems():
             self._1jetOnly[k] = (['lnN'], dict([( process, v[0]) for process in v[1] ]) )
-        self._expcards = {}
-
-        if self.expPath:
-        # mass dependent systematics
-            expProcs = ['VV','WW','ggWW','ggH','vbfH']
-
-            # ggWW_mH600_1j_smooth.syst
-            expCards = AutoVivification()
-            for p in expProcs:
-                for mass in hwwinfo.masses:
-                    for j in [0,1]:
-                        card = self._loadExpCard(mass,p,j)
-                        for e,channels in card.iteritems():
-                            for c,v in channels.iteritems():
-                                expCards[mass][j][c][e][p] = v 
-
-            self._expcards = expCards
-
-
-    def _loadExpCard(self, mass, process, jets):
-        # temporary fix for mass points without d-d-estimates
-        imass = int(mass)
-        if imass<120:
-            print 'WARNING: mass',mass,' exp nuisances taken as mass 120'
-            mass = '120'
-
-        card = {}
-
-        # example: ggWW_mH600_1j_smooth.syst
-        filename = self.expPath+'{0}_mH{1}_{2}j_smooth.syst'.format(process,mass,jets)
-        if not os.path.exists(filename):
-            raise RuntimeError('Card file '+filename+' doesn\'t exits')
-        cardFile = open(filename)
-        channels = ['mm','ee','em','me']
-        card = {}
-        for line in cardFile:
-            if line.lstrip()[0] == '#':
-                continue
-            tokens = line.split()
-            eff = tokens[0]
-#             print tokens
-            vals = [ float(t) for t in tokens[1:]]
-#             mm, ee, em, me
-            card[eff] = dict(zip(channels,vals))
-#         print card
-        return card
 
     
     def _addDataDrivenNuisances(self, nuisances, yields, mass, jets, flavor):
@@ -328,118 +268,6 @@ class NuisanceMapBuilder:
             nuisances[eff_stat] = (['gmN',e.Nctr], stat_entries)
 
 
-
-
-
-#         for p,e in estimates.iteritems():
-#             extrUnc = 1+e.delta/e.alpha if pdf != 'gmM' else e.delta/e.alpha
-
-#             eff_extr = 'CMS_hww_{0}_{1}j_extr'.format(p,jets)
-#             eff_stat = 'CMS_hww_{0}_{1}j_stat'.format(p,jets)
-
-#             nuisances[eff_extr] = ([pdf],dict( {p:extrUnc} ))
-#             nuisances[eff_stat] = (['gmN',e.Nctr],dict( {p:e.alpha} ))
-
-
-#     def _addDataDrivenNuisancesOld(self, nuisances, yields, mass, jets, flavor ):
-#         channels = dict([('sf',['ee','mm']),('of',['em','me'])])
-
-#         # take the 2 cards corresponding to hte mass/jet/flavor selection
-#         cards = [ self._ddcards[mass][jets][c] for c in channels[flavor] ]
-
-#         # mixed treatment/ 12 hard coded
-#         # process and pdfs
-#         processes = dict([
-#             ('Top',   'lnN'),
-#             ('WW',    'lnN'),
-#             ('ggWW',  'lnN'),
-#             ('DYLL',    'lnN'),
-# #             ('DYLL',    'gmM'),
-#         ])
-
-
-#         for p,pdf in processes.iteritems():
-#             if p not in cards[0]:
-#                 continue
-#             # TODO Check this is correct
-#             # no WW dd estimates for WWs
-#             if (p == 'ggWW' or p == 'WW') and int(mass) > 190:
-#                 print 'DEBUG --> skipping',p 
-#                 continue
-
-#             (N1,s1,u1) = cards[0][p]
-#             (N2,s2,u2) = cards[1][p]
-# #             print p,cards[0][p]
-# #             print p,cards[1][p]
-#             if s1<0.: s1 = u1
-#             if s2<0.: s2 = u1
-
-#             s = s1+s2
-# #             u = ROOT.TMath.Sqrt(u1**2+u2**2) 
-#             u = u1*2+u2*2 
-
-#             extrUnc = 1+u/s if pdf != 'gmM' else u/s
-#             eff_extr = 'CMS_hww_{0}_{1}j_extr'.format(p,jets)
-#             eff_stat = 'CMS_hww_{0}_{1}j_stat'.format(p,jets)
-#             
-#             nuisances[eff_extr] = ([pdf],dict( {p:extrUnc} ))
-#             nuisances[eff_stat] = (['gmN',N1],dict( {p:s} ))
-
-
-#     def _addDataDrivenNuisancesMaiko(self, nuisances, yields, mass, jets, flavor ):
-#         channels = dict([('sf',['ee','mm']),('of',['em','me'])])
-
-#         # temporary fix for mass points without d-d-estimates
-#         imass = int(mass)
-#         if imass<120: mass = '120'
-#         elif imass>200 and imass<250: mass = '200'
-
-#         # take the 2 cards corresponding to hte mass/jet/flavor selection
-#         cards = [ self._ddcards[mass][jets][c] for c in channels[flavor] ]
-
-#         # mixed treatment/ 12 hard coded
-#         # process and pdfs
-#         processes = dict([
-#             ('Top', 'lnN'),
-#             ('WW',  'lnN'),
-#             ('ggWW','lnN'),
-#             ('DYLL',  'lnN'),
-# #             ('DYLL',  'gmM'),
-#         ])
-
-#         wwlvlUncertaintiesDY = [0.64, 0.52] # 0-1 jets, taken from the datacards 
-#         # N in control region used for WW-level estimates
-#         nCtrlWWlvl = dict([
-#             ('Top', [131, 491]),
-#             ('WW',  [350, 198]),
-#             ('ggWW', [350, 198]),
-#             ('DYLL',  [(79+108), (71+93)])
-#         ])
-
-#         for p,pdf in processes.iteritems():
-#             if p not in cards[0]:
-#                 continue
-#             (N1,s1,u1) = cards[0][p]
-#             (N2,s2,u2) = cards[1][p]
-
-#             # yield from the shape @ shape level
-#             Nyield = yields[p]._N
-#             # events in ctrl at WW level
-#             NctrlWW = nCtrlWWlvl[p][jets]
-#             s = float(Nyield)/float(NctrlWW)
-#             u = s*0.5*(u1/s1+u2/s2) if p is not 'DYLL' else s*wwlvlUncertaintiesDY[jets]
-
-#             relUnc = u/s if Nyield != 0. else 0.
-#             
-#             extrUnc = 1+relUnc if pdf != 'gmM' else relUnc
-#             eff_extr = 'CMS_hww_{0}_{1}j_extr'.format(p,jets)
-#             eff_stat = 'CMS_hww_{0}_{1}j_stat'.format(p,jets)
-#             
-#             nuisances[eff_extr] = ([pdf],dict( {p:extrUnc} ))
-#             nuisances[eff_stat] = (['gmN',NctrlWW],dict( {p:s} ))
-
-# #         print cards
- 
     def _addStatisticalNuisances(self,nuisances, yields,jets,channel):
         for p,y in yields.iteritems():
             if p == 'Data':
@@ -619,7 +447,9 @@ if __name__ == '__main__':
     parser.add_option('--Ish','--includeShape',action='callback', dest='shapeFlags', type='string', callback=incexc)#)action='append',default=None)
     parser.add_option('-X','--exclude',action='callback', dest='nuisFlags', type='string', callback=incexc)#)action='append',default=None)
     parser.add_option('-I','--include',action='callback', dest='nuisFlags', type='string', callback=incexc)#)action='append',default=None)
-    parser.add_option('--ddpath', dest='ddpath', help='Data driven path', default=None)
+#     parser.add_option('--ddpath', dest='ddpath', help='Data driven path', default=None)
+    parser.add_option('--path_dd'           , dest='path_dd'           , help='Data driven path'                 , default=None)
+    parser.add_option('--path_shape_merged' , dest='path_shape_merged' , help='Destination directory for merged' , default=None)
     hwwinfo.addOptions(parser)
     hwwinfo.loadOptDefaults(parser)
 
@@ -641,10 +471,10 @@ if __name__ == '__main__':
     jetBins = hwwinfo.jets[:]
     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
 
-    histPath = 'merged/'
-#     ddPath   = '/shome/thea/HWW/ShapeAnalysis/data/AnalFull2011_BDT/' 
-    expPath  = 'expUncertainties/' 
-    outPath  = 'datacards/'
+#     histPath = 'merged/'
+#     ddPath   = '/shome/thea/HWW/ShapeAnalysis/data/AnalFull2011_BDT/'
+    mergedPath = opt.path_shape_merged
+    outPath    = 'datacards/'
     if opt.prefix:
         if opt.prefix[0] == '/':
             raise NameError('prefix: Only subdirectories are supported')
@@ -653,25 +483,19 @@ if __name__ == '__main__':
 
     shapeDir = outPath+shapeSubDir[:-1]
 
-#     print outPath
-#     print 'ln -sf '+os.path.abspath(histPath)+' '+outPath+shapeSubDir[:-1]
-#     sys.exit(0)
     os.system('mkdir -p '+outPath)
-    # to improve
-#     os.system('ln -sf '+os.path.abspath(histPath)+' '+outPath+shapeSubDir[:-1])
     if os.path.exists(shapeDir):
         os.unlink(shapeDir)
-    os.symlink(os.path.abspath(histPath), shapeDir)
+    os.symlink(os.path.abspath(mergedPath), shapeDir)
 
     optsNuis = {}
     optsNuis['shapeFlags'] = opt.shapeFlags
     optsNuis['nuisFlags'] = opt.nuisFlags
-#     shapeTmpl = histPath+'histo_H{mass}_{jets}jet_mllmtPreSel_{flavor}.root'
     lumistr = '{0:.2f}'.format(opt.lumi)
-    shapeTmpl = histPath+'hww-'+lumistr+'fb.mH{mass}.{flavor}_{jets}j_shape.root'
+    shapeTmpl = os.path.join(mergedPath,'hww-'+lumistr+'fb.mH{mass}.{flavor}_{jets}j_shape.root')
     mask = ['Vg','DYLL','DYTT']
 
-    builder = NuisanceMapBuilder( opt.ddpath )
+    builder = NuisanceMapBuilder( opt.path_dd )
     builder.statShapeVeto = mask
     for mass in masses:
         for jets in jetBins:
@@ -685,28 +509,14 @@ if __name__ == '__main__':
                 yields = loader.yields()
 
                 # reshuffle the order
-#                 order = [ 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'VV', 'DYTT', 'DYLL', 'ggH', 'vbfH', 'wzttH', 'Data']
                 order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
                 oldYields = yields.copy()
                 yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
                 
                 effects = loader.effects()
 
-#     ok = dict([(k[1],k) for k in keyline] )
-#     keyline = [ok[p] for p in oldOrder if p in ok]
-    
-#                 if flavor == 'of':
-#                     del yields['DYLL']
-#                 if jets == 1:
-#                     del yields['Vg']
-
                 print '   + making nuisance map'
                 nuisances = builder.nuisances( yields, effects , mass, jets, flavor, optsNuis)
-#     if flavor == 'of':
-#         # remove all the DY nuisances
-#         for n in nuisances:
-#             if 'DYLL' in n:
-#                 del nuisances[n]
     
                 basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}_shape'
                 print '   + dumping all to file'

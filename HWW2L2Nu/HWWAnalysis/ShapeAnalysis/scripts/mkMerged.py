@@ -29,7 +29,7 @@ class ShapeMerger:
         # add a collection to be summed
         self.sets.append(s)
 
-    def sum(self, ninja=False):
+    def sum(self):
         # sum the collections together
         if len(self.sets) == 0:
             print 'No sets defined'
@@ -38,46 +38,6 @@ class ShapeMerger:
         
         # build an histogram template
         shapes = {}
-
-        if ninja:
-            print 'Ninja mode ON'
-            # take the nominals
-
-            # check hte nominals are the same everywhere
-            all_nominals = set()
-            for s in self.sets:
-                all_nominals.update(set(s.nominals))
-
-            for s in self.sets:
-                missing = all_nominals-set(s.nominals)
-                if len(missing) != 0:
-                    print 'Missing histograms',
-                    print '   ',', '.join(missing)
-
-            backgrouns = [ n for n in all_nominals if n not in signals ]
-            allbkgs = None
-            for s in self.sets:
-                for n,h in s.nominals.iteritems():
-                    if n in signals or n == 'Data': continue
-                    if not allbkgs:
-                        allbkgs = h.Clone('allbkgs')
-                        allbkgs.Reset()
-                    allbkgs.Add(h)
-
-            integral = numpy.ndarray( (allbkgs.GetNbinsX(),),dtype=numpy.double, buffer=allbkgs.GetIntegral() )
-            nBins = 20
-
-            xax = allbkgs.GetXaxis()
-            xmin= xax.GetXmin()
-            xmax= xax.GetXmax()
-
-            lowEdges = array.array('d',[0.]*(nBins+1))
-            for k in xrange(1,nBins):
-                x = k*1./nBins
-                i = bisect.bisect(integral,x)
-                lowEdges[k] =  xax.GetBinLowEdge(i)
-            lowEdges[0] = xmin
-            lowEdges[nBins] = xmax 
         
         # loop over all the sets
         for s in self.sets:
@@ -85,7 +45,7 @@ class ShapeMerger:
                 if n in shapes:
                     continue
                 # ->> ninja
-                dummy = h.Rebin(nBins,h.GetName(),lowEdges) if ninja else h.Clone()
+                dummy = h.Clone()
 
                 dummy.Reset()
                 shapes[n] = dummy
@@ -97,7 +57,7 @@ class ShapeMerger:
                     continue
 #                 h.Add(s.histograms[n])
                 dummy = s.histograms[n]
-                h2add = dummy.Rebin(nBins,h.GetName(),lowEdges) if ninja else dummy.Clone()
+                h2add = dummy.Clone()
                 h.Add(h2add)
 
             # remove the negative bins before storing it
@@ -147,23 +107,8 @@ class ShapeMerger:
             entries = ROOT.TMath.Nint(pseudo.GetAt(i)) 
             for j in xrange(entries):
                 data.Fill(xax.GetBinCenter(i))
-#             data.SetAt(ROOT.TMath.Nint(pseudo.GetAt(i)),i)
-
 
         self.histograms['Data'] = data
-#         entries = h.GetEntries()
-#         underFlow = h.GetBinContent(0)
-#         overFlow  = h.GetBinContent(nBins+1)
-#         bin1      = h.GetBinContent(1)
-#         binN      = h.GetBinContent(nBins)
-
-#         h.SetAt(0.,0)
-#         h.SetAt(underFlow+bin1,1)
-#         h.SetAt(overFlow+binN, nBins)
-#         h.SetAt(0.,nBins+1,)
-#         h.Rebin(self.rebin)
-#         print sorted(self.histograms)
-#         raise ValueError('Where are my data?')
 
 
     def _removeNegativeBins(self,h):
@@ -248,10 +193,8 @@ class ShapeMerger:
 class ShapeMixer:
     def __init__(self, label):
         self.label = label
-        self.rebin = 10
-        self.shapePath      = None
-        self.dyYieldPath      = None
-        self.dyShapePath    = None
+        self.rebin = 1
+        self.nominalsPath = None
         self.systSearchPath = None
         self.histograms = {}
 
@@ -272,7 +215,7 @@ class ShapeMixer:
         self._disconnect()
     
     def _connect(self):
-        self.shapeFile = ROOT.TFile.Open(self.shapePath)
+        self.shapeFile = ROOT.TFile.Open(self.nominalsPath)
         self.systFiles = {}
 #         print self.systSearchPath
         for file in glob.glob(self.systSearchPath):
@@ -360,10 +303,6 @@ class ShapeMixer:
         dyLLShapeSyst = self.nominals.pop('DYLLtemplatesyst')
         dyLLSystName = 'CMS_hww_DYLL_template_shape'
 
-#         dyLLmc.Print()
-#         dyLLShape.Print()
-#         dyLLShapeSyst.Print()
-
         dyLLnom = dyLLShape.Clone('histo_DYLL')
         dyLLnom.SetTitle('DYLL')
         if dyLLnom.Integral() == 0.:
@@ -425,35 +364,6 @@ class ShapeMixer:
             print self.nominals.keys()
             print '*'*20
 
-
-#         TODO cleanup
-# outdated
-#         if self.replaceDrellYan:
-#             print ' '*self.indent+'  + Replacing DY'
-#             self.nominals.pop('DYLL')
-#             self.nominals.pop('DYTT')
-
-#             # take the DY yields
-#             dyYield    = self.dyYieldFile.Get('histo_DY')
-#             dyTauYield = self.dyYieldFile.Get('histo_DYtau') 
-#             self._remodel(dyYield)
-#             self._remodel(dyTauYield)
-
-#             dyShape    = self.dyShapeFile.Get('histo_DY')
-#             dyTauShape = self.dyShapeFile.Get('histo_DYtau')
-#             self._remodel(dyShape)
-#             self._remodel(dyTauShape)
-
-# #         print 'dyYield :',dyYield.Integral()
-
-#             dyShape.Scale(dyYield.Integral()/dyShape.Integral())
-#             self.nominals['DYLL'] = dyShape
-# #         print 'dyShape rescaled :',dyShape.Integral()
-
-#             dyTauShape.Scale(dyTauYield.Integral()/dyTauShape.Integral())
-#             self.nominals['DYTT'] = dyTauShape
-
-        # apply a 
 
         #
         # WW generator shapes
@@ -603,27 +513,18 @@ class ShapeMixer:
             tokens = name.split()
             sample = tokens[0]
             syst   = tokens[1]
-#             print sample, syst
             for iSample,iSyst in list:
-#                 print '-',iSample,iSyst,tokens[2]
                 if not ( (iSample == '*' or iSample == sample) and (iSyst == '*' or iSyst == syst) ):
                     continue
-#                     print 'rescaling ',sample, syst 
                 sanityCheck[(iSample,iSyst)] += 1
-#                     print '!!!!here'
                 if sample not in self.nominals:
                     raise RuntimeError('Nominal histogram '+sample+' not found')
                 hNom = self.nominals[sample]
-#                 print 'rescale',hSys.GetName(),':',hSys.Integral(),hNom.Integral(),
                 hSys.Scale(hNom.Integral()/hSys.Integral())
-#                 print hSys.Integral()
-#                 print name+', ',
-#         print ''
         
         for ss,k in sanityCheck.iteritems():
             if k == 0:
                 raise NameError('sample,systematic pair not found '+ss[0]+':'+ss[1])
-#         print sanityCheck
 
         
     def _rename(self):
@@ -658,10 +559,6 @@ class ShapeMixer:
 
     def _disconnect(self):
         self.shapeFile.Close()
-#         TODO clean up
-#         if self.replaceDrellYan:
-#             self.dyYieldFile.Close()
-#             self.dyShapeFile.Close()
 
         for n,f in self.systFiles.iteritems():
             f.Close()
@@ -679,33 +576,23 @@ if __name__ == '__main__':
     # |   \ ___ / _|__ _ _  _| | |_ ___
     # | |) / -_)  _/ _` | || | |  _(_-<
     # |___/\___|_| \__,_|\_,_|_|\__/__/
-    #
-    # dyYieldsPath contains the corect DY and DYTau yields
-    # dyShapePath contains the proper DY/DYTau shape
-    # 
-    # use symbolic lynks only
-    # Nominal, Syst, DYYield, DYShape
-                                 
-    defaultOutputPath = 'merged/'
-    defaultNominalPath  = 'Nominal/'
-    systPath          = 'SystMC/'
-    scaleFactorPath   = '/shome/thea/HWW/ShapeAnalysis/data/datamcsf.txt'
-#     dataDrivenPath    = '/shome/thea/HWW/ShapeAnalysis/data/AnalFull2011_BDT'
-
+#     scaleFactorPath   = '/shome/thea/HWW/ShapeAnalysis/data/datamcsf.txt'
 
     usage = 'usage: %prog -s sample1:syst1,sample2:* [options]'
     parser = optparse.OptionParser(usage)
 
     parser.add_option('-n', '--dry', dest='dry', help='Dry run', action='store_true' )
-    parser.add_option('-o', '--outdir', dest='output', help='Output directory', default=defaultOutputPath )
-    parser.add_option('--replaceDY', dest='replaceDY', help=' Don\'t replace drell-yan shapes', action='store_true', default=False )
-    parser.add_option('--scale2nominal', dest='scale2nom', help='Systematics to normalize to nominal ', default='')
-    parser.add_option('-i', '--indir', dest='input', help='Input directory', default=defaultNominalPath)
     parser.add_option('-r', '--rebin', dest='rebin', help='Rebin by', default='1')
-    parser.add_option('--ddpath', dest='ddpath', help='Data driven path', default=None)
-    parser.add_option('--ninja', dest='ninja', help='Ninja', action='store_true', default=False )
-    parser.add_option('-s','--scale',help='Scale sample by an additional factor (overwrides previously defined factors)', action='append',default=[])
+    parser.add_option('-s', '--scale',help='Scale sample by an additional factor (overwrides previously defined factors)', action='append',default=[])
 
+    parser.add_option('--path_dd'           , dest='path_dd'           , help='Data driven path'                 , default=None)
+    parser.add_option('--path_scale'        , dest='path_scale'        , help='Scale factors'                    , default=None)
+    parser.add_option('--path_shape_raw'    , dest='path_shape_raw'    , help='Input directory of raw shapes'    , default=None)
+    parser.add_option('--path_shape_merged' , dest='path_shape_merged' , help='Destination directory for merged' , default=None)
+
+# discontined
+#     parser.add_option('--scale2nominal', dest='scale2nom', help='Systematics to normalize to nominal ', default='')
+#     parser.add_option('--ninja', dest='ninja', help='Ninja', action='store_true', default=False )
 
     hwwinfo.addOptions(parser)
     hwwinfo.loadOptDefaults(parser)
@@ -725,9 +612,10 @@ if __name__ == '__main__':
     # |_| \__,_|_| \__,_|_|_|_\___|\__\___|_| /__/
     #                                             
 
-    inputDir        = opt.input+'/' 
-    outPath         = opt.output
-    rebin           = int(opt.rebin)
+    nomPath   = opt.path_shape_raw+'/nominals/' 
+    systPath  = opt.path_shape_raw+'/systematics/' 
+    mergedDir = opt.path_shape_merged
+    rebin     = int(opt.rebin)
 
 
     jets       = ['0','1']
@@ -739,14 +627,14 @@ if __name__ == '__main__':
     var = opt.var
     lumiMask = ['Data','WJet']
     flavors = dict([('sf',['ee','mm']),('of',['em','me'])])
-    nameTemplateXavier = 'R42X_R42X_Sc1_mtCut_H{0}_{1}jet_mllmtPreSel_{2}__MVAShape'
-    nameTemplateMaiko  = 'histo_H{0}_{1}jet_'+var+'shapePreSel_{2}'
-    os.system('mkdir -p '+outPath)
+#     nameTemplateXavier = 'R42X_R42X_Sc1_mtCut_H{0}_{1}jet_mllmtPreSel_{2}__MVAShape'
+    nameTmpl  = 'histo_H{0}_{1}jet_'+var+'shapePreSel_{2}'
+    os.system('mkdir -p '+mergedDir)
 
     # insert some printout HERE
     # read the scale factors from the scale factors file 
     scaleFactors = [{},{}]
-    f = open(scaleFactorPath)
+    f = open(opt.path_scale)
     for l in f.readlines():
         tokens = l.split()
         scaleFactors[0][tokens[0]] = float(tokens[1])
@@ -766,14 +654,14 @@ if __name__ == '__main__':
 
     ROOT.TH1.SetDefaultSumw2(True)
 
-    scale2NomList = []
-    for entry in opt.scale2nom.split(','):
-        if entry == '':
-            continue
-        tokens = entry.split(':')
-        if len(tokens) != 2:
-            parser.error('scale2nom: syntax error in token '+entry)
-        scale2NomList.append( (tokens[0], tokens[1]) )
+#     scale2NomList = []
+#     for entry in opt.scale2nom.split(','):
+#         if entry == '':
+#             continue
+#         tokens = entry.split(':')
+#         if len(tokens) != 2:
+#             parser.error('scale2nom: syntax error in token '+entry)
+#         scale2NomList.append( (tokens[0], tokens[1]) )
 #     print scale2NomList
 
 
@@ -783,7 +671,7 @@ if __name__ == '__main__':
 # |____\___/\___/ .__/
 #               |_|   
 #     
-    reader = datadriven.DDCardReader( opt.ddpath )
+    reader = datadriven.DDCardReader( opt.path_dd )
 
     for mass in masses:
         for njet in [0,1]:
@@ -798,33 +686,29 @@ if __name__ == '__main__':
                     # configure
                     label = 'mH{0} {1}njet {2}'.format(mass,njet,ch)
                     ss = ShapeMixer(label)
-                    ss.shapePath      = inputDir+nameTemplateMaiko.format(mass, str(njet), ch)+'.root'
-                    ss.systSearchPath = systPath+nameTemplateMaiko.format(mass, str(njet), ch)+'_*.root'
+                    ss.nominalsPath   = os.path.join(nomPath,nameTmpl.format(mass, str(njet), ch)+'.root')
+                    ss.systSearchPath = os.path.join(systPath,nameTmpl.format(mass, str(njet), ch)+'_*.root')
                     ss.lumiMask = lumiMask
                     ss.lumi = lumi
                     ss.rebin = rebin
 
-#         TODO clean up
-#                     ss.replaceDrellYan = opt.replaceDY
                     # run
                     print '     - mixing histograms'
                     ss.mix(njet,fl)
-                    ss.scale2Nominals( scale2NomList )
                     ss.applyScaleFactors( scaleFactors[njet] )
 
                     m.add(ss)
 
                 print '  - summing sets'
-                m.sum(opt.ninja)
+                m.sum()
                 
                 (estimates,dummy) = reader.get(mass,njet,fl)
-#                 print estimates
 
                 m.applyDataDriven( estimates )
                 m.injectSignal()
                 if not opt.dry:
                     output = 'hww-{lumi:.2f}fb.mH{mass}.{flav}_{jets}j_shape.root'.format(lumi=lumi,mass=mass,flav=fl,jets=njet)
-                    path = os.path.join(outPath,output)
+                    path = os.path.join(mergedDir,output)
                     print '  - writing to',path
                     m.save(path)
 

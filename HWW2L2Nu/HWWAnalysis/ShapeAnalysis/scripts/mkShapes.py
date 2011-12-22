@@ -339,23 +339,21 @@ if __name__ == '__main__':
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--sel',      dest='sel',       help='selection cut',                  default=None) 
-    parser.add_option('--treepath', dest='treepath',  help='Root of the master trees',       default=None) 
-    parser.add_option('--bdtpath',  dest='bdtpath',   help='Root of the friendly bdt trees', default=None) 
-    parser.add_option('--dataset',  dest='dataset',   help='dataset to process',             default=None) 
-    parser.add_option('--noNoms',   dest='makeNoms',  help='Do not produce the nominal',     action='store_false',default=True)
-    parser.add_option('--noSyst',   dest='makeSyst',  help='Do not produce the systematics', action='store_false',default=True)
-    parser.add_option('--doSyst',   dest='doSyst',    help='Do only one systematic',         default=None)
+    parser.add_option('--sel',            dest='sel',           help='selection cut',                         default=None)
+    parser.add_option('--dataset',        dest='dataset',       help='dataset to process',                    default=None)
+    parser.add_option('--path_latino',    dest='path_latino',   help='Root of the master trees',              default=None)
+    parser.add_option('--path_bdt',       dest='path_bdt',      help='Root of the friendly bdt trees',        default=None)
+    parser.add_option('--path_shape_raw', dest='path_shape_raw',   help='destination directory of nominals',     default=None)
+
+    parser.add_option('--noNoms',       dest='makeNoms',    help='Do not produce the nominal',            action='store_false',   default=True)
+    parser.add_option('--noSyst',       dest='makeSyst',    help='Do not produce the systematics',        action='store_false',   default=True)
+    parser.add_option('--doSyst',       dest='doSyst',      help='Do only one systematic',                default=None)
     hwwinfo.addOptions(parser)
     hwwinfo.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
 
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
-
-    if not opt.treepath:
-        parser.print_help()
-        parser.error('Master tree path not defined')
 
     if not opt.dataset:
         parser.print_help()
@@ -365,16 +363,29 @@ if __name__ == '__main__':
         parser.print_help()
         parser.error('Selection not defined')
 
+    if not opt.path_latino:
+        parser.print_help()
+        parser.error('Master tree path not defined')
+
+    if not opt.path_shape_raw: 
+        parser.print_help()
+        parser.error('Where shall I put the shapes?')
+
+
     variable = opt.var
     selection = opt.sel
 
 #     latinoDir           = '/shome/thea/HWW/ShapeAnalysis/trees/latino_skim'
 #     bdtDir              = '/shome/thea/HWW/ShapeAnalysis/trees/bdt_skim/ntupleMVA_MH{mass}_njet{jets}'
 
-    latinoDir           = opt.treepath
-    bdtDir              = opt.bdtpath
-    nominalDir          = 'all/'
-    systematicsDir      = '{syst}/'
+    latinoDir           = opt.path_latino
+    bdtDir              = opt.path_bdt
+    nomOutDir           = os.path.join(opt.path_shape_raw,'nominals/')
+    systOutDir          = os.path.join(opt.path_shape_raw,'systematics/')
+    
+    nomInputDir         = 'all/'
+    systInputDir        = '{syst}/'
+
     nominalOutFile      = 'histo_H{mass}_{jets}jet_'+variable+'shapePreSel_{channel}.root'
     systematicsOutFile  = 'histo_H{mass}_{jets}jet_'+variable+'shapePreSel_{channel}_{nick}.root'
     
@@ -398,9 +409,9 @@ if __name__ == '__main__':
 
     if opt.makeNoms:
         # nominal shapes
-        print factory.makeNominals(variable,selection,nominalDir,'Nominal/'+nominalOutFile)
+        print factory.makeNominals(variable,selection,nomInputDir,nomOutDir+nominalOutFile)
 
-    if opt.makeSyst: 
+    if opt.makeSyst:
         # systematic shapes
         systematics = OrderedDict([
             ('electronResolution'    , 'p_res_e'),
@@ -424,7 +435,7 @@ if __name__ == '__main__':
             print '-'*80
             print ' Processing',s,'for samples',' '.join(mask)
             print '-'*80
-            files = factory.makeSystematics(variable,selection,s,m,systematicsDir,'SystMC/'+systematicsOutFile, nicks=systematics)
+            files = factory.makeSystematics(variable,selection,s,m,systInputDir,systOutDir+systematicsOutFile, nicks=systematics)
     #         for old in files:
     #             new = old.replace(s,systematics[s])
     #             print 'Renaming',old,'->',new
