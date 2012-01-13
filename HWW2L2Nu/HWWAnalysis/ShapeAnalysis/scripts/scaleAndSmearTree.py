@@ -6,19 +6,8 @@
 
 ## FIXME:
 ## 1) make an n events argument... it's hardcoded at the moment...
-## 2) I applied a scaling of 2% for the muons...electrons to come...
-## 3) lepton efficiency are at the moment moved up / down for electrons and muosn simultaneously
+## 2) lepton efficiency are at the moment moved up / down for electrons and muosn simultaneously
 
-## lepton scale (mu/ele)   DONE
-## lepton resolution       ?
-## lepton shift            ?
-## lepton efficiency       DONE
-## jet energy scale        DONE
-## jey energy resolution
-## MET scale
-## MET resolution
-## MET PU effect
-## jet veto uncertainty
 
 import optparse
 import os
@@ -44,7 +33,7 @@ electronUncertaintyEE = 0.04
 
 
 
-verbose = False
+verbose = True
 mZ = 91.1876
 to = ' -> '
 
@@ -124,7 +113,7 @@ def checkZveto(mll, channel):
 
 
 # pass eta and pt from a jet plus the list containing the uncertaibties
-# from Emanueles file to extract the uncertainty as finction of pt and eta
+# from Emanueles file to extract the uncertainty as function of pt and eta
 def getJEUFactor(pt, eta, jeuList):
     scale = -1
     ## if there is no jet there is also no uncertainty defined...
@@ -351,6 +340,20 @@ class scaleAndSmear:
             oldTree.SetBranchStatus('mpmet'     ,0)
             oldTree.SetBranchStatus('gammaMRStar',0)
             oldTree.SetBranchStatus('zveto',0)
+
+        if self.systArgument == 'dyTemplate':
+            oldTree.SetBranchStatus('pfmet'     ,0)
+            oldTree.SetBranchStatus('chmet'     ,0)
+            oldTree.SetBranchStatus('tcmet'     ,0)
+            oldTree.SetBranchStatus('ppfmet'    ,0)
+            oldTree.SetBranchStatus('pchmet'    ,0)
+            oldTree.SetBranchStatus('ptcmet'    ,0)
+            oldTree.SetBranchStatus('mth'       ,0)
+            oldTree.SetBranchStatus('mtw1'      ,0)
+            oldTree.SetBranchStatus('mtw2'      ,0)
+            oldTree.SetBranchStatus('mpmet'     ,0)            
+            oldTree.SetBranchStatus('njet'      ,0)
+
             
         newTree = oldTree.CloneTree(0)
         nentries = oldTree.GetEntriesFast()
@@ -1325,6 +1328,148 @@ class scaleAndSmear:
             # fill old and new values            
             self.ttree.Fill()
 
+
+###############################################################################################
+##      _     _____                    _       _       
+##     | |   |_   _|                  | |     | |      
+##   __| |_   _| | ___ _ __ ___  _ __ | | __ _| |_ ___ 
+##  / _` | | | | |/ _ \ '_ ` _ \| '_ \| |/ _` | __/ _ \
+## | (_| | |_| | |  __/ | | | | | |_) | | (_| | ||  __/
+##  \__,_|\__, \_/\___|_| |_| |_| .__/|_|\__,_|\__\___|
+##         __/ |                | |                    
+##        |___/                 |_|                    
+
+
+    def dyTemplate(self):
+
+        
+        pfmet = numpy.zeros(1, dtype=numpy.float32)
+        chmet = numpy.zeros(1, dtype=numpy.float32)
+        tcmet = numpy.zeros(1, dtype=numpy.float32)
+        mth = numpy.zeros(1, dtype=numpy.float32)
+        mtw1 = numpy.zeros(1, dtype=numpy.float32)
+        mtw2 = numpy.zeros(1, dtype=numpy.float32)
+        ppfmet = numpy.zeros(1, dtype=numpy.float32)
+        pchmet = numpy.zeros(1, dtype=numpy.float32)
+        ptcmet = numpy.zeros(1, dtype=numpy.float32)
+        mpmet = numpy.zeros(1, dtype=numpy.float32)
+        njet = numpy.zeros(1, dtype=numpy.float32)
+##         pfmetphi = numpy.zeros(1, dtype=numpy.float32)
+##         chmetphi = numpy.zeros(1, dtype=numpy.float32)
+##         tcmetphi = numpy.zeros(1, dtype=numpy.float32)
+##         dphillmet = numpy.zeros(1, dtype=numpy.float32)
+##         dphilmet = numpy.zeros(1, dtype=numpy.float32)
+##         dphilmet1 = numpy.zeros(1, dtype=numpy.float32)
+##         dphilmet2 = numpy.zeros(1, dtype=numpy.float32)
+        self.ttree.Branch('pfmet',pfmet,'pfmet/F')
+        self.ttree.Branch('chmet',chmet,'chmet/F')
+        self.ttree.Branch('tcmet',tcmet,'tcmet/F')
+        self.ttree.Branch('mth',mth,'mth/F')
+        self.ttree.Branch('mtw1',mtw1,'mtw1/F')
+        self.ttree.Branch('mtw2',mtw2,'mtw2/F')
+        self.ttree.Branch('ppfmet',ppfmet,'ppfmet/F')
+        self.ttree.Branch('pchmet',pchmet,'pchmet/F')
+        self.ttree.Branch('ptcmet',ptcmet,'ptcmet/F')     
+        self.ttree.Branch('mpmet',mpmet,'mpmet/F')
+        self.ttree.Branch('njet',njet,'njet/F')
+##         self.ttree.Branch('pfmetphi',pfmetphi,'pfmetphi/F')
+##         self.ttree.Branch('chmetphi',chmetphi,'chmetphi/F')
+##         self.ttree.Branch('tcmetphi',tcmetphi,'tcmetphi/F')
+##         self.ttree.Branch('dphillmet',dphillmet,'dphillmet/F')
+##         self.ttree.Branch('dphilmet',dphilmet,'dphilmet/F')
+##         self.ttree.Branch('dphilmet1',dphilmet1,'dphilmet1/F')
+##         self.ttree.Branch('dphilmet2',dphilmet2,'dphilmet2/F')
+
+        #nentries = self.ttree.GetEntriesFast()
+        nentries = self.nentries
+        print 'total number of entries: '+str(nentries)
+        i=0
+        for ientry in range(0,nentries):
+            i+=1
+            self.oldttree.GetEntry(ientry)
+            ## print event count
+            step = 10000
+            if i > 0 and i%step == 0:
+                print str(i)+' events processed.'
+
+            if self.oldttree.channel < 1.5:
+            
+                # get the "old" met
+                pfmet_hold  = self.oldttree.pfmet
+                chmet_hold  = self.oldttree.chmet
+                tcmet_hold  = self.oldttree.tcmet
+
+                pfmet[0] = pfmet_hold + 20 
+                chmet[0] = chmet_hold + 20
+                tcmet[0] = tcmet_hold + 20
+                
+                ## fix met related variables
+                ppfmet[0] *= (pfmet[0] / pfmet_hold)
+                pchmet[0] *= (chmet[0] / chmet_hold)
+                ptcmet[0] *= (tcmet[0] / tcmet_hold)
+
+                mpmet[0] = min( ppfmet[0], pchmet[0] )
+
+                met = ROOT.TLorentzVector()
+                met.SetPtEtaPhiM(pfmet[0], 0, self.oldttree.pfmetphi, 0)         
+                chmet4 = ROOT.TLorentzVector()
+                chmet4.SetPtEtaPhiM(chmet[0], 0, self.oldttree.chmetphi, 0)         
+                tcmet4 = ROOT.TLorentzVector()
+                tcmet4.SetPtEtaPhiM(tcmet[0], 0, self.oldttree.tcmetphi, 0)         
+                
+                ## changing MET means also changing transverse masses...
+                l1 = ROOT.TLorentzVector()
+                l2 = ROOT.TLorentzVector()
+                l1.SetPtEtaPhiM(self.oldttree.pt1, self.oldttree.eta1, self.oldttree.phi1, 0)
+                l2.SetPtEtaPhiM(self.oldttree.pt2, self.oldttree.eta2, self.oldttree.phi2, 0)
+                ## recalculate mth
+                mth[0]  = transverseMass((l1+l2),met)
+                mtw1[0] = transverseMass((l1),met)
+                mtw2[0] = transverseMass((l2),met)
+
+                ## migrate events in jet bins
+                jetpt1 = self.oldttree.jetpt1
+                jetpt2 = self.oldttree.jetpt2
+                njet[0] = self.oldttree.njet
+                if jetpt1>30 and jetpt1<40:
+                    njet[0] = njet[0] - 1
+                if jetpt2>30 and jetpt2<40:
+                    njet[0] = njet[0] - 1
+                
+
+            if verbose is True:
+                print '-----------------------------------'
+                print 'event: '    +str(i)
+                print 'channel: '  +str(self.oldttree.channel)
+                print 'pfmet: '    +str(self.oldttree.pfmet) +to+ str(pfmet[0])
+                print 'chmet: '    +str(self.oldttree.chmet) +to+ str(chmet[0])
+                print 'tcmet: '    +str(self.oldttree.tcmet) +to+ str(tcmet[0])
+                print 'mth: ' + str(self.oldttree.mth) +to+ str(mth[0])
+                print 'mtw1: ' + str(self.oldttree.mtw1) +to+ str(mtw1[0])
+                print 'mtw2: ' + str(self.oldttree.mtw2) +to+ str(mtw2[0])
+                print 'ppfmet: '    +str(self.oldttree.ppfmet)    +to+str(ppfmet[0])
+                print 'pchmet: '    +str(self.oldttree.pchmet)    +to+str(pchmet[0])
+                print 'ptcmet: '    +str(self.oldttree.ptcmet)    +to+str(ptcmet[0])            
+                print 'mpmet: '    +str(self.oldttree.mpmet)    +to+str(mpmet[0])
+                print 'njet: '  +str(self.oldttree.njet)        +to+str(njet[0])
+
+
+            # fill old and new values            
+            self.ttree.Fill()
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
 ###############################################################################################
 ##  _____ _           _                    ______                _       _   _             
 ## |  ___| |         | |                   | ___ \              | |     | | (_)            
@@ -1858,11 +2003,11 @@ def main():
     
     parser.set_defaults(overwrite=False)
     
-    parser.add_option('-i', '--inputFileName',   dest='inputFileName',   help='Name of the input *.root file',)
-    parser.add_option('-o', '--outputFileName',  dest='outputFileName',  help='Name of the output *.root file',)
-    parser.add_option('-a', '--systematicArgument', dest='systArgument', help='Argument to specify systematic',)
-    parser.add_option('-d', '--direction',          dest='direction',    help='Direction of the scale variation (up/down)',)
-    parser.add_option('-t', '--treeDir',            dest='treeDir',      help='TDirectry structure to the tree to scale and smear',)
+    parser.add_option('-i', '--inputFileName',      dest='inputFileName',   help='Name of the input *.root file',)
+    parser.add_option('-o', '--outputFileName',     dest='outputFileName',  help='Name of the output *.root file',)
+    parser.add_option('-a', '--systematicArgument', dest='systArgument',    help='Argument to specify systematic',)
+    parser.add_option('-d', '--direction',          dest='direction',       help='Direction of the scale variation (up/down)',)
+    parser.add_option('-t', '--treeDir',            dest='treeDir',         help='TDirectry structure to the tree to scale and smear',)
 #    parser.add_option('-n', '--nEvents',           dest='nEvents',     help='Number of events to run over',)
 
 
@@ -1874,7 +2019,7 @@ def main():
         parser.error('No output file defined')
     if opt.systArgument is None:
         parser.error('No systematic argument given')
-    possibleSystArguments = ['muonScale','electronScale','leptonEfficiency','jetEnergyScale','metResolution','electronResolution']
+    possibleSystArguments = ['muonScale','electronScale','leptonEfficiency','jetEnergyScale','metResolution','electronResolution','dyTemplate']
     if opt.systArgument not in possibleSystArguments:
         parser.error('Wrong systematic argument')        
     possibleDirections = ['up','down']
@@ -1912,6 +2057,8 @@ def main():
         s.metResolution()
     if s.systArgument == 'electronResolution':
         s.electronResolution()
+    if s.systArgument == 'dyTemplate':
+        s.dyTemplate()
     
 
 
