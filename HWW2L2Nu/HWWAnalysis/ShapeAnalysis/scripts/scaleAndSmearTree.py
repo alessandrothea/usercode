@@ -13,9 +13,10 @@ import optparse
 import os
 import ROOT
 import numpy
-from ROOT import *
+#from ROOT import *
 import math
-
+ 
+from math import sqrt, cos
 
 ## MET resolution sigma for gaussian smearing (fraction of x- and y- component)
 ## mean is x- and y- component
@@ -33,7 +34,7 @@ electronUncertaintyEE = 0.04
 
 
 
-verbose = True
+#verbose = False
 mZ = 91.1876
 to = ' -> '
 
@@ -123,7 +124,7 @@ def getJEUFactor(pt, eta, jeuList):
     ## loop over the table and find the matching uncertainty!
     for s in jeuList:
         if eta > float(s[0]) and eta <= float(s[1]):
-            for p in range(len(s)):
+            for p in xrange(len(s)):
                 if p%3 != 0:
                     continue
                 ## uncertainties have some minimum pt, set to the  lowest defined value if pt is too small...
@@ -442,7 +443,7 @@ class scaleAndSmear:
         nentries = self.nentries
         print 'total number of entries: '+str(nentries)
         i=0
-        for ientry in range(0,nentries):
+        for ientry in xrange(0,nentries):
             i+=1
             self.oldttree.GetEntry(ientry)
 
@@ -552,7 +553,7 @@ class scaleAndSmear:
 
             zveto[0] = checkZveto(mll[0], self.oldttree.channel)
 
-            if verbose is True:
+            if self.verbose is True:
                 print '-----------------------------------'
                 print 'event: '+str(i)
                 print 'scale: '+str(scale)
@@ -662,7 +663,7 @@ class scaleAndSmear:
         nentries = self.nentries
         print 'total number of entries: '+str(nentries)
         i=0
-        for ientry in range(0,nentries):
+        for ientry in xrange(0,nentries):
             i+=1
             self.oldttree.GetEntry(ientry)
 
@@ -784,7 +785,7 @@ class scaleAndSmear:
 
             zveto[0] = checkZveto(mll[0], self.oldttree.channel)
 
-            if verbose is True:
+            if self.verbose is True:
                 print '-----------------------------------'
                 print 'event: '+str(i)
                 print 'scale EB: '+str(scaleEB)
@@ -921,7 +922,7 @@ class scaleAndSmear:
         nentries = self.nentries
         print 'total number of entries: '+str(nentries)
         i=0
-        for ientry in range(0,nentries):
+        for ientry in xrange(0,nentries):
             i+=1
 ## FIXME: load tree envirenement like Chiara does?
 ##             j = loadTree(i)
@@ -1146,7 +1147,7 @@ class scaleAndSmear:
             mpmet[0] = min( ppfmet[0], pchmet[0] )
 
 
-            if verbose is True:
+            if self.verbose is True:
                 print '-----------------------------------'
                 print 'event: '+str(i)
                 print 'scale1: '+str(scale1)
@@ -1245,7 +1246,7 @@ class scaleAndSmear:
         nentries = self.nentries
         print 'total number of entries: '+str(nentries)
         i=0
-        for ientry in range(0,nentries):
+        for ientry in xrange(0,nentries):
             i+=1
             self.oldttree.GetEntry(ientry)
             ## print event count
@@ -1301,7 +1302,7 @@ class scaleAndSmear:
             dphilmet2[0] =  deltaPhi(l2,met)           
             dphilmet[0]  =  min(dphilmet1[0], dphilmet2[0])
 
-            if verbose is True:
+            if self.verbose is True:
                 print '-----------------------------------'
                 print 'event: '    +str(i)
                 print 'sigma: '    +str(sigma)
@@ -1341,6 +1342,7 @@ class scaleAndSmear:
 
 
     def dyTemplate(self):
+
 
         
         pfmet = numpy.zeros(1, dtype=numpy.float32)
@@ -1384,7 +1386,7 @@ class scaleAndSmear:
         nentries = self.nentries
         print 'total number of entries: '+str(nentries)
         i=0
-        for ientry in range(0,nentries):
+        for ientry in xrange(0,nentries):
             i+=1
             self.oldttree.GetEntry(ientry)
             ## print event count
@@ -1427,17 +1429,26 @@ class scaleAndSmear:
                 mtw1[0] = transverseMass((l1),met)
                 mtw2[0] = transverseMass((l2),met)
 
-                ## migrate events in jet bins
-                jetpt1 = self.oldttree.jetpt1
-                jetpt2 = self.oldttree.jetpt2
-                njet[0] = self.oldttree.njet
-                if jetpt1>30 and jetpt1<40:
-                    njet[0] = njet[0] - 1
-                if jetpt2>30 and jetpt2<40:
-                    njet[0] = njet[0] - 1
-                
+                ## migrate events in jet bins, only for the systematics
+                if self.direction == 'syst':
+                    jetpt1 = self.oldttree.jetpt1
+                    jetpt2 = self.oldttree.jetpt2
+                    jetpt3 = self.oldttree.jetpt3
+                    jetpt4 = self.oldttree.jetpt4
+                    ptjets = [jetpt1,jetpt2,jetpt3,jetpt4]
+                    nj = 0
+                    for pt in ptjets:
+                        if pt > 40:
+                            nj=nj+1
 
-            if verbose is True:
+                    if nj <= 4:
+                        njet[0] = nj
+                    else:
+                        njet[0] = self.oldttree.njet
+                elif self.direction == 'temp':
+                    njet[0] = self.oldttree.njet
+
+            if self.verbose is True:
                 print '-----------------------------------'
                 print 'event: '    +str(i)
                 print 'channel: '  +str(self.oldttree.channel)
@@ -1450,8 +1461,12 @@ class scaleAndSmear:
                 print 'ppfmet: '    +str(self.oldttree.ppfmet)    +to+str(ppfmet[0])
                 print 'pchmet: '    +str(self.oldttree.pchmet)    +to+str(pchmet[0])
                 print 'ptcmet: '    +str(self.oldttree.ptcmet)    +to+str(ptcmet[0])            
-                print 'mpmet: '    +str(self.oldttree.mpmet)    +to+str(mpmet[0])
-                print 'njet: '  +str(self.oldttree.njet)        +to+str(njet[0])
+                print 'mpmet: '     +str(self.oldttree.mpmet)     +to+str(mpmet[0])
+                print 'jetpt1: '    +str(self.oldttree.jetpt1)    +to+str(self.oldttree.jetpt1)
+                print 'jetpt2: '    +str(self.oldttree.jetpt2)    +to+str(self.oldttree.jetpt2)
+                print 'jetpt3: '    +str(self.oldttree.jetpt3)    +to+str(self.oldttree.jetpt3)
+                print 'jetpt4: '    +str(self.oldttree.jetpt4)    +to+str(self.oldttree.jetpt4)
+                print 'njet: '      +str(self.oldttree.njet)      +to+str(njet[0])
 
 
             # fill old and new values            
@@ -1540,7 +1555,7 @@ class scaleAndSmear:
         nentries = self.nentries
         print 'total number of entries: '+str(nentries)
         i=0
-        for ientry in range(0,nentries):
+        for ientry in xrange(0,nentries):
             i+=1
             self.oldttree.GetEntry(ientry)
 
@@ -1652,7 +1667,7 @@ class scaleAndSmear:
             zveto[0] = checkZveto(mll[0], self.oldttree.channel)
 
 
-            if verbose is True:
+            if self.verbose is True:
                 print '-----------------------------------'
                 print 'event: '+str(i)
                 print 'sigma: '+str(sigma)
@@ -1751,7 +1766,7 @@ class scaleAndSmear:
         nentries = self.nentries
         print 'total number of entries: '+str(nentries)
         i = 0
-        for ientry in range(0,nentries):
+        for ientry in xrange(0,nentries):
             i+=1
             self.oldttree.GetEntry(ientry)
 
@@ -2012,12 +2027,13 @@ def main():
     
     parser.set_defaults(overwrite=False)
     
-    parser.add_option('-i', '--inputFileName',      dest='inputFileName',   help='Name of the input *.root file',)
-    parser.add_option('-o', '--outputFileName',     dest='outputFileName',  help='Name of the output *.root file',)
-    parser.add_option('-a', '--systematicArgument', dest='systArgument',    help='Argument to specify systematic',)
-    parser.add_option('-d', '--direction',          dest='direction',       help='Direction of the scale variation (up/down)',)
-    parser.add_option('-t', '--treeDir',            dest='treeDir',         help='TDirectry structure to the tree to scale and smear',)
-#    parser.add_option('-n', '--nEvents',           dest='nEvents',     help='Number of events to run over',)
+    parser.add_option('-i', '--inputFileName',      dest='inputFileName',   help='Name of the input *.root file.',)
+    parser.add_option('-o', '--outputFileName',     dest='outputFileName',  help='Name of the output *.root file.',)
+    parser.add_option('-a', '--systematicArgument', dest='systArgument',    help='Argument to specify systematic (possible arguments are: "muonScale","electronScale","leptonEfficiency","jetEnergyScale","metResolution","electronResolution","dyTemplate",)',)
+    parser.add_option('-v', '--variation',          dest='variation',       help='Direction of the scale variation ("up"/"down") or type of DY template ("temp"/"syst"), works only in combination with "-a dyTemplate". In the case of "metResolution" and "electronResolution" this is ommitted.',)
+    parser.add_option('-t', '--treeDir',            dest='treeDir',         help='TDirectry structure to the tree to scale and smear.',)
+#    parser.add_option('-n', '--nEvents',           dest='nEvents',         help='Number of events to run over',)
+    parser.add_option('-d', '--debug',              dest='debug',           help='Switch to debug mode',default=False, action='store_true')
 
 
     (opt, args) = parser.parse_args()
@@ -2031,12 +2047,17 @@ def main():
     possibleSystArguments = ['muonScale','electronScale','leptonEfficiency','jetEnergyScale','metResolution','electronResolution','dyTemplate']
     if opt.systArgument not in possibleSystArguments:
         parser.error('Wrong systematic argument')        
-    possibleDirections = ['up','down']
-    if opt.direction not in possibleDirections:
+    possibleDirections = ['up','down','temp','syst']
+    if opt.variation not in possibleDirections:
         parser.error('No direction of the systematic variation given')
     if opt.treeDir is None:
         parser.error('No path to the tree specyfied')
+    if opt.systArgument == 'dyTemplate' and opt.variation not in ['temp','syst']:
+        parser.error('template and syst only allowed for dyTemplate')
+    if opt.systArgument == 'dyTemplate' and opt.variation in ['up','down']:
+        parser.error('"up" or "down" not allowed for "dyTemplate"')
 
+#    verbose = opt.debug
 
 ##     sys.argv.append('-b')
 ##     ROOT.gROOT.SetBatch()
@@ -2046,8 +2067,9 @@ def main():
     s.outputFileName = opt.outputFileName
     s.treeDir = opt.treeDir
     s.systArgument = opt.systArgument
-    s.direction = opt.direction
-
+    s.direction = opt.variation
+    s.verbose = opt.debug
+    
     print s.systArgument
 
     s.openOriginalTFile()
