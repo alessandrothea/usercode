@@ -1928,7 +1928,16 @@ class scaleAndSmear:
                     errB1 = 0.03
                 if errB2 > 0.03:
                     errB2 = 0.03
-
+                ## ... and set the lower limit to 1%
+                if errA1 < 0.01:
+                    errA1 = 0.01
+                if errA2 < 0.01:
+                    errA2 = 0.01
+                if errB1 < 0.01:
+                    errB1 = 0.01
+                if errB2 < 0.01:
+                    errB2 = 0.01
+                    
 ##                 val1 = h_muon.GetBinContent(cpt1,ceta1)
 ##                 val2 = h_ele.GetBinContent(cpt2,ceta2)
 ##                 err1 = h_muon.GetBinError(cpt1,ceta1)
