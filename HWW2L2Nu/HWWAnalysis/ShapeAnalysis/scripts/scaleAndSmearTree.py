@@ -1406,9 +1406,13 @@ class scaleAndSmear:
                 tcmet[0] = tcmet_hold + 20
                 
                 ## fix met related variables
-                ppfmet[0] *= (pfmet[0] / pfmet_hold)
-                pchmet[0] *= (chmet[0] / chmet_hold)
-                ptcmet[0] *= (tcmet[0] / tcmet_hold)
+                # get the "old" met
+                ppfmet_hold  = self.oldttree.ppfmet
+                pchmet_hold  = self.oldttree.pchmet
+                ptcmet_hold  = self.oldttree.ptcmet
+                ppfmet[0] = ppfmet_hold * (pfmet[0] / pfmet_hold)
+                pchmet[0] = pchmet_hold * (chmet[0] / chmet_hold)
+                ptcmet[0] = ptcmet_hold * (tcmet[0] / tcmet_hold)
 
                 mpmet[0] = min( ppfmet[0], pchmet[0] )
 
