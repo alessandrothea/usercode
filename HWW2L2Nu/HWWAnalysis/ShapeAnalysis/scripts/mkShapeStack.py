@@ -12,6 +12,32 @@ import HWWAnalysis.Misc.ROOTAndUtils as utils
 
 #from ROOT import *
 
+## legend title dictionary
+legproc = {
+    'ggWW':'gg #rightarrow WW',
+    'WW':'qq #rightarrow WW',
+    'ggH':'gg #rightarrow H',
+    'Top':'Top',
+    'wzttH':'ass. prod. H',
+    'Vg':'V#gamma',
+    'WJet':'W+Jets',
+    'DYLL':'Z#rightarrow ll',
+    'DYTT':'Z#rightarrow #tau #tau',
+    'VV':'di-boson',
+    'vbfH':'VBF H'
+    }
+
+legsyst = {
+    'CMS_met':'#slashed{E}_{T}',
+    ## '':'',
+    ## '':'',
+    ## '':'',
+    ## '':'',
+    ## '':'',
+    ## '':'',
+    ## '':'',
+    }
+
 
 def openTFile(path, option=''):
     f =  ROOT.TFile.Open(path,option)
@@ -192,7 +218,9 @@ def makeShapeUpDown(file,outputdir, xlabel):
             cName = 'c_'+root+'_'+process+'_'+syst
             fName = odir+'/'+cName
             exts = ['pdf','png']
-            c = printUpDown(cName,fName,exts,syst,vars,xlabel)
+            legheader = legproc[process]+', m_{H} = '+str(mass)+', '+root.split('_')[0].split('.')[-1]+' '+root.split('_')[1]
+            c = printUpDown(cName,fName,exts,syst,vars,xlabel,legheader)
+            
             
 def plotCMSText():
     lines = [ 'CMS Preliminary - #sqrt{s}=7 TeV']
@@ -225,7 +253,7 @@ def plotCMSText():
         
     return pave
 
-def printUpDown( cName, fName, exts, syst, vars, xlabel ):
+def printUpDown( cName, fName, exts, syst, vars, xlabel,legheader):
 #     nom = vars.Nom.DrawClone()
 #     nom.SetTitle('Shape systematics: '+syst)
 
@@ -236,6 +264,12 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
 #     down = vars.Down.DrawClone('same hist')
 #     down.SetLineColor(ROOT.kBlue)
 #     down.SetLineWidth(2)
+
+    ROOT.gStyle.SetOptStat(0)
+    ROOT.gStyle.SetOptTitle(0)
+
+
+
     h_n = vars.Nom
     h_u = vars.Up
     h_d = vars.Down
@@ -269,19 +303,19 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     pad1.Draw('same')
     pad1.cd()
     pad1.SetTopMargin(0.11)
-    pad1.SetLeftMargin(0.07)
+    pad1.SetLeftMargin(0.1)
     pad1.SetRightMargin(0.05)
-    pad1.SetBottomMargin(0.15)
+    pad1.SetBottomMargin(0.05)
     
     c.cd()
     
     pad2 = ROOT.TPad()
     ROOT.SetOwnership(pad2, False)
-    pad2.SetPad('pad2','pad2',0.0,0.,1.0,0.4,10)
+    pad2.SetPad('pad2','pad2',0.0,0.,1.0,0.4, 10)
     pad2.Draw()
     pad2.cd()
-    pad2.SetTopMargin(0.11)
-    pad2.SetLeftMargin(0.07)
+    pad2.SetTopMargin(0.)
+    pad2.SetLeftMargin(0.1)
     pad2.SetRightMargin(0.05)
     pad2.SetBottomMargin(0.15)
     
@@ -297,6 +331,7 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     frame.SetBinContent(frame.GetNbinsX(),minY)
     frame.SetBit(ROOT.TH1.kNoStats)
     frame.SetXTitle(xlabel)
+    frame.SetYTitle('a. u.')
     frame.Draw()
 
     h_n.SetMarkerStyle(21)
@@ -307,6 +342,43 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     h_d.SetLineColor(4)
     h_d.SetLineWidth(2)
     h_d.SetLineStyle(2)
+
+    h_n.GetYaxis().SetLabelFont(43) 
+    h_n.GetXaxis().SetLabelFont(43) 
+    h_n.GetYaxis().SetLabelSize(14) 
+    h_n.GetXaxis().SetLabelSize(14) 
+    h_n.GetYaxis().SetTitleFont(43) 
+    h_n.GetXaxis().SetTitleFont(43) 
+    h_n.GetYaxis().SetTitleSize(20) 
+    h_n.GetXaxis().SetTitleSize(20) 
+    h_n.GetYaxis().SetTitleOffset(2.1)
+    h_n.GetXaxis().SetTitleOffset(2)
+
+    h_d.GetYaxis().SetLabelFont(43) 
+    h_d.GetXaxis().SetLabelFont(43) 
+    h_d.GetYaxis().SetLabelSize(14) 
+    h_d.GetXaxis().SetLabelSize(14) 
+    h_d.GetYaxis().SetTitleFont(43) 
+    h_d.GetXaxis().SetTitleFont(43) 
+    h_d.GetYaxis().SetTitleSize(20) 
+    h_d.GetXaxis().SetTitleSize(20) 
+    h_d.GetYaxis().SetTitleOffset(2.1)
+    h_d.GetXaxis().SetTitleOffset(2)
+
+    h_u.GetYaxis().SetLabelFont(43) 
+    h_u.GetXaxis().SetLabelFont(43) 
+    h_u.GetYaxis().SetLabelSize(14) 
+    h_u.GetXaxis().SetLabelSize(14) 
+    h_u.GetYaxis().SetTitleFont(43) 
+    h_u.GetXaxis().SetTitleFont(43) 
+    h_u.GetYaxis().SetTitleSize(20) 
+    h_u.GetXaxis().SetTitleSize(20) 
+    h_u.GetYaxis().SetTitleOffset(2.1)
+    h_u.GetXaxis().SetTitleOffset(2)
+
+    ## h_n.Sumw2()
+    ## h_u.Sumw2()
+    ## h_d.Sumw2()
 
     h_u.Draw('hist same')
     h_d.Draw('hist same')
@@ -323,11 +395,25 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     frame2.SetBinContent(frame2.GetNbinsX(),0.0)
     frame2.SetTitle('')
     frame2.SetLabelFont(43)
-    frame2.SetLabelSize(12)
-    frame2.SetXTitle('')
-##     frame2.SetTitleSize(20)
+    frame2.SetLabelSize(24)
+    frame2.SetXTitle(xlabel)
+    frame2.SetYTitle('nominal / #pm1#sigma-shape')
+    frame2.SetTitleSize(20)
 ##     frame2.SetYTitle('ratio')
 
+    frame2.GetYaxis().SetLabelFont(43) 
+    frame2.GetXaxis().SetLabelFont(43) 
+    frame2.GetYaxis().SetLabelSize(14) 
+    frame2.GetXaxis().SetLabelSize(14) 
+    frame2.GetYaxis().SetTitleFont(43) 
+    frame2.GetXaxis().SetTitleFont(43) 
+    frame2.GetYaxis().SetTitleSize(20) 
+    frame2.GetXaxis().SetTitleSize(20) 
+    frame2.GetYaxis().SetTitleOffset(2.1)
+    frame2.GetXaxis().SetTitleOffset(2)
+
+    frame2.SetMaximum(1.99)
+    frame2.SetMinimum(0.)
 
     frame2.Draw()
 
@@ -347,6 +433,53 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     r_d.SetLineWidth(2)
     r_d.SetLineStyle(2)    
 
+    r_u.GetYaxis().SetLabelFont(43) 
+    r_u.GetXaxis().SetLabelFont(43) 
+    r_u.GetYaxis().SetLabelSize(14) 
+    r_u.GetXaxis().SetLabelSize(14) 
+    r_u.GetYaxis().SetTitleFont(43) 
+    r_u.GetXaxis().SetTitleFont(43) 
+    r_u.GetYaxis().SetTitleSize(20) 
+    r_u.GetXaxis().SetTitleSize(20) 
+    r_u.GetYaxis().SetTitleOffset(2.1)
+    r_u.GetXaxis().SetTitleOffset(2)
+
+    r_d.GetYaxis().SetLabelFont(43) 
+    r_d.GetXaxis().SetLabelFont(43) 
+    r_d.GetYaxis().SetLabelSize(14) 
+    r_d.GetXaxis().SetLabelSize(14) 
+    r_d.GetYaxis().SetTitleFont(43) 
+    r_d.GetXaxis().SetTitleFont(43) 
+    r_d.GetYaxis().SetTitleSize(20) 
+    r_d.GetXaxis().SetTitleSize(20) 
+    r_d.GetYaxis().SetTitleOffset(2.1)
+    r_d.GetXaxis().SetTitleOffset(2)
+
+    ## ## stat errors
+    ## statn = h_n.Clone('statistics')
+    ## stat  = h_n.Clone('statistics')
+    ## nbins = h_n.GetNbinsX()+1
+    ## for i in range(1,nbins):
+    ##     value = max(stat.GetBinContent(i), 1.+ r_u.GetBinError(i))
+    ##     stat.SetBinContent(i,value)
+
+    ##     stat2 = stat.Clone('statistics2')
+    ##     for i in range(1,nbins):
+    ##         stat2.SetBinContent(i,1.-(stat.GetBinContent(i)-1.))
+    ##     stat.SetFillColor(22)
+    ##     stat.SetLineColor(22)
+    ##     stat.SetLineStyle(1)
+    ##     stat.SetLineWidth(1)
+    ##     stat.SetFillStyle(1001)
+    ##     stat2.SetFillColor(10)
+    ##     stat2.SetLineColor(22)
+    ##     stat2.SetLineStyle(1)
+    ##     stat2.SetLineWidth(1)
+    ##     stat2.SetFillStyle(1001)
+    ##     stat.Draw('hist same')
+    ##     stat2.Draw('hist same')
+
+
     r_u.Draw('hist same')
     r_d.Draw('hist same')
 
@@ -356,9 +489,15 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     line.SetX2(h_n.GetBinLowEdge(h_n.GetNbinsX()+1))
     line.SetY1(1.)
     line.SetY2(1.)
-    line.SetLineWidth(2)
+    line.SetLineWidth(3)
     line.SetLineStyle(2)
     line.Draw('same')
+
+    ## # legend
+    ## x0 = 0.2
+    ## x1 = 0.5
+    ## y0 = 0.60
+    ## y1 = 0.80
 
     # legend
     x0 = 0.2
@@ -366,10 +505,10 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     y0 = 0.60
     y1 = 0.80
 
-    xax = h_n.GetXaxis()
-    if h_n.GetMean() < (xax.GetXmax()-xax.GetXmin())/2.:
-        x0 = 0.5
-        x1 = 0.8
+    ## xax = h_n.GetXaxis()
+    ## if h_n.GetMean() < (xax.GetXmax()-xax.GetXmin())/2.:
+    ##     x0 = 0.5
+    ##     x1 = 0.8
 
 
     pad1.cd()
@@ -378,8 +517,9 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     legend.SetFillStyle(0)
     legend.SetBorderSize(0)
     legend.AddEntry(h_n,'nominal shape')
-    legend.AddEntry(h_u,'+1#sigma shape')
-    legend.AddEntry(h_d,'-1#sigma shape')
+    legend.AddEntry(h_u,'+1#sigma-shape')
+    legend.AddEntry(h_d,'-1#sigma-shape')
+    legend.SetHeader(legheader)
     legend.Draw()
 
     text = plotCMSText()
