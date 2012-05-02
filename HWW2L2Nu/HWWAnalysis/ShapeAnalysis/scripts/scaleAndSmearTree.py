@@ -845,7 +845,7 @@ class scaleAndSmear:
 
         ## read the JES corrections
         jeu = []
-        file = open('START38_V13_AK5PF_Uncertainty.txt')
+        file = open('../data/START38_V13_AK5PF_Uncertainty.txt')
         for line in file:
             if (line[0] == '#' or line[0] == '{'):
                 continue
@@ -1730,7 +1730,8 @@ class scaleAndSmear:
         self.ttree.Branch('effBW',effBW,'effBW/F')
 
 ## this are the 1stNov efficiency weights:
-        base_path = '/shome/jueugste/HWWSystematics/leptonEfficiencies/'
+        base_path = '../data'
+##         base_path = '/shome/jueugste/HWWSystematics/leptonEfficiencies/'
 ##         mA_path = base_path+'OutputScaleFactorMap_Run2011AData_vs_42XMC.root'
 ##         mB_path = base_path+'OutputScaleFactorMap_Run2011BData_vs_42XMC.root'
 ##         eA_path = base_path+'OutputScaleFactorMap_DATA_Run2011A_MC_42X_BDTID.root'
