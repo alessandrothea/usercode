@@ -13,7 +13,8 @@ import optparse
 import os
 import ROOT
 import numpy
-#from ROOT import *
+from ROOT import *
+from ROOT import std
 import math
  
 from math import sqrt, cos
@@ -30,7 +31,11 @@ muonUncertainty = 0.01
 electronUncertaintyEB = 0.02
 electronUncertaintyEE = 0.04
 
-
+## pu uncertainty
+puUp   = "puDATAup.root"
+puDown = "puDATAdown.root"
+puMC   = "puMC.root"
+weightNamePU = "puW"
 
 
 
@@ -355,7 +360,10 @@ class scaleAndSmear:
             oldTree.SetBranchStatus('mpmet'     ,0)            
             oldTree.SetBranchStatus('njet'      ,0)
 
-            
+        if self.systArgument == 'puscale':
+            oldTree.SetBranchStatus('puW'       ,0)
+
+
         newTree = oldTree.CloneTree(0)
         nentries = oldTree.GetEntriesFast()
         print 'Tree with '+str(nentries)+' entries cloned...'
@@ -368,6 +376,160 @@ class scaleAndSmear:
         self.oldttree = oldTree
         for branch in self.ttree.GetListOfBranches():
             print branch
+
+
+###############################################################################################
+##     
+##     
+##        _ \   |   |                         _)         |   _)               
+##       |   |  |   |     \ \   /  _` |   __|  |   _` |  __|  |   _ \   __ \  
+##       ___/   |   |      \ \ /  (   |  |     |  (   |  |    |  (   |  |   | 
+##      _|     \___/        \_/  \__,_| _|    _| \__,_| \__| _| \___/  _|  _| 
+##                                                                            
+##     
+
+    def puVariation(self):
+ 
+        ## define a new branch
+        print 'PU scaling'
+        puW = numpy.ones(1, dtype=numpy.float32)
+        self.ttree.Branch(weightNamePU,puW,weightNamePU+"/F")
+
+
+        inDATAFileUp   = openTFile(puUp)
+        inDATAFileDown = openTFile(puDown)
+        inMCFile       = openTFile(puMC)
+
+
+        puScaleDATAhistoUp   = getHist(inDATAFileUp,"pileup")
+        puScaleDATAhistoDown = getHist(inDATAFileDown,"pileup")
+        puScaleMChisto       = getHist(inMCFile,"pileup")
+
+
+        dataUp_nBin = puScaleDATAhistoUp.GetNbinsX()
+        dataUp_minValue = puScaleDATAhistoUp.GetXaxis().GetXmin()
+        dataUp_maxValue = puScaleDATAhistoUp.GetXaxis().GetXmax()
+        dataUp_dValue = (dataUp_maxValue - dataUp_minValue) / dataUp_nBin
+
+        dataDown_nBin = puScaleDATAhistoDown.GetNbinsX()
+        dataDown_minValue = puScaleDATAhistoDown.GetXaxis().GetXmin()
+        dataDown_maxValue = puScaleDATAhistoDown.GetXaxis().GetXmax()
+        dataDown_dValue = (dataDown_maxValue - dataDown_minValue) / dataDown_nBin
+
+        mc_nBin = puScaleMChisto.GetNbinsX()
+        mc_minValue = puScaleMChisto.GetXaxis().GetXmin()
+        mc_maxValue = puScaleMChisto.GetXaxis().GetXmax()
+        mc_dValue = (mc_maxValue - mc_minValue) / mc_nBin
+  
+        ratioUp = mc_dValue/dataUp_dValue
+        nBinUp = dataUp_nBin
+        minValueUp = dataUp_minValue
+        maxValueUp = dataUp_maxValue
+        dValueUp = dataUp_dValue
+
+        ratioDown = mc_dValue/dataDown_dValue
+        nBinDown = dataDown_nBin
+        minValueDown = dataDown_minValue
+        maxValueDown = dataDown_maxValue
+        dValueDown = dataDown_dValue
+      
+        if (mc_dValue/dataUp_dValue - (int) (mc_dValue/dataUp_dValue)) != 0 :
+          print " ERROR:: incompatible intervals!  Up"
+          exit(0);
+        
+        if (mc_dValue/dataDown_dValue - (int) (mc_dValue/dataDown_dValue)) != 0 :
+          print " ERROR:: incompatible intervals!  Down"
+          exit(0);
+ 
+        puScaleDATAUp   = std.vector(float)()
+        puScaleDATADown = std.vector(float)()
+        puScaleMCtemp   = std.vector(float)()
+        puScaleMC       = std.vector(float)()
+
+        ################
+        nBin = nBinUp
+        # remove last bin -> peak in DATA distribution
+        nBin = nBin-1
+        ################   
+
+        for iBin in range(0, nBin):
+            puScaleDATAUp.push_back(puScaleDATAhistoUp.GetBinContent(iBin+1))
+            puScaleDATADown.push_back(puScaleDATAhistoDown.GetBinContent(iBin+1))
+            mcbin = int(floor(iBin / ratioUp))
+            puScaleMCtemp.push_back(puScaleMChisto.GetBinContent(mcbin+1))
+
+ 
+        integralDATA = 0.
+        integralMC   = 0.
+ 
+        for iBin in range(0, nBin):
+            integralDATA += puScaleDATAUp.at(iBin)
+            integralMC   += puScaleMCtemp.at(iBin)
+
+        print " integralDATA = " + "%.3f" %integralDATA
+        print " integralMC   = " + "%.3f" %integralMC
+ 
+        for iBin in range(0, nBin):
+            puScaleMC.push_back( puScaleMCtemp.at(iBin) * integralDATA / integralMC) 
+
+
+ 
+        nentries = self.nentries
+        print 'total number of entries: '+str(nentries)
+        i = 0
+        for ientry in range(0,nentries):
+            i+=1
+            self.oldttree.GetEntry(ientry)
+
+            ## print event count
+            step = 50000
+            if i > 0 and i%step == 0.:
+                print str(i)+' events processed.'
+
+            puW[0] = 1.
+            
+            
+            if self.direction == 'up':
+                ibin = int(self.oldttree.trpu / dValueUp)
+                if ibin < puScaleDATAUp.size() :
+                   if puScaleMC.at(ibin) != 0 :
+                      puW[0] = 1. * puScaleDATAUp.at(ibin) / puScaleMC.at(ibin)
+                   else :
+                      puW[0] = 1.
+                else :
+                   ibin = puScaleDATAUp.size()-1
+                   if puScaleMC.at(ibin) != 0 :
+                      puW[0] = 1. * puScaleDATAUp.at(ibin) / puScaleMC.at(ibin)
+                   else :
+                      puW[0] = 1.
+
+
+            if self.direction == 'down':
+                ibin = int(self.oldttree.trpu / dValueDown)
+                if ibin < puScaleDATADown.size() :
+                   if puScaleMC.at(ibin) != 0 :
+                      puW[0] = 1. * puScaleDATADown.at(ibin) / puScaleMC.at(ibin)
+                   else :
+                      puW[0] = 1.
+                else :
+                   ibin = puScaleDATADown.size()-1
+                   if puScaleMC.at(ibin) != 0 :
+                      puW[0] = 1. * puScaleDATADown.at(ibin) / puScaleMC.at(ibin)
+                   else :
+                      puW[0] = 1.
+
+            if self.verbose is True:
+                print '-----------------------------------'
+                print 'puW: '+str(puW[0])
+
+
+            # fill old and new values
+            self.ttree.Fill()
+
+
+
+
+
 
 
 ###############################################################################################
@@ -2034,7 +2196,7 @@ def main():
     
     parser.add_option('-i', '--inputFileName',      dest='inputFileName',   help='Name of the input *.root file.',)
     parser.add_option('-o', '--outputFileName',     dest='outputFileName',  help='Name of the output *.root file.',)
-    parser.add_option('-a', '--systematicArgument', dest='systArgument',    help='Argument to specify systematic (possible arguments are: "muonScale","electronScale","leptonEfficiency","jetEnergyScale","metResolution","electronResolution","dyTemplate",)',)
+    parser.add_option('-a', '--systematicArgument', dest='systArgument',    help='Argument to specify systematic (possible arguments are: "muonScale","electronScale","leptonEfficiency","jetEnergyScale","metResolution","electronResolution","dyTemplate","puVariation",)',)
     parser.add_option('-v', '--variation',          dest='variation',       help='Direction of the scale variation ("up"/"down") or type of DY template ("temp"/"syst"), works only in combination with "-a dyTemplate". In the case of "metResolution" and "electronResolution" this is ommitted.',)
     parser.add_option('-t', '--treeDir',            dest='treeDir',         help='TDirectry structure to the tree to scale and smear.',)
 #    parser.add_option('-n', '--nEvents',           dest='nEvents',         help='Number of events to run over',)
@@ -2049,7 +2211,7 @@ def main():
         parser.error('No output file defined')
     if opt.systArgument is None:
         parser.error('No systematic argument given')
-    possibleSystArguments = ['muonScale','electronScale','leptonEfficiency','jetEnergyScale','metResolution','electronResolution','dyTemplate']
+    possibleSystArguments = ['muonScale','electronScale','leptonEfficiency','jetEnergyScale','metResolution','electronResolution','dyTemplate','puVariation']
     if opt.systArgument not in possibleSystArguments:
         parser.error('Wrong systematic argument')        
     possibleDirections = ['up','down','temp','syst']
@@ -2095,9 +2257,10 @@ def main():
         s.electronResolution()
     if s.systArgument == 'dyTemplate':
         s.dyTemplate()
+    if s.systArgument == 'puVariation':
+        s.puVariation()
     
-
-
+    
     print 'Job finished...'
 
 
