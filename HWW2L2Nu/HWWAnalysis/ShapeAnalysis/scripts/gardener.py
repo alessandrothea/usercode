@@ -51,24 +51,28 @@ def confirm(prompt=None, resp=False):
             return False
 
 class wwcuts:
-    wwnomet = [
+    wwcommon = [
         'trigger==1.',
         'pfmet>20.',
         'mll>12',                       # ema7
         '(zveto==1||!sameflav)',
         'mpmet>20.',                    # ema9
-        '((njet<=1 && dphiveto) || (njet>1 && dphilljetjet<pi/180.*165.) || !sameflav )', #ema 10
         'bveto_mu==1',
         'nextra==0',
         '(bveto_ip==1 && (nbjettche==0 || njet>3)  )',
         'ptll>45.',                     # ema 14
     ]
 
-    metlo  = '( !sameflav || ( (njet!=0 || dymva1>0.60) && (njet!=1 || dymva1>0.30) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
-    methi  = '( !sameflav || ( (njet!=0 || mpmet>45.0) && (njet!=1 || mpmet>45.0) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
+    #dy cuts
+    dylo   = '(njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  )'
+    dyhi   = '((njet<=1 && dphiveto) || (njet>1 && dphilljetjet<pi/180.*165.) || !sameflav )'
 
-    wwlo    = wwnomet+[metlo]
-    wwhi    = wwnomet+[methi]
+    # met cuts lo: <=140 GeV, hi > 140 GeV
+    metlo  = '( !sameflav || ( (njet!=0 || dymva1>0.60) && (njet!=1 || dymva1>0.30) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
+    methi  = ''+'( !sameflav || ( (njet!=0 || mpmet>45.0) && (njet!=1 || mpmet>45.0) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
+
+    wwlo    = wwcommon+[dylo,metlo]
+    wwhi    = wwcommon+[dyhi,methi]
 
     zerojet = 'njet == 0'
     onejet  = 'njet == 1'
@@ -188,7 +192,7 @@ class Pruner(TreeCloner):
 #  |__/|__/ |__/|__/_/  /_/  \_,_/_//_/\__/_/   
 #                                               
 class WWPruner(Pruner):
-    levels = ['wwnomet','wwlo','wwhi']
+    levels = ['wwcommon','wwlo','wwhi']
 
     def help(self):
         print 'Skim with one predefined ww-selection lever'
