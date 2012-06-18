@@ -50,6 +50,31 @@ def confirm(prompt=None, resp=False):
         if ans == 'n' or ans == 'N':
             return False
 
+class wwcuts:
+    wwnomet = [
+        'trigger==1.',
+        'pfmet>20.',
+        'mll>12',                       # ema7
+        '(zveto==1||!sameflav)',
+        'mpmet>20.',                    # ema9
+        '((njet<=1 && dphiveto) || (njet>1 && dphilljetjet<pi/180.*165.) || !sameflav )', #ema 10
+        'bveto_mu==1',
+        'nextra==0',
+        '(bveto_ip==1 && (nbjettche==0 || njet>3)  )',
+        'ptll>45.',                     # ema 14
+    ]
+
+    metlo  = '( !sameflav || ( (njet!=0 || dymva1>0.60) && (njet!=1 || dymva1>0.30) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
+    methi  = '( !sameflav || ( (njet!=0 || mpmet>45.0) && (njet!=1 || mpmet>45.0) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
+
+    wwlo    = wwnomet+[metlo]
+    wwhi    = wwnomet+[methi]
+
+    zerojet = 'njet == 0'
+    onejet  = 'njet == 1'
+    vbf     = '(njet >= 2 && njet <= 3 && (jetpt3 <= 30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0))))) '
+
+
 #   _______                 
 #  / ___/ /__  ___  ___ ____
 # / /__/ / _ \/ _ \/ -_) __/
@@ -118,11 +143,13 @@ class Pruner(TreeCloner):
         print "Skim the tree according to the cut string"
 
     def addOptions(self,parser):
-        parser.add_option('-f','--filter',dest='filter',default='')
+        parser.add_option('-f','--filter',dest='filter')
 
     def checkOptions(self, opts ):
-        if hasattr(opts,'filter'):
-            self.filter = getattr(opts,'filter')
+        if not opts.filter:
+            raise ValueError('No filter defined?!?')
+
+        self.filter = getattr(opts,'filter')
 
     def process(self, **kwargs ):
         print 'Filtering \''+self.filter+'\''
@@ -155,6 +182,38 @@ class Pruner(TreeCloner):
 
         self.disconnect()
 
+#   _      ___      _____                       
+#  | | /| / / | /| / / _ \______ _____  ___ ____
+#  | |/ |/ /| |/ |/ / ___/ __/ // / _ \/ -_) __/
+#  |__/|__/ |__/|__/_/  /_/  \_,_/_//_/\__/_/   
+#                                               
+class WWPruner(Pruner):
+    levels = ['wwnomet','wwlo','wwhi']
+
+    def help(self):
+        print 'Skim with one predefined ww-selection lever'
+
+    def addOptions(self,parser):
+        parser.add_option('-f','--filter',dest='filter',help='Selection level. Can be '+str(self.levels))
+
+    def checkOptions(self,opts):
+        if not opts.filter:
+            raise ValueError('No filter defined?!?')
+
+        class options: pass
+        wwopt = options()
+
+
+        if opts.filter not in self.levels:
+            raise NameError('Filter '+opt.filter+' not valid. Can be '+str(self.levels)+'.')
+
+        wwopt.filter = ' && '.join(getattr(wwcuts,opts.filter))
+#         if opts.filter in 
+
+        super(WWPruner,self).checkOptions(wwopt)
+
+    
+
 
 #    ___                    __   _____         _____         
 #   / _ )_______ ____  ____/ /  / ___/______ _/ _/ /____ ____
@@ -175,26 +234,28 @@ class Grafter(TreeCloner):
         parser.add_option('-v','--var',dest='variables',action='append',default=[])
 
     def checkOptions(self,opts):
-        if hasattr(opts,'variables'):
-            for s in opts.variables:
-                r = self.regex.match(s)
-                if not r:
-                    raise RuntimeError('Malformed option '+s)
-                name=r.group(1)
-                type=r.group(2)
-                formula=r.group(3)
-                if type=='F':
-                    numtype = numpy.float32
-                elif type=='D':
-                    numtype = numpy.float64
-                elif type=='I':
-                    numtype = numpy.int32
-                else:
-                    RuntimeError('Type '+type+' not supported')
+        if not opts.variables:
+            raise ValueError('No variables defined?!?')
 
-                value=numpy.zeros(1, dtype = numtype)
-                
-                self.variables[name] = (value, type, formula)
+        for s in opts.variables:
+            r = self.regex.match(s)
+            if not r:
+                raise RuntimeError('Malformed option '+s)
+            name=r.group(1)
+            type=r.group(2)
+            formula=r.group(3)
+            if type=='F':
+                numtype = numpy.float32
+            elif type=='D':
+                numtype = numpy.float64
+            elif type=='I':
+                numtype = numpy.int32
+            else:
+                RuntimeError('Type '+type+' not supported')
+
+            value=numpy.zeros(1, dtype = numtype)
+            
+            self.variables[name] = (value, type, formula)
 
     def process(self,**kwargs):
 
@@ -268,47 +329,33 @@ class Grafter(TreeCloner):
 #                             /___/                                   
 
 class WWFlagsGrafter(Grafter):
-    _wwBase=[
-        'trigger==1.',
-        'pfmet>20.',
-        'mll>12',
-        'zveto==1',
-        'mpmet>20.',
-        '(njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  )',
-        'bveto_mu==1',
-        'nextra==0',
-        '(bveto_ip==1 &&  (njet != 1  || nbjet==0) && ((njet<2 || njet>3) || (jetbjpb1<=1.05 && jetbjpb2<=1.05)) )',
-        'ptll>45.',
-        '( !sameflav || ( (njet!=0 || dymva1>0.60) && (njet!=1 || dymva1>0.30) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
-    ]
 
-    _zerojet = 'njet == 0'
-    _onejet  = 'njet == 1'
-    _vbf     = '(njet >= 2 && njet <= 3 && (jetpt3 <= 30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0))))) '
-    
     def help(self):
-        print 'Add the flags at ww, ww+0j,ww+1j, ww+2j levels'
+        print 'Add the flags at ww, ww+0j,ww+1j, ww+2j levels, hi and lo mass'
 
     def addOptions(self,parser):
         pass
 
     def checkOptions(self, opts):
         # create the options in 'adder style'
-        class opts: pass
+        class options: pass
 
-        opt = opts()
-        opt.variables = [
-            'wwsel/I='+' && '.join(self._wwBase),
-            'wwsel0j/I='+' && '.join(self._wwBase+[self._zerojet]),
-            'wwsel1j/I='+' && '.join(self._wwBase+[self._onejet]),
-            'wwsel2j/I='+' && '.join(self._wwBase+[self._vbf]),
+        wwopt = options()
+
+        wwopt.variables = [
+            'wwsel/I='     +' && '.join(wwcuts.wwlo),
+            'wwsel0j/I='   +' && '.join(wwcuts.wwlo+[wwcuts.zerojet]),
+            'wwsel1j/I='   +' && '.join(wwcuts.wwlo+[wwcuts.onejet]),
+            'wwsel2j/I='   +' && '.join(wwcuts.wwlo+[wwcuts.vbf]),
+
+            'wwsel_hi/I='  +' && '.join(wwcuts.wwhi),
+            'wwsel0j_hi/I='+' && '.join(wwcuts.wwhi+[wwcuts.zerojet]),
+            'wwsel1j_hi/I='+' && '.join(wwcuts.wwhi+[wwcuts.onejet]),
+            'wwsel2j_hi/I='+' && '.join(wwcuts.wwhi+[wwcuts.vbf]),
         ]
-#         for i in xrange(len(self._wwBase)):
-#             opt.variables.['step'+str(i)]+'/I='+' && '.join(wwBase[:i+1])
-        opt.variables += [ ('wwstep{0:02d}/I='.format(i)+' && '.join(self._wwBase[:i+1])) for i in xrange(len(self._wwBase)-1) ]
 
 
-        super(WWFlagsGrafter,self).checkOptions(opt)
+        super(WWFlagsGrafter,self).checkOptions(wwopt)
         
 
 #    ___  __  __                 
@@ -574,7 +621,12 @@ class EffLepFiller(TreeCloner):
         self.disconnect()
         print '- Eventloop completed'
 
-# EffTrgFiller
+#    ________________         _____ ____       
+#   / __/ _/ _/_  __/______ _/ __(_) / /__ ____
+#  / _// _/ _/ / / / __/ _ `/ _// / / / -_) __/
+# /___/_//_/  /_/ /_/  \_, /_/ /_/_/_/\__/_/   
+#                     /___/                    
+
 class EffTrgFiller(TreeCloner):
 
     def __init__(self):
@@ -659,6 +711,7 @@ class EffTrgFiller(TreeCloner):
 
 modules = {}
 modules['filter']     = Pruner()
+modules['wwfilter']   = WWPruner()
 modules['adder']      = Grafter()
 modules['wwflagger']  = WWFlagsGrafter()
 modules['puadder']    = PUpper()
@@ -671,8 +724,9 @@ if __name__ == '__main__':
     usage += '  Commands: '+', '.join(modules.keys()+['help'])
 
     parser = optparse.OptionParser(usage)
-    parser.add_option('-t','--tree',dest='tree',default='latino')
-    parser.add_option('-r','--recursive',dest='recursive',action='store_true',default=False)
+    parser.add_option('-t','--tree',        dest='tree',                            default='latino')
+    parser.add_option('-r','--recursive',   dest='recursive',action='store_true',   default=False)
+    parser.add_option('-F','--force',       dest='force',action='store_true',       default=False)
 
     # some boring argument handling
     if len(sys.argv) == 1:
@@ -744,17 +798,18 @@ if __name__ == '__main__':
         print 'The directory tree',input,'will be gardened and copied to',output
         print 'The following files will be copied:'
         print '\n'.join(fileList)
-        confirm('Do you want to continue?') or sys.exit(0)
-#         print fileList
+        print 'for a grand total of',len(fileList),'files'
+        opt.force or ( confirm('Do you want to continue?') or sys.exit(0) )
 
-
+        nfiles=len(fileList)
         for i,file in enumerate(fileList):
             print '-'*80
-            print 'File',i,'|',file
+            print 'Entry {0}/{1} | {2}'.format(i+1,nfiles,file)
             print '-'*80
+            output = output if output[-1]=='/' else output+'/'
             newfile = file.replace(input,output)
             newdir  = os.path.dirname(newfile)
-            if not os.path.exists(newdir):
+            if newdir and not os.path.exists(newdir):
                 os.system('mkdir -p '+newdir)
 #             print file,newfile
 
@@ -764,9 +819,11 @@ if __name__ == '__main__':
             print 'Output:',outputfile
             print '-'*80
         
-            module.process( input=inputfile, output=outputfile, tree=tree )
+#             module.process( input=inputfile, output=outputfile, tree=tree )
 
     else:
+        if os.path.exists(output) and os.path.isdir(output):
+            output = os.path.join( output , os.path.basename(input) )
         module.process( input=input, output=output, tree=tree )
 
 
