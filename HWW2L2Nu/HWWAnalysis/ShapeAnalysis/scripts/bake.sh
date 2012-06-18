@@ -1,5 +1,4 @@
-
-syst='electronResolution electronScale_down electronScale_up jetEnergyScale_down jetEnergyScale_up leptonEfficiency_down leptonEfficiency_up metResolution muonScale_down muonScale_up' 
+# syst='electronResolution electronScale_down electronScale_up jetEnergyScale_down jetEnergyScale_up leptonEfficiency_down leptonEfficiency_up metResolution muonScale_down muonScale_up' 
 # -- v0 -- 
 # for m in $masses;
 # do

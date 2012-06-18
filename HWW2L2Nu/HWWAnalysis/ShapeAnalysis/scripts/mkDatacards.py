@@ -417,9 +417,9 @@ class NuisanceMapBuilder:
         return nuisances
 
 def incexc(option, opt_str, value, parser):
-    print option
-    print opt_str
-    print value
+#     print option
+#     print opt_str
+#     print value
     if not hasattr(parser.values,'shapeFlags'):
         setattr(parser.values,'shapeFlags',[])
 
@@ -450,8 +450,8 @@ if __name__ == '__main__':
 #     parser.add_option('--ddpath', dest='ddpath', help='Data driven path', default=None)
     parser.add_option('--path_dd'           , dest='path_dd'           , help='Data driven path'                 , default=None)
     parser.add_option('--path_shape_merged' , dest='path_shape_merged' , help='Destination directory for merged' , default=None)
-    hwwinfo.addOptions(parser)
-    hwwinfo.loadOptDefaults(parser)
+    hwwtools.addOptions(parser)
+    hwwtools.loadOptDefaults(parser)
 
     (opt, args) = parser.parse_args()
     print 'ShapeFlags: ',opt.shapeFlags

@@ -5,60 +5,63 @@ import sys
 import ROOT
 import optparse
 import hwwinfo
+import hwwsamples
+import hwwtools
 import os.path
 import string
 import logging
 from HWWAnalysis.Misc.odict import OrderedDict
+import traceback
+
 
 class ShapeFactory:
+    _logger = logging.getLogger('ShapeFactory')
+ 
+    # _____________________________________________________________________________
     def __init__(self):
         self._baseWgt = 'baseW*puW*effW*triggW'
 
         ranges = {}
         ranges['bdtl']       = (400  , -1. , 1.)
         ranges['bdts']       = (400  , -1. , 1.)
-        ranges["mth"]        = (400  , 0   , 200)
-        ranges["dphill"]     = (400  , 0   , 3.15)
-#         ranges["gammaMRStar"]= (1200 , 0   , 600)
+        ranges['mth']        = (400  , 0.  , 200)
+        ranges['dphill']     = (400  , 0.  , 3.15)
+        ranges['detajj']     = (240  , 0.  , 6.)
+        ranges['mll']        = self._getmllrange
+        ranges['gammaMRStar'] = self._getGMstarrange
         self._ranges = ranges
         
         self._dataTag = '2011A'
         self._masses = []
-        self._jets = []
-        self._channels = []
+        self._categories = []
+        self._flavors = []
+        self._channels = {}
         # paths (to move out)
         self._outFileFmt  = ''
         self._paths = {}
 
+    # _____________________________________________________________________________
     def __del__(self):
         pass
     
-    def getrange(self,var,mass,njet):
+    # _____________________________________________________________________________
+    def getrange(self,var,mass,cat):
         
-        if var=='mll':
-#             return (600  , 0   , 600)
-            return self._getmllrange(mass,njet)
 
-        if var == 'gammaMRStar':
-            return self._getGMstarrange(mass,njet)
-
-        varRange = self._ranges[var]
-        if isinstance(varRange,tuple):
-            return varRange
-        elif isinstance(varRange,dict):
-            return varRange[mass][njet]
+        theRange = self._ranges[var]
+        if isinstance(theRange,tuple):
+            return theRange
+        elif isinstance(theRange,dict):
+            return theRange[mass][cat]
+        elif callable(theRange):
+            return theRange(mass,cat)
             
-    def _getmllrange(self,mass,njet):
+    # _____________________________________________________________________________
+    def _getmllrange(self,mass,cat):
         
+        if cat not in ['0j','1j']:
+            raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
         # TODO: cleanup
-
-
-#         xmin = 10.
-#         xmax = hwwinfo.singleVarCuts['mllmax_bdt'][mass]
-#         bins = 200 if njet == 0 else 200
-#         
-#         return (bins,xmin,xmax)
-
 
         # xmin
         xmin   = 0. if mass<300 else 0.2*mass-20      #;--> changed "(mH<300)" and "0.2*float(mH) - 20"
@@ -71,55 +74,73 @@ class ShapeFactory:
             xmax = mass-50.
         # bins
         if mass < 300.:
-            bins = 400 if njet == 0 else 200
+            bins = 400 if cat == '0j' else 200
         else:
-            bins = 300 if njet == 0 else 150
+            bins = 300 if cat == '0j' else 150
         return (bins,xmin,xmax)
     
-    def _getGMstarrange(self,mass,njet):
+    # _____________________________________________________________________________
+    def _getGMstarrange(self,mass,cat):
+        if cat not in [0,1]:
+            raise RuntimeError('GMstar range '+str(cat)+' not defined. Can be 0 or 1')
         # lower alwyas 50
         # upper 100+(mH-100)*0.5
         xmin=40
         xmax=90.+(mass-100.)*0.6
 
-        if njet ==1: xmax += 20
+        if cat == '1j': xmax += 20
 
         if mass < 300.:
-            bins = 200 if njet == 0 else 200
+            bins = 200 if cat == '0j' else 200
         else:
-            bins = 150 if njet == 0 else 150
+            bins = 150 if cat == '0j' else 150
         return (bins,xmin,xmax)
 
+    # _____________________________________________________________________________
+    def addChannel(self, chan ):
+        pass
 
+
+    # _____________________________________________________________________________
     def makeNominals(self, var, sel, inputDir, outPath, **kwargs):
         
         ROOT.TH1.SetDefaultSumw2(True)
-
         shapeFiles = []
+
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
-            samples = hwwinfo.samples(mass, self._dataTag)
+            samples = hwwsamples.samples(mass, self._dataTag)
             # mass and variable selection
             allCuts = hwwinfo.massSelections( mass )
-            varSelection = allCuts[sel+'-sel']
-            varCtrlZ     = allCuts[sel+'-ctrZ']
+            try:
+                varSelection = allCuts[sel+'-selection']
+#                 varCtrlZ     = allCuts[sel+'-ctrZ']
+            except KeyError as ke:
+                raise RuntimeError('Config error: '+str(ke))
+                
             
-            #inner  jet and channel loops
-            for njet in self._jets:
-                for channel in self._channels:
+            #inner  jet and flavor loops
+#             for cat in self._categories:
+#                 for flavor in self._flavors:
+            for chan,(category,flavors) in self._channels.iteritems():
+                cat = hwwinfo.categories[category]
+                for flavor in flavors:
                     pars = dict([
                         ('mass',mass),
-                        ('jets',njet),
-                        ('channel',channel)
+                        ('category',cat.name),
+                        ('flavor',flavor)
                     ])
                     print '-'*80
-                    print ' Processing: mass',mass,'jets',njet,'channel',channel
+                    print ' Processing channel '+chan+': mass',mass,'category',cat.nick,'flavor',flavor
                     print '-'*80
                     
-                    # ----
+                    # - define the source paths 
                     activeInputPaths = ['base']
+                    # - if the current var is listes among the known paths,
+                    #   add it to the actives
                     if var in self._paths: activeInputPaths.append(var)
 
+                    # - apply the pars of the current sample 
                     dirmap = {}
                     for path in activeInputPaths:
                         dirmap[path]=(self._paths[path]+'/'+inputDir).format( **pars )
@@ -137,84 +158,99 @@ class ShapeFactory:
                     print '.'*80
                     print 'Output file:',output
 
-                    # now build the selection
-                    jetSel = 'njet == {0}'.format(njet)
-                    selection = varSelection+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
+                    # - now build the selection
+#                     catSel = 'njet == {0}'.format(njet)
+                    catSel = cat.cut;
+                    selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
-                    dyshapes = ['DYLLtemplate','DYLLtemplatesyst']
-                    for n in dyshapes:
-#                         if n in selections:
-                        selections[n] = varCtrlZ+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
+#                     dyshapes = ['DYLLtemplate','DYLLtemplatesyst']
+#                     for n in dyshapes:
+#                         selections[n] = varCtrlZ+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
 
                     self._addweights(mass,var,selections)
 
                     print '.'*80
-                    rng = self.getrange(var,mass,njet) 
+                    # - extract the histogram range
+                    rng = self.getrange(var,mass,cat.name) 
                     self._draw(var, rng, selections ,output,inputs)
+                    # - to finally fill it
                     self._disconnectInputs(inputs)
+                    # - then disconnect the files
                     shapeFiles.append(output)
         return shapeFiles
 
+    # _____________________________________________________________________________
     def makeSystematics(self,var,sel,syst,mask,inputDir,outPath,**kwargs):
+
         ROOT.TH1.SetDefaultSumw2(True)
         shapeFiles = []
+
         nicks = kwargs['nicks'] if 'nicks' in kwargs else None
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
-            samples = hwwinfo.samples(mass, self._dataTag)
+            samples = hwwsamples.samples(mass, self._dataTag)
             # mass and variable selection
             allCuts = hwwinfo.massSelections( mass )
-            varSelection = allCuts[sel+'-sel']
+            varSelection = allCuts[sel+'-selection']
             
-            #inner  jet and channel loops
-            for njet in self._jets:
-                for channel in self._channels:
+            #inner  jet and flavor loops
+#             for cat in self._categories:
+#                 for flavor in self._flavors:
+            for chan,(category,flavors) in self._channels.iteritems():
+                cat = hwwinfo.categories[category]
+                for flavor in flavors:
                     print '-'*80
-                    print ' Processing: mass',mass,'jets',njet,'channel',channel
+                    print ' Processing channel '+chan+': mass',mass,'category',cat.nick,'flavor',flavor
                     print '-'*80
 
                     pars = dict([
                         ('mass',mass),
-                        ('jets',njet),
-                        ('channel',channel),
+                        ('category',cat.name),
+                        ('flavor',flavor),
                         ('syst',syst),
                     ])
                     pars['nick'] = nicks[syst] if nicks else syst
 
-                    # ----
+                    # - define the source paths 
                     activeInputPaths = ['base']
+                    # - if the current var is listes among the known paths,
+                    #   add it to the actives
                     if var in self._paths: activeInputPaths.append(var)
 
+                    # - apply the pars of the current sample 
                     dirmap = {}
                     for path in activeInputPaths:
                         dirmap[path]=(self._paths[path]+'/'+inputDir).format( **pars )
 
                     inputs = self._connectInputs(var,samples, dirmap, mask)
-
                     # ---
 
-                    # and the output path (might be par dependent as well)
+                    # - and the output path (might be par dependent as well)
                     output = outPath.format(**pars)
                     outdir = os.path.dirname(output)
                     if output:
                         self._ensuredir(outdir)
                     print '.'*80
-                    print 'Output file',output
+                    print 'Output file: ',output
 
-                    # now build the selection
-                    jetSel = 'njet == {0}'.format(njet) #njet>%.1f && njet<%.1f' % (njet-0.5,njet+0.5)
-                    selection = varSelection+' && '+jetSel+' && '+hwwinfo.channelCuts[channel]
+                    # - now build the selection
+#                     catSel = 'njet == {0}'.format(njet) 
+                    catSel = cat.cut;
+                    selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
-#                     print selections
                     self._addweights(mass,var,selections)
 
                     print '.'*80
-                    rng = self.getrange(var,mass,njet) 
+                    # - extract the histogram range
+                    rng = self.getrange(var,mass,cat.name) 
+                    # - to finally fill it
                     self._draw(var, rng, selections ,output,inputs)
+                    # - then disconnect the files
                     self._disconnectInputs(inputs)
                 shapeFiles.append(output)
         return shapeFiles
     
+    # _____________________________________________________________________________
     def _draw(self, var, rng, selections, output, inputs):
         '''
         var :       the variable to plot
@@ -222,7 +258,7 @@ class ShapeFactory:
         output :    the output file path
         inputs :    the process-input files map
         '''
-        logging.info('Yields by process')
+        self._logger.info('Yields by process')
         outFile = ROOT.TFile.Open(output,'recreate')
         for process,tree  in inputs.iteritems():
             print ' '*3,process.ljust(20),':',tree.GetEntries(),
@@ -237,13 +273,15 @@ class ShapeFactory:
 
             cut = selections[process]
 
-            logging.debug('Applied cut: '+cut)
+            self._logger.debug('Variable: '+var+' Applied cut: '+cut)
+            self._logger.debug('ROOTFiles:'+'\n'.join([f.GetTitle() for f in tree.GetListOfFiles()]))
             entries = tree.Draw( var+'>>'+shapeName, cut, 'goff')
             print ' >> ',entries
             shape.Write()
         outFile.Close()
         del outFile
 
+    # _____________________________________________________________________________
     # add the weights to the selection
     def _addweights(self,mass,var,selections):
         sampleWgts =  self._sampleWeights(mass,var)
@@ -255,16 +293,19 @@ class ShapeFactory:
 
             selections[process] = wgt+'*('+cut+')'
 
+    # _____________________________________________________________________________
     # this is too convoluted
     # define here the mass-dependent weights
     def _sampleWeights(self,mass,var):
         weights = {}
-        weights['ggH']          = 'kfW'
-        weights['ggH-SI']       = 'kfW'
-        weights['WJet']         = 'fake2W'
-        weights['WJetFakeRate'] = 'fake2W'
-        weights['Data']         = '1'
-        weights['Vg']           = '(1+0.55*(dataset == 85||dataset == 86))' #TODO move to mkMerged, read from external scale factor file
+        weights['ggH']              = 'kfW'
+        weights['ggH-SI']           = 'kfW'
+        weights['WJet']             = 'fake2W'
+        weights['WJetFakeRate']     = 'fake2W'
+        weights['Data']             = '1'
+        weights['DYLL']             = '(1-(( dataset =  = 36 || dataset =  = 37 ) && mctruth =  = 2 ))'
+        weights['DYLLtemplate']     = '(1-(( dataset =  = 36 || dataset =  = 37 ) && mctruth =  = 2 ))'
+        weights['DYLLtemplatesyst'] = '(1-(( dataset =  = 36 || dataset =  = 37 ) && mctruth =  = 2 ))'
         
         stupidmasses = [118, 122, 124, 126, 128, 135]
         if var in ['bdts','bdtl'] and mass in stupidmasses:
@@ -277,8 +318,8 @@ class ShapeFactory:
             weights['wzttH-SI']='2*(event%2==0)'
             
         return weights
-#         sys.exit(0)
 
+    # _____________________________________________________________________________
     def _ensuredir(self,directory):
         if not os.path.exists(directory):
             try:
@@ -289,6 +330,7 @@ class ShapeFactory:
                 else:
                     raise e
 
+    # _____________________________________________________________________________
     def _connectInputs(self, var, samples, dirmap, mask=None):
         inputs = {}
         treeName = 'latino'
@@ -302,7 +344,9 @@ class ShapeFactory:
                 bdttree = self._buildchain(bdttreeName,[ (dirmap[var]+'/'+f) for f in filenames])
                 
                 if tree.GetEntries() != bdttree.GetEntries():
-                    raise RuntimeError('Mismatching number of entries: '+tree.GetName()+'('+str(tree.GetEntries())+'), '+bdttree.GetName()+'('+str(bdttree.GetEntries())+')')
+                    raise RuntimeError('Mismatching number of entries: '
+                                       +tree.GetName()+'('+str(tree.GetEntries())+'), '
+                                       +bdttree.GetName()+'('+str(bdttree.GetEntries())+')')
                 print ' '*3,process.ljust(20),'- master: ',tree.GetEntries(), ' friend ', bdttree.GetEntries()
                 tree.AddFriend(bdttree)
 
@@ -310,6 +354,7 @@ class ShapeFactory:
 
         return inputs
 
+    # _____________________________________________________________________________
     def _disconnectInputs(self,inputs):
         for n in inputs.keys():
             friends = inputs[n].GetListOfFriends()
@@ -321,10 +366,11 @@ class ShapeFactory:
                     del friend
             del inputs[n]
     
+    # _____________________________________________________________________________
     def _buildchain(self,treeName,files):
         tree = ROOT.TChain(treeName)
         for path in files:
-            logging.debug('     '+str(os.path.exists(path))+' '+path)
+            self._logger.debug('     '+str(os.path.exists(path))+' '+path)
             if not os.path.exists(path):
                 raise RuntimeError('File '+path+' doesn\'t exists')
             tree.Add(path) 
@@ -334,112 +380,117 @@ class ShapeFactory:
     
 
 if __name__ == '__main__':
-#     logging.basicConfig(level=logging.DEBUG)
     
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--sel',            dest='sel',           help='selection cut',                         default=None)
-    parser.add_option('--dataset',        dest='dataset',       help='dataset to process',                    default=None)
-    parser.add_option('--path_latino',    dest='path_latino',   help='Root of the master trees',              default=None)
-    parser.add_option('--path_bdt',       dest='path_bdt',      help='Root of the friendly bdt trees',        default=None)
-    parser.add_option('--path_shape_raw', dest='path_shape_raw',   help='destination directory of nominals',     default=None)
+    parser.add_option('--sel',            dest='sel',               help='selection cut',                         default=None)
+    parser.add_option('--dataset',        dest='dataset',           help='dataset to process',                    default=None)
+    parser.add_option('--path_latino',    dest='path_latino',       help='Root of the master trees',              default=None)
+    parser.add_option('--path_bdt',       dest='path_bdt',          help='Root of the friendly bdt trees',        default=None)
+    parser.add_option('--path_shape_raw', dest='path_shape_raw',    help='destination directory of nominals',     default=None)
 
-    parser.add_option('--noNoms',       dest='makeNoms',    help='Do not produce the nominal',            action='store_false',   default=True)
-    parser.add_option('--noSyst',       dest='makeSyst',    help='Do not produce the systematics',        action='store_false',   default=True)
-    parser.add_option('--doSyst',       dest='doSyst',      help='Do only one systematic',                default=None)
-    hwwinfo.addOptions(parser)
-    hwwinfo.loadOptDefaults(parser)
+    parser.add_option('--no-noms',       dest='makeNoms',    help='Do not produce the nominal',            action='store_false',   default=True)
+    parser.add_option('--no-syst',       dest='makeSyst',    help='Do not produce the systematics',        action='store_false',   default=True)
+    parser.add_option('--do-syst',       dest='doSyst',      help='Do only one systematic',                default=None)
+    hwwtools.addOptions(parser)
+    hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
 
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
 
-    if not opt.dataset:
-        parser.print_help()
-        parser.error('Dataset not defined')
+    if not opt.debug:
+        pass
+    elif opt.debug > 0:
+        logging.basicConfig(level=logging.DEBUG)
 
-    if not opt.sel:
-        parser.print_help()
-        parser.error('Selection not defined')
+#     try:
+    if True:
+        if not opt.dataset:
+            parser.print_help()
+            parser.error('Dataset not defined')
 
-    if not opt.path_latino:
-        parser.print_help()
-        parser.error('Master tree path not defined')
+        if not opt.sel:
+            parser.print_help()
+            parser.error('Selection not defined')
 
-    if not opt.path_shape_raw: 
-        parser.print_help()
-        parser.error('Where shall I put the shapes?')
+        if not opt.path_latino:
+            parser.print_help()
+            parser.error('Master tree path not defined')
+
+        if not opt.path_shape_raw: 
+            parser.print_help()
+            parser.error('Where shall I put the shapes?')
 
 
-    variable = opt.var
-    selection = opt.sel
+        variable = opt.var
+        selection = opt.sel
 
-#     latinoDir           = '/shome/thea/HWW/ShapeAnalysis/trees/latino_skim'
-#     bdtDir              = '/shome/thea/HWW/ShapeAnalysis/trees/bdt_skim/ntupleMVA_MH{mass}_njet{jets}'
+        latinoDir           = opt.path_latino
+        bdtDir              = opt.path_bdt
+        nomOutDir           = os.path.join(opt.path_shape_raw,'nominals/')
+        systOutDir          = os.path.join(opt.path_shape_raw,'systematics/')
+        
+        nomInputDir         = ''
+        systInputDir        = '{syst}/'
 
-    latinoDir           = opt.path_latino
-    bdtDir              = opt.path_bdt
-    nomOutDir           = os.path.join(opt.path_shape_raw,'nominals/')
-    systOutDir          = os.path.join(opt.path_shape_raw,'systematics/')
-    
-    nomInputDir         = 'all/'
-    systInputDir        = '{syst}/'
+        nominalOutFile      = 'shape_Mh{mass}_{category}_'+variable+'_shapePreSel_{flavor}.root'
+        systematicsOutFile  = 'shape_Mh{mass}_{category}_'+variable+'_shapePreSel_{flavor}_{nick}.root'
+        
+        factory = ShapeFactory()
+        factory._outFileFmt  = nominalOutFile
 
-    nominalOutFile      = 'histo_H{mass}_{jets}jet_'+variable+'shapePreSel_{channel}.root'
-    systematicsOutFile  = 'histo_H{mass}_{jets}jet_'+variable+'shapePreSel_{channel}_{nick}.root'
-    
-    factory = ShapeFactory()
-    factory._outFileFmt  = nominalOutFile
-#     factory._nominalDir  = '/scratch/maiko/postLP/MVA/ntupleMVA/ntupleMVA_MH{mass}_njet{jets}/'
-#     factory._systematicsDir = '/scratch/maiko/postLP/MVA/' 
+        masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
+        factory._masses   = masses
+        # update here: from cats and flavs to out_chans
+#         factory._categories = [ hwwinfo.categories[c] for c in opt.cats ]
+#         factory._flavors = hwwinfo.flavors[:]
 
-    masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
-    factory._masses   = masses
-    factory._jets     = hwwinfo.jets[:]
-    factory._channels = hwwinfo.channels[:]
-    factory._paths['base']  = latinoDir
-    factory._paths['bdtl']  = bdtDir
-    factory._paths['bdts']  = bdtDir
+        # go through final channels
+        factory._channels = dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])
+        print factory._channels
 
-#     print factory._masses
-#     sys.exit(0) 
+        factory._paths['base']  = latinoDir
+        factory._paths['bdtl']  = bdtDir
+        factory._paths['bdts']  = bdtDir
 
-    factory._dataTag = opt.dataset    
+        factory._dataTag = opt.dataset    
 
-    if opt.makeNoms:
-        # nominal shapes
-        print factory.makeNominals(variable,selection,nomInputDir,nomOutDir+nominalOutFile)
 
-    if opt.makeSyst:
-        # systematic shapes
-        systematics = OrderedDict([
-            ('electronResolution'    , 'p_res_e'),
-            ('electronScale_down'    , 'p_scale_eDown'),
-            ('electronScale_up'      , 'p_scale_eUp'),
-            ('jetEnergyScale_down'   , 'p_scale_jDown'),
-            ('jetEnergyScale_up'     , 'p_scale_jUp'),
-            ('leptonEfficiency_down' , 'eff_lDown'),
-            ('leptonEfficiency_up'   , 'eff_lUp'),
-            ('metResolution'         , 'met'),
-            ('muonScale_down'        , 'p_scale_mDown'),
-            ('muonScale_up'          , 'p_scale_mUp'),
-        ])
+        if opt.makeNoms:
+            # nominal shapes
+            print factory.makeNominals(variable,selection,nomInputDir,nomOutDir+nominalOutFile)
 
-        mask = ['ggH', 'vbfH', 'ggWW', 'Top', 'WW', 'VV']
-        systMasks = dict([(s,mask[:]) for s in systematics])
+        if opt.makeSyst:
+            # systematic shapes
+            systematics = OrderedDict([
+                ('electronResolution'    , 'p_res_e'),
+                ('electronScale_down'    , 'p_scale_eDown'),
+                ('electronScale_up'      , 'p_scale_eUp'),
+                ('jetEnergyScale_down'   , 'p_scale_jDown'),
+                ('jetEnergyScale_up'     , 'p_scale_jUp'),
+                ('leptonEfficiency_down' , 'eff_lDown'),
+                ('leptonEfficiency_up'   , 'eff_lUp'),
+                ('metResolution'         , 'met'),
+                ('muonScale_down'        , 'p_scale_mDown'),
+                ('muonScale_up'          , 'p_scale_mUp'),
+            ])
 
-        for s,m in systMasks.iteritems():
-            if opt.doSyst and opt.doSyst != s:
-                continue
-            print '-'*80
-            print ' Processing',s,'for samples',' '.join(mask)
-            print '-'*80
-            files = factory.makeSystematics(variable,selection,s,m,systInputDir,systOutDir+systematicsOutFile, nicks=systematics)
-    #         for old in files:
-    #             new = old.replace(s,systematics[s])
-    #             print 'Renaming',old,'->',new
-    #             os.rename(old,new)
-            
-    print 'Used options'
-    print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])
+            mask = ['ggH', 'vbfH', 'ggWW', 'Top', 'WW', 'VV']
+            systMasks = dict([(s,mask[:]) for s in systematics])
+
+            for s,m in systMasks.iteritems():
+                if opt.doSyst and opt.doSyst != s:
+                    continue
+                print '-'*80
+                print ' Processing',s,'for samples',' '.join(mask)
+                print '-'*80
+                files = factory.makeSystematics(variable,selection,s,m,systInputDir,systOutDir+systematicsOutFile, nicks=systematics)
+#     except Exception as e:
+#         print 'Fatal exception: '+str(e)
+#         exc_type, exc_value, exc_traceback = sys.exc_info()
+#         traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+#     finally:
+#         print 'Used options'
+#         print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])

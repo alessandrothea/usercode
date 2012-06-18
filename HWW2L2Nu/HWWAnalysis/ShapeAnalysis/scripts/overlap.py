@@ -315,11 +315,13 @@ def overlap( deck, tag, reference=None, prefix=None ):
 #     drawsave(ran68,legend,outprefix+'_exp68Range')
 #     drawsave(ran95,legend,outprefix+'_exp95Range')
 
-    diffMed.Draw('A')
+    diffMed.Draw('A goff')
 
     ROOT.gPad.ls()
     ROOT.gPad.Modified()
     ROOT.gPad.Update()
+    print 'AAA',diffMed
+    print 'AAA',diffMed.GetXaxis()
     diffMed.GetYaxis().SetTitle('Median, relative difference')
     drawsave(diffMed,legend,outprefix+'_diffExpMedian','AL',False)
     

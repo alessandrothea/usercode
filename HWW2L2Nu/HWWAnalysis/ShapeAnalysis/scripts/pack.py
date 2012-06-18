@@ -13,8 +13,8 @@ def pack():
     usage = 'usage: %prog -p path'
     parser = optparse.OptionParser(usage)
     parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
-    hwwinfo.addOptions(parser)
-    hwwinfo.loadOptDefaults(parser)
+    hwwtools.addOptions(parser)
+    hwwtools.loadOptDefaults(parser)
 
     (opt, args) = parser.parse_args()
 

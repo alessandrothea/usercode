@@ -15,9 +15,12 @@ datacards['shape'] = ['comb_0j1j','comb_0j','comb_1j']
 datacards['full']  = ['comb_0j1j2j']
 
 datacards['all'] = datacards['split']+datacards['shape']+datacards['full']
+datacards['0j1j'] = datacards['split']+datacards['shape']
 
 if len(args) < 1:
     parser.error('Check the usage!')
+
+path = args[0] if args[0][-1] != '/' else args[0][:-1]
 
 bins = datacards['split']
 if len(args) > 1:
@@ -34,7 +37,7 @@ logfile.close()
 
 for bin in bins:
     for mass in hwwinfo.masses:
-        os.system('qexe.py -t '+bin+'_'+str(mass)+' "runLimits.py -s -m '+str(mass)+' '+bin+' -p '+args[0]+'"')
+        os.system('qexe.py -t '+path+'_'+bin+'_'+str(mass)+' "runLimits.py -s -m '+str(mass)+' '+bin+' -p '+path+'"')
  
 os.system('watch \'tail -n 30 qexe.log;echo Remaining jobs: `qstat | wc -l`; qstat\'')
 

@@ -16,8 +16,8 @@ def main():
     parser.add_option('-s','--stepping',dest='stepping',help='Switch stepping on ', action='store_true', default=False)
     parser.add_option('-1',dest='minuit1',help='Minuit ', action='store_true', default=False)
     parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
-    hwwinfo.addOptions(parser)
-    hwwinfo.loadOptDefaults(parser)
+    hwwtools.addOptions(parser)
+    hwwtools.loadOptDefaults(parser)
 
     (opt, args) = parser.parse_args()
     print 'Running with lumi',opt.lumi

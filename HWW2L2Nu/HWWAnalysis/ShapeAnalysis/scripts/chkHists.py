@@ -9,7 +9,7 @@ import re
 
 
 def GetHistograms( path ):
-    print path
+#     print path
     rootFile = ROOT.TFile.Open(path)
 
     finder = utils.ObjFinder("TH1D")
@@ -50,10 +50,9 @@ if __name__ == '__main__':
 #     check histogram list
     entries = OrderedDict()
 
-
     for arg in files:
         (file,names) = GetHistograms(arg)
-        print '*'*80
+#         print '*'*80
         entries[arg] = {}
         
         for name in sorted(names):
@@ -64,22 +63,43 @@ if __name__ == '__main__':
 #             print 'name {0:<20} {1:<10} {2:<10}'.format(name,h.GetEntries(),h.Integral())
 
     nomRegex  = re.compile('^histo_([^_]+)$')
-    
-   
+    colfmt = '{0:<15}'
 
-    print ' '.ljust(40),entries.keys()
+    hdr = []
+    print '*'*80
+    for i,f in enumerate(entries.iterkeys()):
+        fid = 'file'+str(i)
+        print fid,'=',f
+        hdr.append([fid,''])
+    print '*'*80
+    
+    line=''
+
+    print
+#     print ' '*40,' '.join([colfmt.format(h) for h in hdr])
+    line += ' '*40
+    for h in hdr:
+        line+= ' | '+' '.join([colfmt.format(x) for x in h])
+    line += ' |'
+    print line
+    print '-'*len(line)
     sortNames = sorted(allNames)
     for name in sortNames:
         if not ( opt.all or nomRegex.match(name)):
             continue
-        print name.ljust(40),
+        line = name.ljust(40)
+#         print name.ljust(40),
         for arg,entry in entries.iteritems():
             if name in entry:
                 tmp = entry[name]
             else:
                 tmp = ['-']*2
 
-            print ''.join(['{0:<15}'.format(x) for x in tmp]),'   ',
+            line += ' | '+' '.join([colfmt.format(x) for x in tmp])
+#             print '|',' '.join([colfmt.format(x) for x in tmp]),
 
-        print
+#         print ' |'
+        line += ' |'
+        print line
+    print '-'*len(line)
 

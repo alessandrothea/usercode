@@ -7,6 +7,7 @@ import re
 import glob
 import optparse
 import hwwinfo
+import hwwtools
 import numpy
 import array
 import bisect
@@ -21,6 +22,7 @@ import logging
 
 
 class ShapeMerger:
+    _logger = logging.getLogger('ShapeMerger')
     def __init__(self):
         self.sets = []
         self.histograms = {}
@@ -53,7 +55,7 @@ class ShapeMerger:
         for n,h in shapes.iteritems():
             for s in self.sets:
                 if n not in s.histograms:
-                    logging.info('Warning: '+n+' is not available in set '+s.label)
+                    self._logger.info('Warning: '+n+' is not available in set '+s.label)
                     continue
 #                 h.Add(s.histograms[n])
                 dummy = s.histograms[n]
@@ -76,10 +78,10 @@ class ShapeMerger:
         injected = [ n for n in self.histograms if '-SI' in n and nomRegex.match(n) ]
         backgrounds = [ n for n in self.histograms if n not in injected and n not in signals and nomRegex.match(n) ]
 
-        if not len(injected):
-            raise RuntimeError('No injected histograms. And now?')
+#         if not len(injected):
+#             raise RuntimeError('No injected histograms. And now?')
 
-        pseudo = self.histograms[injected[0]].Clone('histo_PseudoData')
+        pseudo = self.histograms[backgrounds[0]].Clone('histo_PseudoData')
         pseudo.SetTitle('Data')
         pseudo.Reset()
         inputs = []
@@ -121,9 +123,9 @@ class ShapeMerger:
             if c < 0.:
                 h.SetAt(0.,i)
         if 'WJet' in h.GetName():
-            logging.debug('/'*50)
-            logging.debug('{0:<50} {1} {2}'.format(h.GetName().ljust(50),integral,h.Integral()))
-            logging.debug('/'*50)
+            self._logger.debug('/'*50)
+            self._logger.debug('{0:<50} {1} {2}'.format(h.GetName().ljust(50),integral,h.Integral()))
+            self._logger.debug('/'*50)
 
         if h.Integral() > 0:
             h.Scale(integral/h.Integral())
@@ -148,7 +150,7 @@ class ShapeMerger:
 
             for shape in shapes:
                 if shape.Integral() == 0.: 
-                    logging.warning('Empty histogram: '+p)
+                    self._logger.warning('Empty histogram: '+p)
                     continue
                 shape.Scale(e.Nsig()/shape.Integral())
 
@@ -178,7 +180,7 @@ class ShapeMerger:
         outFile = ROOT.TFile.Open(path,'recreate')
         for n,h in self.histograms.iteritems():
             if 'DYLL' in n:
-               logging.debug('{0} {1}'.format(n,h.Integral()))
+               self._logger.debug('{0} {1}'.format(n,h.Integral()))
             h.Write()
         outFile.Close()
 
@@ -191,6 +193,7 @@ class ShapeMerger:
 
 
 class ShapeMixer:
+    _logger = logging.getLogger('ShapeMixer')
     def __init__(self, label):
         self.label = label
         self.rebin = 1
@@ -215,6 +218,9 @@ class ShapeMixer:
         self._disconnect()
     
     def _connect(self):
+        self._logger.debug('Opening '+self.nominalsPath)
+        if not os.path.exists(self.nominalsPath):
+            raise IOError('Root file '+self.nominalsPath+' doesn\'t exists.')
         self.shapeFile = ROOT.TFile.Open(self.nominalsPath)
         self.systFiles = {}
 #         print self.systSearchPath
@@ -259,7 +265,8 @@ class ShapeMixer:
 
 
 
-    def mix(self, jets, flavor):
+#     def mix(self, cat, flavor):
+    def mix(self, chan):
         # mixing histograms
 
         self._connect()
@@ -279,51 +286,53 @@ class ShapeMixer:
         #   add the WJets shape systematics derived from miscalculated weights
         #   down is mirrored
         wJet = self.nominals['WJet']
-        wJetEff = self.nominals.pop('WJetFakeRate')
-        wJetSystName = 'CMS_hww_WJet_FakeRate_jet_shape'
-        wJetShapeUp = wJetEff.Clone('histo_WJet_'+wJetSystName+'Up')
-        wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
-        wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
-        self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
+        if 'WJetFakeRate' in self.nominals: 
+            wJetEff = self.nominals.pop('WJetFakeRate')
+            wJetSystName = 'CMS_hww_WJet_FakeRate_jet_shape'
+            wJetShapeUp = wJetEff.Clone('histo_WJet_'+wJetSystName+'Up')
+            wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
+            wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
+            self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
-        wJetShapeDown = wJet.Clone('histo_WJet_'+wJetSystName+'Down')
-        wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
-        wJetShapeDown.Scale(2)
-        wJetShapeDown.Add(wJetShapeUp,-1)
-        wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
-        self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
+            wJetShapeDown = wJet.Clone('histo_WJet_'+wJetSystName+'Down')
+            wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
+            wJetShapeDown.Scale(2)
+            wJetShapeDown.Add(wJetShapeUp,-1)
+            wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
+            self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
         # -----------------------------------------------------------------
         # DY shape syst
         #
         #   take the shape from the pfmet loosened sample
         #   down is mirrored
-        dyLLmc = self.nominals.pop('DYLL')
-        dyLLShape = self.nominals.pop('DYLLtemplate')
-        dyLLShapeSyst = self.nominals.pop('DYLLtemplatesyst')
-        dyLLSystName = 'CMS_hww_DYLL_template_shape'
+        if 'DYLLtemplate' in self.nominals:
+            dyLLmc = self.nominals.pop('DYLL')
+            dyLLShape = self.nominals.pop('DYLLtemplate')
+            dyLLShapeSyst = self.nominals.pop('DYLLtemplatesyst')
+            dyLLSystName = 'CMS_hww_DYLL_template_shape'
 
-        dyLLnom = dyLLShape.Clone('histo_DYLL')
-        dyLLnom.SetTitle('DYLL')
-        if dyLLnom.Integral() == 0.:
-            # no entries in the reference shape
-            # so what?
-            if dyLLmc.Integral() != 0.:
-#                 raise ValueError('DYLL shape template has 0. integral, but the standard mc is not ('+str(dyLLmc.Integral())+')')
-                logging.warn('DYLL shape template has 0. integral, but the standard mc is not ('+str(dyLLmc.Integral())+')')
-                self.nominals['DYLL'] = dyLLmc
+            dyLLnom = dyLLShape.Clone('histo_DYLL')
+            dyLLnom.SetTitle('DYLL')
+            if dyLLnom.Integral() == 0.:
+                # no entries in the reference shape
+                # so what?
+                if dyLLmc.Integral() != 0.:
+    #                 raise ValueError('DYLL shape template has 0. integral, but the standard mc is not ('+str(dyLLmc.Integral())+')')
+                    self._logger.warn('DYLL shape template has 0. integral, but the standard mc is not ('+str(dyLLmc.Integral())+')')
+                    self.nominals['DYLL'] = dyLLmc
+                else:
+                    self.nominals['DYLL'] = dyLLnom
             else:
+                dyLLnom.Scale( (dyLLmc.Integral() if dyLLmc.Integral() != 0. else 0.001)/dyLLnom.Integral() )
                 self.nominals['DYLL'] = dyLLnom
-        else:
-            dyLLnom.Scale( (dyLLmc.Integral() if dyLLmc.Integral() != 0. else 0.001)/dyLLnom.Integral() )
-            self.nominals['DYLL'] = dyLLnom
-            
-            # no shape systematic
-            if dyLLShapeSyst.Integral() != 0.:
-                dyLLShapeUp, dyLLShapeDown = self._mirror('DYLL',dyLLnom,dyLLShapeSyst, dyLLSystName,True)
+                
+                # no shape systematic
+                if dyLLShapeSyst.Integral() != 0.:
+                    dyLLShapeUp, dyLLShapeDown = self._mirror('DYLL',dyLLnom,dyLLShapeSyst, dyLLSystName,True)
 
-                self.templates[dyLLShapeUp.GetTitle()] = dyLLShapeUp
-                self.templates[dyLLShapeDown.GetTitle()] = dyLLShapeDown
+                    self.templates[dyLLShapeUp.GetTitle()] = dyLLShapeUp
+                    self.templates[dyLLShapeDown.GetTitle()] = dyLLShapeDown
 
         # anyway put some nominal back
 
@@ -370,38 +379,41 @@ class ShapeMixer:
         #
         mcAtNLO = {} 
         madWW = self.nominals['WW']
-        for t in ['WWnlo','WWnloUp','WWnloDown',]:
-            mcAtNLO[t] = self.nominals[t]
-            del self.nominals[t]
+        wwNLOs = ['WWnlo','WWnloUp','WWnloDown',]
 
-        wwGenUp = mcAtNLO['WWnlo'].Clone('histo_WW_Gen_nlo_WWUp')
-        wwGenUp.SetTitle('WW Gen_nlo_WW Up')
-        wwGenUp.Scale(madWW.Integral()/wwGenUp.Integral())
-        self.generators[wwGenUp.GetTitle()] = wwGenUp
+        if set(wwNLOs).issubset(self.nominals):
+            for t in wwNLOs:
+                mcAtNLO[t] = self.nominals[t]
+                del self.nominals[t]
 
-        #copy the nominal
-        wwGenDown = madWW.Clone('histo_WW_Gen_nlo_WWDown')
-        wwGenDown.SetTitle('WW Gen_nlo_WW Down')
-        wwGenDown.Scale(2.)
-        wwGenDown.Add(wwGenUp, -1)
-        wwGenDown.Scale(madWW.Integral()/wwGenDown.Integral())
-        self.generators[wwGenDown.GetTitle()] = wwGenDown
+            wwGenUp = mcAtNLO['WWnlo'].Clone('histo_WW_Gen_nlo_WWUp')
+            wwGenUp.SetTitle('WW Gen_nlo_WW Up')
+            wwGenUp.Scale(madWW.Integral()/wwGenUp.Integral())
+            self.generators[wwGenUp.GetTitle()] = wwGenUp
+
+            #copy the nominal
+            wwGenDown = madWW.Clone('histo_WW_Gen_nlo_WWDown')
+            wwGenDown.SetTitle('WW Gen_nlo_WW Down')
+            wwGenDown.Scale(2.)
+            wwGenDown.Add(wwGenUp, -1)
+            wwGenDown.Scale(madWW.Integral()/wwGenDown.Integral())
+            self.generators[wwGenDown.GetTitle()] = wwGenDown
 
 
-        # MC@NLO scale
-        wwScaleUp = mcAtNLO['WWnloUp'].Clone('histo_WW_Gen_scale_WWUp')
-        wwScaleUp.SetTitle('WW Gen_scale_WW Up')
-        wwScaleUp.Divide(mcAtNLO['WWnlo'])
-        wwScaleUp.Multiply(madWW)
-        wwScaleUp.Scale(madWW.Integral()/wwScaleUp.Integral())
-        self.generators[wwScaleUp.GetTitle()] = wwScaleUp
+            # MC@NLO scale
+            wwScaleUp = mcAtNLO['WWnloUp'].Clone('histo_WW_Gen_scale_WWUp')
+            wwScaleUp.SetTitle('WW Gen_scale_WW Up')
+            wwScaleUp.Divide(mcAtNLO['WWnlo'])
+            wwScaleUp.Multiply(madWW)
+            wwScaleUp.Scale(madWW.Integral()/wwScaleUp.Integral())
+            self.generators[wwScaleUp.GetTitle()] = wwScaleUp
 
-        wwScaleDown = mcAtNLO['WWnloDown'].Clone('histo_WW_Gen_scale_WWDown')
-        wwScaleDown.SetTitle('WW Gen_scale_WW Down')
-        wwScaleDown.Divide(mcAtNLO['WWnlo'])
-        wwScaleDown.Multiply(madWW)
-        wwScaleDown.Scale(madWW.Integral()/wwScaleDown.Integral())
-        self.generators[wwScaleDown.GetTitle()] = wwScaleDown
+            wwScaleDown = mcAtNLO['WWnloDown'].Clone('histo_WW_Gen_scale_WWDown')
+            wwScaleDown.SetTitle('WW Gen_scale_WW Down')
+            wwScaleDown.Divide(mcAtNLO['WWnlo'])
+            wwScaleDown.Multiply(madWW)
+            wwScaleDown.Scale(madWW.Integral()/wwScaleDown.Integral())
+            self.generators[wwScaleDown.GetTitle()] = wwScaleDown
 
         #
         # Statistical
@@ -411,11 +423,12 @@ class ShapeMixer:
             if n in ['Data'] or '-SI' in n:
                 continue
             if h.GetEntries() == 0. and h.Integral() == 0.0:
-                logging.info('Warning: nominal shape '+n+' is empty. The stat histograms won\'t be produced')
+                self._logger.info('Warning: nominal shape '+n+' is empty. The stat histograms won\'t be produced')
                 continue
 #             if n in ['DYTT']:
 #                 print n,h.GetEntries(),h.Integral()
-            effName = 'CMS_hww_{0}_{1}_{2}j_stat_shape'.format(n,flavor,jets)
+#             effName = 'CMS_hww_{0}_{1}_{2}_stat_shape'.format(n,flavor,cat)
+            effName = 'CMS_hww_{0}_{1}_stat_shape'.format(n,chan)
 
             statName  = h.GetName()+'_'+effName
             statTitle = h.GetTitle()+' '+effName
@@ -558,10 +571,12 @@ class ShapeMixer:
         self._disconnect()
 
     def _disconnect(self):
-        self.shapeFile.Close()
+        if hasattr(self,'shapeFile'):
+            self.shapeFile.Close()
 
-        for n,f in self.systFiles.iteritems():
-            f.Close()
+        if hasattr(self,'systFiles'):
+            for n,f in self.systFiles.iteritems():
+                f.Close()
 
 
 
@@ -594,8 +609,8 @@ if __name__ == '__main__':
 #     parser.add_option('--scale2nominal', dest='scale2nom', help='Systematics to normalize to nominal ', default='')
 #     parser.add_option('--ninja', dest='ninja', help='Ninja', action='store_true', default=False )
 
-    hwwinfo.addOptions(parser)
-    hwwinfo.loadOptDefaults(parser)
+    hwwtools.addOptions(parser)
+    hwwtools.loadOptDefaults(parser)
 
 
     (opt, args) = parser.parse_args()
@@ -603,9 +618,14 @@ if __name__ == '__main__':
 
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
-    #     ROOT.gSystem.Load('libFWCoreFWLite')
-    #     ROOT.AutoLibraryLoader.enable()
 
+    if not opt.debug:
+        pass
+    elif opt.debug > 0:
+        logging.basicConfig(level=logging.DEBUG)
+
+    logging.debug('Used options')
+    logging.debug(', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()]))
     #  ___                         _              
     # | _ \__ _ _ _ __ _ _ __  ___| |_ ___ _ _ ___
     # |  _/ _` | '_/ _` | '  \/ -_)  _/ -_) '_(_-<
@@ -617,8 +637,7 @@ if __name__ == '__main__':
     mergedDir = opt.path_shape_merged
     rebin     = int(opt.rebin)
 
-
-    jets       = ['0','1']
+#     categories = [ hwwinfo.categories[c] for c in opt.cats ]
     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
 
     if not opt.var or not opt.lumi:
@@ -626,30 +645,43 @@ if __name__ == '__main__':
     lumi = opt.lumi
     var = opt.var
     lumiMask = ['Data','WJet']
-    flavors = dict([('sf',['ee','mm']),('of',['em','me'])])
-#     nameTemplateXavier = 'R42X_R42X_Sc1_mtCut_H{0}_{1}jet_mllmtPreSel_{2}__MVAShape'
-    nameTmpl  = 'histo_H{0}_{1}jet_'+var+'shapePreSel_{2}'
+#     flavors = dict([('sf',['ee','mm']),('of',['em','me'])])
+    nameTmpl  = 'shape_Mh{0}_{1}_'+var+'_shapePreSel_{2}'
     os.system('mkdir -p '+mergedDir)
 
-    # insert some printout HERE
+   
     # read the scale factors from the scale factors file 
-    scaleFactors = [{},{}]
-    f = open(opt.path_scale)
-    for l in f.readlines():
-        tokens = l.split()
-        scaleFactors[0][tokens[0]] = float(tokens[1])
-        scaleFactors[1][tokens[0]] = float(tokens[2])
+    if opt.path_scale:
+        scaleFactors = {}
+        for cat in hwwinfo.categories:
+            factors = {}
+            scaleFactors[cat] = factors
+            scalepath = opt.path_scale.format(category=cat)
+            try:
+                f = open(scalepath)
+                for l in f.readlines():
+                    tokens = l.split()
+                    factors[tokens[0]] = float(tokens[1])
+                logging.defined('Scale factor file '+scalepath+' loaded')
+            except IOError as ioe:
+                logging.debug('File '+scalepath+' not found')
 
-    for o in opt.scale:
-        tokens = o.split('=')
-        if len(tokens) != 2:
-            parser.print_help()
-            parser.error('Scale option syntax is -s <sample>=<value>')
-    
-        scaleFactors[0][tokens[0]] = float(tokens[1])
-        scaleFactors[1][tokens[0]] = float(tokens[1])
+            # cmd line override
+            for o in opt.scale:
+                tokens = o.split('=')
+                if len(tokens) != 2:
+                    parser.print_help()
+                    parser.error('Scale option syntax is -s <sample>=<value>')
+            
+                print cat,'Scale override:',tokens[0],tokens[1]
+                factors[tokens[0]] = float(tokens[1])
+    else:
+        scaleFactors = None
 
-    print scaleFactors
+
+
+
+    logging.debug('Scale Factors: '+str(scaleFactors))
 
 
     ROOT.TH1.SetDefaultSumw2(True)
@@ -664,6 +696,15 @@ if __name__ == '__main__':
 #         scale2NomList.append( (tokens[0], tokens[1]) )
 #     print scale2NomList
 
+#     channels = {}
+#     channels['of_0j'] = ('0j',['em','me'])
+#     channels['of_1j'] = ('1j',['em','me'])
+#     channels['sf_0j'] = ('0j',['mm','ee'])
+#     channels['sf_1j'] = ('1j',['mm','ee'])
+#     channels['of_0j'] = ('0j',['em','me'])
+#     channels['vbf']   = ('vbf',['mm','ee','em','me'])
+
+
 
 #  _                  
 # | |   ___  ___ _ __ 
@@ -673,44 +714,90 @@ if __name__ == '__main__':
 #     
     reader = datadriven.DDCardReader( opt.path_dd )
 
+    channels =  dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])
+
     for mass in masses:
-        for njet in [0,1]:
-            for fl,chans in flavors.iteritems():
-                # open output file
-                m = ShapeMerger()
-                print '-'*100
-                print 'ooo Processing',mass, str(njet), fl
-                print '-'*100
-                for ch in chans:
-                    print '  o Channel:',ch
-                    # configure
-                    label = 'mH{0} {1}njet {2}'.format(mass,njet,ch)
-                    ss = ShapeMixer(label)
-                    ss.nominalsPath   = os.path.join(nomPath,nameTmpl.format(mass, str(njet), ch)+'.root')
-                    ss.systSearchPath = os.path.join(systPath,nameTmpl.format(mass, str(njet), ch)+'_*.root')
-                    ss.lumiMask = lumiMask
-                    ss.lumi = lumi
-                    ss.rebin = rebin
+        for ch,(cat,fls) in channels.iteritems():
+            print ch,cat,fls
+            # open output file
+            m = ShapeMerger()
+            print '-'*100
+            print 'ooo Processing',mass, ch
+            print '-'*100
 
-                    # run
-                    print '     - mixing histograms'
-                    ss.mix(njet,fl)
-                    ss.applyScaleFactors( scaleFactors[njet] )
+            for fl in fls:
+                print '  o Channel:',fl
+                # configure
+                label = 'mH{0} {1} {2}'.format(mass,cat,fl)
+                ss = ShapeMixer(label)
+                ss.nominalsPath   = os.path.join(nomPath,nameTmpl.format(mass, cat, fl)+'.root')
+                ss.systSearchPath = os.path.join(systPath,nameTmpl.format(mass, cat, fl)+'_*.root')
+                ss.lumiMask = lumiMask
+                ss.lumi = lumi
+                ss.rebin = rebin
 
-                    m.add(ss)
+                # run
+                print '     - mixing histograms'
+                ss.mix(ch)
+                if scaleFactors:
+                    ss.applyScaleFactors( scaleFactors[cat] )
 
-                print '  - summing sets'
-                m.sum()
-                
-                (estimates,dummy) = reader.get(mass,njet,fl)
+                m.add(ss)
+            print '  - summing sets'
+            m.sum()
 
+            
+            if not reader.iszombie:
+                print '  - data driven'
+                (estimates,dummy) = reader.get(mass,ch)
                 m.applyDataDriven( estimates )
-                m.injectSignal()
-                if not opt.dry:
-                    output = 'hww-{lumi:.2f}fb.mH{mass}.{flav}_{jets}j_shape.root'.format(lumi=lumi,mass=mass,flav=fl,jets=njet)
-                    path = os.path.join(mergedDir,output)
-                    print '  - writing to',path
-                    m.save(path)
+
+            m.injectSignal()
+            if not opt.dry:
+                output = 'hww-{lumi:.2f}fb.mH{mass}.{channel}_shape.root'.format(lumi=lumi,mass=mass,channel=ch)
+                path = os.path.join(mergedDir,output)
+                print '  - writing to',path
+                m.save(path)
+
+
+#     for mass in masses:
+#         for cat in categories:
+#             for fl,chans in flavors.iteritems():
+#                 # open output file
+#                 m = ShapeMerger()
+#                 print '-'*100
+#                 print 'ooo Processing',mass, cat.name, fl
+#                 print '-'*100
+#                 for ch in chans:
+#                     print '  o Channel:',ch
+#                     # configure
+#                     label = 'mH{0} {1} {2}'.format(mass,cat.name,ch)
+#                     ss = ShapeMixer(label)
+#                     ss.nominalsPath   = os.path.join(nomPath,nameTmpl.format(mass, cat.name, ch)+'.root')
+#                     ss.systSearchPath = os.path.join(systPath,nameTmpl.format(mass, cat.name, ch)+'_*.root')
+#                     ss.lumiMask = lumiMask
+#                     ss.lumi = lumi
+#                     ss.rebin = rebin
+
+#                     # run
+#                     print '     - mixing histograms'
+#                     ss.mix(cat.name,fl)
+#                     ss.applyScaleFactors( scaleFactors[njet] )
+
+#                     m.add(ss)
+
+#                 print '  - summing sets'
+#                 m.sum()
+#                 
+#                 (estimates,dummy) = reader.get(mass,njet,fl)
+
+#                 m.applyDataDriven( estimates )
+#                 m.injectSignal()
+#                 if not opt.dry:
+#                     output = 'hww-{lumi:.2f}fb.mH{mass}.{flav}_{cat}_shape.root'.format(lumi=lumi,mass=mass,flav=fl,cat=cat.name)
+#                     path = os.path.join(mergedDir,output)
+#                     print '  - writing to',path
+#                     m.save(path)
 
     print 'Used options'
     print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])

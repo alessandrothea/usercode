@@ -23,7 +23,7 @@ def runTheShape():
     parser = optparse.OptionParser(usage)
     parser.add_option('-t','--tag',dest='tag')
     parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
-    hwwinfo.loadOptDefaults(parser)
+    hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
 
     tag = opt.tag.replace(' ','_')
@@ -31,12 +31,23 @@ def runTheShape():
     if not args:
         raise 'Desired channels missing: check the usage'
 
-    if args[0] == 'all':
-        plots = ['of_0j','of_1j','sf_0j','sf_1j','comb_0j','comb_1j','comb_0j1j','comb_0j1j2j']
-    elif args[0] == 'shape':
-        plots = ['comb_0j','comb_1j','comb_0j1j']
-    elif args[0] == 'split':
-        plots = ['of_0j','of_1j','sf_0j','sf_1j']
+    datacards = {}
+    datacards['split'] = ['of_0j', 'of_1j', 'sf_0j', 'sf_1j']
+    datacards['shape'] = ['comb_0j1j','comb_0j','comb_1j']
+    datacards['full']  = ['comb_0j1j2j']
+
+    datacards['all'] = datacards['split']+datacards['shape']+datacards['full']
+    datacards['0j1j'] = datacards['split']+datacards['shape']
+
+
+    if args[0] in datacards:
+        plots = datacards[args[0]]
+#     if args[0] == 'all':
+#         plots = ['of_0j','of_1j','sf_0j','sf_1j','comb_0j','comb_1j','comb_0j1j','comb_0j1j2j']
+#     elif args[0] == 'shape':
+#         plots = ['comb_0j','comb_1j','comb_0j1j']
+#     elif args[0] == 'split':
+#         plots = ['of_0j','of_1j','sf_0j','sf_1j']
     else:
         plots = args[:]
         
