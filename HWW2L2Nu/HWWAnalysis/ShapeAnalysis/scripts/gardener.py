@@ -823,7 +823,7 @@ if __name__ == '__main__':
             print 'Output:',outputfile
             print '-'*80
         
-#             module.process( input=inputfile, output=outputfile, tree=tree )
+            module.process( input=inputfile, output=outputfile, tree=tree )
 
     else:
         if os.path.exists(output) and os.path.isdir(output):
