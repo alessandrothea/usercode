@@ -91,6 +91,7 @@ class TreeCloner(object):
         self.itree = None
         self.ofile = None
         self.otree = None
+        self.label = None
     
     def _openRootFile(self,path, option=''):
         f =  ROOT.TFile.Open(path,option)
@@ -142,18 +143,25 @@ class TreeCloner(object):
 class Pruner(TreeCloner):
     def __init__(self):
         self.filter = ''
+        self.dryrun = False
 
     def help(self):
-        print "Skim the tree according to the cut string"
+        return '''Produce a copy of the tree applying a filter'''
 
     def addOptions(self,parser):
-        parser.add_option('-f','--filter',dest='filter')
+        description=self.help()
+        group = optparse.OptionGroup(parser,self.label, description)
+        group.add_option('-f','--filter',dest='filter', help='cut string as undestood by TTree::Draw')
+        group.add_option('-n','--dryrun',dest='dryrun', help='do nothing, just count', action='store_true')
+        parser.add_option_group(group)
+        return group
 
     def checkOptions(self, opts ):
         if not opts.filter:
             raise ValueError('No filter defined?!?')
 
         self.filter = getattr(opts,'filter')
+        self.dryrun = getattr(opts,'dryrun')
 
     def process(self, **kwargs ):
         print 'Filtering \''+self.filter+'\''
@@ -169,8 +177,9 @@ class Pruner(TreeCloner):
         self.itree.Draw('>>prunerlist',self.filter)
         print 'Filtered Entries',evlist.GetN()
 
-        ofile = ROOT.TFile.Open(output,'recreate')
-
+        if self.dryrun:
+            print 'Dryrun: eventloops skipped'
+            return
         self.clone(output)
 
         itree = self.itree
@@ -185,6 +194,7 @@ class Pruner(TreeCloner):
             otree.Fill()
 
         self.disconnect()
+        print '- Eventloop completed'
 
 #   _      ___      _____                       
 #  | | /| / / | /| / / _ \______ _____  ___ ____
@@ -195,28 +205,22 @@ class WWPruner(Pruner):
     levels = ['wwcommon','wwlo','wwhi']
 
     def help(self):
-        print 'Skim with one predefined ww-selection lever'
+        return '''Filters the tree according to the command line options. wwcommon, wwhi, wwlo flags are understood'''
+
 
     def addOptions(self,parser):
-        parser.add_option('-f','--filter',dest='filter',help='Selection level. Can be '+str(self.levels))
+        description= self.help()
+        group = super(WWPruner,self).addOptions(parser)
+        group.set_description(description)
+        return group
 
-    def checkOptions(self,opts):
-        if not opts.filter:
-            raise ValueError('No filter defined?!?')
+#         parser.add_option('-f','--filter',dest='filter',help='Cut string as understood by TTree::Draw. In addition understands '+', '.join(self.levels))
 
-        class options: pass
-        wwopt = options()
+    def connect(self, tree, input):
+        super(WWPruner,self).connect(tree,input)
 
-
-        if opts.filter not in self.levels:
-            raise NameError('Filter '+opt.filter+' not valid. Can be '+str(self.levels)+'.')
-
-        wwopt.filter = ' && '.join(getattr(wwcuts,opts.filter))
-#         if opts.filter in 
-
-        super(WWPruner,self).checkOptions(wwopt)
-
-    
+        for l in self.levels:
+            self.itree.SetAlias(l,' && '.join(getattr(wwcuts,l)))
 
 
 #    ___                    __   _____         _____         
@@ -232,10 +236,14 @@ class Grafter(TreeCloner):
         self.regex = re.compile("([a-zA-Z0-9]*)/([FID])=(.*)")
 
     def help(self):
-        print "Add or replace variables in the tree"
+        return '''Makes a copy of the original tree adding or replacing variables'''
 
     def addOptions(self,parser):
-        parser.add_option('-v','--var',dest='variables',action='append',default=[])
+        description = self.help()
+        group = optparse.OptionGroup(parser,self.label, description)
+        group.add_option('-v','--var',dest='variables',action='append',default=[])
+        parser.add_option_group(group)
+        return group
 
     def checkOptions(self,opts):
         if not opts.variables:
@@ -325,6 +333,8 @@ class Grafter(TreeCloner):
             otree.Fill()
         
         self.disconnect()
+        print '- Eventloop completed'
+
 
 #   _      ___      ________              _____         _____         
 #  | | /| / / | /| / / __/ /__ ____ ____ / ___/______ _/ _/ /____ ____
@@ -338,7 +348,7 @@ class WWFlagsGrafter(Grafter):
         print 'Add the flags at ww, ww+0j,ww+1j, ww+2j levels, hi and lo mass'
 
     def addOptions(self,parser):
-        pass
+        return None
 
     def checkOptions(self, opts):
         # create the options in 'adder style'
@@ -358,9 +368,24 @@ class WWFlagsGrafter(Grafter):
             'wwsel2j_hi/I='+' && '.join(wwcuts.wwhi+[wwcuts.vbf]),
         ]
 
-
         super(WWFlagsGrafter,self).checkOptions(wwopt)
         
+
+#    ___   ___          _____         _____         
+#   / _ | / (_)__ ____ / ___/______ _/ _/ /____ ____
+#  / __ |/ / / _ `(_-</ (_ / __/ _ `/ _/ __/ -_) __/
+# /_/ |_/_/_/\_,_/___/\___/_/  \_,_/_/ \__/\__/_/   
+#                                                   
+class AliasGrafter(Grafter):
+
+    def process(self):
+        
+        tree  = kwargs['tree']
+        input = kwargs['input']
+        output = kwargs['output']
+#         self.connect(tree,input)
+#         self.disconnect()
+        pass
 
 #    ___  __  __                 
 #   / _ \/ / / /__  ___  ___ ____
@@ -380,15 +405,21 @@ class PUpper(TreeCloner):
 
     # ----
     def help(self):
-        pass
+        return '''Add a pileup weight according to data and mc distributions'''
 
     # ----
     def addOptions(self,parser):
-        parser.add_option('-d', '--data'    , dest='datafile', help='Name of the input root file with pu histogram from data',)
-        parser.add_option('-m', '--mc'      , dest='mcfile'  , help='Name of the input root file with pu histogram from mc',)
-        parser.add_option('-H', '--HistName', dest='histname', help='Histogram name', default='pileup')
-        parser.add_option('-k', '--kind'    , dest='kind'    , help='kind of PU reweighting: trpu (= true pu), itpu (= in time pu, that is observed!)',)
-        parser.add_option('-n', '--name'    , dest='branch'  , help='Name of the branch of PU weight', default='puW')
+        description = self.help()
+        group = optparse.OptionGroup(parser,self.label, description)
+ 
+        group.add_option('-d', '--data'    , dest='datafile', help='Name of the input root file with pu histogram from data',)
+        group.add_option('-m', '--mc'      , dest='mcfile'  , help='Name of the input root file with pu histogram from mc',)
+        group.add_option('-H', '--HistName', dest='histname', help='Histogram name', default='pileup')
+        group.add_option('-k', '--kind'    , dest='kind'    , help='kind of PU reweighting: trpu (= true pu), itpu (= in time pu, that is observed!)',)
+        group.add_option('-b', '--branch'  , dest='branch'  , help='Name of the branch of PU weight', default='puW')
+        parser.add_option_group(group)
+
+        return group
 
     # ----
     def checkOptions(self,opts):
@@ -533,19 +564,26 @@ class EffLepFiller(TreeCloner):
         return effW
 
     def help(self):
-        pass
+        return '''Add a new lepton efficiency weight. The source root files for electrons and muons have to be specified'''
 
     def addOptions(self,parser):
-        parser.add_option('-e', '--elfile', dest='elfile', help='Name of the input root file with electron efficiencies',)
-        parser.add_option('-m', '--mufile', dest='mufile', help='Name of the input root file with muon efficiencies',)
-        parser.add_option('-E', '--elname', dest='elname', help='Electon\'s histogram name', default='newhwwWP_ratio')
-        parser.add_option('-M', '--muname', dest='muname', help='Muon\'s histogram name', default='muonDATAMCratio')
-        parser.add_option('-n', '--name',   dest='branch', help='Name of the lepton efficiency weight branch', default='effW')
+        description = self.help()
+        group = optparse.OptionGroup(parser,self.label, description)
+
+        group.add_option('-e', '--elfile', dest='elfile', help='Name of the input root file with electron efficiencies',)
+        group.add_option('-m', '--mufile', dest='mufile', help='Name of the input root file with muon efficiencies',)
+        group.add_option('-E', '--elname', dest='elname', help='Electon\'s histogram name', default='newhwwWP_ratio')
+        group.add_option('-M', '--muname', dest='muname', help='Muon\'s histogram name', default='muonDATAMCratio')
+        group.add_option('-b', '--branch',   dest='branch', help='Name of the lepton efficiency weight branch', default='effW')
+
+        parser.add_option_group(group)
+        return group
+
+
 
     def checkOptions(self,opts):
-        if not (hasattr(opts,'elfile') and 
-                hasattr(opts,'mufile') ):
-            raise RuntimeError('Missing parameter')
+        if not ( (hasattr(opts,'elfile') and hasattr(opts,'mufile') ) and (opts.elfile and opts.mufile)):
+            raise RuntimeError('Missing options: mufile, elfile')
 
         self.elfile = self._openRootFile(opt.elfile)
         elhist = self._getRootObj(self.elfile,opts.elname)
@@ -637,11 +675,17 @@ class EffTrgFiller(TreeCloner):
         pass
 
     def help(self):
-        pass
+        return '''Add a new trigger efficiency weight. The source files must be passed as an option'''
 
     def addOptions(self,parser):
-        parser.add_option('-f', '--fitfile', dest='fitfile', help='path to the file containing the fit results',)
-        parser.add_option('-n', '--name',   dest='branch', help='Name of the trigger efficiency weight branch', default='triggW')
+        description = self.help()
+        group = optparse.OptionGroup(parser,self.label, description)
+
+        group.add_option('-f', '--fitfile', dest='fitfile', help='path to the file containing the fit results',)
+        group.add_option('-b', '--branch',   dest='branch', help='Name of the trigger efficiency weight branch', default='triggW')
+
+        parser.add_option_group(group)
+        return group 
 
     def checkOptions(self,opts):
         if not (hasattr(opts,'fitfile')):
@@ -713,7 +757,15 @@ class EffTrgFiller(TreeCloner):
 # /_/  /_/\_,_/_/_//_/
 #                     
 
-modules = {}
+class ModuleManager(dict):
+    
+    def __setitem__(self,key,value):
+        super(ModuleManager, self).__setitem__(key, value)
+        value.label = key
+
+
+
+modules = ModuleManager()
 modules['filter']     = Pruner()
 modules['wwfilter']   = WWPruner()
 modules['adder']      = Grafter()
@@ -724,8 +776,18 @@ modules['efftfiller'] = EffTrgFiller()
 
 
 if __name__ == '__main__':
-    usage =  'Usage: %prog <command> <options> filein.root fileout.root\n'
-    usage += '  Commands: '+', '.join(modules.keys()+['help'])
+    usage = '''
+    Usage:
+        %prog <command> <options> filein.root fileout.root
+        %prog -r <command> <options> dirin dirout
+
+    In the latter case the directory tree in dirin is rebuilt in dirout
+
+    Valid commands:
+        '''+', '.join(modules.keys()+['help'])+'''
+
+    Type %prog <command> -h for the command specific help
+    '''
 
     parser = optparse.OptionParser(usage)
     parser.add_option('-t','--tree',        dest='tree',                            default='latino')
@@ -766,7 +828,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     module = modules[modname]
-    module.addOptions(parser)
+    group = module.addOptions(parser)
 
     sys.argv.remove(modname)
 
@@ -776,9 +838,19 @@ if __name__ == '__main__':
 
     sys.argv.append('-b')
 
-    module.checkOptions(opt)
+    try:
+        module.checkOptions(opt)
+    except Exception as e:
+        print 'Error in modutle',module.label
+        print e
+        sys.exit(1)
 
     tree = opt.tree
+
+    if len(args) < 2:
+        parser.error('Input and/or output files missing')
+
+        
     input = args[0]
     output = args[1]
 
