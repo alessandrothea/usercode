@@ -4,13 +4,6 @@ import os
 import optparse
 
 
-## list with the root files to process
-runOver = [
-    'ggToH140toWWto2L2Nu',
-    'ggToH160toWWto2L2Nu',
-#    'DYtoElEl',
-    ]
-
 fulltag = [
     'muonScale',
     'electronScale',

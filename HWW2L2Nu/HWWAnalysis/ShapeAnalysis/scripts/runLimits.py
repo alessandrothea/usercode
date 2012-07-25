@@ -3,6 +3,7 @@
 import sys
 import os.path
 import hwwinfo
+import hwwtools
 import optparse
 import fnmatch
 import subprocess
@@ -80,10 +81,12 @@ def main():
         print '-'*50
         print command
         print '-'*50
-        subprocess.call(command, shell=True)
+        code = subprocess.call(command, shell=True)
         print 'mv higgsCombine'+tagname+'.Asymptotic.mH'+mass+'.root '+outputDir
         subprocess.call( 'mv higgsCombine'+tagname+'.Asymptotic.mH'+mass+'.root '+outputDir, shell=True)
         
+        if code: sys.exit(code)
+
 if __name__ == '__main__':
     main()
 

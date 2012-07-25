@@ -1,11 +1,37 @@
 #!/bin/bash
 # set -x
 
-lumi=4.63
+
+
+lumi=3.54
 head="hww-${lumi}fb.mH"
 head2j="hww-${lumi}fb.mH"
 tail="_shape.txt"
+cwd=$PWD
 # masses="110 115 120 130 140 150 160 170 180 190 200 250 300 350 400 450 500 550 600"
+
+function usage() {
+    echo $0 stocazzo!
+}
+
+prefix=
+while getopts "hp:" OPTION
+do
+    case $OPTION in
+        h)
+            usage
+            exit 1
+            ;;
+        p)
+            prefix=$OPTARG
+            ;;
+    esac
+done
+
+if [[ $prefix ]]; then
+    echo "Running in $prefix"
+    cd $prefix
+fi
 
 eval `shape-config.py`
 
@@ -38,6 +64,8 @@ do
 		$combCmd HWW_0j=$head$mass".comb_0j"$tail HWW_1j=$head$mass".comb_1j"$tail HWW_2j=$head2j$mass.comb_2j_cb.txt > $head$mass.comb_0j1j2j$tail
 fi
 
+
 done
+echo "...Done"
 
 

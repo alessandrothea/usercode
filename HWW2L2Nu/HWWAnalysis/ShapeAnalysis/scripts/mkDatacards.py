@@ -7,8 +7,10 @@ import re
 import os.path
 from HWWAnalysis.Misc.odict import OrderedDict
 import hwwinfo
+import hwwtools
 import datadriven
 import fnmatch
+import pdb
 from WWAnalysis.AnalysisStep.systematicUncertainties import getCommonSysts,addFakeBackgroundSysts
 
 class AutoVivification(dict):
@@ -226,9 +228,10 @@ class NuisanceMapBuilder:
             self._1jetOnly[k] = (['lnN'], dict([( process, v[0]) for process in v[1] ]) )
 
     
-    def _addDataDrivenNuisances(self, nuisances, yields, mass, jets, flavor):
+    def _addDataDrivenNuisances(self, nuisances, yields, mass, channel, jcat):
         
-        (estimates,dummy) = self.ddreader.get(mass, jets, flavor)
+        if self.ddreader.iszombie: return
+        (estimates,dummy) = self.ddreader.get(mass, channel)
 
         pdf = 'lnN'
 
@@ -237,12 +240,12 @@ class NuisanceMapBuilder:
         mapping['Top']  = ['Top']
         mapping['DYLL'] = ['DYLL']
 
-        eff_bin1_tmpl = 'CMS_hww_{0}_{1}_{2}j_stat_bin1'
+        eff_bin1_tmpl = 'CMS_hww_{0}_{1}_stat_bin1'
         for tag,processes in mapping.iteritems(): 
             extr_entries = {}
             stat_entries = {}
-            eff_extr = 'CMS_hww_{0}_{1}j_extr'.format(tag,jets)
-            eff_stat = 'CMS_hww_{0}_{1}j_stat'.format(tag,jets)
+            eff_extr = 'CMS_hww_{0}_{1}_extr'.format(tag,jcat)
+            eff_stat = 'CMS_hww_{0}_{1}_stat'.format(tag,jcat)
             
             available = [ p for p in processes if p in estimates ]
             if not available: continue
@@ -259,7 +262,7 @@ class NuisanceMapBuilder:
 
                 extr_entries[process] = extrUnc
                 stat_entries[process] = e.alpha
-                eff_bin1 = eff_bin1_tmpl.format(process,flavor,jets)
+                eff_bin1 = eff_bin1_tmpl.format(process,channel)
                 if eff_bin1 in nuisances:
                     del nuisances[eff_bin1]
 
@@ -268,39 +271,39 @@ class NuisanceMapBuilder:
             nuisances[eff_stat] = (['gmN',e.Nctr], stat_entries)
 
 
-    def _addStatisticalNuisances(self,nuisances, yields,jets,channel):
+    def _addStatisticalNuisances(self,nuisances, yields,channel):
         for p,y in yields.iteritems():
             if p == 'Data':
                 continue
-            name  = 'CMS_hww_{0}_{1}_{2}j_stat_bin1'.format(p,channel,jets)
+            name  = 'CMS_hww_{0}_{1}_stat_bin1'.format(p,channel)
             if y._entries == 0.:
                 continue
             value = 1+(1./ROOT.TMath.Sqrt(y._entries) if y._entries > 0 else 0.)
             nuisances[name] = ( ['lnN'], dict({p:value}) )
 
-    def _addExperimentalMassDepNuisances(self, nuisances, mass, jets, flavor ):
-        '''Mass dependent experimental nuisances [normalization only]'''
-        channels = dict([('sf',['ee','mm']),('of',['em','me'])])
+#     def _addExperimentalMassDepNuisances(self, nuisances, mass, jets, flavor ):
+#         '''Mass dependent experimental nuisances [normalization only]'''
+#         channels = dict([('sf',['ee','mm']),('of',['em','me'])])
 
-        cards = [ self._expcards[mass][jets][ch] for ch in channels[flavor]]
-        # further x-check on the items we are going to average
-        diffEffs = set(cards[0].keys()) ^ set(cards[1].keys())
-        if diffEffs:
-            raise RuntimeError('Different systematics found for '+'-'.join(channels[flavor])+': '+' '.join(diffEffs))
+#         cards = [ self._expcards[mass][jets][ch] for ch in channels[flavor]]
+#         # further x-check on the items we are going to average
+#         diffEffs = set(cards[0].keys()) ^ set(cards[1].keys())
+#         if diffEffs:
+#             raise RuntimeError('Different systematics found for '+'-'.join(channels[flavor])+': '+' '.join(diffEffs))
 
-        effects = cards[0].keys()
-        for eff in effects:
-            # aslo check the same processes re available for the same eff
-            diffProcs = set(cards[0][eff].keys()) ^ set(cards[1][eff].keys())
-            if diffProcs:
-                raise RuntimeError('Different systematics found for '+'-'.join(channels[flavor])+', '+eff+': '+' '.join(diffProcs))
+#         effects = cards[0].keys()
+#         for eff in effects:
+#             # aslo check the same processes re available for the same eff
+#             diffProcs = set(cards[0][eff].keys()) ^ set(cards[1][eff].keys())
+#             if diffProcs:
+#                 raise RuntimeError('Different systematics found for '+'-'.join(channels[flavor])+', '+eff+': '+' '.join(diffProcs))
 
-            processes = cards[0][eff].keys()
-    
-            tag = 'CMS_'+eff
-            if tag in nuisances: del nuisances[tag]
-            values = [(cards[0][eff][p]+cards[1][eff][p])/2. for p in processes]
-            nuisances[tag] = (['lnN'], dict(zip(processes,values)) )
+#             processes = cards[0][eff].keys()
+#     
+#             tag = 'CMS_'+eff
+#             if tag in nuisances: del nuisances[tag]
+#             values = [(cards[0][eff][p]+cards[1][eff][p])/2. for p in processes]
+#             nuisances[tag] = (['lnN'], dict(zip(processes,values)) )
 
     def _addWWShapeNuisances(self,nuisances, effects):
         '''Generator relates shape nuisances'''
@@ -366,7 +369,7 @@ class NuisanceMapBuilder:
     # | .` | || | (_-</ _` | ' \/ _/ -_|_-<
     # |_|\_|\_,_|_/__/\__,_|_||_\__\___/__/
     #                                      
-    def nuisances(self, yields, effects, mass, jets, channel, opts):
+    def nuisances(self, yields, effects, mass, channel, jetcat, flavor, opts):
         '''Add the nuisances according to the options'''
         allNus = OrderedDict()
 #         allNus.update(self._common)
@@ -381,7 +384,7 @@ class NuisanceMapBuilder:
 
         qqWWfromData = int(mass) < 200
 
-        CutBased = getCommonSysts(int(mass),channel,jets,qqWWfromData, optMatt)
+        CutBased = getCommonSysts(int(mass),flavor,jetcat,qqWWfromData, optMatt)
         common = OrderedDict()
         for k in sorted(CutBased):
             common[k] = CutBased[k]
@@ -389,8 +392,8 @@ class NuisanceMapBuilder:
 #         print channel
 #         addFakeBackgroundSysts(allNus, mass,channel,jets)#,errWW=0.2,errggWW=0.2,errDY=1.0,errTop0j=1.0,errTop1j=0.3,errWJ=0.5)
 
-        self._addStatisticalNuisances(allNus, yields, jets, channel)
-        self._addDataDrivenNuisances(allNus, yields, mass, jets, channel)
+        self._addStatisticalNuisances(allNus, yields, channel)
+        self._addDataDrivenNuisances(allNus, yields, mass, channel, jetcat)
         
         self._addShapeNuisances(allNus,effects, opts)
 
@@ -456,23 +459,22 @@ if __name__ == '__main__':
     (opt, args) = parser.parse_args()
     print 'ShapeFlags: ',opt.shapeFlags
     print 'NuisFlags:  ',opt.nuisFlags
-#     sys.exit(0)
 
     # checks
     if not opt.var or not opt.lumi:
         parser.error('The variable and the luminosty must be defined')
-#     lumi = float(opt.lumi)
     var = opt.var
 
     sys.argv.append('-b')
     ROOT.gROOT.SetBatch()
 
-    flavors = ['sf','of']
-    jetBins = hwwinfo.jets[:]
     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
 
-#     histPath = 'merged/'
-#     ddPath   = '/shome/thea/HWW/ShapeAnalysis/data/AnalFull2011_BDT/'
+
+    channels =  dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])
+
+    print channels
+
     mergedPath = opt.path_shape_merged
     outPath    = 'datacards/'
     if opt.prefix:
@@ -481,7 +483,7 @@ if __name__ == '__main__':
         outPath = (opt.prefix if opt.prefix[-1] == '/' else opt.prefix+'/')+outPath
     shapeSubDir = 'shapes/'
 
-    shapeDir = outPath+shapeSubDir[:-1]
+    shapeDir = os.path.join(outPath,shapeSubDir[:-1])
 
     os.system('mkdir -p '+outPath)
     if os.path.exists(shapeDir):
@@ -492,33 +494,37 @@ if __name__ == '__main__':
     optsNuis['shapeFlags'] = opt.shapeFlags
     optsNuis['nuisFlags'] = opt.nuisFlags
     lumistr = '{0:.2f}'.format(opt.lumi)
-    shapeTmpl = os.path.join(mergedPath,'hww-'+lumistr+'fb.mH{mass}.{flavor}_{jets}j_shape.root')
+    shapeTmpl = os.path.join(mergedPath,'hww-'+lumistr+'fb.mH{mass}.{channel}_shape.root')
     mask = ['Vg','DYLL','DYTT']
 
     builder = NuisanceMapBuilder( opt.path_dd )
     builder.statShapeVeto = mask
     for mass in masses:
-        for jets in jetBins:
-            for flavor in flavors:
-                print '- Processing',mass, jets, flavor
-                loader = ShapeLoader(shapeTmpl.format(mass = mass, jets=jets, flavor=flavor) ) 
-                loader.load()
-    
-                writer = ShapeDatacardWriter( mass,'{0}_{1}j'.format(flavor, jets) )
-                print '   + loading yields'
-                yields = loader.yields()
+        for ch,(jcat,fl) in channels.iteritems():
 
-                # reshuffle the order
-                order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
-                oldYields = yields.copy()
-                yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
-                
-                effects = loader.effects()
+#         for jets in jetBins:
+#             for flavor in flavors:
+            print '- Processing',mass, ch
+            loader = ShapeLoader(shapeTmpl.format(mass = mass, channel=ch) ) 
+            loader.load()
 
-                print '   + making nuisance map'
-                nuisances = builder.nuisances( yields, effects , mass, jets, flavor, optsNuis)
-    
-                basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}_shape'
-                print '   + dumping all to file'
-                writer.write(yields,nuisances,outPath+basename+'.txt',shapeSubDir+basename+'.root')
+#                 writer = ShapeDatacardWriter( mass,'{0}_{1}j'.format(flavor, jets) )
+            writer = ShapeDatacardWriter( mass, ch )
+            print '   + loading yields'
+            yields = loader.yields()
+
+            # reshuffle the order
+            order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
+            oldYields = yields.copy()
+            yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
+            
+            effects = loader.effects()
+
+            print '   + making nuisance map'
+#             nuisances = builder.nuisances( yields, effects , mass, jets, flavor, optsNuis)
+            nuisances = builder.nuisances( yields, effects , mass, ch, jcat, fl, optsNuis)
+
+            basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}_shape'
+            print '   + dumping all to file'
+            writer.write(yields,nuisances,outPath+basename+'.txt',shapeSubDir+basename+'.root')
 

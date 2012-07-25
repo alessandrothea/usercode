@@ -7,6 +7,7 @@ import datetime
 
 usage = 'usage: %prog [dir] [cmd]'
 parser = optparse.OptionParser(usage)
+parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
 (opt, args) = parser.parse_args()
 
 datacards = {}
@@ -20,14 +21,15 @@ datacards['0j1j'] = datacards['split']+datacards['shape']
 if len(args) < 1:
     parser.error('Check the usage!')
 
-path = args[0] if args[0][-1] != '/' else args[0][:-1]
+prefix = opt.prefix
+prefix = prefix if prefix[-1] != '/' else prefix[:-1]
 
 bins = datacards['split']
 if len(args) > 1:
-    if args[1] not in datacards['all']+datacards.keys():
+    if args[0] not in datacards['all']+datacards.keys():
         parser.error('Supported datacards: '+', '.join(datacards['all']+datacards.keys()) )
     else:
-        bins = [ args[1] ] if args[1] not in datacards else datacards[args[1]]
+        bins = [ args[0] ] if args[0] not in datacards else datacards[args[0]]
 
 logfile = open('qexe.log','a')
 print >> logfile,'-'*100
@@ -37,7 +39,7 @@ logfile.close()
 
 for bin in bins:
     for mass in hwwinfo.masses:
-        os.system('qexe.py -t '+path+'_'+bin+'_'+str(mass)+' "runLimits.py -s -m '+str(mass)+' '+bin+' -p '+path+'"')
+        os.system('qexe.py -t '+prefix+'_'+bin+'_'+str(mass)+' "runLimits.py -s -m '+str(mass)+' '+bin+' -p '+prefix+'"')
  
 os.system('watch \'tail -n 30 qexe.log;echo Remaining jobs: `qstat | wc -l`; qstat\'')
 

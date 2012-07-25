@@ -3,12 +3,14 @@ import optparse
 import os.path
 import subprocess
 import hwwinfo
+import hwwtools
 
 mypath = os.path.dirname(os.path.abspath(__file__))
 
 plot_tmpl = '''
     makeLimitTable.py {option}
-    root -b -l -q '{mypath}/PlotLimit.C+("limits/{option}_shape.summary","{tag}_{name}_{option}", 1,1)'
+    [[ $? -ne 0 ]] && exit -1
+    root -b -l -q '{mypath}/PlotLimit.C+g({lumi},"limits/{option}_shape.summary","{tag}_{name}_{option}", 1,1)'
     mkdir -p tables
     pdflatex --output-directory tables limits/{option}_shape.tex
     rename {option} {tag}_{name}_{option} tables/{option}_shape*
@@ -23,6 +25,7 @@ def runTheShape():
     parser = optparse.OptionParser(usage)
     parser.add_option('-t','--tag',dest='tag')
     parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
+    parser.add_option('--lumi','-l',dest='lumi',help='lumi',default=None)
     hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
 
@@ -58,7 +61,7 @@ def runTheShape():
 
     for plot in plots:
         print plot
-        command = plot_tmpl.format(tag=tag,option=plot,mypath=mypath,name=name)
+        command = plot_tmpl.format(tag=tag,option=plot,mypath=mypath,name=name,lumi=opt.lumi)
 
         print command
         p = subprocess.call(command,shell=True)

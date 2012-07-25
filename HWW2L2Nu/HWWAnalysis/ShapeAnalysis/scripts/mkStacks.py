@@ -5,6 +5,8 @@ import optparse
 import sys
 import re
 import hwwinfo
+import hwwtools
+import fnmatch
 
 
 import ROOT
@@ -158,13 +160,16 @@ def makeNominalPlots(file,outputdir, lumi, xlabel, ratio):
     histo.Add(nominals['VV'])
     nominals['VVsum'] = histo
 
-    
+    histo = nominals['DYLL'].Clone()
+    if 'DYTT' in nominals:
+        histo.Add(nominals['DYTT'])
+    nominals['DYsum'] = histo
 
     plot = ROOT.MWLPlot()
     plot.setDataHist(nominals['Data'])
     plot.setHWWHist(nominals['HWW'])
     plot.setWWHist(nominals['WWsum'])  
-    plot.setZJetsHist(nominals['DYLL'])
+    plot.setZJetsHist(nominals['DYsum'])
     plot.setTopHist(nominals['Top'])
     plot.setVVHist(nominals['VVsum'])
     plot.setWJetsHist(nominals['WJet'])
@@ -191,7 +196,7 @@ def makeNominalPlots(file,outputdir, lumi, xlabel, ratio):
 
     f.Close()
 
-def makeShapeUpDown(file,outputdir, xlabel):
+def makeShapeUpDown(file,outputdir, xlabel, filter):
 
     # open the file
     f = openTFile(file)
@@ -215,6 +220,8 @@ def makeShapeUpDown(file,outputdir, xlabel):
     updown = getNominalUpDown(f)
     for process,systs in updown.iteritems():
         for syst,vars in systs.iteritems():
+            if not fnmatch.fnmatch(syst, filter):
+                continue
             cName = 'c_'+root+'_'+process+'_'+syst
             fName = odir+'/'+cName
             exts = ['pdf','png']
@@ -253,7 +260,7 @@ def plotCMSText():
         
     return pave
 
-def printUpDown( cName, fName, exts, syst, vars, xlabel,legheader):
+def printUpDown( cName, fName, exts, syst, vars, xlabel ):
 #     nom = vars.Nom.DrawClone()
 #     nom.SetTitle('Shape systematics: '+syst)
 
@@ -303,19 +310,19 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel,legheader):
     pad1.Draw('same')
     pad1.cd()
     pad1.SetTopMargin(0.11)
-    pad1.SetLeftMargin(0.1)
+    pad1.SetLeftMargin(0.07)
     pad1.SetRightMargin(0.05)
-    pad1.SetBottomMargin(0.05)
+    pad1.SetBottomMargin(0.15)
     
     c.cd()
     
     pad2 = ROOT.TPad()
     ROOT.SetOwnership(pad2, False)
-    pad2.SetPad('pad2','pad2',0.0,0.,1.0,0.4, 10)
+    pad2.SetPad('pad2','pad2',0.0,0.,1.0,0.4,10)
     pad2.Draw()
     pad2.cd()
-    pad2.SetTopMargin(0.)
-    pad2.SetLeftMargin(0.1)
+    pad2.SetTopMargin(0.11)
+    pad2.SetLeftMargin(0.07)
     pad2.SetRightMargin(0.05)
     pad2.SetBottomMargin(0.15)
     
@@ -395,8 +402,8 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel,legheader):
     frame2.SetBinContent(frame2.GetNbinsX(),0.0)
     frame2.SetTitle('')
     frame2.SetLabelFont(43)
-    frame2.SetLabelSize(24)
-    frame2.SetXTitle(xlabel)
+    frame2.SetLabelSize(12)
+    frame2.SetXTitle('')
     frame2.SetYTitle('nominal / #pm1#sigma-shape')
     frame2.SetTitleSize(20)
 ##     frame2.SetYTitle('ratio')
@@ -489,7 +496,7 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel,legheader):
     line.SetX2(h_n.GetBinLowEdge(h_n.GetNbinsX()+1))
     line.SetY1(1.)
     line.SetY2(1.)
-    line.SetLineWidth(3)
+    line.SetLineWidth(2)
     line.SetLineStyle(2)
     line.Draw('same')
 
@@ -544,9 +551,10 @@ def main():
     parser.add_option('-x','--xlabel',dest='xlabel',help='X-axis label',default='')
     parser.add_option('-r','--ratio',dest='ratio',help='Plot the data/mc ration', action='store_false',default=True)
     parser.add_option('-l','--lumi', dest='lumi', type='float', help='Luminosity', default=None)
+    parser.add_option('-f','--filter',dest='filter', help='Filter on the variations', default='*')
  
 
-    hwwinfo.loadOptDefaults(parser)
+    hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
     sys.argv.append('-b')
 
@@ -570,22 +578,15 @@ def main():
         path = inputdir+'/'+file
         if str(mass) not in file and mass > 0:
             continue
+
         print 'Making',path
         if not opt.variations:
             makeNominalPlots(path, outputdir, opt.lumi, opt.xlabel, opt.ratio)
         else:
-            makeShapeUpDown(path,outputdir, opt.xlabel)
+            makeShapeUpDown(path,outputdir, opt.xlabel, opt.filter)
 
     print 'Used options'
     print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])
-    
-
-
-    
-
-
-
-    
 
 if __name__ == '__main__':
 

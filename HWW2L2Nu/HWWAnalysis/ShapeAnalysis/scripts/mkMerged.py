@@ -583,8 +583,18 @@ class ShapeMixer:
 
 
 if __name__ == '__main__':
-    print '-- MegaShapeMerger --'
-
+    print '''
+-------------------------------------------------------------------------------
+  ______     _ _  _____ _                      __  __                          
+ |  ____|   (_) |/ ____| |                    |  \/  |                         
+ | |____   ___| | (___ | |__   __ _ _ __   ___| \  / | ___ _ __ __ _  ___ _ __ 
+ |  __\ \ / / | |\___ \| '_ \ / _` | '_ \ / _ \ |\/| |/ _ \ '__/ _` |/ _ \ '__|
+ | |___\ V /| | |____) | | | | (_| | |_) |  __/ |  | |  __/ | | (_| |  __/ |   
+ |______\_/ |_|_|_____/|_| |_|\__,_| .__/ \___|_|  |_|\___|_|  \__, |\___|_|   
+                                   | |                          __/ |          
+                                   |_|                         |___/           
+-------------------------------------------------------------------------------
+'''
 #     logging.basicConfig(level=logging.DEBUG)
     mypath = os.path.dirname(os.path.abspath(__file__))
     #  ___       __           _ _      
@@ -637,7 +647,6 @@ if __name__ == '__main__':
     mergedDir = opt.path_shape_merged
     rebin     = int(opt.rebin)
 
-#     categories = [ hwwinfo.categories[c] for c in opt.cats ]
     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
 
     if not opt.var or not opt.lumi:
@@ -645,12 +654,12 @@ if __name__ == '__main__':
     lumi = opt.lumi
     var = opt.var
     lumiMask = ['Data','WJet']
-#     flavors = dict([('sf',['ee','mm']),('of',['em','me'])])
     nameTmpl  = 'shape_Mh{0}_{1}_'+var+'_shapePreSel_{2}'
     os.system('mkdir -p '+mergedDir)
 
    
     # read the scale factors from the scale factors file 
+
     if opt.path_scale:
         scaleFactors = {}
         for cat in hwwinfo.categories:
@@ -676,7 +685,7 @@ if __name__ == '__main__':
                 print cat,'Scale override:',tokens[0],tokens[1]
                 factors[tokens[0]] = float(tokens[1])
     else:
-        scaleFactors = None
+        scaleFactors = dict([ (cat,{}) for cat in hwwinfo.categories])
 
 
 
@@ -717,15 +726,17 @@ if __name__ == '__main__':
     channels =  dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])
 
     for mass in masses:
-        for ch,(cat,fls) in channels.iteritems():
-            print ch,cat,fls
+        for chan,(cat,fl) in channels.iteritems():
+            flavors = hwwinfo.flavors[fl]
+            print chan,cat,fl,flavors
             # open output file
             m = ShapeMerger()
             print '-'*100
-            print 'ooo Processing',mass, ch
+            print 'ooo Processing',mass, chan
             print '-'*100
 
-            for fl in fls:
+
+            for fl in flavors:
                 print '  o Channel:',fl
                 # configure
                 label = 'mH{0} {1} {2}'.format(mass,cat,fl)
@@ -738,9 +749,9 @@ if __name__ == '__main__':
 
                 # run
                 print '     - mixing histograms'
-                ss.mix(ch)
-                if scaleFactors:
-                    ss.applyScaleFactors( scaleFactors[cat] )
+                ss.mix(chan)
+
+                ss.applyScaleFactors( scaleFactors[cat] )
 
                 m.add(ss)
             print '  - summing sets'
@@ -749,55 +760,15 @@ if __name__ == '__main__':
             
             if not reader.iszombie:
                 print '  - data driven'
-                (estimates,dummy) = reader.get(mass,ch)
+                (estimates,dummy) = reader.get(mass,chan)
                 m.applyDataDriven( estimates )
 
             m.injectSignal()
             if not opt.dry:
-                output = 'hww-{lumi:.2f}fb.mH{mass}.{channel}_shape.root'.format(lumi=lumi,mass=mass,channel=ch)
+                output = 'hww-{lumi:.2f}fb.mH{mass}.{channel}_shape.root'.format(lumi=lumi,mass=mass,channel=chan)
                 path = os.path.join(mergedDir,output)
                 print '  - writing to',path
                 m.save(path)
-
-
-#     for mass in masses:
-#         for cat in categories:
-#             for fl,chans in flavors.iteritems():
-#                 # open output file
-#                 m = ShapeMerger()
-#                 print '-'*100
-#                 print 'ooo Processing',mass, cat.name, fl
-#                 print '-'*100
-#                 for ch in chans:
-#                     print '  o Channel:',ch
-#                     # configure
-#                     label = 'mH{0} {1} {2}'.format(mass,cat.name,ch)
-#                     ss = ShapeMixer(label)
-#                     ss.nominalsPath   = os.path.join(nomPath,nameTmpl.format(mass, cat.name, ch)+'.root')
-#                     ss.systSearchPath = os.path.join(systPath,nameTmpl.format(mass, cat.name, ch)+'_*.root')
-#                     ss.lumiMask = lumiMask
-#                     ss.lumi = lumi
-#                     ss.rebin = rebin
-
-#                     # run
-#                     print '     - mixing histograms'
-#                     ss.mix(cat.name,fl)
-#                     ss.applyScaleFactors( scaleFactors[njet] )
-
-#                     m.add(ss)
-
-#                 print '  - summing sets'
-#                 m.sum()
-#                 
-#                 (estimates,dummy) = reader.get(mass,njet,fl)
-
-#                 m.applyDataDriven( estimates )
-#                 m.injectSignal()
-#                 if not opt.dry:
-#                     output = 'hww-{lumi:.2f}fb.mH{mass}.{flav}_{cat}_shape.root'.format(lumi=lumi,mass=mass,flav=fl,cat=cat.name)
-#                     path = os.path.join(mergedDir,output)
-#                     print '  - writing to',path
-#                     m.save(path)
 
     print 'Used options'
     print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])

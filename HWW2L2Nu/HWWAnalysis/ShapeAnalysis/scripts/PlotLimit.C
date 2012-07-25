@@ -18,7 +18,8 @@
 
 //#include "tdrstyle.C"
 
-void PlotLimit ( string LimitFile , string LimTitle , bool DoObsLim , bool DoExpLim ) {
+
+void PlotLimit ( float lumi, string LimitFile , string LimTitle , bool DoObsLim , bool DoExpLim ) {
 
     //   setTDRStyle();
 
@@ -50,11 +51,7 @@ void PlotLimit ( string LimitFile , string LimTitle , bool DoObsLim , bool DoExp
         //     indata >> Mass >> ObsLimit >> MeanExpLimit >> MedianExpLimit >> ExpLim95Down >> ExpLim68Up >> ExpLim68Down >> ExpLim95Up ;
         indata >> Mass >> ObsLimit >> MeanExpLimit >> MedianExpLimit >> ExpLim68Down >> ExpLim68Up >> ExpLim95Down >> ExpLim95Up ;
 
-
 /*         cout << "- " << Mass << " " << ObsLimit  << " " << MeanExpLimit  << " " << MedianExpLimit <<" "<< ExpLim68Down <<" "<< ExpLim68Up <<" "<< ExpLim95Down <<" "<< ExpLim95Up << endl; */
-
-
-
 
         vMass           .push_back(Mass           );
         vObsLimit       .push_back(ObsLimit       ); 
@@ -69,6 +66,8 @@ void PlotLimit ( string LimitFile , string LimTitle , bool DoObsLim , bool DoExp
     TCanvas* cLimit = new TCanvas();
 
     cLimit->cd();
+/*     cLimit->SetLogx(); */
+/*     cLimit->SetLogy(); */
 
     float x1 = vMass.at(0) - 5. ;
     float x2 = vMass.at(vMass.size()-1) + 5. ; 
@@ -87,7 +86,6 @@ void PlotLimit ( string LimitFile , string LimTitle , bool DoObsLim , bool DoExp
         float yu95[100];
         float yd95[100]; 
         for ( int i = 0 ; i < (signed) vMass.size() ; ++i ) {
-/*             cout << i << endl; */
             x[i]  = vMass.at(i) ;
             ex[i] = 0 ;
             y[i]  = vMedianExpLimit.at(i) ;
@@ -126,8 +124,10 @@ void PlotLimit ( string LimitFile , string LimTitle , bool DoObsLim , bool DoExp
 
         pool->Draw("a");
         cLimit->Update();
-        pool->GetYaxis()->SetRangeUser(0.,10);
+        pool->GetYaxis()->SetRangeUser(0.1,10);
         pool->GetXaxis()->SetRangeUser(x1,x2);
+		pool->GetYaxis()->SetMoreLogLabels();
+		pool->GetXaxis()->SetMoreLogLabels();
         pool->SetTitle();
         pool->GetXaxis()->SetTitle("Higgs mass [GeV/c^{2}]");
         pool->GetYaxis()->SetTitle("95% Limit on #sigma/#sigma_{SM} ");
@@ -177,11 +177,11 @@ void PlotLimit ( string LimitFile , string LimTitle , bool DoObsLim , bool DoExp
     title->Draw("same");
 
     TText* CMS = new TText(.15,.85,"CMS Preliminary");
-    CMS ->SetTextSize(.05);
-    CMS ->SetNDC(1);
-    CMS ->Draw("same");
+    CMS->SetTextSize(.05);
+    CMS->SetNDC(1);
+    CMS->Draw("same");
 
-    TLatex* Lumi = new TLatex(.15,.81,"Lumi = 4.6 fb^{-1} ");
+    TLatex* Lumi = new TLatex(.15,.81,Form("Lumi = %.2f fb^{-1} ",lumi));
     Lumi ->SetTextSize(.03);
     Lumi ->SetNDC(1);
     Lumi ->Draw("same");

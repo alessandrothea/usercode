@@ -27,9 +27,9 @@ eval `shape-config.py`
 
 for m in $masses;
 do
-CMD="qexe.py -t mkShapes_${m} -- mkShapes.py -m $m $@"
-echo "Baking: $CMD"
-$CMD
+    CMD="qexe.py -t mkShapes_${m} -- mkShapes.py -m $m $@"
+    echo "Baking: $CMD"
+    $CMD
 done
 
 watch 'tail -n 30 qexe.log; echo Remaining jobs: `qstat | wc -l`; qstat;'
