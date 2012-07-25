@@ -144,9 +144,8 @@ class list_maker:
 
 
 def addOptions(parser):
-    parser.add_option('-l', '--lumi', dest='lumi', type='float', help='Luminosity', default=None)
-    parser.add_option('-v', '--var',  dest='var',  help='variable', default=None)
-    parser.add_option('-m', '--mass', dest='mass', type='int', help='run on one mass point only ', default=0)
-#     parser.add_option('--cats', dest='cats', type='string', action='callback', callback=list_maker('cats'), help='list of categories', default=['0j'])
-    parser.add_option('-d', '--debug',dest='debug', action='count',help='Debug level', default=0)
-    parser.add_option('-c','--chans', dest='chans', type='string', action='callback', callback=list_maker('chans'), help='list of channels', default=['0j'])
+    parser.add_option('-l' , '--lumi'     , dest='lumi'     , type='float'    , help='Luminosity'                  , default=None)
+    parser.add_option('-v' , '--variable' , dest='variable' , help='variable' , default=None)
+    parser.add_option('-m' , '--mass'     , dest='mass'     , type='int'      , help='run on one mass point only ' , default=0)
+    parser.add_option('-d' , '--debug'    , dest='debug'    , action='count'  , help='Debug level'                 , default=0)
+    parser.add_option('-c' , '--chans'    , dest='chans'    , type='string'   , action='callback'                  , callback=list_maker('chans') , help='list of channels' , default=['0j'])
