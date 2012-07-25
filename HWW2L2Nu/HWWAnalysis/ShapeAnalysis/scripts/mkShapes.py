@@ -423,7 +423,7 @@ if __name__ == '__main__':
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--sel'            , dest='sel'            , help='selection cut'                              , default=None)
+    parser.add_option('--selection'      , dest='selection'      , help='selection cut'                              , default=None)
     parser.add_option('--dataset'        , dest='dataset'        , help='dataset to process'                         , default=None)
     parser.add_option('--path_latino'    , dest='path_latino'    , help='Root of the master trees'                   , default=None)
     parser.add_option('--path_bdt'       , dest='path_bdt'       , help='Root of the friendly bdt trees'             , default=None)
@@ -463,11 +463,11 @@ if __name__ == '__main__':
             parser.error('Where shall I put the shapes?')
 
         if not opt.range:
-            opt.range = opt.var
+            opt.range = opt.variable
 
 
-        variable = opt.var
-        selection = opt.sel
+        variable = opt.variable
+        selection = opt.selection
 
         latinoDir           = opt.path_latino
         bdtDir              = opt.path_bdt

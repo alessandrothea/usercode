@@ -24,9 +24,9 @@ def pack():
     
     tmppath = tempfile.mkdtemp('_pack_'+prefix)
     shutil.copytree(prefix+'/datacards',tmppath+'/datacards')
-    if opt.var == 'mll':
+    if opt.variable == 'mll':
         os.system('rename _shape _mllShape '+tmppath+'/datacards/*_shape.txt')
-    elif opt.var == 'bdts':
+    elif opt.variable == 'bdts':
         os.system('rename _shape _bdtShape '+tmppath+'/datacards/*_shape.txt')
 
     

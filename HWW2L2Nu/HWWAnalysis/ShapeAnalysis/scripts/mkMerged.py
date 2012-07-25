@@ -649,10 +649,11 @@ if __name__ == '__main__':
 
     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
 
-    if not opt.var or not opt.lumi:
+    if not opt.variable or not opt.lumi:
         parser.error('The variable and the luminosty must be defined')
+
     lumi = opt.lumi
-    var = opt.var
+    var = opt.variable
     lumiMask = ['Data','WJet']
     nameTmpl  = 'shape_Mh{0}_{1}_'+var+'_shapePreSel_{2}'
     os.system('mkdir -p '+mergedDir)
