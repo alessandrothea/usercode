@@ -450,7 +450,7 @@ if __name__ == '__main__':
             parser.print_help()
             parser.error('Dataset not defined')
 
-        if not opt.sel:
+        if not opt.selection:
             parser.print_help()
             parser.error('Selection not defined')
 
