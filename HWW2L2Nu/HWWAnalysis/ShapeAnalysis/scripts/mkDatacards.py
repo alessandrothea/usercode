@@ -461,9 +461,10 @@ if __name__ == '__main__':
     print 'NuisFlags:  ',opt.nuisFlags
 
     # checks
-    if not opt.var or not opt.lumi:
+    if not opt.variable or not opt.lumi:
         parser.error('The variable and the luminosty must be defined')
-    var = opt.var
+    var = opt.variable
+    
 
     sys.argv.append('-b')
     ROOT.gROOT.SetBatch()

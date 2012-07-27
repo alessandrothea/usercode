@@ -181,7 +181,7 @@ class MWLPlot {
                     rref->SetBinError(i,summed->GetBinError(i));
                 }
                 rref->SetTitle("");
-                rref->SetLineWidth(0);
+/*                 rref->SetLineWidth(0); */
                 rref->SetFillColor(kGray+1);
                 rref->SetFillStyle(1001);
                 double absmax = 0;
@@ -272,7 +272,7 @@ class MWLPlot {
             float binWidth = 0;
             for (int i=0; i<nSamples; i++) if( _hist[i] && i != iHWW) {
 
-                _hist[i]->SetLineColor(sampleColor[i]);
+                _hist[i]->SetLineColor(1+sampleColor[i]);
                 _hist[i]->SetFillColor(sampleColor[i]);
                 _hist[i]->SetFillStyle(1001);
                 binWidth = _hist[i]->GetBinWidth(1);

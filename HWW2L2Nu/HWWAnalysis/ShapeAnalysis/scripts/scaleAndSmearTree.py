@@ -358,6 +358,8 @@ class scaleAndSmear:
             oldTree.SetBranchStatus('mtw2'      ,0)
             oldTree.SetBranchStatus('mpmet'     ,0)            
             oldTree.SetBranchStatus('njet'      ,0)
+            oldTree.SetBranchStatus('dymva0'    ,0)
+            oldTree.SetBranchStatus('dymva1'    ,0)
 
         if self.systArgument == 'puscale':
             oldTree.SetBranchStatus('puW'       ,0)
@@ -1520,13 +1522,8 @@ class scaleAndSmear:
         ## ptcmet = numpy.zeros(1, dtype=numpy.float32)
         mpmet = numpy.zeros(1, dtype=numpy.float32)
         njet = numpy.zeros(1, dtype=numpy.float32)
-##         pfmetphi = numpy.zeros(1, dtype=numpy.float32)
-##         chmetphi = numpy.zeros(1, dtype=numpy.float32)
-##         tcmetphi = numpy.zeros(1, dtype=numpy.float32)
-##         dphillmet = numpy.zeros(1, dtype=numpy.float32)
-##         dphilmet = numpy.zeros(1, dtype=numpy.float32)
-##         dphilmet1 = numpy.zeros(1, dtype=numpy.float32)
-##         dphilmet2 = numpy.zeros(1, dtype=numpy.float32)
+        dymva0 = numpy.zeros(1, dtype=numpy.float32)
+        dymva1 = numpy.zeros(1, dtype=numpy.float32)
         self.ttree.Branch('pfmet',pfmet,'pfmet/F')
         self.ttree.Branch('chmet',chmet,'chmet/F')
         ## self.ttree.Branch('tcmet',tcmet,'tcmet/F')
@@ -1538,13 +1535,8 @@ class scaleAndSmear:
         ## self.ttree.Branch('ptcmet',ptcmet,'ptcmet/F')     
         self.ttree.Branch('mpmet',mpmet,'mpmet/F')
         self.ttree.Branch('njet',njet,'njet/F')
-##         self.ttree.Branch('pfmetphi',pfmetphi,'pfmetphi/F')
-##         self.ttree.Branch('chmetphi',chmetphi,'chmetphi/F')
-##         self.ttree.Branch('tcmetphi',tcmetphi,'tcmetphi/F')
-##         self.ttree.Branch('dphillmet',dphillmet,'dphillmet/F')
-##         self.ttree.Branch('dphilmet',dphilmet,'dphilmet/F')
-##         self.ttree.Branch('dphilmet1',dphilmet1,'dphilmet1/F')
-##         self.ttree.Branch('dphilmet2',dphilmet2,'dphilmet2/F')
+        self.ttree.Branch('dymva0',dymva0,'dymva0/F')
+        self.ttree.Branch('dymva1',dymva1,'dymva1/F')
 
         #nentries = self.ttree.GetEntriesFast()
         nentries = self.nentries
@@ -1579,6 +1571,9 @@ class scaleAndSmear:
                 ## ptcmet[0] = ptcmet_hold * (tcmet[0] / tcmet_hold)
 
                 mpmet[0] = min( ppfmet[0], pchmet[0] )
+
+                dymva0[0] = dymva1[0] = 1. if mpmet[0] > 45 else 0
+
 
                 met = ROOT.TLorentzVector()
                 met.SetPtEtaPhiM(pfmet[0], 0, self.oldttree.pfmetphi, 0)         
