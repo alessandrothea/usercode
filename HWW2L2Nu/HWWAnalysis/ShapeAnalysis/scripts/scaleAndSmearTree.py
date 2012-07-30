@@ -80,14 +80,14 @@ def smearMET(met,sigma):
     metpx = met.Px()
     metpy = met.Py()
     ## throw the dices
-    newpx = gRandom.Gaus(metpx, sigma*metpx)
-    newpy = gRandom.Gaus(metpy, sigma*metpy)
+    newpx = ROOT.gRandom.Gaus(metpx, sigma*metpx)
+    newpy = ROOT.gRandom.Gaus(metpy, sigma*metpy)
     ## and replace the vector
     met.SetPxPyPzE(newpx, newpy,0,0)
     return met
 
 def smearPt(pt, sigma):
-    pt = gRandom.Gaus(pt, sigma*pt)
+    pt = ROOT.gRandom.Gaus(pt, sigma*pt)
     return pt
 
 
@@ -1513,26 +1513,22 @@ class scaleAndSmear:
         
         pfmet = numpy.zeros(1, dtype=numpy.float32)
         chmet = numpy.zeros(1, dtype=numpy.float32)
-        ## tcmet = numpy.zeros(1, dtype=numpy.float32)
         mth = numpy.zeros(1, dtype=numpy.float32)
         mtw1 = numpy.zeros(1, dtype=numpy.float32)
         mtw2 = numpy.zeros(1, dtype=numpy.float32)
         ppfmet = numpy.zeros(1, dtype=numpy.float32)
         pchmet = numpy.zeros(1, dtype=numpy.float32)
-        ## ptcmet = numpy.zeros(1, dtype=numpy.float32)
         mpmet = numpy.zeros(1, dtype=numpy.float32)
         njet = numpy.zeros(1, dtype=numpy.float32)
         dymva0 = numpy.zeros(1, dtype=numpy.float32)
         dymva1 = numpy.zeros(1, dtype=numpy.float32)
         self.ttree.Branch('pfmet',pfmet,'pfmet/F')
         self.ttree.Branch('chmet',chmet,'chmet/F')
-        ## self.ttree.Branch('tcmet',tcmet,'tcmet/F')
         self.ttree.Branch('mth',mth,'mth/F')
         self.ttree.Branch('mtw1',mtw1,'mtw1/F')
         self.ttree.Branch('mtw2',mtw2,'mtw2/F')
         self.ttree.Branch('ppfmet',ppfmet,'ppfmet/F')
         self.ttree.Branch('pchmet',pchmet,'pchmet/F')
-        ## self.ttree.Branch('ptcmet',ptcmet,'ptcmet/F')     
         self.ttree.Branch('mpmet',mpmet,'mpmet/F')
         self.ttree.Branch('njet',njet,'njet/F')
         self.ttree.Branch('dymva0',dymva0,'dymva0/F')
