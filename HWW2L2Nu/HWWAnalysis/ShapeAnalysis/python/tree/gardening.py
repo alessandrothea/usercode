@@ -461,7 +461,7 @@ def gardener_cli( modules ):
     Usage:
         %prog <command> <options> filein.root fileout.root
         %prog <command> <options> file1.root file2.root ... dirout
-        %prog -r <command> <options> dirin dirout
+        %prog <command> <options> -r dirin dirout
 
     In the latter case the directory tree in dirin is rebuilt in dirout
 
