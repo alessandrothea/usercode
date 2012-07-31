@@ -57,11 +57,12 @@ class SusyVarFiller(TreeCloner):
 
 
     def addOptions(self,parser):
-        description = self.help()
-        group = optparse.OptionGroup(parser,self.label, description)
-        group.add_option('-b', '--branch',   dest='branch', help='Name of something that is not used ... ', default='boh')
-        parser.add_option_group(group)
-        return group
+        #description = self.help()
+        #group = optparse.OptionGroup(parser,self.label, description)
+        #group.add_option('-b', '--branch',   dest='branch', help='Name of something that is not used ... ', default='boh')
+        #parser.add_option_group(group)
+        #return group
+        pass
 
 
     def checkOptions(self,opts):
