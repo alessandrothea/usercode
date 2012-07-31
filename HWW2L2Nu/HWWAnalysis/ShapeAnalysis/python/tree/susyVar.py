@@ -65,7 +65,7 @@ class SusyVarFiller(TreeCloner):
 
 
     def checkOptions(self,opts):
-        self.branch = opts.branch
+        pass
 
     def process(self,**kwargs):
         tree  = kwargs['tree']
