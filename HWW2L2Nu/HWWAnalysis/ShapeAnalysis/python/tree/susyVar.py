@@ -119,9 +119,28 @@ class SusyVarFiller(TreeCloner):
                 jetpz2 = itree.jetpt2 / tan ( 2. * atan ( exp ( -  itree.jeteta2) ))
                 jetp2  = sqrt (jetpx2*jetpx2 + jetpy2*jetpy2 + jetpz2*jetpz2)
 
+
+                px1 = itree.pt1 * cos (itree.phi1)
+                py1 = itree.pt1 * sin (itree.phi1)
+                pt1 = itree.pt1
+                pz1 = itree.pt1 / tan ( 2. * atan ( exp ( -  itree.eta1) ))
+                p1  = sqrt (px1*px1 + py1*py1 + pz1*pz1)
+
+                px2 = itree.pt2 * cos (itree.phi2)
+                py2 = itree.pt2 * sin (itree.phi2)
+                pt2 = itree.pt2
+                pz2 = itree.pt2 / tan ( 2. * atan ( exp ( -  itree.eta2) ))
+                p2  = sqrt (px2*px2 + py2*py2 + pz2*pz2)
+
+
                 met = itree.pfmet
                 metx = met * cos (itree.pfmetphi)
                 mety = met * sin (itree.pfmetphi)
+
+                # add lepton contribution as if I did not measure leptons
+                metx = metx - px1 - px2
+                mety = mety - py1 - py2
+                met = sqrt( metx*metx + mety*mety )
 
                 MR2j[0]  = getMR(jetp1, jetpz1, jetpx1, jetpy1, jetp2, jetpz2, jetpx2, jetpy2)
                 MTR2j[0]  = getMTR(jetpt1, jetpx1, jetpy1, jetpt2, jetpx2, jetpy2, met, metx, mety)
