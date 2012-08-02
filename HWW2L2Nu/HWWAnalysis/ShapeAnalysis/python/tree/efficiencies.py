@@ -1,3 +1,5 @@
+import optparse
+import numpy
 from tree.gardening import TreeCloner
 from HWWAnalysis.ShapeAnalysis.triggerEffCombiner import TriggerEff
 
