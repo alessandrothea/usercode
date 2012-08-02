@@ -50,6 +50,16 @@ class wwcutsB:
         ('p_{T}^{ll}',             'ptll>45.'),                     # ema 14
     ])
 
+    wwmin = odict.OrderedDict([
+        ('trigger',                'trigger==1.'),
+        ('min #slash{E}_{T}',      'pfmet>20.'),
+        ('m_{ll}',                 'mll>12'),                       # ema7
+        ('min proj #slash{E}_{T}', 'mpmet>20.'),                    # ema9
+        ('Soft #mu veto',          'bveto_mu==1'),
+        ('Extra Lepton',           'nextra==0'),
+        ('B veto',                 '(bveto_ip==1 && (nbjettche==0 || njet>3)  )'),
+    ])
+
     #dy cuts
     dphilljjlo   = '(njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  )'
     dphilljjhi   = '((njet<=1 && dphiveto) || (njet>1 && dphilljetjet<pi/180.*165.) || !sameflav )'
@@ -88,6 +98,17 @@ class wwcuts:
         'ptll>45.',                     # ema 14
     ]
 
+    # minimum for skimming
+    wwmin = [
+        'trigger==1',
+        'pfmet>20',
+        'mll>12',
+        'mpmet>20',
+        'bveto_mu==1',
+        'nextra==0',
+        '(bveto_ip==1 && (nbjettche==0 || njet>3)  )',
+    ]
+    
     #dy cuts
     dphilljjlo   = '(njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  )'
     dphilljjhi   = '((njet<=1 && dphiveto) || (njet>1 && dphilljetjet<pi/180.*165.) || !sameflav )'
@@ -201,6 +222,7 @@ def massSelections(mass):
     masscuts = dict([(cut,massDependantCutsbyVar[cut][mass]) for cut in massDependantCutsbyVar])
 
     sel = {}
+    sel['ww-min']       = ' && '.join(wwcuts.wwmin)
     sel['ww-common']    = ' && '.join(wwcuts.wwcommon)
     sel['ww-himass']    = ' && '.join(wwcuts.wwhi)
     sel['ww-lomass']    = ' && '.join(wwcuts.wwlo)

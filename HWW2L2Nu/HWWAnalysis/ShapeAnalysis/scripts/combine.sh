@@ -3,7 +3,7 @@
 
 
 
-lumi=3.54
+lumi=5.06
 head="hww-${lumi}fb.mH"
 head2j="hww-${lumi}fb.mH"
 tail="_shape.txt"

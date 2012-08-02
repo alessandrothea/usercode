@@ -114,7 +114,7 @@ class DDCardReader:
     def _load(self,process, cat, channel):
         ''' Read the Data driven datacar for a given process, jet bin, channel at all masses'''
         
-        filename = self._path+'{0}Card_{1}_{2}.txt'.format(process,channel,cat)
+        filename = os.path.join( self._path,'{0}Card_{1}_{2}.txt'.format(process,channel,cat) )
         self._logger.debug('opening file: '+filename)
         cardFile = open(filename)
         card = {}

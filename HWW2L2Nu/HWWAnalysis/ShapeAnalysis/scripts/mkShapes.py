@@ -19,7 +19,7 @@ class ShapeFactory:
  
     # _____________________________________________________________________________
     def __init__(self):
-        self._baseWgt = 'baseW*puWobs*effW*triggW'
+        self._stdWgt = 'baseW*puWobs*effW*triggW'
 
         ranges = {}
         ranges['bdtl']       = (400  , -1. , 1.)
@@ -32,16 +32,17 @@ class ShapeFactory:
         ranges['gammaMRStar'] = self._getGMstarrange
         self._ranges = ranges
         
-        self._dataTag = '2012A'
-        self._masses = []
-        self._categories = []
-        self._flavors = []
-        self._channels = {}
+        self._dataTag         = '2012A'
+        self._masses          = []
+        self._categories      = []
+        self._flavors         = []
+        self._channels        = {}
         # paths (to move out)
-        self._outFileFmt  = ''
-        self._paths = {}
-        self._range = None
-        self._split = None
+        self._outFileFmt      = ''
+        self._paths           = {}
+        self._range           = None
+        self._split           = None
+        self._lumi            = 1
 
     # _____________________________________________________________________________
     def __del__(self):
@@ -306,9 +307,9 @@ class ShapeFactory:
         sampleWgts =  self._sampleWeights(mass,var)
         print '--',selections.keys()
         for process,cut in selections.iteritems():
-            wgt = self._baseWgt
+            wgt = self._stdWgt
             if process in sampleWgts:
-                wgt += '*'+sampleWgts[process]
+                wgt = sampleWgts[process] 
 
             selections[process] = wgt+'*('+cut+')'
 
@@ -318,32 +319,26 @@ class ShapeFactory:
     def _sampleWeights(self,mass,var):
         weights = {}
         weights['WJet']             = 'fake2W'
-        weights['WJetFakeRate']     = 'fake2W'
+        weights['WJetFakeRate']     = 'fakeWUp'
         weights['Data']             = '1'
-        weights['DYLL']             = '(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
-        weights['DYLLtemplate']     = '(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
-        weights['DYLLtemplatesyst'] = '(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
+        # problem with DYTT using embedded for em/me + MC for ee/mm
+        # puWobs doesn't exist for embedded sample and lumi normalisation only applies for MC
+        weights['DYTT']             = 'baseW*effW*triggW*(1 + ('+str(self._lumi)+' - 1)*(dataset == 37 && mctruth == 2 && channel<1.5))'
+        weights['DYLL']             = self._stdWgt+'*(( dataset == 36 || dataset == 37 ) && mctruth != 2 )'
+        weights['DYLLtemplate']     = self._stdWgt+'*(( dataset == 36 || dataset == 37 ) && mctruth != 2 )'
+        weights['DYLLtemplatesyst'] = self._stdWgt+'*(( dataset == 36 || dataset == 37 ) && mctruth != 2 )'
         
-#         stupidmasses = [118, 122, 124, 126, 128, 135]
-#         if var in ['bdts','bdtl'] and mass in stupidmasses:
-#             weights['ggH']+='*2*(event%2==0)'
-#             weights['vbfH']='2*(event%2==0)'
-#             weights['wzttH']='2*(event%2==0)'
-#             # TODO Signal injection weights, if available
-#             weights['ggH-SI']+='*2*(event%2==0)'
-#             weights['vbfH-SI']='2*(event%2==0)'
-#             weights['wzttH-SI']='2*(event%2==0)'
         if var in ['bdts','bdtl']:
             
-            weights['WW']    = '*2*(event%2 == 0)'
-            weights['ggH']   = '*2*(event%2 == 0)'
-            weights['vbfH']  = '2*(event%2  == 0)'
-            weights['wzttH'] = '2*(event%2  == 0)'
+            weights['WW']    = self._stdWgt+'*2*(event%2 == 0)'
+            weights['ggH']   = self._stdWgt+'*2*(event%2 == 0)'
+            weights['vbfH']  = self._stdWgt+'*2*(event%2 == 0)'
+            weights['wzttH'] = self._stdWgt+'*2*(event%2 == 0)'
             # TODO Signal injection weights, if available
-            weights['ggH-SI']   = '*2*(event%2 == 0)'
-            weights['vbfH-SI']  = '2*(event%2  == 0)'
-            weights['wzttH-SI'] = '2*(event%2  == 0)'
-            
+            weights['ggH-SI']   = self._stdWgt+'*2*(event%2 == 0)'
+            weights['vbfH-SI']  = self._stdWgt+'*2*(event%2 == 0)'
+            weights['wzttH-SI'] = self._stdWgt+'*2*(event%2 == 0)'
+
         return weights
 
     # _____________________________________________________________________________
@@ -498,8 +493,9 @@ if __name__ == '__main__':
         factory._paths['bdts']  = bdtDir
 
         factory._dataTag = opt.dataset
-        factory._range = opt.range
-        factory._split = opt.split
+        factory._range   = opt.range
+        factory._split   = opt.split
+        factory._lumi    = opt.lumi
 
 
         if opt.makeNoms:

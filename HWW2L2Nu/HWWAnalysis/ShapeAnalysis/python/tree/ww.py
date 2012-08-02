@@ -44,7 +44,7 @@ class WWFlagsGrafter(Grafter):
 #                                               
 
 class WWPruner(Pruner):
-    levels = ['wwcommon','wwlo','wwhi']
+    levels = ['wwcommon','wwlo','wwhi','wwmin']
 
     def help(self):
         return '''Filters the tree according to the command line options. wwcommon, wwhi, wwlo flags are understood'''

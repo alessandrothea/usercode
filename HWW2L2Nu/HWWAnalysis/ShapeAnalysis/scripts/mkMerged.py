@@ -654,7 +654,7 @@ if __name__ == '__main__':
 
     lumi = opt.lumi
     var = opt.variable
-    lumiMask = ['Data','WJet']
+    lumiMask = ['Data','WJet','DYTT']
     nameTmpl  = 'shape_Mh{0}_{1}_'+var+'_shapePreSel_{2}'
     os.system('mkdir -p '+mergedDir)
 

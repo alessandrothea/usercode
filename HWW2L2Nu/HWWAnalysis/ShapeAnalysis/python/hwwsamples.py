@@ -9,22 +9,34 @@ import re
 backgrounds = {}
 backgrounds['WW']               = ['nominals/latino_000_WWJets2LMad.root']
 backgrounds['ggWW']             = ['nominals/latino_001_GluGluToWWTo4L.root']
-backgrounds['Vg']               = ['nominals/latino_082_WGstarToElNuMad.root',
-                                   'nominals/latino_083_WGstarToMuNuMad.root',
-                                   'nominals/latino_084_WGstarToTauNuMad.root',
+backgrounds['Vg']               = ['nominals/latino_082_WGstarToElNuMad_filtered.root',
+                                   'nominals/latino_083_WGstarToMuNuMad_filtered.root',
+                                   'nominals/latino_084_WGstarToTauNuMad_filtered.root',
                                    'nominals/latino_085_WgammaToLNuG.root',
-                                   ]
-backgrounds['WJet']             = ['wjets/latino_step3_RunAB_LooseLoose_3.54fb.root']
-# backgrounds['WJetFakeRate']     = ['latino_WJets_Full2011_Mu30El15.root']
-backgrounds['Top']              = ['nominals/latino_010_TTJetsMad.root',
+                                  ]
+backgrounds['WJet']             = ['wjets/latino_10X_LooseLoose.root',
+                                   'wjets/latino_20X_LooseLoose.root',
+                                   'wjets/latino_22X_LooseLoose.root',
+                                   'wjets/latino_23X_LooseLoose.root',
+                                   'wjets/latino_24X_LooseLoose.root'
+                                  ]
+backgrounds['WJetFakeRate']     = ['wjets/latino_10X_LooseLoose.root',
+                                   'wjets/latino_20X_LooseLoose.root',
+                                   'wjets/latino_22X_LooseLoose.root',
+                                   'wjets/latino_23X_LooseLoose.root',
+                                   'wjets/latino_24X_LooseLoose.root'
+                                  ]
+backgrounds['Top']              = ['nominals/latino_019_TTTo2L2Nu2B.root',
                                    'nominals/latino_011_TtWFullDR.root',
                                    'nominals/latino_012_TbartWFullDR.root',
                                   ]
 backgrounds['VV']               = ['nominals/latino_074_WZJetsMad.root',
                                    'nominals/latino_075_ZZJetsMad.root',
+                                   'nominals/latino_078_WZTo2L2QMad.root',
+                                   'nominals/latino_079_ZZTo2L2QMad.root',
                                   ]
-backgrounds['DYTT']             = ['dytautau/latino_103TT_DoubleMu2012ADYttem.root',
-                                   'dytautau/latino_113TT_DoubleMu2012BDYttem.root',
+backgrounds['DYTT']             = ['dytautau/latino_222_EMBtt.root',
+                                   'nominals/latino_037_DY50toLLMad.root',
                                   ]
 backgrounds['DYLL']             = ['nominals/latino_036_DY10toLLMad.root',
                                    'nominals/latino_037_DY50toLLMad.root',
@@ -38,9 +50,19 @@ backgrounds['DYLLtemplatesyst'] = ['dyTemplate-syst/latino_036_DY10toLLMad.root'
 # backgrounds['WWnlo']            = ['wwmcatnlo/latino_002_WWto2L2NuMCatNLO.root']
 # backgrounds['WWnloUp']          = ['wwmcatnlo/latino_003_WWto2L2NuMCatNLOUp.root']
 # backgrounds['WWnloDown']        = ['wwmcatnlo/latino_004_WWto2L2NuMCatNLODown.root']
-backgrounds['WWnlo']            = ['wwmcatnlo/latino_002_WWto2L2NuMCatNLO.root']
-backgrounds['WWnloUp']          = ['wwmcatnlo/latino_004_WWto2L2NuMCatNLOUp.root']
-backgrounds['WWnloDown']        = ['wwmcatnlo/latino_003_WWto2L2NuMCatNLODown.root']
+backgrounds['WWnlo']            = ['wwmcatnlo/latino_002_WWto2L2NuMCatNLO.root',
+                                   'nominals/latino_001_GluGluToWWTo4L.root',
+                                  ]
+backgrounds['WWnloUp']          = ['wwmcatnlo/latino_004_WWto2L2NuMCatNLOUp.root',
+                                   'nominals/latino_001_GluGluToWWTo4L.root',
+                                  ]
+backgrounds['WWnloDown']        = ['wwmcatnlo/latino_003_WWto2L2NuMCatNLODown.root',
+                                   'nominals/latino_001_GluGluToWWTo4L.root',
+                                  ]
+backgrounds['Topmad']           = ['nominals/latino_010_TTJetsMad.root',
+                                   'nominals/latino_011_TtWFullDR.root',
+                                   'nominals/latino_012_TbartWFullDR.root',
+                                  ]
 
 data = {}
 data['Data2011A'] = [
@@ -105,6 +127,18 @@ data['Data2012B']=[
     'data/latino_232_DoubleElectron2012B.root',
     'data/latino_233_DoubleMuon2012B.root',
     'data/latino_234_MuEG2012B.root',
+
+    'data/latino_240_SingleElectron2012B.root',
+    'data/latino_241_SingleMuon2012B.root',
+    'data/latino_242_DoubleElectron2012B.root',
+    'data/latino_243_DoubleMuon2012B.root',
+    'data/latino_244_MuEG2012B.root',
+
+    'data/latino_240_SingleElectron2012B_extra.root',
+    'data/latino_241_SingleMuon2012B_extra.root',
+    'data/latino_242_DoubleElectron2012B_extra.root',
+    'data/latino_243_DoubleMuon2012B_extra.root',
+    'data/latino_244_MuEG2012B_extra.root',    
 ]
 
 data['Data2012'] = data['Data2012A']+data['Data2012B']
