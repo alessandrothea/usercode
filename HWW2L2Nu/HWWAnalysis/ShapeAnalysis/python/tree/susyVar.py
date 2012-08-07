@@ -138,8 +138,8 @@ class SusyVarFiller(TreeCloner):
                 mety = met * sin (itree.pfmetphi)
 
                 # add lepton contribution as if I did not measure leptons
-                metx = metx - px1 - px2
-                mety = mety - py1 - py2
+                metx = metx + px1 + px2
+                mety = mety + py1 + py2
                 met = sqrt( metx*metx + mety*mety )
 
                 MR2j[0]  = getMR(jetp1, jetpz1, jetpx1, jetpy1, jetp2, jetpz2, jetpx2, jetpy2)
