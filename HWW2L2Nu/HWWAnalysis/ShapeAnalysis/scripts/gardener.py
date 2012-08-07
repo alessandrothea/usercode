@@ -6,6 +6,7 @@ from tree.pileup       import PUpper
 from tree.ww           import WWPruner, WWFlagsGrafter
 from tree.efficiencies import EffLepFiller,EffTrgFiller
 from tree.susyVar      import SusyVarFiller
+from tree.mTVar      import MTVarFiller
 
 
 if __name__ == '__main__':
@@ -21,5 +22,6 @@ if __name__ == '__main__':
     modules['effwfiller']   = EffLepFiller()
     modules['efftfiller']   = EffTrgFiller()
     modules['susyVar']      = SusyVarFiller()
+    modules['mTVar']        = MTVarFiller()
 
     gardener_cli( modules )
