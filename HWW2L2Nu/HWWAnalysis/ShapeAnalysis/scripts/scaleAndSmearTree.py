@@ -1553,9 +1553,9 @@ class scaleAndSmear:
                 chmet_hold  = self.oldttree.chmet
                 ## tcmet_hold  = self.oldttree.tcmet
 
-                pfmet[0] = pfmet_hold + 20 
-                chmet[0] = chmet_hold + 20
-                ## tcmet[0] = tcmet_hold + 20
+                pfmet[0] = pfmet_hold + 25 
+                chmet[0] = chmet_hold + 25
+                ## tcmet[0] = tcmet_hold + 25
                 
                 ## fix met related variables
                 # get the "old" met
@@ -1566,10 +1566,9 @@ class scaleAndSmear:
                 pchmet[0] = pchmet_hold * (chmet[0] / chmet_hold)
                 ## ptcmet[0] = ptcmet_hold * (tcmet[0] / tcmet_hold)
 
-                mpmet[0] = min( ppfmet[0], pchmet[0] )
-
-                dymva0[0] = dymva1[0] = 1. if mpmet[0] > 45 else 0
-
+                #mpmet[0] = min( ppfmet[0], pchmet[0] )
+                mpmet_hold  = self.oldttree.mpmet
+                mpmet[0] = mpmet_hold + 25;
 
                 met = ROOT.TLorentzVector()
                 met.SetPtEtaPhiM(pfmet[0], 0, self.oldttree.pfmetphi, 0)         
@@ -1587,6 +1586,9 @@ class scaleAndSmear:
                 mth[0]  = transverseMass((l1+l2),met)
                 mtw1[0] = transverseMass((l1),met)
                 mtw2[0] = transverseMass((l2),met)
+                ## assign binary to dymva based on mpmet
+                dymva0[0] = mpmet[0]>20;
+                dymva1[0] = mpmet[0]>20;
 
                 ## migrate events in jet bins, only for the systematics
                 if self.direction == 'syst':
@@ -1597,7 +1599,7 @@ class scaleAndSmear:
                     ptjets = [jetpt1,jetpt2,jetpt3,jetpt4]
                     nj = 0
                     for pt in ptjets:
-                        if pt > 40:
+                        if pt > 35:
                             nj=nj+1
 
                     if nj <= 4:
@@ -1626,6 +1628,8 @@ class scaleAndSmear:
                 print 'jetpt3: '    +str(self.oldttree.jetpt3)    +to+str(self.oldttree.jetpt3)
                 print 'jetpt4: '    +str(self.oldttree.jetpt4)    +to+str(self.oldttree.jetpt4)
                 print 'njet: '      +str(self.oldttree.njet)      +to+str(njet[0])
+                print 'dymva0: '    +str(self.oldttree.dymva0)    +to+str(dymva0[0])
+                print 'dymva1: '    +str(self.oldttree.dymva1)    +to+str(dymva1[0])
 
 
             # fill old and new values            
