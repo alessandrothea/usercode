@@ -11,7 +11,7 @@ import os.path
 import string
 import logging
 from HWWAnalysis.Misc.odict import OrderedDict
-# import traceback
+import traceback
 
 
 class ShapeFactory:
@@ -52,7 +52,14 @@ class ShapeFactory:
     def getrange(self,var,mass,cat):
         
 
-        theRange = self._ranges[var]
+#         theRange = self._ranges[var]
+        try:
+            theRange = self._ranges[var]
+        except KeyError as ke:
+            self._logger.error('Range '+var+' not available. Possible values: '+', '.join(self._ranges.iterkeys()) )
+            raise ke
+
+            
         if isinstance(theRange,tuple):
             return theRange
         elif isinstance(theRange,dict):
@@ -291,6 +298,7 @@ class ShapeFactory:
 
             cut = selections[process]
 
+            self._logger.debug('---'+process+'---')
             self._logger.debug('Formula: '+var)
             self._logger.debug('Cut:     '+cut)
             self._logger.debug('ROOTFiles:'+'\n'.join([f.GetTitle() for f in tree.GetListOfFiles()]))
@@ -324,9 +332,9 @@ class ShapeFactory:
         # problem with DYTT using embedded for em/me + MC for ee/mm
         # puWobs doesn't exist for embedded sample and lumi normalisation only applies for MC
         weights['DYTT']             = 'baseW*effW*triggW*(1 + ('+str(self._lumi)+' - 1)*(dataset == 37 && mctruth == 2 && channel<1.5))'
-        weights['DYLL']             = self._stdWgt+'*(( dataset == 36 || dataset == 37 ) && mctruth != 2 )'
-        weights['DYLLtemplate']     = self._stdWgt+'*(( dataset == 36 || dataset == 37 ) && mctruth != 2 )'
-        weights['DYLLtemplatesyst'] = self._stdWgt+'*(( dataset == 36 || dataset == 37 ) && mctruth != 2 )'
+        weights['DYLL']             = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
+        weights['DYLLtemplate']     = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
+        weights['DYLLtemplatesyst'] = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         
         if var in ['bdts','bdtl']:
             
@@ -438,9 +446,12 @@ if __name__ == '__main__':
 
     if opt.debug and opt.debug > 0:
         logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARNING)
 
-#     try:
-    if True:
+
+    try:
+#    if True:
         if not opt.dataset:
             parser.print_help()
             parser.error('Dataset not defined')
@@ -527,10 +538,13 @@ if __name__ == '__main__':
                 print ' Processing',s,'for samples',' '.join(mask)
                 print '-'*80
                 files = factory.makeSystematics(variable,selection,s,m,systInputDir,systOutDir+systematicsOutFile, nicks=systematics)
-#     except Exception as e:
-#         print 'Fatal exception: '+str(e)
-#         exc_type, exc_value, exc_traceback = sys.exc_info()
-#         traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-#     finally:
-#         print 'Used options'
-#         print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])
+    except Exception as e:
+        print '*'*80
+        print 'Fatal exception '+type(e).__name__+': '+str(e)
+        print '*'*80
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+        print '*'*80
+    finally:
+        print 'Used options'
+        print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])
