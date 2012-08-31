@@ -1,12 +1,13 @@
 #!/bin/env python
 
-from tree.gardening    import gardener_cli
-from tree.gardening    import ModuleManager,Pruner,Grafter,AliasGrafter,RootWeighter
-from tree.pileup       import PUpper
-from tree.ww           import WWPruner, WWFlagsGrafter
-from tree.efficiencies import EffLepFiller,EffTrgFiller
-from tree.susyVar      import SusyVarFiller
-from tree.mTVar      import MTVarFiller
+from tree.gardening     import gardener_cli
+from tree.gardening     import ModuleManager,Pruner,Grafter,AliasGrafter,RootWeighter
+from tree.pileup        import PUpper
+from tree.ww            import WWPruner, WWFlagsGrafter
+from tree.efficiencies  import EffLepFiller,EffTrgFiller
+from tree.susyVar       import SusyVarFiller
+from tree.mTVar         import MTVarFiller
+from tree.ChessVariable import ChessVarGrafter
 
 
 if __name__ == '__main__':
@@ -23,5 +24,10 @@ if __name__ == '__main__':
     modules['efftfiller']   = EffTrgFiller()
     modules['susyVar']      = SusyVarFiller()
     modules['mTVar']        = MTVarFiller()
+    modules['chessVar']     = ChessVarGrafter()
+
+
+
+
 
     gardener_cli( modules )
