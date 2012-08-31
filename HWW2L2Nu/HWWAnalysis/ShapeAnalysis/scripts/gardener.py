@@ -8,6 +8,7 @@ from tree.efficiencies  import EffLepFiller,EffTrgFiller
 from tree.susyVar       import SusyVarFiller
 from tree.mTVar         import MTVarFiller
 from tree.ChessVariable import ChessVarGrafter
+from tree.unBoostedVar  import UnBoostedVarFiller
 
 
 if __name__ == '__main__':
@@ -25,6 +26,7 @@ if __name__ == '__main__':
     modules['susyVar']      = SusyVarFiller()
     modules['mTVar']        = MTVarFiller()
     modules['chessVar']     = ChessVarGrafter()
+    modules['unBoostedVar'] = UnBoostedVarFiller()
 
 
 
