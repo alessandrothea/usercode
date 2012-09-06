@@ -1,14 +1,15 @@
 #!/bin/env python
 
-from tree.gardening     import gardener_cli
-from tree.gardening     import ModuleManager,Pruner,Grafter,AliasGrafter,RootWeighter
-from tree.pileup        import PUpper
-from tree.ww            import WWPruner, WWFlagsGrafter
-from tree.efficiencies  import EffLepFiller,EffTrgFiller
-from tree.susyVar       import SusyVarFiller
-from tree.mTVar         import MTVarFiller
-from tree.ChessVariable import ChessVarGrafter
-from tree.unBoostedVar  import UnBoostedVarFiller
+from tree.gardening         import gardener_cli
+from tree.gardening         import ModuleManager,Pruner,Grafter,AliasGrafter,RootWeighter
+from tree.pileup            import PUpper
+from tree.ww                import WWPruner, WWFlagsGrafter
+from tree.efficiencies      import EffLepFiller,EffTrgFiller
+from tree.susyVar           import SusyVarFiller
+from tree.mTVar             import MTVarFiller
+from tree.ChessVariable     import ChessVarGrafter
+from tree.unBoostedVar      import UnBoostedVarFiller
+from tree.WobblyBinVariable import WobblyBinVarGrafter
 
 
 if __name__ == '__main__':
@@ -27,8 +28,7 @@ if __name__ == '__main__':
     modules['mTVar']        = MTVarFiller()
     modules['chessVar']     = ChessVarGrafter()
     modules['unBoostedVar'] = UnBoostedVarFiller()
-
-
+    modules['WobblyBinVar'] = WobblyBinVarGrafter()
 
 
 
