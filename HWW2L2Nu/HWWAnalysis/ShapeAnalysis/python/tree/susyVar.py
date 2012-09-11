@@ -9,6 +9,7 @@ import re
 import warnings
 import os.path
 from math import *
+from ROOT import *
 
 
 
@@ -74,16 +75,32 @@ class SusyVarFiller(TreeCloner):
         output = kwargs['output']
 
         self.connect(tree,input)
-        newbranches = ['MR2j', 'MTR2j', 'R2j']
+        newbranches = ['MR2j', 'MTR2j', 'R2j', 'unboostedMR2j', 'dphillRframe2j', 'dphillHRframe2j', 'unboostedMTR2j', 'unboostedR2j'  ]
         self.clone(output,newbranches)
 
         MR2j  = numpy.ones(1, dtype=numpy.float32)
         MTR2j = numpy.ones(1, dtype=numpy.float32)
         R2j   = numpy.ones(1, dtype=numpy.float32)
 
+        unboostedMR2j    = numpy.ones(1, dtype=numpy.float32)
+        dphillRframe2j   = numpy.ones(1, dtype=numpy.float32)
+        dphillHRframe2j  = numpy.ones(1, dtype=numpy.float32)
+        unboostedMTR2j   = numpy.ones(1, dtype=numpy.float32)
+        unboostedR2j     = numpy.ones(1, dtype=numpy.float32)
+
+
+
+
         self.otree.Branch('MR2j',  MR2j,  'MR2j/F')
         self.otree.Branch('MTR2j', MTR2j, 'MTR2j/F')
         self.otree.Branch('R2j',   R2j,   'R2j/F')
+
+        self.otree.Branch('unboostedMR2j',    unboostedMR2j,    'unboostedMR2j/F')
+        self.otree.Branch('dphillRframe2j' ,  dphillRframe2j ,  'dphillRframe2j/F' )
+        self.otree.Branch('dphillHRframe2j',  dphillHRframe2j,  'dphillHRframe2j/F')
+        self.otree.Branch('unboostedMTR2j',   unboostedMTR2j,   'unboostedMTR2j/F')
+        self.otree.Branch('unboostedR2j',     unboostedR2j,     'unboostedR2j/F')
+
 
 
         nentries = self.itree.GetEntries()
@@ -94,6 +111,11 @@ class SusyVarFiller(TreeCloner):
         otree     = self.otree
         getMR     = self._getMR
         getMTR    = self._getMTR
+
+
+        cmssw_base = os.getenv('CMSSW_BASE')
+        ROOT.gROOT.ProcessLine('.L '+cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/unBoostedVar.C+')
+
 
         print '- Starting eventloop'
         step = 5000
@@ -145,10 +167,46 @@ class SusyVarFiller(TreeCloner):
                 MR2j[0]  = getMR(jetp1, jetpz1, jetpx1, jetpy1, jetp2, jetpz2, jetpx2, jetpy2)
                 MTR2j[0]  = getMTR(jetpt1, jetpx1, jetpy1, jetpt2, jetpx2, jetpy2, met, metx, mety)
                 R2j[0]   = MTR2j[0] / MR2j[0]
+
+
+                v1 = ROOT.TLorentzVector()
+                v2 = ROOT.TLorentzVector()
+                v1.SetPtEtaPhiM(itree.jetpt1, itree.jeteta1, itree.jetphi1, 0)
+                v2.SetPtEtaPhiM(itree.jetpt2, itree.jeteta2, itree.jetphi2, 0)
+
+                modmet = itree.pfmet
+                metx = modmet * cos (itree.pfmetphi)
+                mety = modmet * sin (itree.pfmetphi)
+                vmet = ROOT.TVector3()
+                vmet.SetXYZ(metx, mety, 0.)
+
+                hwwKin = HWWKinematics(v1, v2, vmet)
+
+                unboostedMR2j[0]     = hwwKin.CalcMRNEW()
+                dphillRframe2j[0]    = hwwKin.CalcDeltaPhiRFRAME()
+                dphillHRframe2j[0]   = hwwKin.CalcDoubleDphiRFRAME()
+
+                unboostedMTR2j[0] = hwwKin.CalcUnboostedMTR(v1, v2, vmet)
+                unboostedR2j[0]   = hwwKin.CalcRNEW(v1, v2, vmet)
+
+
+
+
             else :
                 MR2j[0]  = -999.
                 MTR2j[0] = -999.
                 R2j[0]   = -999.
+                unboostedMR2j[0]   = -999.
+
+                unboostedMR2j[0]     = -999.
+                dphillRframe2j[0]    = -999.
+                dphillHRframe2j[0]   = -999.
+
+                unboostedMTR2j[0] = -999.
+                unboostedR2j[0]   = -999.
+
+
+
             otree.Fill()
         self.disconnect()
         print '- Eventloop completed'

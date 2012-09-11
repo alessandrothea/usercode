@@ -17,12 +17,21 @@ class HWWKinematics {
   virtual ~HWWKinematics() {}
   //! set the jets
   void setJets(std::vector<TLorentzVector> jets) { JETS = jets; }
-  
+
   //! kinematic fuctions
   double CalcMRNEW();
   double CalcDeltaPhiRFRAME();
   double CalcDoubleDphiRFRAME();
   double CalcMR();
+
+  double CalcMR(TLorentzVector P, TLorentzVector Q);
+  double CalcMTR(TLorentzVector P, TLorentzVector Q, TVector3 M);
+  double CalcMRNEW(TLorentzVector P, TLorentzVector Q, TVector3 M);
+  double CalcRNEW(TLorentzVector P, TLorentzVector Q, TVector3 M);
+  double CalcDeltaPhiNEW(TLorentzVector P, TLorentzVector Q, TVector3 M);
+  double CalcMTRNEW(TLorentzVector P, TLorentzVector Q);
+  double CalcUnboostedMTR(TLorentzVector P, TLorentzVector Q, TVector3 M);
+
 
  private:
   TLorentzVector L1,L2;
@@ -162,3 +171,161 @@ double HWWKinematics::CalcMR(){
   
   return MR;
 }
+
+
+
+
+
+//---- addition ----
+
+
+//This is the updated MR definition that we use in the inclusive analysis 
+//(no pt corrections or anything fancy)
+// P and Q are the 4-vectors for the 2 hemispheres, or in you case,
+// the two leptons - setting mass to 0 should be fine
+double HWWKinematics::CalcMR(TLorentzVector P, TLorentzVector Q){
+
+ float MR = sqrt((P.P()+Q.P())*(P.P()+Q.P())-(P.Pz()+Q.Pz())*(P.Pz()+Q.Pz()));
+
+ return MR;
+}
+
+
+
+//This is the function for MTR from the inclusive analysis
+//it goes in the numerator when calculating 'R' such that:
+// R = MTR/MR
+// P and Q are the 4-vectors for the 2 hemispheres, or in you case,
+// the two leptons - setting mass to 0 should be fine
+// M is the MET 3 vector (don't forget to set the z-component of
+// MET to 0)
+double HWWKinematics::CalcMTR(TLorentzVector P, TLorentzVector Q, TVector3 M){
+ float MTR = sqrt((M.Mag()*(P.Pt()+Q.Pt())-(P+Q).Vect().Dot(M))/2.);
+ return MTR;
+}
+
+
+
+
+
+// This is the pt corrected MR -
+
+// M is the MET 3 vector (don't forget to set the z-component of
+// MET to 0)
+double HWWKinematics::CalcMRNEW(TLorentzVector P, TLorentzVector Q, TVector3 M){
+ TVector3 vI = M+P.Vect()+Q.Vect();
+ vI.SetZ(0.0);
+ double PpQ = CalcMR(P,Q); //Note - this calls the old MR function
+ double vptx = (P+Q).Px();
+ double vpty = (P+Q).Py();
+ TVector3 vpt;
+ vpt.SetXYZ(vptx,vpty,0.0);
+
+ float MR2 = 0.5*(PpQ*PpQ-vpt.Dot(vI)+PpQ*sqrt(PpQ*PpQ+vI.Dot(vI)-2.*vI.Dot(vpt)));
+
+ return sqrt(MR2);
+
+}
+
+
+
+
+
+
+// This is the pt corrected R - here, we assume the pt
+
+// P and Q are the 4-vectors for the 2 hemispheres
+// M is the MET 3 vector (don't forget to set the z-component of
+// MET to 0)
+// This function will do the correct Lorentz transformations of the 
+// leptons for you
+double HWWKinematics::CalcRNEW(TLorentzVector P, TLorentzVector Q, TVector3 M){
+    // first calculate pt-corrected MR
+ float mymrnew = CalcMRNEW(L1,L2,MET);
+
+    //Next, calculate the transverse Lorentz transformation
+ TVector3 B = P.Vect()+Q.Vect()+MET;
+ B.SetZ(0.0);
+ B = (-1./(sqrt(4.*mymrnew*mymrnew+B.Dot(B))))*B;
+
+ P.Boost(B);
+ Q.Boost(B);
+
+    //Now, re-calculate MTR in the new reference frame:
+ float mymtrnew = CalcMTRNEW(P, Q);
+
+    //R is now just the ratio of mymrnew and mymtrnew;
+
+ return mymtrnew/mymrnew;
+}
+
+
+
+
+// This is the pt corrected delta phi between the 2 mega-jets
+// P and Q are the 4-vectors for the 2 hemispheres 
+// M is the MET 3 vector (don't forget to set the z-component of
+// MET to 0)
+// This function will do the correct Lorentz transformations of the 
+// leptons for you
+double HWWKinematics::CalcDeltaPhiNEW(TLorentzVector P, TLorentzVector Q, TVector3 M){
+    // first calculate pt-corrected MR
+ float mymrnew = CalcMRNEW(L1,L2,MET);
+
+    //Next, calculate the transverse Lorentz transformation
+ TVector3 B = P.Vect()+Q.Vect()+MET;
+ B.SetZ(0.0);
+ B = (-1./(sqrt(4.*mymrnew*mymrnew+B.Dot(B))))*B;
+
+ P.Boost(B);
+ Q.Boost(B);
+
+    //Now, re-calculate the delta phi
+    // in the new reference frame:
+
+ return P.DeltaPhi(Q);
+
+}
+
+
+
+
+// This is the version of MTR to use when the leptons/mega-jets
+// _already have the pt correction applied_
+// In the functions here, I will call this from within another function.
+// P and Q are the 4-vectors for the 2 hemispheres, or in you case,
+// the two leptons - setting mass to 0 should be fine
+// DO NOT USE THIS FUNCTION WITH THE LEPTON 4-vectors from the lab frame
+double HWWKinematics::CalcMTRNEW(TLorentzVector P, TLorentzVector Q){
+
+ float MTR = sqrt(((P+Q).Pt()*(P.Pt()+Q.Pt())+(P+Q).Pt()*(P+Q).Pt())/2.);
+
+ return MTR;
+
+}
+
+
+
+double HWWKinematics::CalcUnboostedMTR(TLorentzVector P, TLorentzVector Q, TVector3 M){
+    // first calculate pt-corrected MR
+ float mymrnew = CalcMRNEW(L1,L2,MET);
+
+    //Next, calculate the transverse Lorentz transformation
+ TVector3 B = P.Vect()+Q.Vect()+MET;
+ B.SetZ(0.0);
+ B = (-1./(sqrt(4.*mymrnew*mymrnew+B.Dot(B))))*B;
+
+ P.Boost(B);
+ Q.Boost(B);
+
+    //Now, re-calculate MTR in the new reference frame:
+ float mymtrnew = CalcMTRNEW(P, Q);
+
+    //R is now just the ratio of mymrnew and mymtrnew;
+
+ return mymtrnew;
+}
+
+
+
+
