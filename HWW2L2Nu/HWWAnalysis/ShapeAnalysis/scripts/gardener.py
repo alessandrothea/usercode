@@ -10,25 +10,29 @@ from tree.mTVar             import MTVarFiller
 from tree.ChessVariable     import ChessVarGrafter
 from tree.unBoostedVar      import UnBoostedVarFiller
 from tree.WobblyBinVariable import WobblyBinVarGrafter
+from tree.likelihoodQGVar   import likelihoodQGVarFiller
+
+
 
 
 if __name__ == '__main__':
 
     modules = ModuleManager()
-    modules['filter']       = Pruner()
-    modules['adder']        = Grafter()
-    modules['alias']        = AliasGrafter()
-    modules['rootweighter'] = RootWeighter()
-    modules['wwfilter']     = WWPruner()
-    modules['wwflagger']    = WWFlagsGrafter()
-    modules['puadder']      = PUpper()
-    modules['effwfiller']   = EffLepFiller()
-    modules['efftfiller']   = EffTrgFiller()
-    modules['susyVar']      = SusyVarFiller()
-    modules['mTVar']        = MTVarFiller()
-    modules['chessVar']     = ChessVarGrafter()
-    modules['unBoostedVar'] = UnBoostedVarFiller()
-    modules['WobblyBinVar'] = WobblyBinVarGrafter()
+    modules['filter']          = Pruner()
+    modules['adder']           = Grafter()
+    modules['alias']           = AliasGrafter()
+    modules['rootweighter']    = RootWeighter()
+    modules['wwfilter']        = WWPruner()
+    modules['wwflagger']       = WWFlagsGrafter()
+    modules['puadder']         = PUpper()
+    modules['effwfiller']      = EffLepFiller()
+    modules['efftfiller']      = EffTrgFiller()
+    modules['susyVar']         = SusyVarFiller()
+    modules['mTVar']           = MTVarFiller()
+    modules['chessVar']        = ChessVarGrafter()
+    modules['unBoostedVar']    = UnBoostedVarFiller()
+    modules['WobblyBinVar']    = WobblyBinVarGrafter()
+    modules['likelihoodQGVar'] = likelihoodQGVarFiller()
 
 
 
