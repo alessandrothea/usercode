@@ -1,0 +1,12 @@
+// #include "DataFormats/Common/interface/Wrapper.h"
+
+//Add includes for your classes here
+#include "HWWAnalysis/QuarkGluonTagger/interface/QGLikelihoodCalculator.h"
+
+namespace {
+   struct pandolf_QuarkGluonTagger {
+
+       QGLikelihoodCalculator dummyQG;
+
+   };
+}
