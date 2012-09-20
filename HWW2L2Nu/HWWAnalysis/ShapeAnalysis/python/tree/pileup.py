@@ -48,9 +48,9 @@ class PUpper(TreeCloner):
         self.kind     = opts.kind
         self.branch   = opts.branch
 
-        self.datafile   = self._openRootFile(opt.datafile)
+        self.datafile   = self._openRootFile(opts.datafile)
         self.datadist   = self._getRootObj(self.datafile,opts.histname)
-        self.mcfile     = self._openRootFile(opt.mcfile)
+        self.mcfile     = self._openRootFile(opts.mcfile)
         self.mcdist     = self._getRootObj(self.mcfile, opts.histname)
 
     # ----
