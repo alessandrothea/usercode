@@ -10,7 +10,6 @@ import warnings
 import os.path
 from math import *
 from array import array;
-from ROOT import *
 
 
 
@@ -96,7 +95,11 @@ class UnBoostedVarFiller(TreeCloner):
 
 
         cmssw_base = os.getenv('CMSSW_BASE')
-        ROOT.gROOT.ProcessLine('.L '+cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/unBoostedVar.C+')
+        try:
+            ROOT.gROOT.LoadMacro(cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/unBoostedVar.C+g')
+        except RuntimeError:
+            ROOT.gROOT.LoadMacro(cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/unBoostedVar.C++g')
+
 
         print '- Starting eventloop'
         step = 5000
@@ -119,7 +122,7 @@ class UnBoostedVarFiller(TreeCloner):
             met.SetXYZ(metx, mety, 0.)
 
 
-            hwwKin = HWWKinematics(l1, l2, met)
+            hwwKin = ROOT.HWWKinematics(l1, l2, met)
 
 
             boostedMR[0]     = hwwKin.CalcMR()

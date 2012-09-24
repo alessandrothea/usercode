@@ -10,7 +10,6 @@ import warnings
 import os.path
 from math import *
 from array import array;
-from ROOT import *
 
 
 
@@ -76,7 +75,10 @@ class MTVarFiller(TreeCloner):
 
 
         cmssw_base = os.getenv('CMSSW_BASE')
-        ROOT.gROOT.ProcessLine('.L '+cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/mT2.C+')
+        try:
+            ROOT.gROOT.LoadMacro(cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/mT2.C+g')
+        except RuntimeError:
+            ROOT.gROOT.LoadMacro(cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/mT2.C++g')
 
         print '- Starting eventloop'
         step = 5000

@@ -9,7 +9,6 @@ import re
 import warnings
 import os.path
 from math import *
-from ROOT import *
 
 
 
@@ -114,8 +113,10 @@ class SusyVarFiller(TreeCloner):
 
 
         cmssw_base = os.getenv('CMSSW_BASE')
-        ROOT.gROOT.ProcessLine('.L '+cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/unBoostedVar.C+')
-
+        try:
+            ROOT.gROOT.LoadMacro(cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/unBoostedVar.C+g')
+        except RuntimeError:
+            ROOT.gROOT.LoadMacro(cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/unBoostedVar.C++g')
 
         print '- Starting eventloop'
         step = 5000
@@ -180,7 +181,7 @@ class SusyVarFiller(TreeCloner):
                 vmet = ROOT.TVector3()
                 vmet.SetXYZ(metx, mety, 0.)
 
-                hwwKin = HWWKinematics(v1, v2, vmet)
+                hwwKin = ROOT.HWWKinematics(v1, v2, vmet)
 
                 unboostedMR2j[0]     = hwwKin.CalcMRNEW()
                 dphillRframe2j[0]    = hwwKin.CalcDeltaPhiRFRAME()

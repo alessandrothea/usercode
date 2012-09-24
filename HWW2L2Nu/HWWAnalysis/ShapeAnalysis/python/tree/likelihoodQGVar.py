@@ -10,8 +10,6 @@ import warnings
 import os.path
 from math import *
 from array import array;
-from ROOT import *
-
 
 
 #
@@ -94,10 +92,11 @@ class likelihoodQGVarFiller(TreeCloner):
         #ROOT.gROOT.ProcessLine('.L '+cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/likelihoodQG.C+')
         gSystem.Load("libFWCoreFWLite.so")
         gSystem.Load("libHWWAnalysisQuarkGluonTagger.so")
+        # try ROOT.AutoLibraryLoader.enable()
         ROOT.gROOT.ProcessLine('AutoLibraryLoader::enable()')
 
 
-        QGLikCalc = QGLikelihoodCalculator("data/QGTaggerConfig_nCharged_AK5PF.txt","data/QGTaggerConfig_nNeutral_AK5PF.txt","data/QGTaggerConfig_ptD_AK5PF.txt")
+        QGLikCalc = ROOT.QGLikelihoodCalculator("data/QGTaggerConfig_nCharged_AK5PF.txt","data/QGTaggerConfig_nNeutral_AK5PF.txt","data/QGTaggerConfig_ptD_AK5PF.txt")
 
         print '- Starting eventloop'
         step = 5000

@@ -8,6 +8,8 @@ import re
 import warnings
 import os.path
 
+import HWWAnalysis.Misc.odict as odict
+
 # for trigger efficiency fits
 from HWWAnalysis.ShapeAnalysis.hwwtools import confirm
 
@@ -432,7 +434,7 @@ class RootWeighter(TreeCloner):
 #  \___/\___/_/_/_/_/_/_/\_,_/_//_/\_,_/ /_/_/_//_/\__/ 
 #                                                       
 
-class ModuleManager(dict):
+class ModuleManager(odict.OrderedDict):
     
     def __setitem__(self,key,value):
         super(ModuleManager, self).__setitem__(key, value)
@@ -472,9 +474,9 @@ def gardener_cli( modules ):
     '''
 
     parser = optparse.OptionParser(usage)
-    parser.add_option('-t','--tree',        dest='tree',                            default='latino')
-    parser.add_option('-r','--recursive',   dest='recursive',action='store_true',   default=False)
-    parser.add_option('-F','--force',       dest='force',action='store_true',       default=False)
+    parser.add_option('-t','--tree',        dest='tree',                                default='latino',   help='Name of the tree to operate on (default = %default)')
+    parser.add_option('-r','--recursive',   dest='recursive',   action='store_true',    default=False,      help='Recurse subdirectories (default = %default)')
+    parser.add_option('-F','--force',       dest='force',       action='store_true',    default=False,      help='Don\'t ask for confirmation when recursing (default = %default)')
 
     # some boring argument handling
     if len(sys.argv) == 1:
@@ -523,7 +525,7 @@ def gardener_cli( modules ):
     try:
         module.checkOptions(opt)
     except Exception as e:
-        print 'Error in modutle',module.label
+        print 'Error in module',module.label
         print e
         sys.exit(1)
 
