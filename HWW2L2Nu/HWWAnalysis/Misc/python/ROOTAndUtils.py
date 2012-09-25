@@ -8,6 +8,18 @@ class TH1AddDirSentry:
     def __del__(self):
         ROOT.TH1.AddDirectory(self.status)
 
+def openROOTFile(path, option=''):
+    f =  ROOT.TFile.Open(path,option)
+    if not f.__nonzero__() or not f.IsOpen():
+        raise NameError('File '+path+' not open')
+    return f
+
+def getROOTObj(d,name):
+    o = d.Get(name)
+    if not o.__nonzero__():
+        raise NameError('Object '+name+' doesn\'t exist in '+d.GetName())
+    return o
+
 def ROOTInheritsFrom( objClass, theClass ):
     c = ROOT.gROOT.GetClass(objClass)
     return c.InheritsFrom(theClass)
