@@ -15,6 +15,7 @@ from tree.WobblyBinVariable import WobblyBinVarGrafter
 from tree.likelihoodQGVar   import likelihoodQGVarFiller
 from tree.susyVar2B2LMET    import SusyVar2B2LMETFiller
 from tree.dymvaVar          import DymvaVarFiller
+from tree.xyShift           import XYShiftVarFiller
 
 
 
@@ -38,6 +39,7 @@ if __name__ == '__main__':
     modules['likelihoodQGVar'] = likelihoodQGVarFiller()
     modules['susyVar2B2LMET']  = SusyVar2B2LMETFiller()
     modules['dymvaVar']        = DymvaVarFiller()
+    modules['xyShift']         = XYShiftVarFiller()
 
 
 
