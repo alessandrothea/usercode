@@ -88,10 +88,10 @@ class likelihoodQGVarFiller(TreeCloner):
 
 
         cmssw_base = os.getenv('CMSSW_BASE')
-        gSystem.Load("libFWCoreFWLite.so") 
+        ROOT.gSystem.Load("libFWCoreFWLite.so") 
         #ROOT.gROOT.ProcessLine('.L '+cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/likelihoodQG.C+')
-        gSystem.Load("libFWCoreFWLite.so")
-        gSystem.Load("libHWWAnalysisQuarkGluonTagger.so")
+        ROOT.gSystem.Load("libFWCoreFWLite.so")
+        ROOT.gSystem.Load("libHWWAnalysisQuarkGluonTagger.so")
         # try ROOT.AutoLibraryLoader.enable()
         ROOT.gROOT.ProcessLine('AutoLibraryLoader::enable()')
 
