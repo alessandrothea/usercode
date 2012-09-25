@@ -175,11 +175,9 @@ class SusyVarFiller(TreeCloner):
                 v1.SetPtEtaPhiM(itree.jetpt1, itree.jeteta1, itree.jetphi1, 0)
                 v2.SetPtEtaPhiM(itree.jetpt2, itree.jeteta2, itree.jetphi2, 0)
 
-                modmet = itree.pfmet
-                metx = modmet * cos (itree.pfmetphi)
-                mety = modmet * sin (itree.pfmetphi)
                 vmet = ROOT.TVector3()
-                vmet.SetXYZ(metx, mety, 0.)
+                # add leptons to met since I consider "unseen" the leptons
+                vmet.SetXYZ(metx + px1 + px2, mety + py1 + py2, 0.)
 
                 hwwKin = ROOT.HWWKinematics(v1, v2, vmet)
 
