@@ -151,6 +151,13 @@ class ChessVarGrafter(Grafter):
 #               totformula += formula
 #
 
+
+        totformula += ' + '
+        totformula += '   (' + varA + ' > ' + str(varAmin) + ' && ' + varA + '<=' + str(varAmax)
+        totformula += ' && ' + varB + ' > ' + str(varBmin) + ' && ' + varB + '<=' + str(varBmax)
+        totformula += ' ) * '
+
+
         if (varBunderflow==1) :
           varBnumBin += 1
           varBmin -= widthB
@@ -168,8 +175,13 @@ class ChessVarGrafter(Grafter):
           varAmax += widthA
 
 
+        totformula +=                        ' ( TMath::Ceil( (' + varA + '-' + str(varAmin) + ')/(' + str(varAmax) +' - ' + str(varAmin) + ') * ' + str(varAnumBin) +' ) + '
+        totformula +=   str(varAnumBin) + ' *    TMath::Ceil( (' + varB + '-' + str(varBmin) + ')/(' + str(varBmax) +' - ' + str(varBmin) + ') * ' + str(varBnumBin) +' )   )'
+
+
+        # to deal with underflow and overflow
         for iBinB in xrange(0, varBnumBin):
-            for iBinA in xrange(0, varAnumBin):
+           for iBinA in xrange(0, varAnumBin):
                value = iBinA + iBinB*varAnumBin + 1
                minA  = varAmin + iBinA*widthA
                maxA  = varAmin + (iBinA+1)*widthA
@@ -178,43 +190,68 @@ class ChessVarGrafter(Grafter):
 
                formula = ' '
 
-               if (varAunderflow==0 and varAoverflow==0 and varBunderflow==0 and varBoverflow==0 ) :
-                   formula += ' + (' + varA + '>' + str(minA) + '&&' + varA + '<=' + str(maxA) + '&&' + varB + '>' + str(minB) + '&&' + varB + '<=' + str(maxB) + ')'
-               else :
-                   if (iBinA==0) :
-                       if (varAunderflow==1) :
-                           formula += ' + (' + varA + '<=' + str(maxA) + ' '
-                       else :
-                           formula += ' + (' + varA + '>' + str(minA) + '&&' + varA + '<=' + str(maxA) + ' '
+               dosomething = 0
 
-                   if (iBinA==(varAnumBin-1)) :
-                       if (varAoverflow==1) :
-                           formula += ' + (' + varA + '>' + str(minA) + ' '
-                       else :
-                           formula += ' + (' + varA + '>' + str(minA) + '&&' + varA + '<=' + str(maxA) + ' '
+               if (iBinA==0) :
+                    if (varAunderflow==1) :
+                        formula += ' + (' + varA + '<=' + str(maxA) + ' '
+                        dosomething = 1
+                    else :
+                        formula += ' + (' + varA + '>' + str(minA) + '&&' + varA + '<=' + str(maxA) + ' '
 
-                   if (iBinA!=0 and iBinA!=(varAnumBin-1)) :
+               if (iBinA==(varAnumBin-1)) :
+                   if (varAoverflow==1) :
+                       formula += ' + (' + varA + '>' + str(minA) + ' '
+                       dosomething = 1
+                   else :
                        formula += ' + (' + varA + '>' + str(minA) + '&&' + varA + '<=' + str(maxA) + ' '
 
-                   if (iBinB==0) :
-                       if (varBunderflow==1) :
-                           formula += ' && ' + varB + '<=' + str(maxB) + ' )'
-                       else :
-                           formula += ' && ' + varB + '>' + str(minB) + '&&' + varB + '<=' + str(maxB) + ' )'
+               if (iBinA!=0 and iBinA!=(varAnumBin-1)) :
+                   formula += ' + (' + varA + '>' + str(minA) + '&&' + varA + '<=' + str(maxA) + ' '
 
-                   if (iBinB==(varBnumBin-1)) :
-                       if (varBoverflow==1) :
-                           formula += ' && ' + varB + '>' + str(minB) + ' )'
-                       else :
-                           formula += ' && ' + varB + '>' + str(minB) + '&&' + varB + '<=' + str(maxB) + ' )'
-
-                   if (iBinB!=0 and iBinB!=(varBnumBin-1)) :
+               if (iBinB==0) :
+                   if (varBunderflow==1) :
+                       formula += ' && ' + varB + '<=' + str(maxB) + ' )'
+                       dosomething = 1
+                   else :
                        formula += ' && ' + varB + '>' + str(minB) + '&&' + varB + '<=' + str(maxB) + ' )'
 
-               formula += '*' + str(value) + ' '
-               totformula += formula
+               if (iBinB==(varBnumBin-1)) :
+                   if (varBoverflow==1) :
+                       formula += ' && ' + varB + '>' + str(minB) + ' )'
+                       dosomething = 1
+                   else :
+                       formula += ' && ' + varB + '>' + str(minB) + '&&' + varB + '<=' + str(maxB) + ' )'
+
+               if (iBinB!=0 and iBinB!=(varBnumBin-1)) :
+                   formula += ' && ' + varB + '>' + str(minB) + '&&' + varB + '<=' + str(maxB) + ' )'
+
+               #if (iBinA==0) :
+                 #if (varAunderflow==1) :
+                   #formula += ' + (' + varA + '<=' + str(maxA) + ' '
+                   #dosomething = 1
+
+               #if (iBinA==(varAnumBin-1)) :
+                 #if (varAoverflow==1) :
+                   #formula += ' + (' + varA + '>' + str(minA) + ' '
+                   #dosomething = 1
+
+               #if (iBinB==0) :
+                 #if (varBunderflow==1) :
+                   #formula += ' && ' + varB + '<=' + str(maxB) + ' )'
+                   #dosomething = 1
+
+               #if (iBinB==(varBnumBin-1)) :
+                 #if (varBoverflow==1) :
+                   #formula += ' && ' + varB + '>' + str(minB) + ' )'
+                   #dosomething = 1
+
+               if dosomething == 1 :
+                   formula += '*' + str(value) + ' '
+                   totformula += formula
 
 
+        print ' Calculate ...'
         print totformula
 
         chessVarOpt.variables = [
