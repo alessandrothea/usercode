@@ -124,7 +124,26 @@ class wwcuts:
     onejet  = 'njet == 1'
     vbf     = '(njet >= 2 && njet <= 3 && (jetpt3 <= 30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0))))) '
 
+# da rifare
+class vbfcuts:
+    _massindep = [
+        'abs(eta1 - (jeteta1+jeteta2)/2)/detajj < 0.5',
+        'abs(eta2 - (jeteta1+jeteta2)/2)/detajj < 0.5',
+    ]
 
+    _cut   = [
+        'detajj>3.5',
+        'mjj>450',
+    ]
+    _shape = [
+        'detajj>3.',
+        'mjj>200',
+    ]
+
+    vbflocut   = wwcuts.wwlo+_massindep+_cut
+    vbfhicut   = wwcuts.wwhi+_massindep+_cut
+    vbfloshape = wwcuts.wwlo+_massindep+_shape
+    vbfhishape = wwcuts.wwhi+_massindep+_shape
 
 masses = [110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 170, 180, 190, 200, 250, 300, 350, 400, 450, 500, 550, 600]
 
@@ -148,7 +167,6 @@ flavorCuts['me']  = 'channel == 3' #'channel> 2.5 && channel<4.5'
 flavorCuts['sf']  = 'channel < 1.5'
 flavorCuts['of']  = 'channel > 1.5' 
 
-
 flavors = {}
 flavors['sf']=['mm','ee']
 flavors['of']=['em','me']
@@ -162,26 +180,14 @@ channels['of_1j'] = ('1j','of')#,['em','me'])
 channels['sf_0j'] = ('0j','sf')#,['mm','ee'])
 channels['sf_1j'] = ('1j','sf')#,['mm','ee'])
 channels['2j']    = ('2j','ll')#,['mm','ee','em','me'])
+channels['of_2j'] = ('2j','of')#,['em','me'])
+channels['sf_2j'] = ('2j','sf')#,['mm','ee'])
 
 #  __  __               ___     _      
 # |  \/  |__ _ ______  / __|  _| |_ ___
 # | |\/| / _` (_-<_-< | (_| || |  _(_-<
 # |_|  |_\__,_/__/__/  \___\_,_|\__/__/
 #                                      
-
-# # masses                = [ 110 , 115 , 118 , 120 , 122 , 124 , 126 , 128 , 130 , 135 , 140 , 150 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
-# shapecuts = {}
-# shapecuts['mllmax_bdt']  = [ 70  , 70  , 70  , 70  , 70  , 70  , 80  , 80  , 80  , 90  , 90  , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600 ]
-# shapecuts['pt1min']      = [ 20  , 20  , 20  , 20  , 21  , 22  , 23  , 24  , 25  , 25  , 25  , 27  , 30  , 34  , 36  , 38  , 40  , 55  , 70  , 80  , 90  , 110 , 120 , 130 , 140 ]
-# shapecuts['pt2min']      = [ 10  , 10  , 10  , 10  , 10  , 10  , 10  , 10  , 10  , 12  , 15  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  ]
-# shapecuts['mllmax']      = [ 40  , 40  , 40  , 40  , 41  , 42  , 43  , 44  , 45  , 45  , 45  , 50  , 50  , 50  , 60  , 80  , 90  , 150 , 200 , 250 , 300 , 350 , 400 , 450 , 500 ]
-# shapecuts['dphimax']     = [ 115 , 115 , 115 , 115 , 110 , 105 , 100 , 95  , 90  , 90  , 90  , 90  , 60  , 60  , 70  , 90  , 100 , 140 , 175 , 175 , 175 , 175 , 175 , 175 , 175 ]
-# # automatic conversion to radiants
-# shapecuts['dphimax']     = [ str(phi)+'*pi/180' for phi in shapecuts['dphimax'] ]
-
-# shapecuts['mt']          = [(80,110), (80,110), (80,115), (80,120), (80,121), (80,122), (80,123), (80,124), (80,125), (80,128), (80,130), (80,150), (90,160), (110,170), (120,180), (120,190), (120,200), (120,250), (120,300), (120,350), (120,400), (120,450), (120,500), (120,550), (120,600) ]
-
-
 # masses                = [ 110 , 115 , 120 , 125 , 130 , 135 , 140 , 145 , 150 , 155 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
 cutmap = {}                                                                     
 cutmap['mllmax_bdt']  = [ 70  , 70  , 70  , 70  , 80  , 90  , 90  , 100 , 100 , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600 ]
@@ -189,14 +195,12 @@ cutmap['pt1min']      = [ 20  , 20  , 20  , 20  , 25  , 25  , 25  , 25  , 27  , 
 cutmap['pt2min']      = [ 10  , 10  , 10  , 10  , 10  , 12  , 15  , 15  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  ]
 cutmap['mllmax']      = [ 40  , 40  , 40  , 43  , 45  , 45  , 45  , 48  , 50  , 50  , 50  , 50  , 60  , 80  , 90  , 150 , 200 , 250 , 300 , 350 , 400 , 450 , 500 ]
 cutmap['dphimax']     = [ 115 , 115 , 115 , 103 , 90  , 90  , 90  , 90  , 90  , 90  , 60  , 60  , 70  , 90  , 100 , 140 , 175 , 175 , 175 , 175 , 175 , 175 , 175 ]
+
+cutmap['mtmin']       = [ 80  , 80  , 80  , 80  , 80  , 80  , 80  , 80  , 80  , 80  , 90  , 110 , 120 , 120 , 120 , 120 , 120 , 120 , 120 , 120 , 120 , 120 , 120 ]
+cutmap['mtmax']       = [ 110 , 110 , 120 , 123 , 125 , 128 , 130 , 140 , 150 , 155 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600 ]
+
 # automatic conversion to radiants
 cutmap['dphimax']     = [ str(phi)+'*pi/180' for phi in cutmap['dphimax'] ]
-
-cutmap['mt']          = [(80,110),  (80,110),  (80,120),  (80,123),  (80,125),
-                         (80,128),  (80,130),  (80,140),  (80,150),  (80,155),
-                         (90,160),  (110,170), (120,180), (120,190), (120,200),
-                         (120,250), (120,300), (120,350), (120,400), (120,450),
-                         (120,500), (120,550), (120,600) ]
 
 massDependantCutsbyVar = {}
 for c,list in cutmap.iteritems():
@@ -208,6 +212,7 @@ del cutmap
 del c
 del list
 del phi
+
 
 
 #  ___      _        _   _             
@@ -227,6 +232,10 @@ def massSelections(mass):
     sel['ww-himass']    = ' && '.join(wwcuts.wwhi)
     sel['ww-lomass']    = ' && '.join(wwcuts.wwlo)
 
+    sel['vbf-shape-himass']    = ' && '.join(vbfcuts.vbfhishape)
+    sel['vbf-shape-lomass']    = ' && '.join(vbfcuts.vbfloshape)
+    sel['vbf-shape']           = sel['vbf-shape-lomass'] if mass <= 140 else sel['vbf-shape-himass'] 
+
     sel['ww-level']     = sel['ww-lomass'] if mass <= 140 else sel['ww-himass'] 
     sel['bdt-specific'] = 'mll < {0} && (mth > {1:.0f} && mth < {2:.0f})'.format(masscuts['mllmax_bdt'], mthmin_bdt, int(mass))
 
@@ -235,7 +244,7 @@ def massSelections(mass):
     hwwlvl['pt1']    = 'pt1 > {0:.1f}'.format(masscuts['pt1min'])
     hwwlvl['pt2']    = 'pt2 > {0:.1f}'.format(masscuts['pt2min'])
     hwwlvl['dphill'] = 'dphill < {0}'.format(masscuts['dphimax'])
-    hwwlvl['mth']    = '(mth > {0:.1f} && mth < {1:.1f})'.format(masscuts['mt'][0], masscuts['mt'][1])
+    hwwlvl['mth']    = '(mth > {0:.1f} && mth < {1:.1f})'.format(masscuts['mtmin'], masscuts['mtmax'])
 
     sel['ww-selection']           = sel['ww-level']
     sel['hww-selection']          = ' && '.join([sel['ww-level']]+[cut for cut     in hwwlvl.itervalues()])
@@ -246,8 +255,12 @@ def massSelections(mass):
     sel['bdt-selection']          = sel['ww-level']+' && '+sel['bdt-specific']
     sel['bdtl-selection']         = sel['bdt-selection']
 
+    sel['vbf-selection']          = sel['vbf-shape']+' && '+hwwlvl['mth']
+
+
+    
     # TODO gammastar test
-    sel['gammaMRStar-selection']  = sel['bdt-selection']
+#     sel['gammaMRStar-selection']  = sel['bdt-selection']
 
     return sel
 

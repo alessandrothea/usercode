@@ -5,7 +5,7 @@ import hwwinfo
 import os
 import datetime
 
-usage = 'usage: %prog [dir] [cmd]'
+usage = 'usage: %prog <options>'
 parser = optparse.OptionParser(usage)
 parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
 (opt, args) = parser.parse_args()
@@ -25,8 +25,8 @@ prefix = opt.prefix
 prefix = prefix if prefix[-1] != '/' else prefix[:-1]
 
 bins = datacards['split']
-if len(args) > 1:
-    if args[0] not in datacards['all']+datacards.keys():
+if len(args) >= 1:
+    if args[0] not in (datacards['all']+datacards.keys()):
         parser.error('Supported datacards: '+', '.join(datacards['all']+datacards.keys()) )
     else:
         bins = [ args[0] ] if args[0] not in datacards else datacards[args[0]]

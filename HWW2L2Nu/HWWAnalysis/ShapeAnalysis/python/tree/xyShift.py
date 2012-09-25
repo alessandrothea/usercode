@@ -10,8 +10,6 @@ import re
 import warnings
 import os.path
 from math import *
-from ROOT import TMVA
-from ROOT import std
 import math
 
 
@@ -31,10 +29,10 @@ class XYShiftVarFiller(TreeCloner):
 
 
     def createDYMVA(self):
-        self.getDYMVAV0j0 = TMVA.Reader();
-        self.getDYMVAV0j1 = TMVA.Reader();
-        self.getDYMVAV1j0 = TMVA.Reader();
-        self.getDYMVAV1j1 = TMVA.Reader();
+        self.getDYMVAV0j0 = ROOT.TMVA.Reader();
+        self.getDYMVAV0j1 = ROOT.TMVA.Reader();
+        self.getDYMVAV1j0 = ROOT.TMVA.Reader();
+        self.getDYMVAV1j1 = ROOT.TMVA.Reader();
 
         self.getDYMVAV0j0.AddVariable("met",           (self.var1))
         self.getDYMVAV0j0.AddVariable("trackMet",      (self.var2))

@@ -76,6 +76,7 @@ class TreeCloner(object):
 class Pruner(TreeCloner):
     def __init__(self):
         self.filter = ''
+        self.drops = []
         self.dryrun = False
 
     def help(self):
@@ -84,17 +85,19 @@ class Pruner(TreeCloner):
     def addOptions(self,parser):
         description=self.help()
         group = optparse.OptionGroup(parser,self.label, description)
-        group.add_option('-f','--filter',dest='filter', help='cut string as undestood by TTree::Draw')
+        group.add_option('-f','--filter',dest='filter', help='cut string as undestood by TTree::Draw', default='')
+        group.add_option('-d','--drop',  dest='drops',  help='drops the variables while cloning', action='append',default=[])
         group.add_option('-n','--dryrun',dest='dryrun', help='do nothing, just count', action='store_true')
         parser.add_option_group(group)
         return group
 
     def checkOptions(self, opts ):
-        if not opts.filter:
+        if not opts.filter and not opts.drops:
             raise ValueError('No filter defined?!?')
 
         self.filter = getattr(opts,'filter')
         self.dryrun = getattr(opts,'dryrun')
+        self.drops  = getattr(opts,'drops')
 
     def process(self, **kwargs ):
         print 'Filtering \''+self.filter+'\''
@@ -113,7 +116,10 @@ class Pruner(TreeCloner):
         if self.dryrun:
             print 'Dryrun: eventloops skipped'
             return
-        self.clone(output)
+
+        # do we want to support wildcards? with fnmatch?
+        # complicated because here we can't access the input tree
+        self.clone(output, self.drops)
 
         itree = self.itree
         otree = self.otree

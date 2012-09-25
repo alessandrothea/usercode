@@ -49,6 +49,7 @@ class ShapeDatacardWriter:
             print yields.keys()
             raise RuntimeError('No Data found!')
         card.write('observation %.0f\n' % yields['Data']._N)
+        # replace the second * with the bin?
         card.write('shapes  *           * '+
                    fileFmt.format(mass=self._mass, bin=self._bin)+
                    '     histo_$PROCESS histo_$PROCESS_$SYSTEMATIC'+'\n')

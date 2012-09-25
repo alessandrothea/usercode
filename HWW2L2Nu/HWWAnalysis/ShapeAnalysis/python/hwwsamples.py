@@ -5,7 +5,6 @@ import re
 # \__ \/ _` | '  \| '_ \ / -_|_-<
 # |___/\__,_|_|_|_| .__/_\___/__/
 #                 |_|            
-
 backgrounds = {}
 backgrounds['WW']               = ['nominals/latino_000_WWJets2LMad.root']
 backgrounds['ggWW']             = ['nominals/latino_001_GluGluToWWTo4L.root']
@@ -30,12 +29,16 @@ backgrounds['Top']              = ['nominals/latino_019_TTTo2L2Nu2B.root',
                                    'nominals/latino_011_TtWFullDR.root',
                                    'nominals/latino_012_TbartWFullDR.root',
                                   ]
+# backgrounds['TopTT']            = ['nominals/latino_019_TTTo2L2Nu2B.root']
+# backgrounds['TopTW']            = ['nominals/latino_011_TtWFullDR.root',
+#                                    'nominals/latino_012_TbartWFullDR.root',
+#                                   ]
 backgrounds['VV']               = ['nominals/latino_074_WZJetsMad.root',
                                    'nominals/latino_075_ZZJetsMad.root',
                                    'nominals/latino_078_WZTo2L2QMad.root',
                                    'nominals/latino_079_ZZTo2L2QMad.root',
                                   ]
-backgrounds['DYTT']             = ['dytautau/latino_222_EMBtt.root',
+backgrounds['DYTT']             = ['nominals/latino_222_EMBtt.root',
                                    'nominals/latino_037_DY50toLLMad.root',
                                   ]
 backgrounds['DYLL']             = ['nominals/latino_036_DY10toLLMad.root',
@@ -47,22 +50,12 @@ backgrounds['DYLLtemplate']     = ['dyTemplate/latino_036_DY10toLLMad.root',
 backgrounds['DYLLtemplatesyst'] = ['dyTemplate-syst/latino_036_DY10toLLMad.root',
                                    'dyTemplate-syst/latino_037_DY50toLLMad.root',
                                   ]
-# backgrounds['WWnlo']            = ['wwmcatnlo/latino_002_WWto2L2NuMCatNLO.root']
-# backgrounds['WWnloUp']          = ['wwmcatnlo/latino_003_WWto2L2NuMCatNLOUp.root']
-# backgrounds['WWnloDown']        = ['wwmcatnlo/latino_004_WWto2L2NuMCatNLODown.root']
-backgrounds['WWnlo']            = ['wwmcatnlo/latino_002_WWto2L2NuMCatNLO.root',
-                                   'nominals/latino_001_GluGluToWWTo4L.root',
-                                  ]
-backgrounds['WWnloUp']          = ['wwmcatnlo/latino_004_WWto2L2NuMCatNLOUp.root',
-                                   'nominals/latino_001_GluGluToWWTo4L.root',
-                                  ]
-backgrounds['WWnloDown']        = ['wwmcatnlo/latino_003_WWto2L2NuMCatNLODown.root',
-                                   'nominals/latino_001_GluGluToWWTo4L.root',
-                                  ]
-backgrounds['Topmad']           = ['nominals/latino_010_TTJetsMad.root',
-                                   'nominals/latino_011_TtWFullDR.root',
-                                   'nominals/latino_012_TbartWFullDR.root',
-                                  ]
+# backgrounds['DYLLtemplatedd']   = ['dyTemplate-dd/latino_036_DY10toLLMad.root',
+#                                    'dyTemplate-dd/latino_037_DY50toLLMad.root',
+#                                    ]
+backgrounds['WWnlo']            = ['nominals/latino_002_WWto2L2NuMCatNLO.root']
+backgrounds['WWnloUp']          = ['nominals/latino_004_WWto2L2NuMCatNLOUp.root']
+backgrounds['WWnloDown']        = ['nominals/latino_003_WWto2L2NuMCatNLODown.root']
 
 data = {}
 data['Data2011A'] = [
@@ -184,7 +177,7 @@ def signalSamples(mass):
     return signals
 
     
-def samples(mass, datatag='Data2012'):
+def samples(mass, datatag='Data2012', filter='all'):
     '''
     mass: mass for the higgs samples'
     datatag: tag for the dataset to be included

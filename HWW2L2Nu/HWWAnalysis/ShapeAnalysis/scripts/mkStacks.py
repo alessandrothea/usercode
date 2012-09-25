@@ -569,8 +569,10 @@ def main():
     mypath = os.path.dirname(os.path.abspath(__file__))
 #     print mypath
     ROOT.gInterpreter.ExecuteMacro(mypath+'/LatinoStyle2.C')
-    ROOT.gROOT.ProcessLine('.L '+mypath+'/MWLPlot.C+g')
-
+    try:
+        ROOT.gROOT.LoadMacro(mypath+'/MWLPlot.C+g')
+    except RuntimeError:
+        ROOT.gROOT.LoadMacro(mypath+'/MWLPlot.C++g')
 
     filenames = getFiles(inputdir)
     # loop over all files

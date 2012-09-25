@@ -11,6 +11,7 @@ import os.path
 import string
 import logging
 from HWWAnalysis.Misc.odict import OrderedDict
+from HWWAnalysis.Misc.ROOTAndUtils import TH1AddDirSentry
 import traceback
 
 
@@ -20,6 +21,7 @@ class ShapeFactory:
     # _____________________________________________________________________________
     def __init__(self):
         self._stdWgt = 'baseW*puWobs*effW*triggW'
+        self._systByWeight = {}
 
         ranges = {}
         ranges['bdtl']       = (400  , -1. , 1.)
@@ -27,6 +29,7 @@ class ShapeFactory:
         ranges['mth']        = (400  , 0.  , 200)
         ranges['dphill']     = (400  , 0.  , 3.15)
         ranges['detajj']     = (240  , 0.  , 6.)
+        ranges['mll-vbf']    = (60   , 12  , 135)
         ranges['mll']        = self._getmllrange
         ranges['mllsplit']   = self._getmllsplitrange
         ranges['gammaMRStar'] = self._getGMstarrange
@@ -42,6 +45,7 @@ class ShapeFactory:
         self._paths           = {}
         self._range           = None
         self._split           = None
+        self._keep2d          = False
         self._lumi            = 1
 
     # _____________________________________________________________________________
@@ -49,15 +53,16 @@ class ShapeFactory:
         pass
     
     # _____________________________________________________________________________
-    def getrange(self,var,mass,cat):
+    def getrange(self,tag,mass,cat):
         
-
-#         theRange = self._ranges[var]
-        try:
-            theRange = self._ranges[var]
-        except KeyError as ke:
-            self._logger.error('Range '+var+' not available. Possible values: '+', '.join(self._ranges.iterkeys()) )
-            raise ke
+        if isinstance(tag,tuple):
+            theRange = tag
+        else:
+            try:
+                theRange = self._ranges[tag]
+            except KeyError as ke:
+                self._logger.error('Range '+tag+' not available. Possible values: '+', '.join(self._ranges.iterkeys()) )
+                raise ke
 
             
         if isinstance(theRange,tuple):
@@ -107,7 +112,7 @@ class ShapeFactory:
     
     # _____________________________________________________________________________
     def _getGMstarrange(self,mass,cat):
-        if cat not in [0,1]:
+        if cat not in ['0j','1j']:
             raise RuntimeError('GMstar range '+str(cat)+' not defined. Can be 0 or 1')
         # lower alwyas 50
         # upper 100+(mH-100)*0.5
@@ -180,18 +185,19 @@ class ShapeFactory:
                     print 'Output file:',output
 
                     # - now build the selection
+                    # - make a separate function to cotain the exceptions
                     catSel = cat.cut;
                     selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
 
-                    self._addweights(mass,var,selections)
+                    self._addweights(mass,var,'nominals',selections)
 
                     print '.'*80
                     # - extract the histogram range
                     rng = self.getrange(opt.range,mass,cat.name) 
 
                     # - to finally fill it
-                    self._draw(alias, rng, selections ,output,inputs)
+                    self._draw(alias, rng, selections, output, inputs)
                     # - then disconnect the files
                     self._disconnectInputs(inputs)
 
@@ -262,7 +268,7 @@ class ShapeFactory:
                     catSel = cat.cut;
                     selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
-                    self._addweights(mass,var,selections)
+                    self._addweights(mass,var,syst,selections)
 
                     print '.'*80
                     # - extract the histogram range
@@ -284,40 +290,167 @@ class ShapeFactory:
         '''
         self._logger.info('Yields by process')
         outFile = ROOT.TFile.Open(output,'recreate')
+        vdim = var.count(':')+1
+        hproto,hdim = ShapeFactory._projexpr(rng)
+
+        if vdim != hdim:
+            raise ValueError('The variable\'s and range number of dimensions are mismatching')
+
         for process,tree  in inputs.iteritems():
 #             print ' '*3,process.ljust(20),':',tree.GetEntries(),
             print '    {0:<20} : {1:^9}'.format(process,tree.GetEntries()),
             # new histogram
             shapeName = 'histo_'+process
-            shape = ROOT.TH1D(shapeName,process+';'+var,
-                              rng[0],
-                              rng[1],
-                              rng[2]
-                             )
+            hstr = shapeName+hproto
+
             outFile.cd()
 
             cut = selections[process]
 
             self._logger.debug('---'+process+'---')
-            self._logger.debug('Formula: '+var)
+            self._logger.debug('Formula: '+var+'>>'+hstr)
             self._logger.debug('Cut:     '+cut)
             self._logger.debug('ROOTFiles:'+'\n'.join([f.GetTitle() for f in tree.GetListOfFiles()]))
-            entries = tree.Draw( var+'>>'+shapeName, cut, 'goff')
+            entries = tree.Draw( var+'>>'+hstr, cut, 'goff')
 #             print ' >> ',entries,':',shape.Integral()
+            shape = outFile.Get(shapeName)
+            shape.SetTitle(process+';'+var)
+
+
+            if isinstance(shape,ROOT.TH2) and not self._keep2d:
+                shape2d = shape
+                # puts the over/under flows in
+                self._reshape( shape )
+                # go 1d
+                shape = ShapeFactory._h2toh1(shape2d)
+                # rename the old
+                shape2d.SetName(shape2d.GetName()+'_2d')
+                shape.SetDirectory(outFile)
+
             print '>> {0:>9} : {1:>9.2f}'.format(entries,shape.Integral())
             shape.Write()
         outFile.Close()
         del outFile
 
+    @staticmethod
+    def _moveAddBin(h, fromBin, toBin ):
+        if not isinstance(fromBin,tuple) or not isinstance(toBin,tuple):
+            raise ValueError('Arguments must be tuples')
+
+        dims = [h.GetDimension(), len(fromBin), len(toBin) ]
+
+        if dims.count(dims[0]) != len(dims):
+            raise ValueError('histogram and the 2 bins don\'t have the same dimension')
+        
+        # get bins
+        b1 = h.GetBin( *fromBin )
+        b2 = h.GetBin( *toBin )
+
+        # move contents
+        c1 = h.At( b1 )
+        c2 = h.At( b2 )
+
+        h.SetAt(0, b1)
+        h.SetAt(c1+c2, b2)
+
+        # move weights as well
+        sumw2 = h.GetSumw2()
+
+        w1 = sumw2.At( b1 )
+        w2 = sumw2.At( b2 )
+
+        sumw2.SetAt(0, b1)
+        sumw2.SetAt(w1+w2, b2)
+
+
+    def _reshape(self,h):
+        if h.GetDimension() == 1:
+#             nx = h.GetNbinsX()
+#             ShapeFactory._moveAddBin(h, (0,),(1,) )
+#             ShapeFactory._moveAddBin(h, (nx+1,),(nx,) )
+            return
+        elif h.GetDimension() == 2:
+            nx = h.GetNbinsX()
+            ny = h.GetNbinsY()
+
+            for i in xrange(1,nx+1):
+                ShapeFactory._moveAddBin(h,(i,0   ),(i, 1 ) )
+                ShapeFactory._moveAddBin(h,(i,ny+1),(i, ny) )
+
+            for j in xrange(1,ny+1):
+                ShapeFactory._moveAddBin(h,(0,    j),(1, j) )
+                ShapeFactory._moveAddBin(h,(nx+1, j),(nx,j) )
+
+#             0,0 -> 1,1
+#             0,ny+1 -> 1,ny
+#             nx+1,0 -> nx,1
+#             nx+1,ny+1 ->nx,ny
+
+            ShapeFactory._moveAddBin(h, (0,0),(1,1) )
+            ShapeFactory._moveAddBin(h, (0,ny+1),(1,ny) )
+            ShapeFactory._moveAddBin(h, (nx+1,0),(nx,1) )
+            ShapeFactory._moveAddBin(h, (nx+1,ny+1),(nx,ny) )
+
+    @staticmethod
+    def _h2toh1(h):
+        import array
+        
+        if not isinstance(h,ROOT.TH2):
+            raise ValueError('Can flatten only 2d hists')
+
+        sentry = TH1AddDirSentry()
+
+#         H1class = getattr(ROOT,h.__class__.__name__.replace('2','1'))
+
+        nx = h.GetNbinsX()
+        ny = h.GetNbinsY()
+
+        h_flat = ROOT.TH1D(h.GetName(),h.GetTitle(),nx*ny,0,nx*ny)
+
+        
+        sumw2 = h.GetSumw2()
+        sumw2_flat = h_flat.GetSumw2()
+
+        for i in xrange(1,nx+1):
+            for j in xrange(1,ny+1):
+                # i,j must be mapped in 
+                b2d = h.GetBin( i,j )
+#                 b2d = h.GetBin( j,i )
+#                 b1d = ((i-1)+(j-1)*nx)+1
+                b1d = ((j-1)+(i-1)*ny)+1
+
+                h_flat.SetAt( h.At(b2d), b1d )
+                sumw2_flat.SetAt( sumw2.At(b2d), b1d ) 
+
+        h_flat.SetEntries(h.GetEntries())
+        
+        stats2d = array.array('d',[0]*7)
+        h.GetStats(stats2d)
+
+        stats1d = array.array('d',[0]*4)
+        stats1d[0] = stats2d[0]
+        stats1d[1] = stats2d[1]
+        stats1d[2] = stats2d[2]+stats2d[4]
+        stats1d[3] = stats2d[3]+stats2d[5]
+
+        h_flat.PutStats(stats1d)
+
+        return h_flat
+
+
     # _____________________________________________________________________________
     # add the weights to the selection
-    def _addweights(self,mass,var,selections):
+    def _addweights(self,mass,var,syst,selections):
         sampleWgts =  self._sampleWeights(mass,var)
         print '--',selections.keys()
         for process,cut in selections.iteritems():
             wgt = self._stdWgt
             if process in sampleWgts:
-                wgt = sampleWgts[process] 
+                wgt = sampleWgts[process]
+            
+            if syst in self._systByWeight:
+                wgt = wgt+'*'+self._systByWeight[syst]
+   
 
             selections[process] = wgt+'*('+cut+')'
 
@@ -408,6 +541,27 @@ class ShapeFactory:
         return tree
 
     
+    # _____________________________________________________________________________
+    @staticmethod
+    def _projexpr( bins = None ):
+        if not bins:
+            return name,0
+        elif not ( isinstance(bins, tuple) or isinstance(bins,list)):
+            raise RuntimeError('bin must be an ntuple or an arrya')
+            
+        l = len(bins)
+        if l in [1,3]:
+            # nx,xmin,xmax
+            ndim=1
+        elif l in [4,6]:
+            # nx,xmin,xmax,ny,ymin,ymax
+            ndim=2
+        else:
+            # only 1d or 2 d hist
+            raise RuntimeError('What a mess!!! bin malformed!')
+
+        hdef = '('+','.join([ str(x) for x in bins])+')' if bins else ''
+        return hdef,ndim
 
 if __name__ == '__main__':
     print '''
@@ -434,9 +588,10 @@ if __name__ == '__main__':
     parser.add_option('--range'          , dest="range"          , help='range (optional default is var)'            , default=None)
     parser.add_option('--split'          , dest="split"          , help='split in channels using a second selection' , default=None)
 
-    parser.add_option('--no-noms',       dest='makeNoms',    help='Do not produce the nominal',            action='store_false',   default=True)
-    parser.add_option('--no-syst',       dest='makeSyst',    help='Do not produce the systematics',        action='store_false',   default=True)
-    parser.add_option('--do-syst',       dest='doSyst',      help='Do only one systematic',                default=None)
+    parser.add_option('--keep2d',        dest="keep2d",     help='keep 2d histograms (no unrolling)', action='store_true', default=False)
+    parser.add_option('--no-noms',       dest='makeNoms',   help='Do not produce the nominal',            action='store_false',   default=True)
+    parser.add_option('--no-syst',       dest='makeSyst',   help='Do not produce the systematics',        action='store_false',   default=True)
+    parser.add_option('--do-syst',       dest='doSyst',     help='Do only one systematic',                default=None)
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
@@ -507,6 +662,7 @@ if __name__ == '__main__':
         factory._range   = opt.range
         factory._split   = opt.split
         factory._lumi    = opt.lumi
+        factory._keep2d  = opt.keep2d
 
 
         if opt.makeNoms:
@@ -514,6 +670,9 @@ if __name__ == '__main__':
             print factory.makeNominals(variable,selection,nomInputDir,nomOutDir+nominalOutFile)
 
         if opt.makeSyst:
+            class Systematics:
+                def __init__(self,name,nick,indir,mask):
+                    pass
             # systematic shapes
             systematics = OrderedDict([
                 ('electronResolution'    , 'p_res_e'),
@@ -528,16 +687,26 @@ if __name__ == '__main__':
                 ('muonScale_up'          , 'p_scale_mUp'),
             ])
 
-            mask = ['ggH', 'vbfH', 'ggWW', 'Top', 'WW', 'VV']
-            systMasks = dict([(s,mask[:]) for s in systematics])
+            systByWeight = {}
+            systByWeight['leptonEfficiency_down'] = 'effWDown/effW'
+            systByWeight['leptonEfficiency_up']   = 'effWUp/effW'
 
-            for s,m in systMasks.iteritems():
-                if opt.doSyst and opt.doSyst != s:
+            factory._systByWeight = systByWeight
+
+            processMask = ['ggH', 'vbfH', 'ggWW', 'Top', 'WW', 'VV']
+            systMasks = dict([(s,processMask[:]) for s in systematics])
+            systDirs  = dict([(s,systInputDir if s not in systByWeight else 'nominals/' ) for s in systematics])
+
+            print systDirs
+
+            for syst,mask in systMasks.iteritems():
+                if opt.doSyst and opt.doSyst != syst:
                     continue
                 print '-'*80
-                print ' Processing',s,'for samples',' '.join(mask)
+                print ' Processing',syst,'for samples',' '.join(mask)
                 print '-'*80
-                files = factory.makeSystematics(variable,selection,s,m,systInputDir,systOutDir+systematicsOutFile, nicks=systematics)
+                files = factory.makeSystematics(variable,selection,syst,mask,systDirs[syst],systOutDir+systematicsOutFile, nicks=systematics)
+
     except Exception as e:
         print '*'*80
         print 'Fatal exception '+type(e).__name__+': '+str(e)

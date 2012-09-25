@@ -57,7 +57,6 @@ class ShapeMerger:
                 if n not in s.histograms:
                     self._logger.info('Warning: '+n+' is not available in set '+s.label)
                     continue
-#                 h.Add(s.histograms[n])
                 dummy = s.histograms[n]
                 h2add = dummy.Clone()
                 h.Add(h2add)
@@ -78,9 +77,6 @@ class ShapeMerger:
         injected = [ n for n in self.histograms if '-SI' in n and nomRegex.match(n) ]
         backgrounds = [ n for n in self.histograms if n not in injected and n not in signals and nomRegex.match(n) ]
 
-#         if not len(injected):
-#             raise RuntimeError('No injected histograms. And now?')
-
         pseudo = self.histograms[backgrounds[0]].Clone('histo_PseudoData')
         pseudo.SetTitle('Data')
         pseudo.Reset()
@@ -92,7 +88,6 @@ class ShapeMerger:
         print backgrounds
 
         for n in inputs:
-#             self.histograms[n].Print()
             pseudo.Add(self.histograms[n])
 
         for n in injected:
@@ -140,12 +135,7 @@ class ShapeMerger:
 #                 continue
             proRegex = re.compile('^'+p+' .+')
             shapes = [ h for n,h in self.histograms.iteritems() if proRegex.match(n) ]
-#             if p == 'DYLL':
-#                 print '+'*20
-#                 print p,' Nsig', e.Nsig(),'  Nctrl', e.Nctr,' alpha', e.alpha,'dalpha',e.delta
-#                 print p,nominal.Integral()
-#                 print '+'*20
-#             factor = e.Nsig()/nominal.Integral()
+
             shapes.append(nominal)
 
             for shape in shapes:
@@ -223,13 +213,11 @@ class ShapeMixer:
             raise IOError('Root file '+self.nominalsPath+' doesn\'t exists.')
         self.shapeFile = ROOT.TFile.Open(self.nominalsPath)
         self.systFiles = {}
-#         print self.systSearchPath
         for file in glob.glob(self.systSearchPath):
             m = re.search('_(e|m)(e|m)_(.*).root',file)
             if m is None:
                 raise NameError('something went wrong, this \''+file+'\' doesn\'t look like a experimental file')
             self.systFiles[m.group(3)] = ROOT.TFile.Open(file)
-#             print 'TFile',file,'opened'
 
     def _remodel(self,h):
         nBins = h.GetNbinsX()
@@ -318,7 +306,6 @@ class ShapeMixer:
                 # no entries in the reference shape
                 # so what?
                 if dyLLmc.Integral() != 0.:
-    #                 raise ValueError('DYLL shape template has 0. integral, but the standard mc is not ('+str(dyLLmc.Integral())+')')
                     self._logger.warn('DYLL shape template has 0. integral, but the standard mc is not ('+str(dyLLmc.Integral())+')')
                     self.nominals['DYLL'] = dyLLmc
                 else:

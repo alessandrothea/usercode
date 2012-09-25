@@ -80,18 +80,19 @@ class MWLPlot {
     public: 
         MWLPlot() { 
             _hist.resize(nSamples,0); 
-            _data = 0; 
-            _breakdown = false; 
-            _mass = 0; 
-            _nbins=_low=_high=-1;
-            _labelFont        = 42;
-            _legendTextSize   = 0.04;
-            _xoffset          = 0.20;
-            _yoffset          = 0.06;
-            _labelOffset      = 0.015;
-            _axisLabelSize    = 0.050;
-            _titleOffset      = 1.6;
-            _extraLabel       = 0x0;
+            _data           = 0;
+            _stackSignal    = false;
+            _breakdown      = false;
+            _mass           = 0;
+            _nbins = _low = _high = -1;
+            _labelFont      = 42;
+            _legendTextSize = 0.04;
+            _xoffset        = 0.20;
+            _yoffset        = 0.06;
+            _labelOffset    = 0.015;
+            _axisLabelSize  = 0.050;
+            _titleOffset    = 1.6;
+            _extraLabel     = 0x0;
         }
 
         void setDataHist (TH1D * h)                        { _data          = h;        } 
@@ -160,7 +161,7 @@ class MWLPlot {
             if(div) hstack->GetHistogram()->SetLabelSize(0.06,"Y");
             if(div) hstack->GetHistogram()->SetTitleSize(0.06,"XY");
             hstack->Draw("hist");
-            if(signal) signal->Draw("hist,same");
+            if(signal && !_stackSignal) signal->Draw("hist,same");
             if(data)     data->Draw("ep,same");
             DrawLabels();
             //            pad1->GetFrame()->DrawClone();
@@ -288,6 +289,10 @@ class MWLPlot {
 
                 hstack->Add(_autreHists[i].second);
             }
+            
+            //
+            if ( _stackSignal ) 
+                hstack->Add(GetSignalHist());
 
 
             hstack->Draw("GOFF");
@@ -333,10 +338,11 @@ class MWLPlot {
             return hstack;
         }
 
-        void setLumi(const float &l) { _lumi = l; }
+        void setLumi(float l) { _lumi = l; }
         void setLabel(const TString &s) { _xLabel = s; }
         void setUnits(const TString &s) { _units = s; }
-        void setBreakdown(const bool &b = true) { _breakdown = b; }
+        void setBreakdown(bool b = true) { _breakdown = b; }
+        void setStackSignal(bool b=true) { _stackSignal = b; }
         void addLabel(const std::string &s) {
             _extraLabel = new TLatex(0.707, 0.726, TString(s));
             _extraLabel->SetNDC();
@@ -479,6 +485,7 @@ class MWLPlot {
         TString  _units;
         TLatex * _extraLabel;
         bool     _breakdown;
+        bool     _stackSignal;
         int      _mass;
         int      _nbins;
         double   _low;

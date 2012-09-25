@@ -11,7 +11,7 @@ cwd=$PWD
 # masses="110 115 120 130 140 150 160 170 180 190 200 250 300 350 400 450 500 550 600"
 
 function usage() {
-    echo $0 stocazzo!
+	echo "$( basename $0) -p <prefix>"
 }
 
 prefix=
@@ -37,6 +37,7 @@ eval `shape-config.py`
 
 hline=$(printf '%.0s-' {1..80})
 combCmd='combineCards.py -S'
+echo $PWD
 for mass in $masses
 do
 

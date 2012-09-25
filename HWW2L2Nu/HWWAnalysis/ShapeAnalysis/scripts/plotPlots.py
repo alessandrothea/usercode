@@ -59,6 +59,12 @@ def runTheShape():
 
     name=opt.prefix if opt.prefix[-1] != '/' else opt.prefix[:-1] 
 
+    import ROOT
+    try:
+        ROOT.gROOT.LoadMacro(os.path.join(mypath,'PlotLimit.C+g'))
+    except RuntimeError:
+        ROOT.gROOT.LoadMacro(os.path.join(mypath,'PlotLimit.C++g'))
+
     for plot in plots:
         print plot
         command = plot_tmpl.format(tag=tag,option=plot,mypath=mypath,name=name,lumi=opt.lumi)
