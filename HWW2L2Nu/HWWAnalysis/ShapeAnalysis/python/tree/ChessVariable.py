@@ -161,7 +161,7 @@ class ChessVarGrafter(Grafter):
 
         if (varAunderflow==1) :
           varAnumBin += 1
-          varAmin += widthA
+          varAmin -= widthA
 
         if (varAoverflow==1) :
           varAnumBin += 1
