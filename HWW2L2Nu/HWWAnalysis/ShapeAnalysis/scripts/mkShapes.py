@@ -45,7 +45,6 @@ class ShapeFactory:
         self._paths           = {}
         self._range           = None
         self._split           = None
-        self._keep2d          = False
         self._lumi            = 1
 
     # _____________________________________________________________________________
@@ -317,7 +316,7 @@ class ShapeFactory:
             shape.SetTitle(process+';'+var)
 
 
-            if isinstance(shape,ROOT.TH2) and not self._keep2d:
+            if isinstance(shape,ROOT.TH2):
                 shape2d = shape
                 # puts the over/under flows in
                 self._reshape( shape )
@@ -325,6 +324,7 @@ class ShapeFactory:
                 shape = ShapeFactory._h2toh1(shape2d)
                 # rename the old
                 shape2d.SetName(shape2d.GetName()+'_2d')
+                shape2d.Write()
                 shape.SetDirectory(outFile)
 
             print '>> {0:>9} : {1:>9.2f}'.format(entries,shape.Integral())
@@ -662,7 +662,6 @@ if __name__ == '__main__':
         factory._range   = opt.range
         factory._split   = opt.split
         factory._lumi    = opt.lumi
-        factory._keep2d  = opt.keep2d
 
 
         if opt.makeNoms:

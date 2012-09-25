@@ -265,6 +265,9 @@ class ShapeMixer:
         #
         for k in self.shapeFile.GetListOfKeys():
             h = k.ReadObj()
+            # only 1d histograms supported
+            if h.GetDimension() != 1: 
+                continue
             self._remodel(h)
             self.nominals[h.GetTitle()] = h
 
