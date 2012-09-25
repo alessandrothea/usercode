@@ -170,7 +170,7 @@ class ChessVarGrafter(Grafter):
 
         for iBinB in xrange(0, varBnumBin):
             for iBinA in xrange(0, varAnumBin):
-               value = iBinA + iBinB*varBnumBin + 1
+               value = iBinA + iBinB*varAnumBin + 1
                minA  = varAmin + iBinA*widthA
                maxA  = varAmin + (iBinA+1)*widthA
                minB  = varBmin + iBinB*widthB
