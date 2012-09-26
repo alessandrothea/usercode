@@ -154,7 +154,7 @@ class XYShiftVarFiller(TreeCloner):
 
         self.connect(tree,input)
 
-        newbranches = ['dphillmet','dphilmet', 'dphilmet1', 'dphilmet2', 'mth', 'mtw1', 'mtw2', 'pfmet', 'pfmetphi', 'ppfmet', 'mpmet', 'dymva0', 'dymva1']
+        newbranches = ['dphillmet','dphilmet', 'dphilmet1', 'dphilmet2', 'mth', 'mtw1', 'mtw2', 'pfmet', 'pfmetphi', 'ppfmet', 'mpmet', 'dymva0', 'dymva1', 'dphilljet1', 'dphimetjet1', 'recoil']
         self.clone(output,newbranches)
 
         dphillmet = numpy.ones(1, dtype=numpy.float32)
@@ -171,6 +171,10 @@ class XYShiftVarFiller(TreeCloner):
         dymva0    = numpy.ones(1, dtype=numpy.float32)
         dymva1    = numpy.ones(1, dtype=numpy.float32)
 
+        dphilljet1  = numpy.ones(1, dtype=numpy.float32)
+        dphimetjet1 = numpy.ones(1, dtype=numpy.float32)
+        recoil      = numpy.ones(1, dtype=numpy.float32)
+
 
         self.otree.Branch('dphillmet',  dphillmet,  'dphillmet/F')
         self.otree.Branch('dphilmet',   dphilmet,   'dphilmet/F')
@@ -185,6 +189,9 @@ class XYShiftVarFiller(TreeCloner):
         self.otree.Branch('mpmet' ,  mpmet,  'mpmet/F')
         self.otree.Branch('dymva0',  dymva0, 'dymva0/F')
         self.otree.Branch('dymva1',  dymva1, 'dymva1/F')
+        self.otree.Branch('dphilljet1',   dphilljet1,  'dphilljet1/F')
+        self.otree.Branch('dphimetjet1',  dphimetjet1, 'dphimetjet1/F')
+        self.otree.Branch('recoil',       recoil,      'recoil/F')
 
 
         self.createDYMVA()
@@ -292,8 +299,8 @@ class XYShiftVarFiller(TreeCloner):
 
            #### correct dymva ####
 
-            dphilljet1  = numpy.ones(1, dtype=numpy.float32)
-            dphimetjet1 = numpy.ones(1, dtype=numpy.float32)
+            #dphilljet1  = numpy.ones(1, dtype=numpy.float32)
+            #dphimetjet1 = numpy.ones(1, dtype=numpy.float32)
 
             jetpt1 = itree.jetpt1
             if itree.jetpt1 < 15 :
@@ -324,7 +331,7 @@ class XYShiftVarFiller(TreeCloner):
             else :
                   dymva0[0] = -999
 
-            recoil = numpy.ones(1, dtype=numpy.float32)
+            #recoil = numpy.ones(1, dtype=numpy.float32)
             px_rec = pfmet[0] * cos(pfmetphi[0]) + (l1+l2).Px()
             py_rec = pfmet[0] * sin(pfmetphi[0]) + (l1+l2).Py()
 

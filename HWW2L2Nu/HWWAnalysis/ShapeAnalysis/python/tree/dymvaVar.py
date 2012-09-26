@@ -81,11 +81,18 @@ class DymvaVarFiller(TreeCloner):
         #self.getDYMVAV1j0.BookMVA("BDTG",baseCMSSW+string("/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_BDTG_0j_MCtrain.weights.xml"))
         #self.getDYMVAV1j1.BookMVA("BDTG",baseCMSSW+string("/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_BDTG_1j_MCtrain.weights.xml"))
 
+        #baseCMSSW = os.getenv('CMSSW_BASE')
+        #self.getDYMVAV0j0.BookMVA("BDTB",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_0j_BDTB.weights.xml")
+        #self.getDYMVAV0j1.BookMVA("BDTB",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_1j_BDTB.weights.xml")
+        #self.getDYMVAV1j0.BookMVA("BDTG",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_BDTG_0j_MCtrain.weights.xml")
+        #self.getDYMVAV1j1.BookMVA("BDTG",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_BDTG_1j_MCtrain.weights.xml")
+
+        # new dymva trainined xml
         baseCMSSW = os.getenv('CMSSW_BASE')
         self.getDYMVAV0j0.BookMVA("BDTB",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_0j_BDTB.weights.xml")
         self.getDYMVAV0j1.BookMVA("BDTB",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_1j_BDTB.weights.xml")
-        self.getDYMVAV1j0.BookMVA("BDTG",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_BDTG_0j_MCtrain.weights.xml")
-        self.getDYMVAV1j1.BookMVA("BDTG",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_BDTG_1j_MCtrain.weights.xml")
+        self.getDYMVAV1j0.BookMVA("BDTG",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_0j_metshift_BDTG.weights.xml")
+        self.getDYMVAV1j1.BookMVA("BDTG",baseCMSSW+"/src/DYMvaInCMSSW/GetDYMVA/data/TMVA_1j_metshift_BDTG.weights.xml")
 
 
     def deltaPhi(self,l1,l2):
@@ -144,15 +151,22 @@ class DymvaVarFiller(TreeCloner):
         output = kwargs['output']
 
         self.connect(tree,input)
-        newbranches = ['dymva0new', 'dymva1new']
+        newbranches = ['dymva0new', 'dymva1new', 'dphilljet1', 'dphimetjet1', 'recoil']
+
         self.clone(output,newbranches)
 
-        dymva0 = numpy.ones(1, dtype=numpy.float32)
-        dymva1 = numpy.ones(1, dtype=numpy.float32)
+        dymva0      = numpy.ones(1, dtype=numpy.float32)
+        dymva1      = numpy.ones(1, dtype=numpy.float32)
+        dphilljet1  = numpy.ones(1, dtype=numpy.float32)
+        dphimetjet1 = numpy.ones(1, dtype=numpy.float32)
+        recoil      = numpy.ones(1, dtype=numpy.float32)
 
 
         self.otree.Branch('dymva0new',  dymva0,  'dymva0new/F')
         self.otree.Branch('dymva1new',  dymva1,  'dymva1new/F')
+        self.otree.Branch('dphilljet1',   dphilljet1,  'dphilljet1/F')
+        self.otree.Branch('dphimetjet1',  dphimetjet1, 'dphimetjet1/F')
+        self.otree.Branch('recoil',       recoil,      'recoil/F')
 
 
         self.createDYMVA()
@@ -189,8 +203,6 @@ class DymvaVarFiller(TreeCloner):
             #dphilmet [0] = min (dphilmet1[0], dphilmet2[0])
 
 
-            dphilljet1  = numpy.ones(1, dtype=numpy.float32)
-            dphimetjet1 = numpy.ones(1, dtype=numpy.float32)
 
             jetpt1 = itree.jetpt1
             if itree.jetpt1 < 15 :
@@ -223,7 +235,6 @@ class DymvaVarFiller(TreeCloner):
             else :
                   dymva0[0] = -999
 
-            recoil = numpy.ones(1, dtype=numpy.float32)
             px_rec = itree.pfmet * cos(itree.pfmetphi) + (l1+l2).Px()
             py_rec = itree.pfmet * sin(itree.pfmetphi) + (l1+l2).Py()
 
