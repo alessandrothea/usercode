@@ -70,7 +70,12 @@ class SusyVar2B2LMETFiller(TreeCloner):
 
 
         cmssw_base = os.getenv('CMSSW_BASE')
-        ROOT.gROOT.ProcessLine('.L '+cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/Razor_for_2B_2L_MET.C+')
+        #ROOT.gROOT.ProcessLine('.L '+cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/Razor_for_2B_2L_MET.C+')
+        try:
+             ROOT.gROOT.LoadMacro(cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/Razor_for_2B_2L_MET.C+g')
+        except RuntimeError:
+             ROOT.gROOT.LoadMacro(cmssw_base+'/src/HWWAnalysis/ShapeAnalysis/python/tree/Razor_for_2B_2L_MET.C++g')
+
 
 
         print '- Starting eventloop'
