@@ -455,6 +455,8 @@ class ShapeMixer:
             histograms = []
             for k in syst.GetListOfKeys():
                 h = k.ReadObj()
+                if h.GetDimension() != 1: 
+                    continue
                 self._remodel(h)
                 histograms.append(h)
 
