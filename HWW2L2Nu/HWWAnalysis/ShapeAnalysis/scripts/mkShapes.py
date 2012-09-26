@@ -290,7 +290,9 @@ class ShapeFactory:
         self._logger.info('Yields by process')
         outFile = ROOT.TFile.Open(output,'recreate')
         vdim = var.count(':')+1
-        hproto,hdim = ShapeFactory._projexpr(rng)
+#         hproto,hdim = ShapeFactory._projexpr(rng)
+        # 3 items per dimention
+        hdim = len(rng)/3
 
         if vdim != hdim:
             raise ValueError('The variable\'s and range number of dimensions are mismatching')
@@ -300,17 +302,19 @@ class ShapeFactory:
             print '    {0:<20} : {1:^9}'.format(process,tree.GetEntries()),
             # new histogram
             shapeName = 'histo_'+process
-            hstr = shapeName+hproto
-
+#             hstr = shapeName+hproto
+            
             outFile.cd()
 
+            # prepare a dummy to fill
+            shape = ShapeFactory._makeshape(shapeName,rng)
             cut = selections[process]
 
             self._logger.debug('---'+process+'---')
-            self._logger.debug('Formula: '+var+'>>'+hstr)
+            self._logger.debug('Formula: '+var+'>>'+shapeName)
             self._logger.debug('Cut:     '+cut)
             self._logger.debug('ROOTFiles:'+'\n'.join([f.GetTitle() for f in tree.GetListOfFiles()]))
-            entries = tree.Draw( var+'>>'+hstr, cut, 'goff')
+            entries = tree.Draw( var+'>>'+shapeName, cut, 'goff')
 #             print ' >> ',entries,':',shape.Integral()
             shape = outFile.Get(shapeName)
             shape.SetTitle(process+';'+var)
@@ -539,6 +543,30 @@ class ShapeFactory:
             tree.Add(path) 
 
         return tree
+
+
+    @staticmethod
+    def _makeshape( name, bins ):
+        if not bins:
+            return name,0
+        elif not ( isinstance(bins, tuple) or isinstance(bins,list)):
+            raise RuntimeError('bin must be an ntuple or an arrya')
+
+        l = len(bins)
+        if l == 3:
+            # nx,xmin,xmax
+            ndim=1
+            HClass = ROOT.TH1D
+        elif l == 6:
+            # nx,xmin,xmax,ny,ymin,ymax
+            ndim=2
+            HClass = ROOT.TH2D
+        else:
+            # only 1d or 2 d hist
+            raise RuntimeError('What a mess!!! bin malformed!')
+
+        return HClass(name, name, *bins)
+
 
     
     # _____________________________________________________________________________

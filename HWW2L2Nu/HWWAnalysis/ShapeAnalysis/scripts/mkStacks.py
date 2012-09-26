@@ -124,7 +124,7 @@ def getNominalUpDown(file):
 ##     nominals['Data'] = 
 
     
-def makeNominalPlots(file,outputdir, lumi, xlabel, ratio):
+def makeNominalPlots(file,outputdir, lumi, xlabel, ratio, stacksignal):
 
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
@@ -166,6 +166,7 @@ def makeNominalPlots(file,outputdir, lumi, xlabel, ratio):
     nominals['DYsum'] = histo
 
     plot = ROOT.MWLPlot()
+    plot.setStackSignal(stacksignal)
     plot.setDataHist(nominals['Data'])
     plot.setHWWHist(nominals['HWW'])
     plot.setWWHist(nominals['WWsum'])  
@@ -551,6 +552,8 @@ def main():
     parser.add_option('-x','--xlabel',dest='xlabel',help='X-axis label',default='')
     parser.add_option('-r','--ratio',dest='ratio',help='Plot the data/mc ration', action='store_false',default=True)
     parser.add_option('-l','--lumi', dest='lumi', type='float', help='Luminosity', default=None)
+    parser.add_option('-s','--stacksignal', dest='stacksignal', action='store_true', help='Stack the signal on the backgrounds', default=False)
+    
     parser.add_option('-f','--filter',dest='filter', help='Filter on the variations', default='*')
  
 
@@ -583,7 +586,7 @@ def main():
 
         print 'Making',path
         if not opt.variations:
-            makeNominalPlots(path, outputdir, opt.lumi, opt.xlabel, opt.ratio)
+            makeNominalPlots(path, outputdir, opt.lumi, opt.xlabel, opt.ratio, opt.stacksignal)
         else:
             makeShapeUpDown(path,outputdir, opt.xlabel, opt.filter)
 

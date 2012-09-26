@@ -1,5 +1,56 @@
 import re
 
+backgrounds = {
+    'WW'               : ['nominals/latino_000_WWJets2LMad.root'],
+    'ggWW'             : ['nominals/latino_001_GluGluToWWTo4L.root'],
+    'Vg'               : ['nominals/latino_082_WGstarToElNuMad_filtered.root',
+                          'nominals/latino_083_WGstarToMuNuMad_filtered.root',
+                          'nominals/latino_084_WGstarToTauNuMad_filtered.root',
+                          'nominals/latino_085_WgammaToLNuG.root',
+                         ],
+    'WJet'             : ['wjets/latino_10X_LooseLoose.root',
+                          'wjets/latino_20X_LooseLoose.root',
+                          'wjets/latino_22X_LooseLoose.root',
+                          'wjets/latino_23X_LooseLoose.root',
+                          'wjets/latino_24X_LooseLoose.root'
+                         ],
+    'WJetFakeRate'     : ['wjets/latino_10X_LooseLoose.root',
+                          'wjets/latino_20X_LooseLoose.root',
+                          'wjets/latino_22X_LooseLoose.root',
+                          'wjets/latino_23X_LooseLoose.root',
+                          'wjets/latino_24X_LooseLoose.root'
+                         ],
+    'Top'              : ['nominals/latino_019_TTTo2L2Nu2B.root',
+                          'nominals/latino_011_TtWFullDR.root',
+                          'nominals/latino_012_TbartWFullDR.root',
+                         ],
+    'VV'               : ['nominals/latino_074_WZJetsMad.root',
+                          'nominals/latino_075_ZZJetsMad.root',
+                          'nominals/latino_078_WZTo2L2QMad.root',
+                          'nominals/latino_079_ZZTo2L2QMad.root',
+                         ],
+    'DYTT'             : ['nominals/latino_222_EMBtt.root',
+                          'nominals/latino_037_DY50toLLMad.root',
+                         ],
+    'DYLL'             : ['nominals/latino_036_DY10toLLMad.root',
+                          'nominals/latino_037_DY50toLLMad.root',
+                         ],
+    'DYLLtemplate'     : ['dyTemplate/latino_036_DY10toLLMad.root',
+                          'dyTemplate/latino_037_DY50toLLMad.root',
+                         ],
+    'DYLLtemplatesyst' : ['dyTemplate-syst/latino_036_DY10toLLMad.root',
+                          'dyTemplate-syst/latino_037_DY50toLLMad.root',
+                         ],
+    'DYLLtemplatedd'   : ['dyTemplate-dd/latino_036_DY10toLLMad.root',
+                          'dyTemplate-dd/latino_037_DY50toLLMad.root',
+                         ],
+    'WWnlo'            : ['nominals/latino_002_WWto2L2NuMCatNLO.root'],
+    'WWnloUp'          : ['nominals/latino_004_WWto2L2NuMCatNLOUp.root'],
+    'WWnloDown'        : ['nominals/latino_003_WWto2L2NuMCatNLODown.root'],
+}
+
+
+
 #  ___                  _        
 # / __| __ _ _ __  _ __| |___ ___
 # \__ \/ _` | '  \| '_ \ / -_|_-<
@@ -138,34 +189,12 @@ data['Data2012'] = data['Data2012A']+data['Data2012B']
 
 def signalSamples(mass):
     signals = {}
-    ggH = ['nominals/latino_1{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root',
-#            'latino_1{mass}_ggToH{mass}toWWto2L2Nu.root',
-#            'latino_2{mass}_ggToH{mass}toWWtoLNuTauNu.root',
-#            'latino_3{mass}_ggToH{mass}toWWto2Tau2Nu.root',
-          ]
-#     ggHnew = ['latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root']
-    vbfH   = ['nominals/latino_2{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root',
-#               'latino_4{mass}_vbfToH{mass}toWWto2L2Nu.root', 
-#               'latino_5{mass}_vbfToH{mass}toWWtoLNuTauNu.root',
-#               'latino_6{mass}_vbfToH{mass}toWWto2Tau2Nu.root', 
-             ]
-#     vbfHnew = ['latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root']
-    wzttH   = ['nominals/latino_3{mass}_wzttH{mass}ToWW.root']
+    ggH   = ['nominals/latino_1{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root',
+    ]
+    vbfH  = ['nominals/latino_2{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root',
+    ]
+    wzttH = ['nominals/latino_3{mass}_wzttH{mass}ToWW.root']
 
-#     if int(mass)==122:
-#         signals['ggH']  = [f.format(mass = mass) for f in ggHnew]
-#         signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
-#     elif int(mass)==118 or (int(mass)>120 and int(mass)<130) or int(mass)==135:
-#         signals['ggH']  = [f.format(mass = mass) for f in ggHnew]
-#         signals['vbfH'] = [f.format(mass = mass) for f in vbfHnew]
-#         signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
-#     elif int(mass) > 115:
-#         signals['ggH']  = [f.format(mass = mass) for f in ggH]
-#         signals['vbfH'] = [f.format(mass = mass) for f in vbfH]
-#         signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
-#     else:
-#         signals['ggH']  = ['latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
-#         signals['vbfH'] = ['latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
 
     if mass <= 300:
         signals['ggH']   = [f.format(mass = mass) for f in ggH]

@@ -263,6 +263,9 @@ class MWLPlot {
             for (int i=0; i<nSamples; i++) if( _hist[i] && i != iHWW) hMC->Add(_hist[i]);
             for (size_t i=0; i<_autreHists.size(); i++)               hMC->Add(_autreHists[i].second);
 
+			if ( _stackSignal )
+				hMC->Add(GetSignalHist());
+
             return hMC;
 
         }
