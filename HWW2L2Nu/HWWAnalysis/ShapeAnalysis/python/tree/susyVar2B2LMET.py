@@ -85,6 +85,7 @@ class SusyVar2B2LMETFiller(TreeCloner):
             njet    = itree.njet
 
             if njet >= 2:
+
                 jetpx1 = itree.jetpt1 * cos (itree.jetphi1)
                 jetpy1 = itree.jetpt1 * sin (itree.jetphi1)
                 jetpt1 = itree.jetpt1
@@ -121,18 +122,40 @@ class SusyVar2B2LMETFiller(TreeCloner):
                 B1.SetPtEtaPhiM(itree.jetpt1, itree.jeteta1, itree.jetphi1, 0)
                 B2.SetPtEtaPhiM(itree.jetpt2, itree.jeteta2, itree.jetphi2, 0)
 
+                LA = ROOT.TLorentzVector()
+                LB = ROOT.TLorentzVector()
+                LA.SetPtEtaPhiM(itree.pt1, itree.eta1, itree.phi1, 0)
+                LB.SetPtEtaPhiM(itree.pt2, itree.eta2, itree.phi2, 0)
+
+
+                # jet 1 --> lepton A
+                # jet 2 --> lepton B
+                #
+                # combination with squared sum of invariant mass of "lepton-jet" system smaller
+                #
+
+                massAB = ((B1+LA).Mag2() + (B2+LB).Mag2())
+                massBA = ((B1+LB).Mag2() + (B2+LA).Mag2())
+
+
                 L1 = ROOT.TLorentzVector()
                 L2 = ROOT.TLorentzVector()
-                L1.SetPtEtaPhiM(itree.pt1, itree.eta1, itree.phi1, 0)
-                L2.SetPtEtaPhiM(itree.pt2, itree.eta2, itree.phi2, 0)
+
+                if (massAB < massBA) :
+                    L1.SetPtEtaPhiM(itree.pt1, itree.eta1, itree.phi1, 0)
+                    L2.SetPtEtaPhiM(itree.pt2, itree.eta2, itree.phi2, 0)
+                else :
+                    L1.SetPtEtaPhiM(itree.pt2, itree.eta2, itree.phi2, 0)
+                    L2.SetPtEtaPhiM(itree.pt1, itree.eta1, itree.phi1, 0)
+
 
                 MET = ROOT.TVector3()
                 MET.SetPtEtaPhi(itree.pfmet, 0, itree.pfmetphi)
 
                 # now calculate variavbles
-                MR2B2LMET[0] = CalcMRNEW(B1,  B2,  L1,  L2,  MET)
-                deltaPhiR2B2LMET[0] = CalcDeltaPhiRFRAME( B1,  B2,  L1,  L2,  MET)
-                deltaPhiBoostR2B2LMET[0] = CalcDoubleDphiRFRAME( B1,  B2,  L1,  L2,  MET)
+                MR2B2LMET[0] = ROOT.CalcMRNEW(B1,  B2,  L1,  L2,  MET)
+                deltaPhiR2B2LMET[0] = ROOT.CalcDeltaPhiRFRAME( B1,  B2,  L1,  L2,  MET)
+                deltaPhiBoostR2B2LMET[0] = ROOT.CalcDoubleDphiRFRAME( B1,  B2,  L1,  L2,  MET)
 
             else :
                 MR2B2LMET[0] = -999.
