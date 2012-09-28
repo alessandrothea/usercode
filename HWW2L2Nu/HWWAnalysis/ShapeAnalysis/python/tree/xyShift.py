@@ -154,7 +154,7 @@ class XYShiftVarFiller(TreeCloner):
 
         self.connect(tree,input)
 
-        newbranches = ['dphillmet','dphilmet', 'dphilmet1', 'dphilmet2', 'mth', 'mtw1', 'mtw2', 'pfmet', 'pfmetphi', 'ppfmet', 'mpmet', 'dymva0', 'dymva1', 'dphilljet1', 'dphimetjet1', 'recoil']
+        newbranches = ['dphillmet','dphilmet', 'dphilmet1', 'dphilmet2', 'mth', 'mtw1', 'mtw2', 'pfmet', 'pfmetphi', 'ppfmet', 'mpmet', 'dymva0', 'dymva1', 'dphilljet1', 'dphimetjet1', 'recoil', 'pfmetMEtSig']
         self.clone(output,newbranches)
 
         dphillmet = numpy.ones(1, dtype=numpy.float32)
@@ -175,6 +175,9 @@ class XYShiftVarFiller(TreeCloner):
         dphimetjet1 = numpy.ones(1, dtype=numpy.float32)
         recoil      = numpy.ones(1, dtype=numpy.float32)
 
+        pfmetMEtSig      = numpy.ones(1, dtype=numpy.float32)
+
+
 
         self.otree.Branch('dphillmet',  dphillmet,  'dphillmet/F')
         self.otree.Branch('dphilmet',   dphilmet,   'dphilmet/F')
@@ -192,6 +195,7 @@ class XYShiftVarFiller(TreeCloner):
         self.otree.Branch('dphilljet1',   dphilljet1,  'dphilljet1/F')
         self.otree.Branch('dphimetjet1',  dphimetjet1, 'dphimetjet1/F')
         self.otree.Branch('recoil',       recoil,      'recoil/F')
+        self.otree.Branch('pfmetMEtSig',       pfmetMEtSig,      'pfmetMEtSig/F')
 
 
         self.createDYMVA()
@@ -337,12 +341,17 @@ class XYShiftVarFiller(TreeCloner):
 
             recoil[0] = sqrt(px_rec*px_rec + py_rec*py_rec)
 
+
+            #pfmetMEtSig[0] = pfmet[0] / sqrt( itree.pfSumEt)
+            pfmetMEtSig[0] = pfmet[0] / itree.pfmet * itree.pfmetMEtSig
+
             self.var1[0]  =  ppfmet[0]
             self.var2[0]  =  itree.pchmet
             self.var3[0]  =  itree.nvtx
             self.var4[0]  =  itree.ptll
             self.var5[0]  =  jetpt1
-            self.var6[0]  =  itree.pfmetMEtSig #pfMetMEtSig
+            self.var6[0]  =  pfmetMEtSig[0]  #pfMetMEtSig
+            #self.var6[0]  =  itree.pfmetMEtSig #pfMetMEtSig
             self.var7[0]  =  dphilljet1[0]
             self.var8[0]  =  dphillmet[0]
             self.var9[0]  =  dphimetjet1[0]
