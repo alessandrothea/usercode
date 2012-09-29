@@ -1,0 +1,15 @@
+<use   name="clhep"/>
+<use   name="root"/>
+<use   name="rootcore"/>
+<use   name="rootrflx"/>
+<use   name="FWCore/Framework"/>
+<use   name="FWCore/ParameterSet"/>
+<use   name="DataFormats/Common"/>
+<use   name="DataFormats/JetReco"/>
+<use   name="RecoJets/JetAlgorithms"/>
+<use   name="RecoJets/JetProducers"/>
+<use   name="JetMETCorrections/Objects"/>
+<use   name="CondFormats/JetMETObjects"/>
+<export>
+  <lib   name="1"/>
+</export>
