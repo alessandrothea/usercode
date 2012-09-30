@@ -51,27 +51,12 @@ class DDCardReader:
         print 'Reading data driven estimates from',self._path
 
         # data driven systematics
-#         readmap = {}
-#         readmap['Top']  = {'sf': ['mm','ee'], 'of':['em','me']}
-#         readmap['WW']   = {'sf': ['mm','ee'], 'of':['em','me']}
-#         readmap['ggWW'] = {'sf': ['mm','ee'], 'of':['em','me']}
-#         readmap['DYLL'] = {'sf': ['ll']}
-
-
-        # DYLL: Top -> {of_0j: [('em','0j'),('me','0j')], of_1j: [('em','1j'),('me','1j')], sf_0j: [('ee','0j'),('mm','0j')], sf_1j: [('ee','1j'),('mm','1j')], 2j: [('em','1j'),('me','1j'),('ee','0j'),('mm','0j')]}
-        
-#         basemapping = {'of_0j': ('0j',['em','me']), 'of_1j': ('1j',['em','me']), 
-#                        'sf_0j': ('0j',['mm','ee']), 'sf_1j': ('1j',['mm','ee']), 
-#                        '2j':   ('2j',['ll']) }
-#         llmapping = {'sf_0j': ('0j',['ll']), 
-#                      'sf_1j': ('1j',['ll']), 
-#                      '2j':   ('2j',['ll']) }
         basemapping = {'of_0j': ('0j',['of']), 'of_1j': ('1j',['of']), 
                        'sf_0j': ('0j',['sf']), 'sf_1j': ('1j',['sf']), 
                        '2j':   ('2j',['sf']) }
-        llmapping = {'sf_0j': ('0j',['sf']), 
-                     'sf_1j': ('1j',['sf']), 
-                     '2j':   ('2j',['sf']) }
+        llmapping   = {'sf_0j': ('0j',['sf']), 
+                       'sf_1j': ('1j',['sf']), 
+                       '2j':   ('2j',['sf']) }
 
         readmap = {}
         readmap['Top']  = basemapping.copy()
@@ -100,8 +85,6 @@ class DDCardReader:
 
 
                 for mass in masses:
-                    # no data driven from WW/ggWW
-                    if mass >= 200 and (p == 'WW' or p =='ggWW'): continue
                     value = None
                     for card in cards:
                         value = value+card[mass] if value else card[mass] 
@@ -167,12 +150,34 @@ class DDEntry:
     def Usig(self):
         return self.Nctr*self.delta
         
+class DDWWFilter:
+
+    def __init__(self, reader):
+        self._reader = reader
+
+    def get(self, mass,channel):
+        import copy
+
+        x,y = self._reader.get(mass,channel)
+        z = copy.deepcopy(x)
+
+        if mass >= 200:
+#         if mass >= 100
+            for p in ['WW','ggWW']:
+                del z[p]
+        
+        return z,y
+
+
+
+
 
 if __name__ == '__main__':
     print 'DDCardReader test'
     logging.basicConfig(level=logging.DEBUG)
 
     ddPath = "/shome/thea/HWW/work/shape2012/data/Anal_HWW/"
+    ddPath = '/shome/thea/HWW/work/shape2012/data/bdt_2012_51fb/'
     reader = DDCardReader(ddPath)
 
     ddcards = reader.estimates
@@ -190,4 +195,9 @@ if __name__ == '__main__':
     eWW = e['WW']
 
     print '190',0,'sf', eWW.Nsig(), eWW.Usig(), eWW.delta/eWW.alpha
+
+    filt = DDWWFilter(reader)
+
+    e,d = filt.get(300,'sf_0j')
+    print e
 

@@ -36,6 +36,7 @@ class ShapeFactory:
         self._ranges = ranges
         
         self._dataTag         = '2012A'
+        self._dataTag         = '0j1j'
         self._masses          = []
         self._categories      = []
         self._flavors         = []
@@ -134,7 +135,8 @@ class ShapeFactory:
 
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
-            samples = hwwsamples.samples(mass, self._dataTag)
+            samples = hwwsamples.samples(mass, self._dataTag, self._mcTag)
+            print samples
             # mass and variable selection
             allCuts = hwwinfo.massSelections( mass )
 
@@ -212,7 +214,7 @@ class ShapeFactory:
         nicks = kwargs['nicks'] if 'nicks' in kwargs else None
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
-            samples = hwwsamples.samples(mass, self._dataTag)
+            samples = hwwsamples.samples(mass, self._dataTag, self._mcTag)
             
             # remove the dirname
             for tag,files in samples.iteritems():
@@ -463,22 +465,25 @@ class ShapeFactory:
     # define here the mass-dependent weights
     def _sampleWeights(self,mass,var):
         weights = {}
-        weights['WJet']             = 'fake2W'
-        weights['WJetFakeRate']     = 'fakeWUp'
-        weights['Data']             = '1'
+        # tocheck
+        weights['WJet']              = 'baseW*fakeW'
+        weights['WJetFakeRate']      = 'baseW*fakeWUp'
+        weights['Data']              = '1'
         # problem with DYTT using embedded for em/me + MC for ee/mm
         # puWobs doesn't exist for embedded sample and lumi normalisation only applies for MC
-        weights['DYTT']             = 'baseW*effW*triggW*(1 + ('+str(self._lumi)+' - 1)*(dataset == 37 && mctruth == 2 && channel<1.5))'
-        weights['DYLL']             = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
-        weights['DYLLtemplate']     = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
-        weights['DYLLtemplatesyst'] = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
+        # select the dy -> tt mc events decaying only in ee/mm, in other words:
+        # remove the mc (ds==37) events which are not tau decays (truth !=2) or are em/me (ch > 1.5)
+        weights['DYTT']              = self._stdWgt+'*(!( dataset == 36 || dataset == 37 ) || (mctruth == 2 && channel<1.5))'
+        weights['DYLL']              = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
+        weights['DYLL-template']     = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
+        weights['DYLL-templatesyst'] = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         
         if var in ['bdts','bdtl']:
             
-            weights['WW']    = self._stdWgt+'*2*(event%2 == 0)'
-            weights['ggH']   = self._stdWgt+'*2*(event%2 == 0)'
-            weights['vbfH']  = self._stdWgt+'*2*(event%2 == 0)'
-            weights['wzttH'] = self._stdWgt+'*2*(event%2 == 0)'
+            weights['WW']       = self._stdWgt+'*2*(event%2 == 0)'
+            weights['ggH']      = self._stdWgt+'*2*(event%2 == 0)'
+            weights['vbfH']     = self._stdWgt+'*2*(event%2 == 0)'
+            weights['wzttH']    = self._stdWgt+'*2*(event%2 == 0)'
             # TODO Signal injection weights, if available
             weights['ggH-SI']   = self._stdWgt+'*2*(event%2 == 0)'
             weights['vbfH-SI']  = self._stdWgt+'*2*(event%2 == 0)'
@@ -610,13 +615,14 @@ if __name__ == '__main__':
 
     parser.add_option('--selection'      , dest='selection'      , help='selection cut'                              , default=None)
     parser.add_option('--dataset'        , dest='dataset'        , help='dataset to process'                         , default=None)
+    parser.add_option('--mcset'          , dest='mcset'          , help='mcset to process'                           , default=None)
     parser.add_option('--path_latino'    , dest='path_latino'    , help='Root of the master trees'                   , default=None)
     parser.add_option('--path_bdt'       , dest='path_bdt'       , help='Root of the friendly bdt trees'             , default=None)
     parser.add_option('--path_shape_raw' , dest='path_shape_raw' , help='destination directory of nominals'          , default=None)
     parser.add_option('--range'          , dest="range"          , help='range (optional default is var)'            , default=None)
     parser.add_option('--split'          , dest="split"          , help='split in channels using a second selection' , default=None)
 
-    parser.add_option('--keep2d',        dest="keep2d",     help='keep 2d histograms (no unrolling)', action='store_true', default=False)
+    parser.add_option('--keep2d',        dest="keep2d",     help='keep 2d histograms (no unrolling)',     action='store_true', default=False)
     parser.add_option('--no-noms',       dest='makeNoms',   help='Do not produce the nominal',            action='store_false',   default=True)
     parser.add_option('--no-syst',       dest='makeSyst',   help='Do not produce the systematics',        action='store_false',   default=True)
     parser.add_option('--do-syst',       dest='doSyst',     help='Do only one systematic',                default=None)
@@ -635,25 +641,21 @@ if __name__ == '__main__':
 
     try:
 #    if True:
-        if not opt.dataset:
-            parser.print_help()
-            parser.error('Dataset not defined')
-
-        if not opt.selection:
-            parser.print_help()
-            parser.error('Selection not defined')
-
-        if not opt.path_latino:
-            parser.print_help()
-            parser.error('Master tree path not defined')
-
-        if not opt.path_shape_raw: 
-            parser.print_help()
-            parser.error('Where shall I put the shapes?')
+        checks = [
+            ('mcset','MonteCarlo not defined'),
+            ('dataset','Dataset not defined'),
+            ('selection','Selection not defined'),
+            ('path_latino','Master tree path not defined'),
+            ('path_shape_raw','Where shall I put the shapes?'),
+        ]
+        
+        for dest,msg in checks:
+            if not getattr(opt,dest):
+                parser.print_help()
+                parser.error(msg)
 
         if not opt.range:
             opt.range = opt.variable
-
 
         variable = opt.variable
         selection = opt.selection
@@ -687,6 +689,7 @@ if __name__ == '__main__':
         factory._paths['bdts']  = bdtDir
 
         factory._dataTag = opt.dataset
+        factory._mcTag   = opt.mcset
         factory._range   = opt.range
         factory._split   = opt.split
         factory._lumi    = opt.lumi
@@ -739,7 +742,8 @@ if __name__ == '__main__':
         print 'Fatal exception '+type(e).__name__+': '+str(e)
         print '*'*80
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+        traceback.print_tb(exc_traceback, file=sys.stdout)
+#         traceback.print_tb(exc_traceback, limit=3, file=sys.stdout)
         print '*'*80
     finally:
         print 'Used options'

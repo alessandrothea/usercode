@@ -126,14 +126,17 @@ class ShapeMerger:
             h.Scale(integral/h.Integral())
 #         print 'Integral', integral, h.Integral()
 
-    def applyDataDriven(self, estimates):
+    def applyDataDriven(self, mass,estimates):
         ''' rescale to the data driven estimates if available'''
         for p,e in estimates.iteritems():
+            if ( mass >= 200  and (p == 'WW' or p =='ggWW') ): continue
             nominal = self.histograms[p]
 #             if nominal.Integral() == 0:
 #                 print 'Empty histogram',p,': Data driven rescaling skipped'
 #                 continue
             proRegex = re.compile('^'+p+' .+')
+            # move here the selection on 
+#             print mass,p,[ n for n,h in self.histograms.iteritems() if proRegex.match(n)  ]
             shapes = [ h for n,h in self.histograms.iteritems() if proRegex.match(n) ]
 
             shapes.append(nominal)
@@ -297,10 +300,10 @@ class ShapeMixer:
         #
         #   take the shape from the pfmet loosened sample
         #   down is mirrored
-        if 'DYLLtemplate' in self.nominals:
+        if 'DYLL-template' in self.nominals:
             dyLLmc = self.nominals.pop('DYLL')
-            dyLLShape = self.nominals.pop('DYLLtemplate')
-            dyLLShapeSyst = self.nominals.pop('DYLLtemplatesyst')
+            dyLLShape = self.nominals.pop('DYLL-template')
+            dyLLShapeSyst = self.nominals.pop('DYLL-templatesyst')
             dyLLSystName = 'CMS_hww_DYLL_template_shape'
 
             dyLLnom = dyLLShape.Clone('histo_DYLL')
@@ -447,9 +450,8 @@ class ShapeMixer:
             self.statistical[statDown.GetTitle()] = statDown
         #
         # Experimental
-       #
+        #
         udRegex = re.compile("(.+)(Up|Down)$")
-#         print self.histograms
         allSysts = {}
         for n,syst in self.systFiles.iteritems():
             histograms = []
@@ -646,7 +648,8 @@ if __name__ == '__main__':
 
     lumi = opt.lumi
     var = opt.variable
-    lumiMask = ['Data','WJet','DYTT']
+#     lumiMask = ['Data','WJet','DYTT']
+    lumiMask = ['Data']
     nameTmpl  = 'shape_Mh{0}_{1}_'+var+'_shapePreSel_{2}'
     os.system('mkdir -p '+mergedDir)
 
@@ -753,8 +756,10 @@ if __name__ == '__main__':
             
             if not reader.iszombie:
                 print '  - data driven'
-                (estimates,dummy) = reader.get(mass,chan)
-                m.applyDataDriven( estimates )
+                # make a filter to remove the dd >= 200 for WW 
+                wwfilter = datadriven.DDWWFilter(reader)
+                (estimates,dummy) = wwfilter.get(mass,chan)
+                m.applyDataDriven( mass,estimates )
 
             m.injectSignal()
             if not opt.dry:

@@ -48,6 +48,7 @@ class wwcutsB:
         ('Extra Lepton',           'nextra==0'),
         ('B veto',                 '(bveto_ip==1 && (nbjettche==0 || njet>3)  )'),
         ('p_{T}^{ll}',             'ptll>45.'),                     # ema 14
+        ('Extra Jet',              'njet<4'),
     ])
 
     wwmin = odict.OrderedDict([
@@ -57,7 +58,7 @@ class wwcutsB:
         ('min proj #slash{E}_{T}', 'mpmet>20.'),                    # ema9
         ('Soft #mu veto',          'bveto_mu==1'),
         ('Extra Lepton',           'nextra==0'),
-        ('B veto',                 '(bveto_ip==1 && (nbjettche==0 || njet>3)  )'),
+        ('Extra Jet',              'njet<4'),
     ])
 
     #dy cuts
@@ -80,6 +81,16 @@ class wwcutsB:
         ('dymva',      methi),
     ])
 
+    wwcommon.update([
+        ('d#Phi_{lljj} OR', '( '+dphilljjlo+' || '+dphilljjhi+' )'),
+        ('dymva OR',        '( '+metlo+' || '+methi+' )'),
+    ])
+    
+    wwmin.update([
+        ('d#Phi_{lljj} OR', '( '+dphilljjlo+' || '+dphilljjhi+' )'),
+        ('dymva OR',        '( '+metlo+' || '+methi+' )'),
+    ])
+        
     zerojet = 'njet == 0'
     onejet  = 'njet == 1'
     vbf     = '(njet >= 2 && njet <= 3 && (jetpt3 <= 30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0))))) '
@@ -106,7 +117,7 @@ class wwcuts:
         'mpmet>20',
         'bveto_mu==1',
         'nextra==0',
-        '(bveto_ip==1 && (nbjettche==0 || njet>3)  )',
+        'njet<4',
     ]
     
     #dy cuts
@@ -120,6 +131,9 @@ class wwcuts:
     wwlo    = wwcommon+[dphilljjlo,metlo]
     wwhi    = wwcommon+[dphilljjhi,methi]
 
+    wwcommon = wwcommon+['( '+dphilljjlo+' || '+dphilljjhi+' )', '( '+metlo+' || '+methi+' )']
+    wwmin    = wwmin   +['( '+dphilljjlo+' || '+dphilljjhi+' )', '( '+metlo+' || '+methi+' )']
+    
     zerojet = 'njet == 0'
     onejet  = 'njet == 1'
     vbf     = '(njet >= 2 && njet <= 3 && (jetpt3 <= 30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0))))) '
@@ -159,11 +173,11 @@ categories['1j'] = Category('1j',wwcuts.onejet, '1jet')
 categories['2j'] = Category('2j',wwcuts.vbf,    'vbf')
 
 flavorCuts = {}
-flavorCuts['all'] = '1'			   #'channel>-1'
-flavorCuts['mm']  = 'channel == 0' #'channel>-0.5 && channel<0.5'
-flavorCuts['ee']  = 'channel == 1' #'channel> 0.5 && channel<1.5'
-flavorCuts['em']  = 'channel == 2' #'channel> 1.5 && channel<2.5'
-flavorCuts['me']  = 'channel == 3' #'channel> 2.5 && channel<4.5'
+flavorCuts['all'] = '1'			       #'channel>-1'
+flavorCuts['mm']  = 'channel == 0'     #'channel>-0.5 && channel<0.5'
+flavorCuts['ee']  = 'channel == 1'     #'channel> 0.5 && channel<1.5'
+flavorCuts['em']  = 'channel == 2'     #'channel> 1.5 && channel<2.5'
+flavorCuts['me']  = 'channel == 3'     #'channel> 2.5 && channel<4.5'
 flavorCuts['sf']  = 'channel < 1.5'
 flavorCuts['of']  = 'channel > 1.5' 
 
@@ -188,7 +202,7 @@ channels['sf_2j'] = ('2j','sf')#,['mm','ee'])
 # | |\/| / _` (_-<_-< | (_| || |  _(_-<
 # |_|  |_\__,_/__/__/  \___\_,_|\__/__/
 #                                      
-# masses                = [ 110 , 115 , 120 , 125 , 130 , 135 , 140 , 145 , 150 , 155 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
+# masses              = [ 110 , 115 , 120 , 125 , 130 , 135 , 140 , 145 , 150 , 155 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
 cutmap = {}                                                                     
 cutmap['mllmax_bdt']  = [ 70  , 70  , 70  , 70  , 80  , 90  , 90  , 100 , 100 , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600 ]
 cutmap['pt1min']      = [ 20  , 20  , 20  , 20  , 25  , 25  , 25  , 25  , 27  , 27  , 30  , 34  , 36  , 38  , 40  , 55  , 70  , 80  , 90  , 110 , 120 , 130 , 140 ]
@@ -236,7 +250,7 @@ def massSelections(mass):
     sel['vbf-shape-lomass']    = ' && '.join(vbfcuts.vbfloshape)
     sel['vbf-shape']           = sel['vbf-shape-lomass'] if mass <= 140 else sel['vbf-shape-himass'] 
 
-    sel['ww-level']     = sel['ww-lomass'] if mass <= 140 else sel['ww-himass'] 
+    sel['ww-level']     = sel['ww-lomass'] if mass <= 140 else sel['ww-himass']
     sel['bdt-specific'] = 'mll < {0} && (mth > {1:.0f} && mth < {2:.0f})'.format(masscuts['mllmax_bdt'], mthmin_bdt, int(mass))
 
     hwwlvl = {}
@@ -247,6 +261,8 @@ def massSelections(mass):
     hwwlvl['mth']    = '(mth > {0:.1f} && mth < {1:.1f})'.format(masscuts['mtmin'], masscuts['mtmax'])
 
     sel['ww-selection']           = sel['ww-level']
+    sel['wwtight-selection']      = sel['ww-level']+' && mth > 60'
+    sel['wwloose-selection']      = sel['ww-level'].replace('ptll>45','ptll>20')+' && mth > 60'
     sel['hww-selection']          = ' && '.join([sel['ww-level']]+[cut for cut     in hwwlvl.itervalues()])
     sel['mll-selection']          = ' && '.join([sel['ww-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
     sel['mth-selection']          = ' && '.join([sel['ww-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
@@ -255,10 +271,8 @@ def massSelections(mass):
     sel['bdt-selection']          = sel['ww-level']+' && '+sel['bdt-specific']
     sel['bdtl-selection']         = sel['bdt-selection']
 
-    sel['vbf-selection']          = sel['vbf-shape']+' && '+hwwlvl['mth']
+    sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
 
-
-    
     # TODO gammastar test
 #     sel['gammaMRStar-selection']  = sel['bdt-selection']
 

@@ -232,7 +232,9 @@ class NuisanceMapBuilder:
     def _addDataDrivenNuisances(self, nuisances, yields, mass, channel, jcat):
         
         if self.ddreader.iszombie: return
-        (estimates,dummy) = self.ddreader.get(mass, channel)
+        # make a filter to remove the dd >= 200 for WW 
+        wwfilter = datadriven.DDWWFilter(self.ddreader)
+        (estimates,dummy) = wwfilter.get(mass, channel)
 
         pdf = 'lnN'
 
@@ -358,7 +360,6 @@ class NuisanceMapBuilder:
                 dummy |= subset
             else:
                 dummy -= subset
-#         print dummy
 
         for eff in shapeNu:
             if eff not in dummy: continue
@@ -451,7 +452,6 @@ if __name__ == '__main__':
     parser.add_option('--Ish','--includeShape',action='callback', dest='shapeFlags', type='string', callback=incexc)#)action='append',default=None)
     parser.add_option('-X','--exclude',action='callback', dest='nuisFlags', type='string', callback=incexc)#)action='append',default=None)
     parser.add_option('-I','--include',action='callback', dest='nuisFlags', type='string', callback=incexc)#)action='append',default=None)
-#     parser.add_option('--ddpath', dest='ddpath', help='Data driven path', default=None)
     parser.add_option('--path_dd'           , dest='path_dd'           , help='Data driven path'                 , default=None)
     parser.add_option('--path_shape_merged' , dest='path_shape_merged' , help='Destination directory for merged' , default=None)
     hwwtools.addOptions(parser)
