@@ -1608,6 +1608,19 @@ class scaleAndSmear:
                         njet[0] = self.oldttree.njet
                 elif self.direction == 'temp':
                     njet[0] = self.oldttree.njet
+            else:
+                pfmet[0]  = self.oldtree.pfmet
+                chmet[0]  = self.oldtree.chmet
+                mth[0]    = self.oldtree.mth
+                mtw1[0]   = self.oldtree.mtw1
+                mtw2[0]   = self.oldtree.mtw2
+                ppfmet[0] = self.oldtree.ppfmet
+                pchmet[0] = self.oldtree.pchmet
+                mpmet[0]  = self.oldtree.mpmet
+                njet[0]   = self.oldtree.njet
+                dymva0[0] = self.oldtree.dymva0
+                dymva1[0] = self.oldtree.dymva1
+                
 
             if self.verbose is True:
                 print '-----------------------------------'
