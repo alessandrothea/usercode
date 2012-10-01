@@ -45,7 +45,7 @@ class ShapeFactory:
         self._outFileFmt      = ''
         self._paths           = {}
         self._range           = None
-        self._split           = None
+        self._splitmode       = None
         self._lumi            = 1
 
     # _____________________________________________________________________________
@@ -136,11 +136,10 @@ class ShapeFactory:
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
             samples = hwwsamples.samples(mass, self._dataTag, self._mcTag)
-            print samples
             # mass and variable selection
             allCuts = hwwinfo.massSelections( mass )
 
-            alias = var if not self._split else var+'*(-1+2*('+allCuts[self._split+'-selection']+') )'
+            alias = var if not self._splitmode else var+'*(-1+2*('+allCuts[self._splitmode+'-selection']+') )'
             try:
                 varSelection = allCuts[sel+'-selection']
             except KeyError as ke:
@@ -224,7 +223,7 @@ class ShapeFactory:
             allCuts = hwwinfo.massSelections( mass )
             varSelection = allCuts[sel+'-selection']
 
-            alias = var if not self._split else var+'*(-1+2*('+allCuts[self._split+'-selection']+') )'
+            alias = var if not self._splitmode else var+'*(-1+2*('+allCuts[self._splitmode+'-selection']+') )'
             
             #inner  jet and flavor loops
             for chan,(category,flavor) in self._channels.iteritems():
@@ -338,6 +337,7 @@ class ShapeFactory:
         outFile.Close()
         del outFile
 
+    # _____________________________________________________________________________
     @staticmethod
     def _moveAddBin(h, fromBin, toBin ):
         if not isinstance(fromBin,tuple) or not isinstance(toBin,tuple):
@@ -479,7 +479,6 @@ class ShapeFactory:
         weights['DYLL-templatesyst'] = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         
         if var in ['bdts','bdtl']:
-            
             weights['WW']       = self._stdWgt+'*2*(event%2 == 0)'
             weights['ggH']      = self._stdWgt+'*2*(event%2 == 0)'
             weights['vbfH']     = self._stdWgt+'*2*(event%2 == 0)'
@@ -550,14 +549,41 @@ class ShapeFactory:
         return tree
 
 
+    # _____________________________________________________________________________
     @staticmethod
     def _makeshape( name, bins ):
+        '''
+        Fixed bin width
+        bins = (nx,xmin,xmax)
+        bins = (nx,xmin,xmax, ny,ymin,ymax)
+        Variable bin width
+        bins = ([x0,...,xn])
+        bins = ([x0,...,xn],[y0,...,ym])
+        
+        '''
+
+        from array import array
         if not bins:
             return name,0
         elif not ( isinstance(bins, tuple) or isinstance(bins,list)):
-            raise RuntimeError('bin must be an ntuple or an arrya')
+            raise RuntimeError('bin must be an ntuple or an arrys')
 
         l = len(bins)
+        # 1D variable binning
+        if l == 1 and isinstance(bins[0],list):
+            ndim=1
+            HClass = ROOT.TH1D
+            xbins = bins[0]
+            bins = (len(xbins), array('d',xbins))
+        elif l == 2 and  isinstance(bins[0],list) and  isinstance(bins[1],list):
+            ndim=2
+            HClass = ROOT.TH2D
+            xbins = bins[0]
+            ybins = bins[1]
+            bins = (len(xbins), array('d',xbins),
+                    len(ybins), array('d',ybins))
+
+
         if l == 3:
             # nx,xmin,xmax
             ndim=1
@@ -613,16 +639,17 @@ if __name__ == '__main__':
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('--selection'      , dest='selection'      , help='selection cut'                              , default=None)
-    parser.add_option('--dataset'        , dest='dataset'        , help='dataset to process'                         , default=None)
-    parser.add_option('--mcset'          , dest='mcset'          , help='mcset to process'                           , default=None)
+    parser.add_option('--tag'            , dest='tag'            , help='Tag used for the shape file name'           , default=None)
+    parser.add_option('--selection'      , dest='selection'      , help='Selection cut'                              , default=None)
+    parser.add_option('--dataset'        , dest='dataset'        , help='Dataset to process'                         , default=None)
+    parser.add_option('--mcset'          , dest='mcset'          , help='Mcset to process'                           , default=None)
     parser.add_option('--path_latino'    , dest='path_latino'    , help='Root of the master trees'                   , default=None)
     parser.add_option('--path_bdt'       , dest='path_bdt'       , help='Root of the friendly bdt trees'             , default=None)
-    parser.add_option('--path_shape_raw' , dest='path_shape_raw' , help='destination directory of nominals'          , default=None)
-    parser.add_option('--range'          , dest="range"          , help='range (optional default is var)'            , default=None)
-    parser.add_option('--split'          , dest="split"          , help='split in channels using a second selection' , default=None)
+    parser.add_option('--path_shape_raw' , dest='path_shape_raw' , help='Destination directory of nominals'          , default=None)
+    parser.add_option('--range'          , dest='range'          , help='Range (optional default is var)'            , default=None)
+    parser.add_option('--splitmode'      , dest='splitmode'      , help='Split in channels using a second selection' , default=None)
 
-    parser.add_option('--keep2d',        dest="keep2d",     help='keep 2d histograms (no unrolling)',     action='store_true', default=False)
+    parser.add_option('--keep2d',        dest='keep2d',     help='Keep 2d histograms (no unrolling)',     action='store_true',    default=False)
     parser.add_option('--no-noms',       dest='makeNoms',   help='Do not produce the nominal',            action='store_false',   default=True)
     parser.add_option('--no-syst',       dest='makeSyst',   help='Do not produce the systematics',        action='store_false',   default=True)
     parser.add_option('--do-syst',       dest='doSyst',     help='Do only one systematic',                default=None)
@@ -657,7 +684,8 @@ if __name__ == '__main__':
         if not opt.range:
             opt.range = opt.variable
 
-        variable = opt.variable
+        tag       = opt.tag if opt.tag else opt.variable
+        variable  = opt.variable
         selection = opt.selection
 
         latinoDir           = opt.path_latino
@@ -668,8 +696,8 @@ if __name__ == '__main__':
         nomInputDir         = ''
         systInputDir        = '{syst}/'
 
-        nominalOutFile      = 'shape_Mh{mass}_{category}_'+variable+'_shapePreSel_{flavor}.root'
-        systematicsOutFile  = 'shape_Mh{mass}_{category}_'+variable+'_shapePreSel_{flavor}_{nick}.root'
+        nominalOutFile      = 'shape_Mh{mass}_{category}_'+tag+'_shapePreSel_{flavor}.root'
+        systematicsOutFile  = 'shape_Mh{mass}_{category}_'+tag+'_shapePreSel_{flavor}_{nick}.root'
         
         factory = ShapeFactory()
         factory._outFileFmt  = nominalOutFile
@@ -691,7 +719,7 @@ if __name__ == '__main__':
         factory._dataTag = opt.dataset
         factory._mcTag   = opt.mcset
         factory._range   = opt.range
-        factory._split   = opt.split
+        factory._splitmode   = opt.splitmode
         factory._lumi    = opt.lumi
 
 

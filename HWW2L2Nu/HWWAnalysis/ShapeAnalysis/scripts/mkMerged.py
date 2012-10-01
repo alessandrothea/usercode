@@ -201,11 +201,12 @@ class ShapeMixer:
         self.fakerate = {}
         self.templates = {}
         
-        self.factors = {}
-        self.indent = 4
-        self.nameMap = {}
+        self.factors  = {}
+        self.indent   = 4
+        self.nameMap  = {}
         self.lumiMask = []
-        self.lumi = 1.
+        self.lumi     = 1.
+        self.statmode = 'unified'
 
     def __del__(self):
         self._disconnect()
@@ -327,45 +328,6 @@ class ShapeMixer:
                     self.templates[dyLLShapeUp.GetTitle()] = dyLLShapeUp
                     self.templates[dyLLShapeDown.GetTitle()] = dyLLShapeDown
 
-        # anyway put some nominal back
-
-
-        # -----------------------------------------------------------------
-        # DYLL shape systematics
-        #
-        #
-        #
-        if False and 'DYLL' in self.nominals and 'DYLLctrZ' in self.nominals:
-            print ' '*self.indent+'  + Replacing DY wil DYctrZ'
-            dy = self.nominals['DYLL']
-            dyCtrZ = self.nominals['DYLLctrZ']
-            print '*'*20
-            print 'DYLL',dy.Integral() == 0.,dy.Integral()
-            print 'DYLLctrZ',dyCtrZ.Integral()==0,dyCtrZ.Integral()
-            print '*'*20
-
-            if dyCtrZ.Integral() == 0.:
-                print ' '*self.indent+'  WARNING: DYctrZ is 0, MC is the reference now'
-            else:
-                self.nominals.pop('DYLL')
-                if dy.Integral() == 0. :
-                    print ' '*self.indent+'  WARNING: empty DY, the rescaling will be done by the DD estimates. Rescaling to 0.001'
-                    dyCtrZ.Scale(0.001/dyCtrZ.Integral())
-                else:
-                    dyCtrZ.Scale(dy.Integral()/dyCtrZ.Integral())
-
-                dyCtrZ.SetNameTitle(dy.GetName(), dy.GetTitle())
-                self.nominals['DYLL'] = dyCtrZ
-#             elif dyCtrZ.Integral() != 0:   
-#                 self.nominals.pop('DYLL')
-#                 self.nominals['DYLL'] = dyCtrZ
-            self.nominals.pop('DYLLctrZ')
-            print '*'*20
-            print 'DYLL',dy.Integral() == 0.,dy.Integral()
-            print 'DYLLctrZ',dyCtrZ.Integral()==0,dyCtrZ.Integral()
-            print self.nominals.keys()
-            print '*'*20
-
 
         #
         # WW generator shapes
@@ -411,43 +373,82 @@ class ShapeMixer:
         #
         # Statistical
         #
+        def _pushbin(h,bin,alpha):
+            c = h.GetBinContent(bin)
+            e = h.GetBinError(bin)
+            x = c+alpha*e
+            h.SetAt( x if x > 0. else c*0.001, bin)
+
+
         for n,h in self.nominals.iteritems():
             # skip data or injected sample
             if n in ['Data'] or '-SI' in n:
                 continue
             if h.GetEntries() == 0. and h.Integral() == 0.0:
-                self._logger.info('Warning: nominal shape '+n+' is empty. The stat histograms won\'t be produced')
+                self._logger.info('Warning: nominal shape %s is empty. The stat histograms won\'t be produced',n)
                 continue
-#             if n in ['DYTT']:
-#                 print n,h.GetEntries(),h.Integral()
-#             effName = 'CMS_hww_{0}_{1}_{2}_stat_shape'.format(n,flavor,cat)
             effName = 'CMS_hww_{0}_{1}_stat_shape'.format(n,chan)
 
+            nx = h.GetNbinsX()
             statName  = h.GetName()+'_'+effName
             statTitle = h.GetTitle()+' '+effName
-            # clone the nominal twice
-            statUp = h.Clone(statName+'Up')
-            statUp.SetTitle(statTitle+' Up')
-            for i in xrange(1,statUp.GetNbinsX()+1):
-                c = statUp.GetBinContent(i)
-                e = statUp.GetBinError(i)
-                statUp.SetAt(c+e if c+e > 0. else c*0.001,i)
-            # rescale to the original, shape only
-            if statUp.Integral() != 0.:
-                statUp.Scale(h.Integral()/statUp.Integral())
-            self.statistical[statUp.GetTitle()] = statUp
 
-            # clone the nominal twice
-            statDown = h.Clone(statName+'Down')
-            statDown.SetTitle(statTitle+' Down')
-            for i in xrange(1,statDown.GetNbinsX()+1):
-                c = statDown.GetBinContent(i)
-                e = statDown.GetBinError(i)
-                statDown.SetAt(c-e if c-e > 0.0 else c*0.001,i)
-            # rescale to the original, shape only
-            if statDown.Integral() != 0.:
-                statDown.Scale(h.Integral()/statDown.Integral())
-            self.statistical[statDown.GetTitle()] = statDown
+            if self.statmode == 'unified' :
+                # global shape morphing 
+                # clone the nominal twice
+                statUp = h.Clone(statName+'Up')
+                statUp.SetTitle(statTitle+' Up')
+
+                statDown = h.Clone(statName+'Down')
+                statDown.SetTitle(statTitle+' Down')
+
+                for i in xrange(0,nx+2):
+                    _pushbin(statUp,  i, +1)
+                    _pushbin(statDown,i, -1)
+
+                # rescale to the original, shape only
+                if statUp.Integral() != 0.:
+                    statUp.Scale(h.Integral()/statUp.Integral())
+                self.statistical[statUp.GetTitle()] = statUp
+                # rescale to the original, shape only
+                if statDown.Integral() != 0.:
+                    statDown.Scale(h.Integral()/statDown.Integral())
+                self.statistical[statDown.GetTitle()] = statDown
+            elif self.statmode == 'bybin' :
+                # bin-by-bin morphing
+                # clone the histogram once per bin
+                for i in xrange(1,nx+1):
+                    binName  = '{0}_bin{1}'.format(statName,i) 
+                    binTitle = '{0}_bin{1}'.format(statTitle,i) 
+
+                    binUp   = h.Clone(binName+'Up' )
+                    binUp.SetTitle(binTitle+' Up' )
+                    binDown = h.Clone(binName+'Down' )
+                    binDown.SetTitle(binTitle+' Down' )
+
+                    _pushbin( binUp,   i, +1)
+                    _pushbin( binDown, i, -1)
+
+                    if i == 1:
+                        _pushbin( binUp,   0, +1)
+                        _pushbin( binDown, 0, -1)
+                    elif i == nx:
+                        _pushbin( binUp,   nx, +1)
+                        _pushbin( binDown, nx, -1)
+
+                    # rescale to the original, shape only
+                    if binUp.Integral() != 0.:
+                        binUp.Scale(h.Integral()/binUp.Integral())
+                    self.statistical[binUp.GetTitle()] = binUp
+
+                    # rescale to the original, shape only
+                    if binDown.Integral() != 0.:
+                        binDown.Scale(h.Integral()/binDown.Integral())
+                    self.statistical[binDown.GetTitle()] = binDown
+
+            else:
+                raise ValueError('Invalid option %s (can be \'unified\',\'bybin\')' % self.statmode)
+
         #
         # Experimental
         #
@@ -597,13 +598,19 @@ if __name__ == '__main__':
     # |___/\___|_| \__,_|\_,_|_|\__/__/
 #     scaleFactorPath   = '/shome/thea/HWW/ShapeAnalysis/data/datamcsf.txt'
 
-    usage = 'usage: %prog -s sample1:syst1,sample2:* [options]'
+    usage = '''
+
+    %prog [options]
+    '''
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('-n', '--dry', dest='dry', help='Dry run', action='store_true' )
-    parser.add_option('-r', '--rebin', dest='rebin', help='Rebin by', default='1')
-    parser.add_option('-s', '--scale',help='Scale sample by an additional factor (overwrides previously defined factors)', action='append',default=[])
+    parser.add_option('-n', '--dry',   dest='dry',   help='Dry run', action='store_true' )
+    parser.add_option('-r', '--rebin', dest='rebin', help='Rebin by', type='int', default=1)
+    parser.add_option('-s', '--scale', dest='scale', help='Scale sample by an additional factor (overwrides previously defined factors) <sample>=<value>', action='append',default=[])
+    
 
+    parser.add_option('--tag'               , dest='tag'               , help='Tag used for the shape file name' , default=None)
+    parser.add_option('--statmode'          , dest='statmode'          , help='Production mode for stat-shapes (default = %default)', default='unified')
     parser.add_option('--path_dd'           , dest='path_dd'           , help='Data driven path'                 , default=None)
     parser.add_option('--path_scale'        , dest='path_scale'        , help='Scale factors'                    , default=None)
     parser.add_option('--path_shape_raw'    , dest='path_shape_raw'    , help='Input directory of raw shapes'    , default=None)
@@ -618,7 +625,6 @@ if __name__ == '__main__':
 
 
     (opt, args) = parser.parse_args()
-
 
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
@@ -639,18 +645,19 @@ if __name__ == '__main__':
     nomPath   = opt.path_shape_raw+'/nominals/' 
     systPath  = opt.path_shape_raw+'/systematics/' 
     mergedDir = opt.path_shape_merged
-    rebin     = int(opt.rebin)
+#     rebin     = int(opt.rebin)
 
     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
 
     if not opt.variable or not opt.lumi:
         parser.error('The variable and the luminosty must be defined')
 
-    lumi = opt.lumi
-    var = opt.variable
+    tag  = opt.tag if opt.tag else opt.variable
+#     lumi = opt.lumi
+    var  = opt.variable
 #     lumiMask = ['Data','WJet','DYTT']
     lumiMask = ['Data']
-    nameTmpl  = 'shape_Mh{0}_{1}_'+var+'_shapePreSel_{2}'
+    nameTmpl  = 'shape_Mh{0}_{1}_'+tag+'_shapePreSel_{2}'
     os.system('mkdir -p '+mergedDir)
 
    
@@ -667,7 +674,7 @@ if __name__ == '__main__':
                 for l in f.readlines():
                     tokens = l.split()
                     factors[tokens[0]] = float(tokens[1])
-                logging.defined('Scale factor file '+scalepath+' loaded')
+                logging.debug('Scale factor file '+scalepath+' loaded')
             except IOError as ioe:
                 logging.debug('File '+scalepath+' not found')
 
@@ -683,23 +690,9 @@ if __name__ == '__main__':
     else:
         scaleFactors = dict([ (cat,{}) for cat in hwwinfo.categories])
 
-
-
-
     logging.debug('Scale Factors: '+str(scaleFactors))
 
-
     ROOT.TH1.SetDefaultSumw2(True)
-
-#     scale2NomList = []
-#     for entry in opt.scale2nom.split(','):
-#         if entry == '':
-#             continue
-#         tokens = entry.split(':')
-#         if len(tokens) != 2:
-#             parser.error('scale2nom: syntax error in token '+entry)
-#         scale2NomList.append( (tokens[0], tokens[1]) )
-#     print scale2NomList
 
 #     channels = {}
 #     channels['of_0j'] = ('0j',['em','me'])
@@ -724,7 +717,7 @@ if __name__ == '__main__':
     for mass in masses:
         for chan,(cat,fl) in channels.iteritems():
             flavors = hwwinfo.flavors[fl]
-            print chan,cat,fl,flavors
+            # print chan,cat,fl,flavors
             # open output file
             m = ShapeMerger()
             print '-'*100
@@ -740,8 +733,9 @@ if __name__ == '__main__':
                 ss.nominalsPath   = os.path.join(nomPath,nameTmpl.format(mass, cat, fl)+'.root')
                 ss.systSearchPath = os.path.join(systPath,nameTmpl.format(mass, cat, fl)+'_*.root')
                 ss.lumiMask = lumiMask
-                ss.lumi = lumi
-                ss.rebin = rebin
+                ss.lumi     = opt.lumi
+                ss.rebin    = opt.rebin
+                ss.statmode = opt.statmode
 
                 # run
                 print '     - mixing histograms'
@@ -763,7 +757,7 @@ if __name__ == '__main__':
 
             m.injectSignal()
             if not opt.dry:
-                output = 'hww-{lumi:.2f}fb.mH{mass}.{channel}_shape.root'.format(lumi=lumi,mass=mass,channel=chan)
+                output = 'hww-{lumi:.2f}fb.mH{mass}.{channel}_shape.root'.format(lumi=opt.lumi,mass=mass,channel=chan)
                 path = os.path.join(mergedDir,output)
                 print '  - writing to',path
                 m.save(path)

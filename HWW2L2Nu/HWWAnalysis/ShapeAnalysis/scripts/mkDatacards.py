@@ -5,24 +5,28 @@ import ROOT
 import sys
 import re
 import os.path
-from HWWAnalysis.Misc.odict import OrderedDict
+import logging
+import pdb
+import fnmatch
+
 import hwwinfo
 import hwwtools
 import datadriven
-import fnmatch
-import pdb
+from HWWAnalysis.Misc.odict import OrderedDict
 from WWAnalysis.AnalysisStep.systematicUncertainties import getCommonSysts,addFakeBackgroundSysts
 
-class AutoVivification(dict):
-    """Implementation of perl's autovivification feature."""
-    def __getitem__(self, item):
-        try:
-            return dict.__getitem__(self, item)
-        except KeyError:
-            value = self[item] = type(self)()
-            return value
+# class AutoVivification(dict):
+#     """Implementation of perl's autovivification feature."""
+#     def __getitem__(self, item):
+#         try:
+#             return dict.__getitem__(self, item)
+#         except KeyError:
+#             value = self[item] = type(self)()
+#             return value
 
 class ShapeDatacardWriter:
+    _logger = logging.getLogger('ShapeDatacardWriter')
+
     '''Dump a crappy datacard to file'''
     
     def __init__(self, mass, bin):
@@ -35,7 +39,7 @@ class ShapeDatacardWriter:
     def write(self, yields, nuisances, path, fileFmt, signals = ['ggH', 'vbfH', 'wzttH']):
 
         cardPath = path.format(mass = self._mass, bin = self._bin)
-        print cardPath
+        print 'Writing to '+cardPath 
         card = open( cardPath ,"w")
         card.write('## Shape input card for H->WW analysis using 2.12/fb\n')
         
@@ -46,7 +50,7 @@ class ShapeDatacardWriter:
         card.write('-'*100+'\n')
         card.write('bin         %s' % self._bin+'\n')
         if 'Data' not in yields:
-            print yields.keys()
+            self._logger.warning( 'Yields: '+','.join(yields.keys()) )
             raise RuntimeError('No Data found!')
         card.write('observation %.0f\n' % yields['Data']._N)
         # replace the second * with the bin?
@@ -100,6 +104,7 @@ class ShapeLoader:
     '''Load the histogram data from the shape file
     + Yields
     + Nuisance shapes and parameters'''
+    _logger = logging.getLogger('ShapeDatacardWriter')
 
     def __init__(self, path):
         self._systRegex = re.compile('^histo_([^_]+)_(.+)(Up|Down)$')
@@ -135,9 +140,7 @@ class ShapeLoader:
 
             self._yields[process] = Yield( N, name=process, entries=entries ) 
 #             self._yields[process] = Yield( N, name=process, entries=entries, shape=h ) 
-#             print process, '%.3f' % h.Integral(0,h.GetNbins())
         
-#         print self._systematics
         ups = {}
         downs = {}
         for name in self._systematics:
@@ -150,8 +153,6 @@ class ShapeLoader:
                 if effect not in downs: downs[effect]= []
                 downs[effect].append(process)
 
-#         del ups['p_scale_j'][0]
-#         del ups['p_scale_e'][1]
         # check 
         for effect in ups:
             if set(ups[effect]) != set(downs[effect]):
@@ -163,6 +164,8 @@ class ShapeLoader:
         self._effects = ups
 
 class NuisanceMapBuilder:
+    _logger = logging.getLogger('NuisanceMapBuilder')
+
     def __init__(self, ddPath):
         self._common    = OrderedDict()
         self._0jetOnly  = OrderedDict()
@@ -334,8 +337,10 @@ class NuisanceMapBuilder:
                 continue
 
             m = statRegex.match(eff)
+#             if m:
+#                 print m.group(1), self.statShapeVeto
             if m and m.group(1) in self.statShapeVeto:
-                print 'Skipping',eff,' (vetoed, data driven)'
+                self._logger.info( 'Skipping %s (vetoed, data driven)', eff )
                 continue
             tag = eff
             if tag in nuisances: del nuisances[tag]
@@ -465,14 +470,16 @@ if __name__ == '__main__':
     if not opt.variable or not opt.lumi:
         parser.error('The variable and the luminosty must be defined')
     var = opt.variable
-    
+
+    if not opt.debug:
+        pass
+    elif opt.debug > 0:
+        logging.basicConfig(level=logging.DEBUG)
 
     sys.argv.append('-b')
     ROOT.gROOT.SetBatch()
 
     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
-
-
     channels =  dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])
 
     print channels

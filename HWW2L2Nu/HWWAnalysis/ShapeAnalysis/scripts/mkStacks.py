@@ -261,7 +261,7 @@ def plotCMSText():
         
     return pave
 
-def printUpDown( cName, fName, exts, syst, vars, xlabel ):
+def printUpDown( cName, fName, exts, syst, vars, xlabel, legheader ):
 #     nom = vars.Nom.DrawClone()
 #     nom.SetTitle('Shape systematics: '+syst)
 
@@ -313,7 +313,7 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     pad1.SetTopMargin(0.11)
     pad1.SetLeftMargin(0.07)
     pad1.SetRightMargin(0.05)
-    pad1.SetBottomMargin(0.15)
+    pad1.SetBottomMargin(0.05)
     
     c.cd()
     
@@ -338,7 +338,7 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     frame.SetBinContent(1,maxY)
     frame.SetBinContent(frame.GetNbinsX(),minY)
     frame.SetBit(ROOT.TH1.kNoStats)
-    frame.SetXTitle(xlabel)
+    frame.SetXTitle('')
     frame.SetYTitle('a. u.')
     frame.Draw()
 
@@ -404,8 +404,8 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     frame2.SetTitle('')
     frame2.SetLabelFont(43)
     frame2.SetLabelSize(12)
-    frame2.SetXTitle('')
-    frame2.SetYTitle('nominal / #pm1#sigma-shape')
+    frame2.SetXTitle(xlabel)
+    frame2.SetYTitle('#pm1#sigma-shape/nominal')
     frame2.SetTitleSize(20)
 ##     frame2.SetYTitle('ratio')
 
@@ -426,13 +426,13 @@ def printUpDown( cName, fName, exts, syst, vars, xlabel ):
     frame2.Draw()
 
     ratios = []
-    r_u = h_n.Clone()
-    r_d = h_n.Clone()
+    r_u = h_u.Clone()
+    r_d = h_d.Clone()
     r_u.SetYTitle('ratio') 
     r_d.SetYTitle('ratio') 
 
-    r_u.Divide(h_u)
-    r_d.Divide(h_d)
+    r_u.Divide(h_n)
+    r_d.Divide(h_n)
 
     r_u.SetLineColor(2)
     r_u.SetLineWidth(2)
