@@ -1,42 +1,9 @@
+import HWWAnalysis.Misc.odict as odict
 # 
 # Sample class to 
 # 
 # 
 # 
-
-class Sample:
-    '''
-    How do we define files?
-
-    [('latino',['pippo/pluto.root','pippo/topolino.root']), ('latino_bdt',['bdt/pluto.root','bdt/topolino.root'])]
-
-    Latino(weight='baseW*effW',selection='',files=['pippo/'])
-'''
-
-    #---
-    def __init__(self, **kwargs):
-        self.main         = (None,None)
-        self.friends      = []
-        self.preselection = ''
-        self.weight       = ''
-        self.title        = ''
-
-        for k,v in kwargs.iteritems():
-            if not hasattr(self,k): continue
-            setattr(self,k,v)    
-
-    #---
-    def set(self, name, files ):
-        self.main = (name,files)
-
-    #---
-    def addfriend(self, name, files):
-        self.friends.append( (name, files) )
-
-    #---
-    def list(self):
-        return [self.main]+self.friends
-
 
 #______________________________________________________________________________
 class Sample:
@@ -79,7 +46,7 @@ class Sample:
         self.friends.append( (name, files) )
 
     #---
-    def list(self):
+    def trees(self):
         return [self.master]+self.friends
 
 
@@ -178,3 +145,59 @@ class Latino:
         s = Sample( weight=self.weight, preselection=self.preselection, master=master, friends=friends )
 
         return s
+
+class TreeAnalyser:
+
+    def __init__(self, sample, cuts ):
+        self._worker = self._makeworker(sample)
+
+    def __repr__(self):
+        pass
+
+    @staticmethod
+    def _makeworker(sample):
+        if not isinstance( sample, Sample):
+            raise ValueError('sample must inherit from Sample')
+        t = TreeWorker( sample.trees() )
+        t.setselection( sample.preselection )
+        t.setweight( sample.weight )
+        return t
+
+if __name__ == '__main__':
+
+    basepath = '/shome/thea/HWW/work/shape2012/trees/latino_skim' 
+
+    flow = CutFlow()
+
+    flow['mll'] = Cut('mll > 12','m_{ll} > 12')
+    flow['mpmet'] = Cut('mpmet > 45','mp \slash{E}', 'mp #slash{E}')
+    flow['njet'] = Cut('njet == 0')
+    flow['mpmet'] = 'mpmet > 45'
+
+    print flow
+    print flow[:1].items()
+    del flow['mll']
+    print flow
+    print flow.string()
+    print flow.list()
+
+    samples = hwwsamples2g.samples(125,'Data2012')
+
+    l = samples['DYLL']
+
+    print 'AAAA: ',l
+
+    s = l.makeSample( basepath,latinobdt='/shome/thea/HWW/work/shape2012/trees/bdt_skim/mva_MH125_1j' )
+
+    print s
+
+    a = TreeAnalyser(s,None)
+    
+    print a._worker._friends
+
+    del a
+    
+
+
+
+
