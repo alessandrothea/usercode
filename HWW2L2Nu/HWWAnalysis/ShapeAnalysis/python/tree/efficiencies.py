@@ -37,8 +37,10 @@ class EffLepFiller(TreeCloner):
         pt = pt if pt < pt_hi else pt_hi-0.01
         pt = pt if pt > pt_lo else pt_lo+0.01
 
-        effW = hW.GetBinContent(hW.FindBin(eta,pt))
-        return effW
+        bin = hW.FindBin(eta,pt)
+        w = hW.GetBinContent(bin)
+        e = hW.GetBinError(bin)
+        return w,e
 
     def help(self):
         return '''Add a new lepton efficiency weight. The source root files for electrons and muons have to be specified'''
@@ -49,9 +51,9 @@ class EffLepFiller(TreeCloner):
 
         group.add_option('-e', '--elfile', dest='elfile', help='Name of the input root file with electron efficiencies',)
         group.add_option('-m', '--mufile', dest='mufile', help='Name of the input root file with muon efficiencies',)
-        group.add_option('-E', '--elname', dest='elname', help='Electon\'s histogram name', default='newhwwWP_ratio')
-        group.add_option('-M', '--muname', dest='muname', help='Muon\'s histogram name', default='muonDATAMCratio')
-        group.add_option('-b', '--branch',   dest='branch', help='Name of the lepton efficiency weight branch', default='effW')
+        group.add_option('-E', '--elname', dest='elname', help='Electon\'s histogram name (default=%default)', default='electronsDATAMCratio_All_selec')
+        group.add_option('-M', '--muname', dest='muname', help='Muon\'s histogram name (default=%default)', default='muonDATAMCratio_All_selec')
+        group.add_option('-b', '--branch',   dest='branch', help='Name of the lepton efficiency weight branch (default=%default)', default='effW')
 
         parser.add_option_group(group)
         return group
@@ -62,9 +64,9 @@ class EffLepFiller(TreeCloner):
         if not ( (hasattr(opts,'elfile') and hasattr(opts,'mufile') ) and (opts.elfile and opts.mufile)):
             raise RuntimeError('Missing options: mufile, elfile')
 
-        self.elfile = self._openRootFile(opt.elfile)
+        self.elfile = self._openRootFile(opts.elfile)
         elhist = self._getRootObj(self.elfile,opts.elname)
-        self.mufile = self._openRootFile(opt.mufile)
+        self.mufile = self._openRootFile(opts.mufile)
         muhist = self._getRootObj(self.mufile, opts.muname)
 
         self.branch = opts.branch
@@ -78,14 +80,27 @@ class EffLepFiller(TreeCloner):
         output = kwargs['output']
 
         self.connect(tree,input)
-        self.clone(output,[self.branch]) 
 
-        weight = numpy.ones(1, dtype=numpy.float32)
-        w1 = numpy.ones(1, dtype=numpy.float32)
-        w2 = numpy.ones(1, dtype=numpy.float32)
-        self.otree.Branch(self.branch,weight,self.branch+'/F')
-        self.otree.Branch('w1',w1,'w1/F')
-        self.otree.Branch('w2',w2,'w2/F')
+        br = self.branch
+        branches = [ br, br+'Up', br+'Down', br+'1', br+'2' ]
+
+        self.clone(output, branches) 
+
+        wgt     = numpy.ones(1, dtype = numpy.float32)
+        wgtUp   = numpy.ones(1, dtype = numpy.float32)
+        wgtDown = numpy.ones(1, dtype = numpy.float32)
+        # wgt1    = numpy.ones(1, dtype = numpy.float32)
+        # wgt2    = numpy.ones(1, dtype = numpy.float32)
+        # err1    = numpy.ones(1, dtype = numpy.float32)
+        # err2    = numpy.ones(1, dtype = numpy.float32)
+
+        self.otree.Branch(br        , wgt     , br+'/F')
+        self.otree.Branch(br+'Up'   , wgtUp   , br+'Up/F')
+        self.otree.Branch(br+'Down' , wgtDown , br+'Down/F')
+        # self.otree.Branch(br+'1'    , wgt1    , br+'1/F')
+        # self.otree.Branch(br+'2'    , wgt2    , br+'2/F')
+        # self.otree.Branch(br+'E1'   , err1    , br+'E1/F')
+        # self.otree.Branch(br+'E2'   , err2    , br+'E2/F')
         
 
         nentries = self.itree.GetEntries()
@@ -97,7 +112,7 @@ class EffLepFiller(TreeCloner):
         elBounds  = self.elBounds
         muBounds  = self.muBounds
         getWeight = self._getWeight
-        
+
         print '- Starting eventloop'
         step = 5000
         for i in xrange(nentries):
@@ -128,15 +143,31 @@ class EffLepFiller(TreeCloner):
             else:
                 raise ValueError('channel=={0} What is that?!?!'.format(channel))
 
-            w1[0] = getWeight(eta1,pt1,b1)
-            w2[0] = getWeight(eta2,pt2,b2)
+            w1,e1 = getWeight(eta1,pt1,b1)
+            w2,e2 = getWeight(eta2,pt2,b2)
 
-            w1[0] = w1[0] if w1[0] >= 0.5 else 1.
-            w2[0] = w2[0] if w2[0] >= 0.5 else 1.
+            w1 = w1 if w1 >= 0.5 else 1.
+            w2 = w2 if w2 >= 0.5 else 1.
 
-            weight[0] = w1[0]*w2[0]
-            
+            e1 = e1 if e1 > 0.01 else 0.01
+            e2 = e2 if e2 > 0.01 else 0.01
+
+            e1 = e1 if e1 < 0.05 else 0.05
+            e2 = e2 if e2 < 0.05 else 0.05
+
+            wgt[0] = w1*w2
+
+            wgtUp[0]   = (w1+e1)*(w2+e2)  # store as effWUp
+            wgtDown[0] = (w1-e1)*(w2-e2)  # store as effDown 
+
+            # debug info
+            # wgt1[0] = w1
+            # wgt2[0] = w2
+            # err1[0] = e1
+            # err2[0] = e2
+
             otree.Fill()
+
         self.disconnect()
         print '- Eventloop completed'
 
