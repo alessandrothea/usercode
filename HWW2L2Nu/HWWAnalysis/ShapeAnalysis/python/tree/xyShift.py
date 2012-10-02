@@ -281,6 +281,9 @@ class XYShiftVarFiller(TreeCloner):
             l1.SetPtEtaPhiM(itree.pt1, itree.eta1, itree.phi1, 0)
             l2.SetPtEtaPhiM(itree.pt2, itree.eta2, itree.phi2, 0)
 
+            met = ROOT.TLorentzVector()
+            met.SetPxPyPzE(itree.pfmet * cos (itree.pfmetphi), itree.pfmet * sin (itree.pfmetphi), 0, itree.pfmet)
+
             dphillmet[0] = self.deltaPhi(l1+l2,met)
             dphilmet1[0] = self.deltaPhi(l1   ,met)
             dphilmet2[0] = self.deltaPhi(   l2,met)

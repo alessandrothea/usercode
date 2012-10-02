@@ -1,0 +1,18 @@
+lumi:4.63
+rebin:20
+var:bdts
+sel:bdts
+tag:bdts_dev
+xlabel:BDT discriminator
+dataset:SI124
+
+# directories
+path_latino:/shome/thea/HWW/ShapeAnalysis/trees/latino_skim
+path_bdt:/shome/thea/HWW/ShapeAnalysis/trees/bdt_skim_cebby/ntupleMVA_MH{mass}_njet{jets}
+path_dd:/shome/thea/HWW/ShapeAnalysis/data/AnalFull2011_BDT/
+path_scale:/shome/thea/HWW/ShapeAnalysis/data/datamcsf.txt
+
+
+# other directories
+path_shape_raw:raw
+path_shape_merged:merged
