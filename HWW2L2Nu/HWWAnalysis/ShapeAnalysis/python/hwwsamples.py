@@ -170,10 +170,11 @@ mcsets = {
         #signals
         'ggH','vbfH','wzttH',
         # bkgs
-        'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown',
+        'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYLL',
+        #'WWnlo','WWnloUp','WWnloDown',
         # vbf mapping
         # ('WJet-template','WJet-template-vbf'),
-        ('DYLL-template','DYLL-template-vbf'),
+#         ('DYLL-template','DYLL-template-vbf'),
     ],
 }
 
@@ -182,9 +183,13 @@ def _mcFilterAndRename( samples, voc ):
     
     filtered = {}
 
+    # convert the vocabulary, which is a mixture of strings and 2d tuples, into a dictionary
     fullvoc = dict([ e if isinstance(e,tuple) else (e,e) for e in voc])
     for proc,label in fullvoc.iteritems():
 #         print proc,label
+
+        if label not in samples: continue
+
         filtered[proc] = samples[label]
 
     return filtered
