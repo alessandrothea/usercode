@@ -293,7 +293,7 @@ class ShapeFactory:
         vdim = var.count(':')+1
 #         hproto,hdim = ShapeFactory._projexpr(rng)
         # 3 items per dimention
-        hdim = len(rng)/3
+        hdim = self._bins2dim( rng )
 
         if vdim != hdim:
             raise ValueError('The variable\'s and range number of dimensions are mismatching')
@@ -308,7 +308,7 @@ class ShapeFactory:
             outFile.cd()
 
             # prepare a dummy to fill
-            shape = ShapeFactory._makeshape(shapeName,rng)
+            shape = self._makeshape(shapeName,rng)
             cut = selections[process]
 
             self._logger.debug('---'+process+'---')
@@ -326,7 +326,7 @@ class ShapeFactory:
                 # puts the over/under flows in
                 self._reshape( shape )
                 # go 1d
-                shape = ShapeFactory._h2toh1(shape2d)
+                shape = self._h2toh1(shape2d)
                 # rename the old
                 shape2d.SetName(shape2d.GetName()+'_2d')
                 shape2d.Write()
@@ -551,7 +551,7 @@ class ShapeFactory:
 
     # _____________________________________________________________________________
     @staticmethod
-    def _makeshape( name, bins ):
+    def _bins2hclass( bins ):
         '''
         Fixed bin width
         bins = (nx,xmin,xmax)
@@ -566,37 +566,47 @@ class ShapeFactory:
         if not bins:
             return name,0
         elif not ( isinstance(bins, tuple) or isinstance(bins,list)):
-            raise RuntimeError('bin must be an ntuple or an arrys')
+            raise RuntimeError('bin must be an ntuple or an arryas')
 
         l = len(bins)
         # 1D variable binning
         if l == 1 and isinstance(bins[0],list):
             ndim=1
-            HClass = ROOT.TH1D
+            hclass = ROOT.TH1D
             xbins = bins[0]
-            bins = (len(xbins), array('d',xbins))
+            hargs = (len(xbins)-1, array('d',xbins))
         elif l == 2 and  isinstance(bins[0],list) and  isinstance(bins[1],list):
             ndim=2
-            HClass = ROOT.TH2D
+            hclass = ROOT.TH2D
             xbins = bins[0]
             ybins = bins[1]
-            bins = (len(xbins), array('d',xbins),
-                    len(ybins), array('d',ybins))
-
-
-        if l == 3:
+            hargs = (len(xbins)-1, array('d',xbins),
+                    len(ybins)-1, array('d',ybins))
+        elif l == 3:
             # nx,xmin,xmax
             ndim=1
-            HClass = ROOT.TH1D
+            hclass = ROOT.TH1D
+            hargs = bins
         elif l == 6:
             # nx,xmin,xmax,ny,ymin,ymax
             ndim=2
-            HClass = ROOT.TH2D
+            hclass = ROOT.TH2D
+            hargs = bins
         else:
             # only 1d or 2 d hist
             raise RuntimeError('What a mess!!! bin malformed!')
+        
+        return hclass,hargs,ndim
 
-        return HClass(name, name, *bins)
+    @staticmethod
+    def _bins2dim(bins):
+        hclass,hargs,ndim = ShapeFactory._bins2hclass( bins )
+        return ndim
+
+    @staticmethod
+    def _makeshape( name, bins ):
+        hclass,hargs,ndim = ShapeFactory._bins2hclass( bins )
+        return hclass(name, name, *hargs)
 
 
     

@@ -55,7 +55,7 @@ def PrintTable( table, title, missing, width, all, colhdr=None ):
     print '*'*labelLen
     for i,f in enumerate(table.iterkeys()):
         h = ['']*len(missing)
-        fid = '[fid %d]' % i
+        fid = '[file %d]' % i
         print fid,'=',f
         h[-1]=fid
         hdr.append(h)
@@ -102,6 +102,7 @@ if __name__ == '__main__':
     parser.add_option('-a','--all',dest='all',action='store_true',default=False)
     parser.add_option('-d','--diff',dest='diff',action='store_true',help='check different histograms among the files',default=False)
     parser.add_option('-s','--stat',dest='stat',action='store_true',help='check statistics',default=False)
+    parser.add_option('-o','--over',dest='over',action='store_true',help='show under/overflow',default=False)
     (opt, args) = parser.parse_args()
 
     sys.argv.append('-b')
@@ -143,11 +144,11 @@ if __name__ == '__main__':
         for name in sorted(names):
             h = file.Get(name)
             xax = h.GetXaxis()
-            entries[arg][name] = [h.GetEntries(),h.Integral()]
+            entries[arg][name] = [h.GetEntries(),h.Integral(),h.GetBinContent(0),h.GetBinContent(h.GetNbinsX())]
         file.Close()
 
 
-    missing=['-']*2
+    missing=['-']*4 if opt.over else ['-']*2
 
     if opt.stat:
         missing = ['-']
@@ -158,7 +159,7 @@ if __name__ == '__main__':
             zeroes[arg] = {}
             lowstat[arg] = {}
             histograms = entries[arg]
-            for name,(n,i) in histograms.iteritems():
+            for name,(n,i,uf,of) in histograms.iteritems():
                 if not n:
                     zeroes[arg][name] = ['\x1b[41m'+console.colorize('white','0')]
 
@@ -173,9 +174,13 @@ if __name__ == '__main__':
         for arg in sorted(entries):
             table[arg] = {}
             histograms = entries[arg]
-            for name,(n,i) in histograms.iteritems():
-                table[arg][name]=['%.2f'%n,'%.2f'%i ]
-        PrintTable(table,'nentries',missing,15, opt.all)
+            print 'aaa'
+            for name,(n,i,uf,of) in histograms.iteritems():
+                entry = ['%.f'%n,'%.3f'%i]
+                if opt.over:
+                    entry += ['%3.f'%uf,'%3.f'%of]
+                table[arg][name]=entry
+        PrintTable(table,'nentries',missing,5, opt.all)
 
 
 

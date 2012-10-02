@@ -302,18 +302,18 @@ class ShapeMixer:
         #   take the shape from the pfmet loosened sample
         #   down is mirrored
         if 'DYLL-template' in self.nominals:
-            dyLLmc = self.nominals.pop('DYLL')
-            dyLLShape = self.nominals.pop('DYLL-template')
-            dyLLShapeSyst = self.nominals.pop('DYLL-templatesyst')
+            dyLLmc        = self.nominals.pop('DYLL')
+            dyLLShape     = self.nominals.pop('DYLL-template')
             dyLLSystName = 'CMS_hww_DYLL_template_shape'
+            dyLLShapeSyst = self.nominals.pop('DYLL-templatesyst') if 'DYLL-templatesyst' in self.nominals else None
 
             dyLLnom = dyLLShape.Clone('histo_DYLL')
             dyLLnom.SetTitle('DYLL')
             if dyLLnom.Integral() == 0.:
                 # no entries in the reference shape
-                # so what?
+                # 
                 if dyLLmc.Integral() != 0.:
-                    self._logger.warn('DYLL shape template has 0. integral, but the standard mc is not ('+str(dyLLmc.Integral())+')')
+                    self._logger.warn('DYLL shape template has no entries, but the standard mc is not (%f,%d)', dyLLmc.Integral(), dyLLmc.GetEntries())
                     self.nominals['DYLL'] = dyLLmc
                 else:
                     self.nominals['DYLL'] = dyLLnom
@@ -321,8 +321,8 @@ class ShapeMixer:
                 dyLLnom.Scale( (dyLLmc.Integral() if dyLLmc.Integral() != 0. else 0.001)/dyLLnom.Integral() )
                 self.nominals['DYLL'] = dyLLnom
                 
-                # no shape systematic
-                if dyLLShapeSyst.Integral() != 0.:
+
+                if dyLLShapeSyst and dyLLShapeSyst.Integral() != 0.:
                     dyLLShapeUp, dyLLShapeDown = self._mirror('DYLL',dyLLnom,dyLLShapeSyst, dyLLSystName,True)
 
                     self.templates[dyLLShapeUp.GetTitle()] = dyLLShapeUp
@@ -384,9 +384,9 @@ class ShapeMixer:
             # skip data or injected sample
             if n in ['Data'] or '-SI' in n:
                 continue
-            if h.GetEntries() == 0. and h.Integral() == 0.0:
-                self._logger.info('Warning: nominal shape %s is empty. The stat histograms won\'t be produced',n)
-                continue
+#             if h.GetEntries() == 0. and h.Integral() == 0.0:
+#                 self._logger.info('Warning: nominal shape %s is empty. The stat histograms won\'t be produced',n)
+#                 continue
             effName = 'CMS_hww_{0}_{1}_stat_shape'.format(n,chan)
 
             nx = h.GetNbinsX()
@@ -402,6 +402,12 @@ class ShapeMixer:
                 statDown = h.Clone(statName+'Down')
                 statDown.SetTitle(statTitle+' Down')
 
+                self.statistical[statUp.GetTitle()] = statUp
+                self.statistical[statDown.GetTitle()] = statDown
+
+                # the histogram is empty, skip the rest
+                if h.GetEntries() == 0. and h.Integral() == 0.0: continue
+
                 for i in xrange(0,nx+2):
                     _pushbin(statUp,  i, +1)
                     _pushbin(statDown,i, -1)
@@ -409,11 +415,9 @@ class ShapeMixer:
                 # rescale to the original, shape only
                 if statUp.Integral() != 0.:
                     statUp.Scale(h.Integral()/statUp.Integral())
-                self.statistical[statUp.GetTitle()] = statUp
                 # rescale to the original, shape only
                 if statDown.Integral() != 0.:
                     statDown.Scale(h.Integral()/statDown.Integral())
-                self.statistical[statDown.GetTitle()] = statDown
             elif self.statmode == 'bybin' :
                 # bin-by-bin morphing
                 # clone the histogram once per bin
@@ -426,6 +430,12 @@ class ShapeMixer:
                     binDown = h.Clone(binName+'Down' )
                     binDown.SetTitle(binTitle+' Down' )
 
+                    self.statistical[binUp.GetTitle()] = binUp
+                    self.statistical[binDown.GetTitle()] = binDown
+
+                    # the histogram is empty, skip the rest
+                    if h.GetEntries() == 0. and h.Integral() == 0.0: continue
+                    
                     _pushbin( binUp,   i, +1)
                     _pushbin( binDown, i, -1)
 
@@ -439,12 +449,10 @@ class ShapeMixer:
                     # rescale to the original, shape only
                     if binUp.Integral() != 0.:
                         binUp.Scale(h.Integral()/binUp.Integral())
-                    self.statistical[binUp.GetTitle()] = binUp
 
                     # rescale to the original, shape only
                     if binDown.Integral() != 0.:
                         binDown.Scale(h.Integral()/binDown.Integral())
-                    self.statistical[binDown.GetTitle()] = binDown
 
             else:
                 raise ValueError('Invalid option %s (can be \'unified\',\'bybin\')' % self.statmode)
@@ -560,7 +568,9 @@ class ShapeMixer:
                 h.Scale(factors[type])
 
             if not type in self.lumiMask:
+                integral = h.Integral()
                 h.Scale(self.lumi)
+                self._logger.debug('Lumi scale for %s (%f,%f,%f)',h.GetName(),integral,h.Integral(),self.lumi)
 
     def close(self):
         self._disconnect()

@@ -237,10 +237,7 @@ def samples(mass, datatag='Data2012', mctag='all'):
     samples = {}
     samples.update(selectedMc)
     samples.update(selectedData)
-#     for i,j in  samples.iteritems():
-#         print i,j
-#     import sys
-#     sys.exit(0)
+
     return samples
 
 
