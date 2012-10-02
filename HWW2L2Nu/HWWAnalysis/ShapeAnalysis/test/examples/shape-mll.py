@@ -9,6 +9,7 @@ selection='bdt'
 tag='mll_bdtsel'
 xlabel='m(ll) [GeV]'
 dataset='Data2012'
+mcset='0j1j'
 
 # directories
 path_latino='/shome/mtakahashi/HWW/Tree/ShapeAna/tree_skim_wwcommon'

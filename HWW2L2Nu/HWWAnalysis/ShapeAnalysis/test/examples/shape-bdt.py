@@ -9,6 +9,7 @@ selection='bdt'
 tag='bdt_bdtsel'
 xlabel='BDT discriminant'
 dataset='Data2012'
+mcset='0j1j'
 
 # directories
 path_latino='/shome/mtakahashi/HWW/Tree/ShapeAna/tree_skim_wwcommon'
