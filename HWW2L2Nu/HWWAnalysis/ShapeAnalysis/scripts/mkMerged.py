@@ -118,25 +118,18 @@ class ShapeMerger:
             if c < 0.:
                 h.SetAt(0.,i)
         if 'WJet' in h.GetName():
-            self._logger.debug('/'*50)
-            self._logger.debug('{0:<50} {1} {2}'.format(h.GetName().ljust(50),integral,h.Integral()))
-            self._logger.debug('/'*50)
+            self._logger.debug('Neg Bins removal %-50s : %.3f %.3f',h.GetName(),integral,h.Integral())
 
         if h.Integral() > 0:
             h.Scale(integral/h.Integral())
-#         print 'Integral', integral, h.Integral()
 
     def applyDataDriven(self, mass,estimates):
         ''' rescale to the data driven estimates if available'''
         for p,e in estimates.iteritems():
-            if ( mass >= 200  and (p == 'WW' or p =='ggWW') ): continue
+#             if ( mass >= 200  and (p == 'WW' or p =='ggWW') ): continue
             nominal = self.histograms[p]
-#             if nominal.Integral() == 0:
-#                 print 'Empty histogram',p,': Data driven rescaling skipped'
-#                 continue
             proRegex = re.compile('^'+p+' .+')
             # move here the selection on 
-#             print mass,p,[ n for n,h in self.histograms.iteritems() if proRegex.match(n)  ]
             shapes = [ h for n,h in self.histograms.iteritems() if proRegex.match(n) ]
 
             shapes.append(nominal)
@@ -145,6 +138,7 @@ class ShapeMerger:
                 if shape.Integral() == 0.: 
                     self._logger.warning('Empty histogram: '+p)
                     continue
+                self._logger.debug('DD to %-50s : %.3f -> %.3f',shape.GetName(), shape.Integral(), e.Nsig())
                 shape.Scale(e.Nsig()/shape.Integral())
 
     def applyDataDrivenRelative(self, estimates):
@@ -172,8 +166,6 @@ class ShapeMerger:
         # save the final output file
         outFile = ROOT.TFile.Open(path,'recreate')
         for n,h in self.histograms.iteritems():
-            if 'DYLL' in n:
-               self._logger.debug('{0} {1}'.format(n,h.Integral()))
             h.Write()
         outFile.Close()
 
@@ -570,7 +562,7 @@ class ShapeMixer:
             if not type in self.lumiMask:
                 integral = h.Integral()
                 h.Scale(self.lumi)
-                self._logger.debug('Lumi scale for %s (%f,%f,%f)',h.GetName(),integral,h.Integral(),self.lumi)
+                self._logger.debug('Lumi scale (%.2f) %-50s : %.3f -> %.3f',self.lumi,h.GetName(),integral,h.Integral())
 
     def close(self):
         self._disconnect()
