@@ -1,12 +1,59 @@
 import HWWAnalysis.Misc.odict as odict
+# from HWWAnalysis.ShapeAnalysis.ROOTtree import TreeWorker
+from ROOTtree import TreeWorker
+import os.path
 # 
 # Sample class to 
 # 
 # 
 # 
 
+ 
 #______________________________________________________________________________
-class Sample:
+class Labelled(object):
+    ''' Generic base classes for objects which have a latex/tlatex representation'''
+    def __init__(self,name,title=None,latex=None,tlatex=None):
+        self.name    = name
+        self._title  = title
+        self._latex  = latex
+        self._tlatex = tlatex
+
+    #---
+    def __str__(self):
+        s = [self.name]
+        if self._title: s.append(self._title)
+        return self.__class__.__name__+'('+', '.join(s)+')'
+    
+    #---
+    def __repr__(self):
+        return '%s(%s)' % (self.__class__.__name__,self.name)
+
+    #---
+    def _getbyorder(self,attrs):
+        for x in attrs:
+            if getattr(self,x): return getattr(self,x)
+
+    def __getattr__(self,key):
+        if key=='title': 
+            return self._getbyorder(['_title','name'])
+        elif key == 'latex':
+            return self._getbyorder(['_latex','_title','name'])
+        elif key == 'tlatex':
+            return self._getbyorder(['_tlatex','_title','name'])
+        else:
+            raise AttributeError('%s instance has no attribute \'%s\'' % (self.__class__.__name__,key) )
+
+    def __setattr__(self,key,val):
+        if key in ['title','latex','tlatex']:
+            self.__dict__['_'+key] = val
+        else:
+            self.__dict__[key] = val
+
+    #---
+    def getTLatex(self):
+        return ROOT.TLatex(0.,0.,self.tlatex)
+#______________________________________________________________________________
+class Sample(Labelled):
     '''
     How do we define files?
 
@@ -17,11 +64,12 @@ class Sample:
 
     #---
     def __init__(self, **kwargs):
+
+        super(Sample,self).__init__('')
         self.master       = (None,None)
         self.friends      = []
         self.preselection = ''
         self.weight       = ''
-        self.title        = ''
 
         for k,v in kwargs.iteritems():
             if not hasattr(self,k): continue
@@ -30,12 +78,16 @@ class Sample:
     #---
     def __repr__(self):
         repr = []
+        repr += [self.__class__.__name__+(' '+self.name if self.name else'') + (' also known as '+self._title if self._title else '')]
         repr += ['weight: \'%s\', preselection: \'%s\'' % (self.weight, self.preselection) ]
         repr += ['master: '+self.master[0]+'  files: '+str(self.master[1]) ]
-        for friend in self.friends:
-            repr += ['friend: '+friend[0]+'  files: '+str(friend[1]) ]
+        for i,friend in enumerate(self.friends):
+            repr += [('friend: ' if i == 0 else ' '*8)+friend[0]+'  files: '+str(friend[1]) ]
 
         return '\n'.join(repr)
+
+    def dump(self):
+        print self.__repr__()
 
     #---
     def setmaster(self, name, files ):
@@ -49,14 +101,30 @@ class Sample:
     def trees(self):
         return [self.master]+self.friends
 
-
-
 #______________________________________________________________________________
 class CutFlow(odict.OrderedDict):
 
     def __init__(self, init_val=(), strict=False):
-        odict.OrderedDict.__init__(self,init_val, strict) 
+        odict.OrderedDict.__init__(self,(), strict) 
+        self._import(init_val)
     
+    def _import(self,l):
+        if isinstance(l,list):
+            for item in l:
+                if isinstance(item,tuple) and len(item)==2:
+                    self[item[0]] = item[1]
+                elif isinstance(item,str):
+                    self[item] = item
+                else:
+                    raise ValueError('CutFlow: list entry not supported: '+item.__class__.__name__)
+        elif isinstance(l,odict.OrderedDict):
+            for key,val in l.iteritems():
+                self[key] = val
+        else:
+            raise ValueError('CutFlow: init value not supported: '+l.__class__.__name__)
+
+        
+
     def __setitem__(self, key, val):
         if isinstance(val,str):
             val = Cut(val)    
@@ -67,6 +135,22 @@ class CutFlow(odict.OrderedDict):
 
         odict.OrderedDict.__setitem__(self,key,val)
 
+    def __getitem__(self, key):
+        """
+        Allows slicing. Returns an OrderedDict if you slice.
+        >>> b = OrderedDict([(7, 0), (6, 1), (5, 2), (4, 3), (3, 4), (2, 5), (1, 6)])
+        >>> b[::-1]
+        OrderedDict([(1, 6), (2, 5), (3, 4), (4, 3), (5, 2), (6, 1), (7, 0)])
+        >>> b[2:5]
+        OrderedDict([(5, 2), (4, 3), (3, 4)])
+        >>> type(b[2:4])
+        <class '__main__.OrderedDict'>
+        """
+        item = odict.OrderedDict.__getitem__(self,key)
+        if isinstance(item, odict.OrderedDict):
+            return CutFlow(item)
+        else:
+            return item
 
     def __repr__(self):
         return '%s([%s])' % (self.__class__.__name__, ', '.join( 
@@ -84,32 +168,29 @@ class CutFlow(odict.OrderedDict):
         return ' && '.join( [ '(%s)' % step.cut for step in self.itervalues() ] ) 
 
     def list(self):
+        return [ (step.name,step.cut) for step in self.itervalues() ]
+
+    def rawlist(self):
         return [ step.cut for step in self.itervalues() ]
 
 
 #______________________________________________________________________________
-class Cut:
-    def __init__(self, cut, latex=None, tlatex=None):
-        self.name  = ''
-        self._latex = latex
-        self._tlatex = tlatex
+class Cut(Labelled):
+    def __init__(self, cut, **kwargs):
+        super(Cut,self).__init__('')
         self.cut = cut
+
+        for k,v in kwargs.iteritems():
+            if not hasattr(self,k): continue
+            setattr(self,k,v)    
 
     def __str__(self):
         return self.cut
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__,self.cut)
-
-
-    def latex(self):
-        return self._latex if self._latex else self.name
-
-    def tlatex(self):
-        return self._tlatex if self._tlatex else self.name
-
-    def getTLatex(self):
-        return ROOT.TLatex(0.,0.,self.tlatex())
+    
+  
 
 #______________________________________________________________________________
 class Latino:
@@ -125,7 +206,7 @@ class Latino:
             setattr(self,k,v)   
 
     def __repr__(self):
-        return 'sample(\'%s\', \'%s\', %s)' % (self.weight, self.preselection, str(self.files) )
+        return 'Latino(\'%s\', \'%s\', %s)' % (self.weight, self.preselection, str(self.files) )
 
     def __add__(self,other):
         if self.weight != other.weight or self.preselection != other.preselection:
@@ -146,14 +227,20 @@ class Latino:
 
         return s
 
+
+#______________________________________________________________________________
 class TreeAnalyser:
 
+    #---
     def __init__(self, sample, cuts ):
         self._worker = self._makeworker(sample)
+        self._cuts = cuts
 
+    #---
     def __repr__(self):
         pass
 
+    #---
     @staticmethod
     def _makeworker(sample):
         if not isinstance( sample, Sample):
@@ -162,6 +249,29 @@ class TreeAnalyser:
         t.setselection( sample.preselection )
         t.setweight( sample.weight )
         return t
+
+    #---
+    def entries(self):
+        return self._worker.entries(self._cuts.string())
+
+    def entriesflow(self):
+        return [ (n,self._worker.entries(self._cuts[:i+1].string()))  for i,n in enumerate(self._cuts) ]
+    #---
+    def yields(self):
+        return self._worker.yields(self._cuts.string())
+
+    #---
+    def yieldsflow(self):
+        return self._worker.yieldsflow(odict.OrderedDict(self._cuts.list()))
+
+    #---
+    def plot(self,name,var,extra=None):
+        cut = self._cuts.string()
+        if extra:
+            cut = '(%s) && (%s)' % (cut,extra)
+
+        return self._worker.plot(name,var, cut)
+
 
 if __name__ == '__main__':
 
@@ -192,6 +302,8 @@ if __name__ == '__main__':
     print s
 
     a = TreeAnalyser(s,None)
+    
+    print a.entries()
     
     print a._worker._friends
 

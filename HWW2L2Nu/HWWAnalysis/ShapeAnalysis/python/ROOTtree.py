@@ -291,7 +291,6 @@ class TreeWorker:
         return self._chain.Draw(*args, **kwargs)
 
     def _cutexpr(self,cuts):
-        
         if isinstance(cuts,list):
             cuts = [self._scale,self._weight]+cuts
 #         elif isinstance(cuts,CutFlow):

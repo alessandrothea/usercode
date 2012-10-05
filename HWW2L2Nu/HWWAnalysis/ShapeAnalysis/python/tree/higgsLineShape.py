@@ -69,7 +69,7 @@ class HiggsLineshapeWeightAdder(TreeCloner):
         group = optparse.OptionGroup(parser,self.label, description)
         group.add_option('-b', '--branch',    dest='branch',  help='Name of the higgs lineshape weight branch (default = %default)', default='kfW')
         group.add_option('-p', '--process',   dest='process', help='Scale factor to add to the weight (default = %default)', default='ggH')
-        group.add_option('-m', '--mass',      dest='mass',    type='int', help='Higgs Mass to reweight to')
+        group.add_option('-m', '--mass',      dest='mass',    type='int', help='Higgs Mass to reweight to', default=0)
         group.add_option('-n', '--noscale',   dest='scale', action='store_false', help='don\'t apply sample specific scale factor', default=True)
         parser.add_option_group(group)
         return group

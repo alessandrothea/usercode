@@ -633,8 +633,12 @@ if __name__ == '__main__':
 
     if not opt.debug:
         pass
-    elif opt.debug > 0:
+    elif opt.debug == 2:
+        print 'Logging level set to DEBUG (%d)' % opt.debug
         logging.basicConfig(level=logging.DEBUG)
+    elif opt.debug == 1:
+        print 'Logging level set to INFO (%d)' % opt.debug
+        logging.basicConfig(level=logging.INFO)
 
     logging.debug('Used options')
     logging.debug(', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()]))

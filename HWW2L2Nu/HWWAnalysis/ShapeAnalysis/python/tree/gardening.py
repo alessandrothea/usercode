@@ -7,6 +7,7 @@ import numpy
 import re
 import warnings
 import os.path
+import traceback
 
 import HWWAnalysis.Misc.odict as odict
 
@@ -532,6 +533,12 @@ def gardener_cli( modules ):
         module.checkOptions(opt)
     except Exception as e:
         print 'Error in module',module.label
+#         print '*'*80
+#         print 'Fatal exception '+type(e).__name__+': '+str(e)
+#         print '*'*80
+#         exc_type, exc_value, exc_traceback = sys.exc_info()
+#         traceback.print_tb(exc_traceback, file=sys.stdout)
+#         print '*'*80
         print e
         sys.exit(1)
 

@@ -441,6 +441,12 @@ class ShapeFactory:
 
         h_flat.PutStats(stats1d)
 
+        xtitle = h.GetXaxis().GetTitle()
+        v1,v2 = xtitle.split(':') # we know it's a 2d filled by an expr like y:x
+        xtitle = '%s #times %s bin' % (v1,v2)
+
+        h_flat.GetXaxis().SetTitle(xtitle)
+
         return h_flat
 
 
@@ -670,11 +676,14 @@ if __name__ == '__main__':
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
 
-    if opt.debug and opt.debug > 0:
+    if not opt.debug:
+        pass
+    elif opt.debug == 2:
+        print 'Logging level set to DEBUG (%d)' % opt.debug
         logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.WARNING)
-
+    elif opt.debug == 1:
+        print 'Logging level set to INFO (%d)' % opt.debug
+        logging.basicConfig(level=logging.INFO)
 
     try:
 #    if True:
