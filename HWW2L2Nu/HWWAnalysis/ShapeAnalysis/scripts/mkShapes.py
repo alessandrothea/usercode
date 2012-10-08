@@ -20,7 +20,7 @@ class ShapeFactory:
  
     # _____________________________________________________________________________
     def __init__(self):
-        self._stdWgt = 'baseW*puWobs*effW*triggW'
+        self._stdWgt = 'baseW*puW60ABC*effW*triggW'
         self._systByWeight = {}
 
         ranges = {}
@@ -33,6 +33,7 @@ class ShapeFactory:
         ranges['mll']        = self._getmllrange
         ranges['mllsplit']   = self._getmllsplitrange
         ranges['gammaMRStar'] = self._getGMstarrange
+        ranges['vbf2D']      = self._getVBF2Drange
         self._ranges = ranges
         
         self._dataTag         = '2012A'
@@ -71,7 +72,24 @@ class ShapeFactory:
             return theRange[mass][cat]
         elif callable(theRange):
             return theRange(mass,cat)
-            
+
+
+
+
+    # _____________________________________________________________________________
+    def _getVBF2Drange(self,mass,cat):
+
+        if cat not in ['2j']:
+            raise RuntimeError('mth:mll range for '+str(cat)+' not defined. Can be 2')
+
+        if mass<300 :
+          return (4, 30, 280, 4, 0, 200)
+        else :
+          return (2, 30, 330, 3, 0, 450)
+
+
+
+
     # _____________________________________________________________________________
     def _getmllrange(self,mass,cat):
         
