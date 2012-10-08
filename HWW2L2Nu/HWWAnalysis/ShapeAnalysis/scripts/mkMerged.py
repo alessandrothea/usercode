@@ -126,7 +126,6 @@ class ShapeMerger:
     def applyDataDriven(self, mass,estimates):
         ''' rescale to the data driven estimates if available'''
         for p,e in estimates.iteritems():
-#             if ( mass >= 200  and (p == 'WW' or p =='ggWW') ): continue
             nominal = self.histograms[p]
             proRegex = re.compile('^'+p+' .+')
             # move here the selection on 

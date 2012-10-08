@@ -24,15 +24,15 @@ class WWFlagsGrafter(Grafter):
         wwopt = options()
 
         wwopt.variables = [
-            'wwsel/I='     +' && '.join(wwcuts.wwlo),
-            'wwsel0j/I='   +' && '.join(wwcuts.wwlo+[wwcuts.zerojet]),
-            'wwsel1j/I='   +' && '.join(wwcuts.wwlo+[wwcuts.onejet]),
-            'wwsel2j/I='   +' && '.join(wwcuts.wwlo+[wwcuts.vbf]),
+            'wwsel/I='     +' && '.join(wwcuts.wwcommon),
+            'wwsel0j/I='   +' && '.join(wwcuts.wwcommon+[wwcuts.zerojet]),
+            'wwsel1j/I='   +' && '.join(wwcuts.wwcommon+[wwcuts.onejet]),
+            'wwsel2j/I='   +' && '.join(wwcuts.wwcommon+[wwcuts.vbf]),
 
-            'wwsel_hi/I='  +' && '.join(wwcuts.wwhi),
-            'wwsel0j_hi/I='+' && '.join(wwcuts.wwhi+[wwcuts.zerojet]),
-            'wwsel1j_hi/I='+' && '.join(wwcuts.wwhi+[wwcuts.onejet]),
-            'wwsel2j_hi/I='+' && '.join(wwcuts.wwhi+[wwcuts.vbf]),
+            'wwsel_hi/I='  +' && '.join(wwcuts.wwcommon),
+            'wwsel0j_hi/I='+' && '.join(wwcuts.wwcommon+[wwcuts.zerojet]),
+            'wwsel1j_hi/I='+' && '.join(wwcuts.wwcommon+[wwcuts.onejet]),
+            'wwsel2j_hi/I='+' && '.join(wwcuts.wwcommon+[wwcuts.vbf]),
         ]
 
         super(WWFlagsGrafter,self).checkOptions(wwopt)
@@ -44,10 +44,10 @@ class WWFlagsGrafter(Grafter):
 #                                               
 
 class WWPruner(Pruner):
-    levels = ['wwcommon','wwlo','wwhi','wwmin']
+    levels = ['wwcommon','wwmin']
 
     def help(self):
-        return '''Filters the tree according to the command line options. wwcommon, wwhi, wwlo flags are understood'''
+        return '''Filters the tree according to the command line options. wwcommon, wwmin flags are understood'''
 
 
     def addOptions(self,parser):
