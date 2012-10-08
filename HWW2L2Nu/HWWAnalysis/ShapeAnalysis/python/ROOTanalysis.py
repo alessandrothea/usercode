@@ -235,10 +235,11 @@ class TreeAnalyser:
 
     #---
     class Plotter:
-        def __init__(self,analyser,name,var,extra=None):
+        def __init__(self,analyser,name,var,bins=None,extra=None):
             self._analyser = analyser
             self._name     = name
             self._var      = var
+            self._bins     = bins
             self._extra    = extra
 
         def __getitem__(self,val):
@@ -270,6 +271,16 @@ class TreeAnalyser:
     def __init__(self, sample, cuts ):
         self._worker = self._makeworker(sample)
         self._cuts = cuts
+        self._entries = None
+
+    #---
+    def __del__(self):
+        if self._entries:
+            for l in self._entries.itervalues():
+                self._logger.debug( 'obj before %s',l.__repr__())
+                l.IsA().Destructor(l)
+                self._logger.debug( 'obj after  %s', l.__repr__())
+
 
     #---
     def __repr__(self):
@@ -295,6 +306,13 @@ class TreeAnalyser:
 
 
     #---
+    def _ensureentries(self):
+        if not self._entries:
+            self._logger.info('Buffering the entries passing each cut')
+            self._entries = self._worker._makeentrylists(self._cuts)
+        return self._entries
+
+    #---
     def entries(self):
         return self._worker.entries(self._cuts.string())
 
@@ -308,7 +326,14 @@ class TreeAnalyser:
 
     #---
     def yieldsflow(self):
-        return self._worker.yieldsflow(odict.OrderedDict(self._cuts.list()))
+        # make the entries
+        elists = self._ensureentries()
+
+        # add the weight and get the yields
+        yields = self._worker._yieldsfromentries(elists)
+        return yields
+        
+#         return self._worker.yieldsflow(odict.OrderedDict(self._cuts.list()))
 
     #---
     def plot(self, name, varexp, options='', bins=None, extra=None):
@@ -320,12 +345,17 @@ class TreeAnalyser:
 
     #---
     def plotsflow(self, name, varexp, options='', bins=None, extra=None):
-        return self._worker.plotsflow(name,varexp,odict.OrderedDict(self._cuts.list()), options, bins)
+        # make the entries
+        elists = self._ensureentries()
+        
+        # add the weight and get the yields
+        plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
+        return plots
+#         return self._worker.plotsflow(name,varexp,odict.OrderedDict(self._cuts.list()), options, bins)
 
     #---
-    def plotter(self,name,var,extra=None):
-        return self.Plotter(self,name,var,extra)
-
+    def plotter(self,*args,**kwargs):
+        return self.Plotter(self,*args,**kwargs)
 
 
 if __name__ == '__main__':

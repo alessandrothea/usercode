@@ -348,12 +348,16 @@ class TreeWorker:
         self._logger.debug('cut:     %s', cut)
         self._logger.debug('options: %s', options)
 
-        self._chain.Draw(varexp , cut, options, *args, **kwargs)
+        n = self._chain.Draw(varexp , cut, options, *args, **kwargs)
         h = self._chain.GetHistogram()
-        self._logger.debug('entries  %d integral %f', h.GetEntries(), h.Integral())
-        h.Scale(self._scale)
-        self._logger.debug('scale:   %f integral %f', self._scale, h.Integral())
-        return h
+        if h.__nonzero__():
+            self._logger.debug('entries  %d integral %f', h.GetEntries(), h.Integral())
+            h.Scale(self._scale)
+            self._logger.debug('scale:   %f integral %f', self._scale, h.Integral())
+            return h
+        else:
+            self._logger.debug('entries  %d', n)
+            return None
     
     #---
     @staticmethod
@@ -425,7 +429,7 @@ class TreeWorker:
 #         
 #         return yields
 
-    def _yieldsfromevents(self,elists,options=''):
+    def _yieldsfromentries(self,elists,options=''):
         '''Calculates the yields using eventlists instead of cuts'''
         yields = odict.OrderedDict()
 
@@ -455,7 +459,7 @@ class TreeWorker:
         elists = self._makeentrylists(cuts)
         
         # add the weight and get the yields
-        yields = self._yieldsfromevents(elists,options)
+        yields = self._yieldsfromentries(elists,options)
 
         # delete the lists
         self._delroots(elists)
@@ -466,8 +470,8 @@ class TreeWorker:
     def plot(self, name, varexp, cut='', options='', bins=None, *args, **kwargs):
     
         # check the name doesn't contain project infos
-        m = re.match(r'.*(\([^\)]*\))',varexp)
-        if m: raise ValueError('Use bins argument to specify the binning %s',m.group(1))
+        m = re.match(r'.*(\([^\)]*\))',name)
+        if m: raise ValueError('Use bins argument to specify the binning %s' % m.group(1))
                 
         hstr,ndim = self._projexpr(name,bins)
         
@@ -477,7 +481,7 @@ class TreeWorker:
         return self._plot( varexp, cut, options, *args, **kwargs)
 
     #---
-    def _plotsfromevents(self,name, varexp, elists, options='', bins=None, *args, **kwargs):
+    def _plotsfromentries(self,name, varexp, elists, options='', bins=None, *args, **kwargs):
         '''plot the plots using eventlists instead of cuts'''
         plots = odict.OrderedDict()
 
@@ -507,7 +511,7 @@ class TreeWorker:
         elists = self._makeentrylists(cuts)
         
         # add the weight and get the yields
-        plots = self._plotsfromevents(name,varexp,elists,options,bins,*args, **kwargs)
+        plots = self._plotsfromentries(name,varexp,elists,options,bins,*args, **kwargs)
 
         # delete the lists
         self._delroots(elists)
