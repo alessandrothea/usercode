@@ -556,19 +556,26 @@ def gardener_cli( modules ):
 
         print inputs
         
+        # sanitise output
+        output = output if output[-1]=='/' else output+'/'
         iofiles = [ (f,os.path.join(output,os.path.basename(f))) for f in inputs ]
 
         execute( module, tree, iofiles )
     
     elif nargs == 2:
-        input = args[0]
+        input  = args[0]
         output = args[1]
+
 
         # recursiveness here
         if os.path.isdir(input):
             if not opt.recursive:
                 print input,'is a directory. Use -r to go recursive'
                 sys.exit(0)
+
+            # sanitize the input/output
+            input  = input  if input [-1]=='/' else input +'/'
+            output = output if output[-1]=='/' else output+'/'
 
             if os.path.exists(output) and not os.path.isdir(output):
                 print output,'exists and is not a directory!'
@@ -586,13 +593,15 @@ def gardener_cli( modules ):
             print 'for a grand total of',len(fileList),'files'
             opt.force or ( confirm('Do you want to continue?') or sys.exit(0) )
 
-            output = output if output[-1]=='/' else output+'/'
-            iofiles = [ (f,os.path.join(output,os.path.basename(f))) for f in fileList ]
+            iofiles = [ (f,f.replace(input,output)) for f in fileList ]
+#             iofiles = [ (f,os.path.join(output,os.path.basename(f))) for f in fileList ]
 
             execute( module, tree, iofiles )
 
         else:
             if os.path.exists(output) and os.path.isdir(output):
+                # sanitise output
+                output = output if output[-1]=='/' else output+'/'
                 output = os.path.join( output , os.path.basename(input) )
             execute(module,tree,[(input,output)])
 

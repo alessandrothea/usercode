@@ -1,3 +1,4 @@
+import hwwtools
 import re
 
 backgrounds = {
@@ -86,11 +87,11 @@ data = {
                    'data/latino_144_MuEG2011Bv1a.root',
                   ],
 
-    'Data2012A' : ['latino_RunA_892pbinv.root'],
+    'Data2012A' : ['data/latino_RunA_892pbinv.root'],
 
-    'Data2012B' : ['latino_RunB_4404pbinv.root'],
-    
-    'Data2012C' : ['latino_RunC_6807pbinv.root'],
+    'Data2012B' : ['data/latino_RunB_4404pbinv.root'],
+
+    'Data2012C' : ['data/latino_RunC_6807pbinv.root'],
 }
 
 data['Data2011'] = data['Data2011A']+data['Data2011B']
@@ -149,22 +150,6 @@ mcsets = {
 }
 
 #--------------
-def _mcFilterAndRename( samples, voc ):
-    
-    filtered = {}
-
-    # convert the vocabulary, which is a mixture of strings and 2d tuples, into a dictionary
-    fullvoc = dict([ e if isinstance(e,tuple) else (e,e) for e in voc])
-    for proc,label in fullvoc.iteritems():
-#         print proc,label
-
-        if label not in samples: continue
-
-        filtered[proc] = samples[label]
-
-    return filtered
-
-#--------------
 def samples(mass, datatag='Data2012', mctag='all'):
     '''
     mass: mass for the higgs samples'
@@ -178,13 +163,15 @@ def samples(mass, datatag='Data2012', mctag='all'):
     mcsamples.update(signals)
     mcsamples.update(backgrounds)
 
-    #--
-    # check mc
-    if mctag not in mcsets:
-        raise ValueError('Data tag '+mctag+' not supported')
+    if isinstance(mctag,list):
+        mclabels = mctag
+    else:
+        if mctag not in mcsets:
+            raise ValueError('MCtag '+mctag+' not supported')
+        mclabels = mcsets[mctag]
 
-    selectedMc = _mcFilterAndRename( mcsamples, mcsets[mctag] )
-
+    selectedMc = hwwtools.filterSamples( mcsamples, mclabels )
+        
     # add data
     selectedData = {}
     if datatag == 'NoData':

@@ -108,8 +108,8 @@ class vbfcuts:
         'mjj>200',
     ]
 
-    vbflocut   = wwcuts.wwlo+_massindep+_cut
-    vbfhicut   = wwcuts.wwhi+_massindep+_cut
+#     vbflocut   = wwcuts.wwlo+_massindep+_cut
+#     vbfhicut   = wwcuts.wwhi+_massindep+_cut
     vbfcut     = wwcuts.wwcommon+_massindep+_cut
     #vbfshape   = wwcuts.wwcommon+_massindep+_shape
     #vbfloshape = wwcuts.wwlo+_massindep+_shape
