@@ -108,8 +108,23 @@ class vbfcuts:
         'mjj>200',
     ]
 
-    vbfcut   = wwcuts.wwcommon+_massindep+_cut
-    vbfshape = wwcuts.wwcommon+_massindep+_shape
+    vbflocut   = wwcuts.wwlo+_massindep+_cut
+    vbfhicut   = wwcuts.wwhi+_massindep+_cut
+    vbfcut     = wwcuts.wwcommon+_massindep+_cut
+    #vbfshape   = wwcuts.wwcommon+_massindep+_shape
+    #vbfloshape = wwcuts.wwlo+_massindep+_shape
+    #vbfhishape = wwcuts.wwhi+_massindep+_shape
+
+    vbfshape = ['trigger==1. && pfmet>20. && mll>12 && zveto==1 && mpmet>20. && (njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  ) && bveto_mu==1 && nextra==0 && (bveto_ip==1 &&  (nbjettche==0 || njet>3))  && ptll>45. &&   ( !sameflav || ( (njet!=0 || dymva1>0.88) && (njet!=1 || dymva1>0.84) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) ) && (njet>=2 && njet<=3 && (jetpt3<=30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0)))))   && abs(eta1 - (jeteta1+jeteta2)/2)/detajj < 0.5 && abs(eta2 - (jeteta1+jeteta2)/2)/detajj < 0.5      && detajj>3.5     && mjj>500']
+
+    specificvbfloshape = ['pt1>20   &&      pt2>0   &&      mth>30  &&  mth<280      &&    mll<200 ']
+    specificvbfhishape = ['pt1>50   &&      pt2>0   &&      mth>30  &&  mth<680      &&    mll<600 ']
+
+    vbfloshape = vbfshape + specificvbfloshape
+    vbfhishape = vbfshape + specificvbfhishape
+
+
+
 
 masses = [110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 170, 180, 190, 200, 250, 300, 350, 400, 450, 500, 550, 600]
 
@@ -197,6 +212,10 @@ def massSelections(mass):
     sel = {}
     sel['ww-min']       = ' && '.join(wwcuts.wwmin)
     sel['ww-common']    = ' && '.join(wwcuts.wwcommon)
+
+    sel['vbf-shape-2d-himass']    = ' && '.join(vbfcuts.vbfhishape)
+    sel['vbf-shape-2d-lomass']    = ' && '.join(vbfcuts.vbfloshape)
+    sel['vbf-shape-2d']           = sel['vbf-shape-2d-lomass'] if mass <= 250 else sel['vbf-shape-2d-himass'] 
     
     sel['shape-lomass'] = 'mth>80 && mth<280 && mll<200'
     sel['shape-himass'] = 'mth>80 && mth<600 && mll<600 && pt1>50'
@@ -223,7 +242,10 @@ def massSelections(mass):
     sel['gammaMRStar-selection']  = ' && '.join([sel['ww-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
     sel['bdt-selection']          = sel['ww-level']+' && '+sel['bdt-specific']
     sel['bdtl-selection']         = sel['bdt-selection']
+    sel['vbf-shape-2d-selection']         = sel['vbf-shape-2d']
 
+    #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
+    #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f}) && mll > {0:.0f}    {0:.0f} {1:.0f} '.format(int(mass), float(12452))
     sel['shape-selection']        = sel['ww-level']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-level']+' && '+sel['shape-himass']
  
     sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
