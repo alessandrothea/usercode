@@ -89,7 +89,7 @@ data = {
     'Data2012A' : ['latino_RunA_892pbinv.root'],
 
     'Data2012B' : ['latino_RunB_4404pbinv.root'],
-
+    
     'Data2012C' : ['latino_RunC_6807pbinv.root'],
 }
 
@@ -127,8 +127,8 @@ mcsets = {
         # bkgs
         'WW','ggWW','Vg','WJet','WJetFakeRate','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown',
         # 0j1j specific
-        ('DYLL-template',    'DYLL-template-0j1j'),
-        ('DYLL-templatesyst','DYLL-templatesyst-0j1j')
+        ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
+        ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
     ],
     'vbf' : [
         #signals
@@ -139,6 +139,12 @@ mcsets = {
         # vbf mapping
         # ('WJet-template','WJet-template-vbf'),
 #         ('DYLL-template','DYLL-template-vbf'),
+    ],
+   'vbf_of' : [
+        #signals
+        'ggH','vbfH','wzttH',
+        # bkgs
+        'WW','ggWW','Vg','WJet','Top','VV','DYTT',
     ],
 }
 
