@@ -52,7 +52,7 @@ float yOffA[] = {0,1,2,0,1,2,3,3,3,4,4,4,5,5,5};
 float xPosB[] = {0,0,0,1,1,1,0,1,0,1,2}; 
 float yOffB[] = {0,1,2,0,1,2,3,3,4,4,4};
 
-
+#define TH1D TH1
 
 //------------------------------------------------------------------------------
 // GetMaximumIncludingErrors
@@ -452,6 +452,7 @@ class MWLPlot {
         
             legend->SetBorderSize(     0);
             legend->SetFillColor (     0);
+            legend->SetFillStyle (     0);
             legend->SetTextAlign (    12);
             legend->SetTextFont  (_labelFont);
             legend->SetTextSize  (_legendTextSize);

@@ -1,14 +1,9 @@
 import HWWAnalysis.Misc.odict as odict
-# from HWWAnalysis.ShapeAnalysis.ROOTtree import TreeWorker
 from ROOTtree import TreeWorker
 import os.path
-# 
-# Sample class to 
-# 
-# 
-# 
+import ROOT
+import logging
 
- 
 #______________________________________________________________________________
 class Labelled(object):
     ''' Generic base classes for objects which have a latex/tlatex representation'''
@@ -158,6 +153,11 @@ class CutFlow(odict.OrderedDict):
     
     __str__ = __repr__
 
+    def collapse(self,name):
+        cut = self.string()
+        self.reset()
+        self.__setitem__(name,cut)
+
     def rename(self, old_key, new_key):
 
         odict.OrderedDict.rename(self,old_key,new_key)
@@ -228,8 +228,43 @@ class Latino:
         return s
 
 
+import types
 #______________________________________________________________________________
 class TreeAnalyser:
+    _logger = logging.getLogger('TreeAnalyser')
+
+    #---
+    class Plotter:
+        def __init__(self,analyser,name,var,extra=None):
+            self._analyser = analyser
+            self._name     = name
+            self._var      = var
+            self._extra    = extra
+
+        def __getitem__(self,val):
+            print val 
+            if isinstance(val,types.SliceType):
+                plots = []
+                flow = self._analyser._cuts
+                fkeys = flow.keys()
+                # get the ids of the elements in the slice
+                ids = [flow._sequence.index(i) for i in flow._sequence[val]]
+
+                for i in ids:
+                    cut = flow[:i+1].string()
+                    print 'cut',cut
+                    h = self._analyser._worker.plot( '%s_%s' % (self._name,fkeys[i]),self._var, cut)
+                    plots.append(h)
+                    print h
+
+                print plots
+
+                return plots
+            else:
+                print 'Making hists up to val'
+                cut = self._analyser._cuts[:val].string()
+                return self._analyser._worker.plot(self._name,self._var, cut)
+                
 
     #---
     def __init__(self, sample, cuts ):
@@ -238,24 +273,35 @@ class TreeAnalyser:
 
     #---
     def __repr__(self):
-        pass
+        return self.__class__.__name__
+
+
+    #---
+    def __setattr__(self,key,value):
+        if key == 'lumi':
+            self._worker.setscale(value)
+        else:
+            self.__dict__[key] = value
 
     #---
     @staticmethod
     def _makeworker(sample):
         if not isinstance( sample, Sample):
-            raise ValueError('sample must inherit from Sample')
+            raise ValueError('sample must inherit from %s (found %s)' % (Sample.__name__, sample.__class__.__name__) )
         t = TreeWorker( sample.trees() )
         t.setselection( sample.preselection )
         t.setweight( sample.weight )
         return t
 
+
     #---
     def entries(self):
         return self._worker.entries(self._cuts.string())
 
+    #---
     def entriesflow(self):
         return [ (n,self._worker.entries(self._cuts[:i+1].string()))  for i,n in enumerate(self._cuts) ]
+
     #---
     def yields(self):
         return self._worker.yields(self._cuts.string())
@@ -265,12 +311,21 @@ class TreeAnalyser:
         return self._worker.yieldsflow(odict.OrderedDict(self._cuts.list()))
 
     #---
-    def plot(self,name,var,extra=None):
+    def plot(self, name, varexp, options='', bins=None, extra=None):
         cut = self._cuts.string()
         if extra:
             cut = '(%s) && (%s)' % (cut,extra)
 
-        return self._worker.plot(name,var, cut)
+        return self._worker.plot(name,var,cut,options,bins)
+
+    #---
+    def plotsflow(self, name, varexp, options='', bins=None, extra=None):
+        return self._worker.plotsflow(name,varexp,odict.OrderedDict(self._cuts.list()), options, bins)
+
+    #---
+    def plotter(self,name,var,extra=None):
+        return self.Plotter(self,name,var,extra)
+
 
 
 if __name__ == '__main__':

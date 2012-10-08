@@ -5,6 +5,8 @@ import ctypes
 import os.path
 import HWWAnalysis.Misc.ROOTAndUtils as utils
 import HWWAnalysis.Misc.odict as odict
+import logging
+import re
 
 #      ________      __  ______                 __ 
 #     / ____/ /___ _/ /_/ ____/   _____  ____  / /_
@@ -204,6 +206,7 @@ def _buildchain(treeName,files):
 
 # _____________________________________________________________________________
 class TreeWorker:
+    _logger = logging.getLogger('TreeWorker')
     #---
     def __init__(self, samples ):
     
@@ -220,7 +223,8 @@ class TreeWorker:
         self._elist     = None
         self._friends   = []
         self._weight    = ''
-        self._scale     = ''
+#         self._scale     = ''
+        self._scale     = 1.
         self._selection = ''
         self._link(samples[1:])
 
@@ -239,14 +243,50 @@ class TreeWorker:
 
     #---
     def __del__(self):
-        for fchain in self._friends:
-            self._chain.RemoveFriend(fchain)
-            ROOT.SetOwnership(fchain,True)
-            del fchain
+        if hasattr(self,'_friends'):
+            for fchain in self._friends:
+                self._chain.RemoveFriend(fchain)
+                ROOT.SetOwnership(fchain,True)
+                del fchain
+    #---
+    def _makeentrylists(self, cuts):
+        elists = odict.OrderedDict()
+        for i,(name,acut) in enumerate(cuts.iteritems()):
+            cut = self._cutexpr(acut)
+            elabel = 'elist%d' % i
+            self._plot('>>'+elabel,cut,'entrylist')
+            
+            l = ROOT.gDirectory.Get(elabel)
+            # detach the list
+            l.SetDirectory(0x0)
+            # ensure the ownership
+            ROOT.SetOwnership(l,True)
+            # store it
+            elists[name] = l
+            # activate it
+            self._chain.SetEntryList(l)
+
+            self._logger.debug('%s -> %d',l.GetName(),l.GetN())
+
+        # restore the preselection
+        self._chain.SetEntryList(self._elist if self._elist else 0x0)
+        return elists
+
+    #---
+    def _delroots(self,roots):
+        for l in roots.itervalues():
+            self._logger.debug( 'obj before %s',l.__repr__())
+            l.IsA().Destructor(l)
+            self._logger.debug( 'obj after  %s', l.__repr__())
+        
 
     #---
     def setweight(self,w):
         self._weight = str(w)
+
+    #---
+    def setscale(self,s):
+        self._scale = float(s)
 
     #---
     def setselection(self,c):
@@ -289,14 +329,13 @@ class TreeWorker:
     #---
     def draw(self, *args, **kwargs):
         return self._chain.Draw(*args, **kwargs)
-
+    
+    #--
     def _cutexpr(self,cuts):
         if isinstance(cuts,list):
-            cuts = [self._scale,self._weight]+cuts
-#         elif isinstance(cuts,CutFlow):
-#             cuts = [self._scale,self._weight]+cuts.list()
+            cuts = [self._weight]+cuts
         else:
-            cuts = [self._scale,self._weight,cuts]
+            cuts = [self._weight,cuts]
         expr = '*'.join( ['(%s)' % s for s in cuts if s ] )
         return expr
 
@@ -305,8 +344,16 @@ class TreeWorker:
     def _plot(self,varexp, cut, options, *args, **kwargs):
         sentry = utils.TH1AddDirSentry()
         options = 'goff '+options
+        self._logger.debug('varexp:  %s', varexp)
+        self._logger.debug('cut:     %s', cut)
+        self._logger.debug('options: %s', options)
+
         self._chain.Draw(varexp , cut, options, *args, **kwargs)
-        return self._chain.GetHistogram()
+        h = self._chain.GetHistogram()
+        self._logger.debug('entries  %d integral %f', h.GetEntries(), h.Integral())
+        h.Scale(self._scale)
+        self._logger.debug('scale:   %f integral %f', self._scale, h.Integral())
+        return h
     
     #---
     @staticmethod
@@ -330,48 +377,142 @@ class TreeWorker:
         hdef = '('+','.join([ str(x) for x in bins])+')' if bins else ''
         return name+hdef,ndim
 
+
     #---
     def yields(self, cut='', options='', *args, **kwargs):
-        
         cut = self._cutexpr(cut)
         h = self._plot('0 >> counter(1,0.,1.)', cut, options, *args, **kwargs)
         return h.Integral()
 
     #--
-    def yieldsflow(self, cuts, options=''):
+#     def yieldsflow(self, cuts, options=''):
+#         yields = odict.OrderedDict()
+
+#         flow = []
+#         elists = []
+#         b = ROOT.TBenchmark()
+
+#         b.Start('plain')
+#         for i,(name,acut) in enumerate(cuts.iteritems()):
+#             flow += [acut]
+#             b.Start(name.ljust(20))
+#             yields[name] = self.yields( flow, options )
+#             b.Show(name.ljust(20))
+#         b.Show('plain')
+#         b.Reset()
+#         b.Start('fancy')
+#         for i,(name,acut) in enumerate(cuts.iteritems()):
+#             b.Start(name.ljust(20))
+#             flow = [acut]
+#             cut = self._cutexpr(flow)
+#             elabel = 'elist%d' % i
+#             self._chain.Draw('>>'+elabel,cut,'goff entrylist')
+#             
+
+#             l = ROOT.gDirectory.Get(elabel)
+#             elists.append(l)
+#             self._chain.SetEntryList(l)
+#             yields[name] = self.yields( '', options )
+#             b.Show(name.ljust(20))
+#         b.Show('fancy')
+
+#         # restore the preselection
+#         self._chain.SetEntryList(self._elist if self._elist else 0x0)
+
+#         for l in elists:
+#             l.IsA().Destructor(l)
+#             del l
+#         
+#         return yields
+
+    def _yieldsfromevents(self,elists,options=''):
+        '''Calculates the yields using eventlists instead of cuts'''
         yields = odict.OrderedDict()
 
-        flow = []
-        elists = []
-        for i,(name,acut) in enumerate(cuts.iteritems()):
-            flow += [acut]
-            cut = self._cutexpr(flow)
-            elabel = 'elist%d' % i
-            self._chain.Draw('>>'+elabel,cut,'goff entrylist')
-            
-
-            l = ROOT.gDirectory.Get(elabel)
-            elists.append(l)
+        for c,l in elists.iteritems():
             self._chain.SetEntryList(l)
-            yields[name] = self.yields( '', options )
+            yields[c] = self.yields( '', options )
 
-        self._chain.SetEntryList(0)
+        # restore the preselection
+        self._chain.SetEntryList(self._elist if self._elist else 0x0)
 
-        for l in elists:
-            l.IsA().Destructor(l)
-            del l
+        return yields
+
+    #---
+    def yieldsflow(self, cuts, options=''):
+
+#         yields = odict.OrderedDict()
+
+#         elists = self._makeentrylists(cuts)
+#         for c,l in elists.iteritems():
+#             self._chain.SetEntryList(l)
+#             yields[c] = self.yields( '', options )
+
+#         # restore the preselection
+#         self._chain.SetEntryList(self._elist if self._elist else 0x0)
+
+        # make the entries
+        elists = self._makeentrylists(cuts)
         
+        # add the weight and get the yields
+        yields = self._yieldsfromevents(elists,options)
+
+        # delete the lists
+        self._delroots(elists)
+
         return yields
     
     #---
     def plot(self, name, varexp, cut='', options='', bins=None, *args, **kwargs):
-        
+    
+        # check the name doesn't contain project infos
+        m = re.match(r'.*(\([^\)]*\))',varexp)
+        if m: raise ValueError('Use bins argument to specify the binning %s',m.group(1))
+                
         hstr,ndim = self._projexpr(name,bins)
         
         varexp = '%s >> %s' % (varexp,hstr)
         cut = self._cutexpr(cut)
 
         return self._plot( varexp, cut, options, *args, **kwargs)
+
+    #---
+    def _plotsfromevents(self,name, varexp, elists, options='', bins=None, *args, **kwargs):
+        '''plot the plots using eventlists instead of cuts'''
+        plots = odict.OrderedDict()
+
+        for c,l in elists.iteritems():
+            self._chain.SetEntryList(l)
+            plots[c] = self.plot('%s_%s' % (name,c),varexp,'',options,bins,*args, **kwargs) 
+
+        # restore the preselection
+        self._chain.SetEntryList(self._elist if self._elist else 0x0)
+
+        return plots
+
+    #---
+    def plotsflow(self, name, varexp, cuts, options='', bins=None, *args, **kwargs):
+
+#         plots = odict.OrderedDict()
+
+#         elists = self._makeentrylists(cuts)
+#         for c,l in elists.iteritems():
+#             self._chain.SetEntryList(l)
+#             plots[c] = self.plot('%s_%s' % (name,c),varexp,'',options,bins,*args, **kwargs) 
+
+#         # restore the preselection
+#         self._chain.SetEntryList(self._elist if self._elist else 0x0)
+
+        # make the entries
+        elists = self._makeentrylists(cuts)
+        
+        # add the weight and get the yields
+        plots = self._plotsfromevents(name,varexp,elists,options,bins,*args, **kwargs)
+
+        # delete the lists
+        self._delroots(elists)
+
+        return plots
 
     #--- 
     def fill(self, h, varexp, cut='', options='', *args, **kwargs):

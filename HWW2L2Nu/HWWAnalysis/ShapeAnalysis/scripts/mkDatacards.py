@@ -29,9 +29,10 @@ class ShapeDatacardWriter:
 
     '''Dump a crappy datacard to file'''
     
-    def __init__(self, mass, bin):
+    def __init__(self, mass, bin, shape=True):
         self._mass = mass
         self._bin = bin
+        self._shape = shape
 
     def __del__(self):
         pass
@@ -54,12 +55,15 @@ class ShapeDatacardWriter:
             raise RuntimeError('No Data found!')
         card.write('observation %.0f\n' % yields['Data']._N)
         # replace the second * with the bin?
-        card.write('shapes  *           * '+
-                   fileFmt.format(mass=self._mass, bin=self._bin)+
-                   '     histo_$PROCESS histo_$PROCESS_$SYSTEMATIC'+'\n')
-        card.write('shapes  data_obs    * '+
-                   fileFmt.format(mass=self._mass, bin=self._bin)+
-                   '     histo_Data'+'\n')
+
+        if self._shape:
+            card.write('shapes  *           * '+
+                       fileFmt.format(mass=self._mass, bin=self._bin)+
+                       '     histo_$PROCESS histo_$PROCESS_$SYSTEMATIC'+'\n')
+            card.write('shapes  data_obs    * '+
+                       fileFmt.format(mass=self._mass, bin=self._bin)+
+                       '     histo_Data'+'\n')
+
         card.write('-'*100+'\n')
         
         bkgs = [ name for name in yields if name not in signals and name != 'Data']
@@ -104,7 +108,7 @@ class ShapeLoader:
     '''Load the histogram data from the shape file
     + Yields
     + Nuisance shapes and parameters'''
-    _logger = logging.getLogger('ShapeDatacardWriter')
+    _logger = logging.getLogger('ShapeLoader')
 
     def __init__(self, path):
         self._systRegex = re.compile('^histo_([^_]+)_(.+)(Up|Down)$')
@@ -166,11 +170,12 @@ class ShapeLoader:
 class NuisanceMapBuilder:
     _logger = logging.getLogger('NuisanceMapBuilder')
 
-    def __init__(self, ddPath):
+    def __init__(self, ddPath, shape=True):
         self._common    = OrderedDict()
         self._0jetOnly  = OrderedDict()
         self._1jetOnly  = OrderedDict()
         self._ddEstimates = OrderedDict()
+        self._shape = shape
         # to options
         self.ddPath     = ddPath
         self.statShapeVeto = []
@@ -401,8 +406,8 @@ class NuisanceMapBuilder:
 
         self._addStatisticalNuisances(allNus, yields, channel)
         self._addDataDrivenNuisances(allNus, yields, mass, channel, jetcat)
-        
-        self._addShapeNuisances(allNus,effects, opts)
+
+        if self._shape: self._addShapeNuisances(allNus,effects, opts)
 
         if 'nuisFlags' not in opts:
             raise RuntimeError('nuisFlags not found among the allNus options')
@@ -450,7 +455,8 @@ if __name__ == '__main__':
 
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
-    parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
+    parser.add_option('--cutbased',dest='shape',help='Make cutbased datacards (no shapes)', action='store_false', default=True)
+    parser.add_option('-p','--prefix',dest='prefix',help='Datacard directory prefix',default=None)
     parser.set_defaults(shapeFlags=[])
     parser.set_defaults(nuisFlags=[])
     parser.add_option('--Xsh','--excludeShape',action='callback', dest='shapeFlags', type='string', callback=incexc)#)action='append',default=None)
@@ -506,7 +512,7 @@ if __name__ == '__main__':
     shapeTmpl = os.path.join(mergedPath,'hww-'+lumistr+'fb.mH{mass}.{channel}_shape.root')
     mask = ['Vg','DYLL','DYTT']
 
-    builder = NuisanceMapBuilder( opt.path_dd )
+    builder = NuisanceMapBuilder( opt.path_dd, opt.shape )
     builder.statShapeVeto = mask
     for mass in masses:
         for ch,(jcat,fl) in channels.iteritems():
@@ -518,7 +524,7 @@ if __name__ == '__main__':
             loader.load()
 
 #                 writer = ShapeDatacardWriter( mass,'{0}_{1}j'.format(flavor, jets) )
-            writer = ShapeDatacardWriter( mass, ch )
+            writer = ShapeDatacardWriter( mass, ch, opt.shape )
             print '   + loading yields'
             yields = loader.yields()
 

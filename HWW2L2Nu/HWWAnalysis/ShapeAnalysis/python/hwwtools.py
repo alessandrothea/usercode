@@ -7,7 +7,7 @@
 import os.path
 import hwwinfo
 
-
+#---
 def confirm(prompt=None, resp=False):
     """prompts for yes or no response from the user. Returns True for yes and
     False for no.
@@ -45,6 +45,23 @@ def confirm(prompt=None, resp=False):
         if ans == 'n' or ans == 'N':
             return False
 
+#---
+def filterSamples( samples, voc ):
+    
+    filtered = {}
+
+    # convert the vocabulary, which is a mixture of strings and 2d tuples, into a dictionary
+    fullvoc = dict([ e if isinstance(e,tuple) else (e,e) for e in voc])
+    for proc,label in fullvoc.iteritems():
+#         print proc,label
+
+        if label not in samples: continue
+
+        filtered[proc] = samples[label]
+
+    return filtered
+
+
 def getChain( sample, mass, path, tag='Data2011', tname='latino' ):
     import ROOT
     files = []
@@ -61,28 +78,43 @@ def getChain( sample, mass, path, tag='Data2011', tname='latino' ):
     return chain
 
     
-
-def loadOptDefaults(parser,rc='shape.rc'):
+#---
+def loadOptDefaults(parser,pycfg=None):
     '''
     Load the default options from the configuation file.
     The new defaults options shall be written in python, as they are interpreted
     '''
-#     import imp
-    filename='shape.py'
-    if os.path.exists(filename):
-        handle = open(filename,'r')
+
+    if not pycfg:
+        import sys
+        import re
+        try:
+            # pre-parse the python cfg location
+            pyexp = re.compile('--pycfg(=)+')
+            j = max([i for i,a in enumerate(sys.argv) if pyexp.match(a) ])
+            dummy = [sys.argv[j]]
+            try:
+                dummy += [sys.argv[i+1]]
+            except IndexError:
+                pass
+
+        except:
+            dummy = []
+        (opt,args) = parser.parse_args(dummy)
+
+        pycfg = opt.pycfg 
+
+    if os.path.exists(pycfg):
+        handle = open(pycfg,'r')
         vars = {}
         exec(handle,vars)
         handle.close()
 
 
-#         cfo = imp.load_source('pycfg',filename,handle)
         for opt_name, opt_value in vars.iteritems():
             if opt_name[0] == '-': continue
             opt_longname = '--'+opt_name
             if not parser.has_option(opt_longname): continue
-
-#             value = getattr(cfo,opt_name)
 
             o = parser.get_option(opt_longname)
             o.default = opt_value
@@ -92,28 +124,7 @@ def loadOptDefaults(parser,rc='shape.rc'):
         return
 
 
-    if not os.path.exists(rc):
-        print rc,'not found'
-        return
-
-    f = open(rc)
-    for line in f:
-        if line[0] == '#':
-            continue
-        tokens = line.split(':')
-        if len(tokens) < 2:
-            continue
-        opt_name = tokens[0]
-        opt_longname = '--'+tokens[0]
-        if parser.has_option(opt_longname):
-            strval = line[line.index(':')+1:-1]
-            value = eval(strval)
-            o = parser.get_option(opt_longname)
-            o.default = value
-            parser.defaults[opt_name] = value
-
-            print ' - new default value:',opt_name,'=',value
-
+#---
 class list_maker:
     def __init__(self, var ):
         self._var = var
@@ -127,7 +138,7 @@ class list_maker:
            setattr(parser.values, self._var, array)
 
         except:
-                   print 'Malformed option (comma separated list expected):',value
+           print 'Malformed option (comma separated list expected):',value
 
 
 # def make_cat_list(option, opt_str, value, parser):
@@ -149,3 +160,5 @@ def addOptions(parser):
     parser.add_option('-m' , '--mass'     , dest='mass'     , type='int'      , help='run on one mass point only ' , default=0)
     parser.add_option('-d' , '--debug'    , dest='debug'    , action='count'  , help='Debug level'                 , default=0)
     parser.add_option('-c' , '--chans'    , dest='chans'    , type='string'   , action='callback'                  , callback=list_maker('chans') , help='list of channels' , default=['0j'])
+    parser.add_option('--pycfg'           , dest='pycfg'    , help='configuration file (default=%default)'         , default='shape.py')
+
