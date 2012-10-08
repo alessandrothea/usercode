@@ -24,16 +24,17 @@ class ShapeFactory:
         self._systByWeight = {}
 
         ranges = {}
-        ranges['bdtl']       = (400  , -1. , 1.)
-        ranges['bdts']       = (400  , -1. , 1.)
-        ranges['mth']        = (400  , 0.  , 200)
-        ranges['dphill']     = (400  , 0.  , 3.15)
-        ranges['detajj']     = (240  , 0.  , 6.)
-        ranges['mll-vbf']    = (60   , 12  , 135)
-        ranges['mll']        = self._getmllrange
-        ranges['mllsplit']   = self._getmllsplitrange
+        ranges['bdtl']        = (400  , -1. , 1.)
+        ranges['bdts']        = (400  , -1. , 1.)
+        ranges['mth']         = (400  , 0.  , 200)
+        ranges['dphill']      = (400  , 0.  , 3.15)
+        ranges['detajj']      = (240  , 0.  , 6.)
+        ranges['mll-vbf']     = (60   , 12  , 135)
+        ranges['mll']         = self._getmllrange
+        ranges['mllsplit']    = self._getmllsplitrange
         ranges['gammaMRStar'] = self._getGMstarrange
-        ranges['vbf2D']      = self._getVBF2Drange
+        ranges['vbf2D']       = self._getVBF2Drange
+        ranges['mth-mll2D']   = self._getMllMth2Drange
         self._ranges = ranges
         
         self._dataTag         = '2012A'
@@ -65,7 +66,6 @@ class ShapeFactory:
                 self._logger.error('Range '+tag+' not available. Possible values: '+', '.join(self._ranges.iterkeys()) )
                 raise ke
 
-            
         if isinstance(theRange,tuple):
             return theRange
         elif isinstance(theRange,dict):
@@ -73,8 +73,16 @@ class ShapeFactory:
         elif callable(theRange):
             return theRange(mass,cat)
 
+    # _____________________________________________________________________________
+    def _getMllMth2Drange(self,mass):
 
+        if cat not in ['0j','1j']:
+            raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
 
+        if mass < 300.:
+            return (10,80,280,8,0,200) 
+        else:
+            return (10,80,380,8,0,200) 
 
     # _____________________________________________________________________________
     def _getVBF2Drange(self,mass,cat):
@@ -86,9 +94,6 @@ class ShapeFactory:
           return (4, 30, 280, 4, 0, 200)
         else :
           return (2, 30, 330, 3, 0, 450)
-
-
-
 
     # _____________________________________________________________________________
     def _getmllrange(self,mass,cat):
