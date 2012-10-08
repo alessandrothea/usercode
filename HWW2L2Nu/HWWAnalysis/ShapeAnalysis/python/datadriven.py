@@ -51,11 +51,19 @@ class DDCardReader:
         print 'Reading data driven estimates from',self._path
 
         # data driven systematics
+<<<<<<< datadriven.py
+        basemapping = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
+                       'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),} 
+        topmapping  = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
+                       'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),
+                       'of_2j': ('2j',['of']),}
+=======
         basemapping = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
                        'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),} 
         topmapping  = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
                        'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),
                        'of_2j': ('2j',['of']), 'sf_2j': ('2j',['sf'])}
+>>>>>>> 1.5
         llmapping   = {'sf_0j': ('0j',['sf']), 
                        'sf_1j': ('1j',['sf']),}
 
@@ -165,8 +173,9 @@ class DDWWFilter:
         if mass >= 200:
 #         if mass >= 100
             for p in ['WW','ggWW']:
+              if p in z:
                 del z[p]
-        
+
         return z,y
 
 
