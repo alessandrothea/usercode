@@ -1533,6 +1533,8 @@ class scaleAndSmear:
         self.ttree.Branch('njet',njet,'njet/F')
         self.ttree.Branch('dymva0',dymva0,'dymva0/F')
         self.ttree.Branch('dymva1',dymva1,'dymva1/F')
+        self.ttree.Branch('dyW',dyW,'dyW/F')
+        self.ttree.Branch('dyWUp',dyWUp,'dyWUp/F')
 
         #nentries = self.ttree.GetEntriesFast()
         nentries = self.nentries
@@ -1546,7 +1548,16 @@ class scaleAndSmear:
             if i > 0 and i%step == 0:
                 print str(i)+' events processed.'
 
+            dyW[0]=1.
+            dyWUp[0]=1.
+
             if self.oldttree.channel < 1.5:
+
+                # reweighting as a function of ptll
+                # preliminary (almost random) implementation for test
+                ptll_temp = self.oldttree.ptll
+                dyWUp[0] = 1.
+                dyW[0]   = 1.1*ptll_temp*(1./400.)
             
                 # get the "old" met
                 pfmet_hold  = self.oldttree.pfmet
@@ -1609,17 +1620,17 @@ class scaleAndSmear:
                 elif self.direction == 'temp':
                     njet[0] = self.oldttree.njet
             else:
-                pfmet[0]  = self.oldtree.pfmet
-                chmet[0]  = self.oldtree.chmet
-                mth[0]    = self.oldtree.mth
-                mtw1[0]   = self.oldtree.mtw1
-                mtw2[0]   = self.oldtree.mtw2
-                ppfmet[0] = self.oldtree.ppfmet
-                pchmet[0] = self.oldtree.pchmet
-                mpmet[0]  = self.oldtree.mpmet
-                njet[0]   = self.oldtree.njet
-                dymva0[0] = self.oldtree.dymva0
-                dymva1[0] = self.oldtree.dymva1
+                pfmet[0]  = self.oldttree.pfmet
+                chmet[0]  = self.oldttree.chmet
+                mth[0]    = self.oldttree.mth
+                mtw1[0]   = self.oldttree.mtw1
+                mtw2[0]   = self.oldttree.mtw2
+                ppfmet[0] = self.oldttree.ppfmet
+                pchmet[0] = self.oldttree.pchmet
+                mpmet[0]  = self.oldttree.mpmet
+                njet[0]   = self.oldttree.njet
+                dymva0[0] = self.oldttree.dymva0
+                dymva1[0] = self.oldttree.dymva1
                 
 
             if self.verbose is True:
