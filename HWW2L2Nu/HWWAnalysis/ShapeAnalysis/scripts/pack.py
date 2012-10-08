@@ -5,6 +5,7 @@ import glob
 import tempfile
 import optparse
 import hwwinfo
+import hwwtools
 import shutil
 import tarfile
 import os
@@ -31,13 +32,15 @@ def pack():
 
     
     tarname = tmppath+'/'+prefix+'.tgz'
+    here = os.getcwd()
+    os.chdir(tmppath)
     tar = tarfile.open(tarname,mode='w:gz')
-    tar.add(tmppath+'/datacards')
+    tar.add('datacards')
     tar.close()
-    shutil.move(tarname,'.')
+    shutil.move(tarname,here)
 
 #     shutil.rmtree(tmppath)
-    print tmppath
+#     print tmppath
 
 if __name__ == '__main__':
     pack()
