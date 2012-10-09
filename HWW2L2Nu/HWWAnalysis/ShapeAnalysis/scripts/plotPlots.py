@@ -26,6 +26,7 @@ def runTheShape():
     parser.add_option('-t','--tag',dest='tag')
     parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
     parser.add_option('--lumi','-l',dest='lumi',help='lumi',default=None)
+    hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
 
@@ -45,12 +46,6 @@ def runTheShape():
 
     if args[0] in datacards:
         plots = datacards[args[0]]
-#     if args[0] == 'all':
-#         plots = ['of_0j','of_1j','sf_0j','sf_1j','comb_0j','comb_1j','comb_0j1j','comb_0j1j2j']
-#     elif args[0] == 'shape':
-#         plots = ['comb_0j','comb_1j','comb_0j1j']
-#     elif args[0] == 'split':
-#         plots = ['of_0j','of_1j','sf_0j','sf_1j']
     else:
         plots = args[:]
         
