@@ -134,11 +134,14 @@ class MWLPlot {
 
 //         }
 
-        void Draw(TCanvas *c1, const int &rebin=1, const bool &div=false) {
+        void Draw(TCanvas *c1, int rebin=1, bool div=false) {
 
             gStyle->SetOptStat(0);
             c1->cd();
             c1->Clear();
+
+			if ( div && !GetDataHist() )
+				div = false;
 
             TPad *pad1;
             if(div) {
@@ -172,11 +175,10 @@ class MWLPlot {
 
                 TH1D *rdat = (TH1D*)data->Clone("rdat");   
                 if(gROOT->FindObject("rref")) gROOT->FindObject("rref")->Delete();
-                TH1D *rref = new TH1D("rref","rref",
-                    summed->GetNbinsX(),
-                    summed->GetBinLowEdge(1),
-                    summed->GetBinLowEdge(summed->GetNbinsX()+1)
-                );
+				TH1D *rref = (TH1D*)summed->Clone("rref");
+				rref->SetTitle("rref");
+				rref->Reset();
+
                 for (int i = 1, n = rref->GetNbinsX(); i <= n+1; ++i) {
                     rref->SetBinContent(i,summed->GetBinContent(i));
                     rref->SetBinError(i,summed->GetBinError(i));
@@ -257,7 +259,13 @@ class MWLPlot {
         TH1D *GetSummedMCHist() {
 
             if(gROOT->FindObject("hMC")) gROOT->FindObject("hMC")->Delete();
-            TH1D* hMC = new TH1D("hMC","hMC",_nbins,_low,_high);
+
+			TH1D* hMC = 0x0;
+			for (int i=0; i<nSamples; i++) if( _hist[i] && i != iHWW)
+				hMC = (TH1D*)_hist[i]->Clone("hMC");
+
+			hMC->SetTitle("hMC");
+			hMC->Reset();
             hMC->Sumw2();
 
             for (int i=0; i<nSamples; i++) if( _hist[i] && i != iHWW) hMC->Add(_hist[i]);
