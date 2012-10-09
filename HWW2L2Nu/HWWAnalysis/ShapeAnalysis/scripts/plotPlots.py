@@ -23,9 +23,7 @@ plot_tmpl = '''
 def runTheShape():
     usage = 'usage: %prog -t tag -p prefix channel'
     parser = optparse.OptionParser(usage)
-    parser.add_option('-t','--tag',dest='tag')
     parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
-    parser.add_option('--lumi','-l',dest='lumi',help='lumi',default=None)
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
