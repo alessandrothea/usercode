@@ -124,7 +124,7 @@ def getNominalUpDown(file):
 ##     nominals['Data'] = 
 
     
-def makeNominalPlots(file,outputdir, lumi, xlabel, ratio, stacksignal):
+def makeNominalPlots(file,outputdir, opt):
 
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
@@ -140,12 +140,8 @@ def makeNominalPlots(file,outputdir, lumi, xlabel, ratio, stacksignal):
     if not m: 
         raise RuntimeError('Mass label not found in '+file)
     mass = int(m.group(1))
-#     mass = int(file.split('.')[2].replace('mH',''))
 
     nominals = getNominals(f)
-
-#     print nominals
-
 
     histo = nominals['ggH']
     if 'vbfH' in nominals:
@@ -166,8 +162,10 @@ def makeNominalPlots(file,outputdir, lumi, xlabel, ratio, stacksignal):
     nominals['DYsum'] = histo
 
     plot = ROOT.MWLPlot()
-    plot.setStackSignal(stacksignal)
-    plot.setDataHist(nominals['Data'])
+    plot.setStackSignal(opt.stacksignal)
+    if opt.showdata:
+        plot.setDataHist(nominals['Data'])
+
     plot.setHWWHist(nominals['HWW'])
     plot.setWWHist(nominals['WWsum'])  
     plot.setZJetsHist(nominals['DYsum'])
@@ -180,12 +178,15 @@ def makeNominalPlots(file,outputdir, lumi, xlabel, ratio, stacksignal):
 ##     plot.setZZHist(nominals[])
 ##     plot.setFakesHist(nominals[])
 
+    ratio = opt.ratio and opt.showdata
+
 
     cName = 'c_'+file.split('/')[-1].replace('.root','')
     c = ROOT.TCanvas(cName,cName) if ratio else ROOT.TCanvas(cName,cName,2)
+    if opt.logY: c.SetLogy()
     plot.setMass(mass)
-    plot.setLumi(lumi)
-    plot.setLabel(xlabel)
+    plot.setLumi(opt.lumi)
+    plot.setLabel(opt.xlabel)
     plot.Draw(c,1,ratio)
 
 #     c.ls()
@@ -545,19 +546,25 @@ def main():
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
     
-    parser.add_option('-i','--input',dest='inputdir',help='Input dir')
-    parser.add_option('-m','--mass',dest='mass',help='Mass',default=-1)
-    parser.add_option('-o','--output',dest='outputdir',help='Output dir',default='.')
-    parser.add_option('-v','--variations',dest='variations',help='make the scale up/down stacks',action='store_true',default=False)
-    parser.add_option('-x','--xlabel',dest='xlabel',help='X-axis label',default='')
-    parser.add_option('-r','--ratio',dest='ratio',help='Plot the data/mc ration', action='store_false',default=True)
-    parser.add_option('-l','--lumi', dest='lumi', type='float', help='Luminosity', default=None)
-    parser.add_option('-s','--stacksignal', dest='stacksignal', action='store_true', help='Stack the signal on the backgrounds', default=False)
+    parser.add_option('-i' , '--input'       , dest='inputdir'    , help='Input dir')
+    parser.add_option('-o' , '--output'      , dest='outputdir'   , help='Output dir'                          , default='.' )
+    parser.add_option('-V' , '--variations'  , dest='variations'  , help='make the scale up/down stacks'       , default=False , action='store_true' )
+    parser.add_option('-x' , '--xlabel'      , dest='xlabel'      , help='X-axis label'                        , default='' )
+    parser.add_option('-r' , '--ratio'       , dest='ratio'       , help='Plot the data/mc ration'             , default=True  , action='store_false'  )
+    parser.add_option('-s' , '--stacksignal' , dest='stacksignal' , help='Stack the signal on the backgrounds' , default=False , action='store_true' )
+    parser.add_option('-n' , '--nodata'      , dest='showdata'    , help='Hide data histogram'                 , default=True  , action='store_false' )
     
-    parser.add_option('-f','--filter',dest='filter', help='Filter on the variations', default='*')
+    parser.add_option('-f' , '--filter'      , dest='filter'      , help='Filter on the variations'            , default='*')
+    parser.add_option('-Y' , '--logY'        , dest='logY'        , help='Log Y axis'                          , default=False , action='store_true' )
+
  
 
+    hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
+    # use
+    # (opt, args) = parser.parse_args([])
+    # with [] as arguments to have an opt object with the defaults
+
     (opt, args) = parser.parse_args()
     sys.argv.append('-b')
 
@@ -586,7 +593,7 @@ def main():
 
         print 'Making',path
         if not opt.variations:
-            makeNominalPlots(path, outputdir, opt.lumi, opt.xlabel, opt.ratio, opt.stacksignal)
+            makeNominalPlots(path, outputdir, opt)
         else:
             makeShapeUpDown(path,outputdir, opt.xlabel, opt.filter)
 

@@ -79,7 +79,7 @@ def getChain( sample, mass, path, tag='Data2011', tname='latino' ):
 
     
 #---
-def loadOptDefaults(parser,pycfg=None):
+def loadOptDefaults(parser,pycfg=None,quiet=False):
     '''
     Load the default options from the configuation file.
     The new defaults options shall be written in python, as they are interpreted
@@ -120,7 +120,7 @@ def loadOptDefaults(parser,pycfg=None):
             o.default = opt_value
             parser.defaults[opt_name] = opt_value
 
-            print ' - new default value:',opt_name,'=',opt_value
+            if not quiet: print ' - new default value:',opt_name,'=',opt_value
         return
 
 

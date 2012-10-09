@@ -162,8 +162,7 @@ class DDWWFilter:
         x,y = self._reader.get(mass,channel)
         z = copy.deepcopy(x)
 
-        if mass >= 200:
-#         if mass >= 100
+        if mass >= 2000:
             for p in ['WW','ggWW']:
               if p in z:
                 del z[p]
