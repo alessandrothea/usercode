@@ -99,10 +99,12 @@ class Sample(Labelled):
 #______________________________________________________________________________
 class CutFlow(odict.OrderedDict):
 
+    #---
     def __init__(self, init_val=(), strict=False):
         odict.OrderedDict.__init__(self,(), strict) 
         self._import(init_val)
     
+    #---
     def _import(self,l):
         if isinstance(l,list):
             for item in l:
@@ -118,8 +120,8 @@ class CutFlow(odict.OrderedDict):
         else:
             raise ValueError('CutFlow: init value not supported: '+l.__class__.__name__)
 
-        
 
+    #---
     def __setitem__(self, key, val):
         if isinstance(val,str):
             val = Cut(val)    
@@ -130,6 +132,7 @@ class CutFlow(odict.OrderedDict):
 
         odict.OrderedDict.__setitem__(self,key,val)
 
+    #---
     def __getitem__(self, key):
         """
         Allows slicing. Returns an OrderedDict if you slice.
@@ -147,29 +150,43 @@ class CutFlow(odict.OrderedDict):
         else:
             return item
 
+    #---
     def __repr__(self):
         return '%s([%s])' % (self.__class__.__name__, ', '.join( 
             ['(%r, %r)' % (key, self[key].cut) for key in self._sequence]))
     
     __str__ = __repr__
 
+    #---
     def collapse(self,name):
         cut = self.string()
-        self.reset()
+        self.clear()
         self.__setitem__(name,cut)
 
+    #---
+    def insert(self, index, key, value):
+
+        if isinstance(value,str):
+            value = Cut(value)
+
+        odict.OrderedDict.insert(self, index, key, value)
+
+    #---
     def rename(self, old_key, new_key):
 
         odict.OrderedDict.rename(self,old_key,new_key)
 
         self.__getitem__(new_key).name = new_key
 
+    #---
     def string(self):
         return ' && '.join( [ '(%s)' % step.cut for step in self.itervalues() ] ) 
 
+    #---
     def list(self):
         return [ (step.name,step.cut) for step in self.itervalues() ]
 
+    #---
     def rawlist(self):
         return [ step.cut for step in self.itervalues() ]
 
@@ -234,7 +251,7 @@ class TreeAnalyser:
     _logger = logging.getLogger('TreeAnalyser')
 
     #---
-    class Plotter:
+    class Plotter(object):
         def __init__(self,analyser,name,var,bins=None,extra=None):
             self._analyser = analyser
             self._name     = name
@@ -254,18 +271,30 @@ class TreeAnalyser:
                 for i in ids:
                     cut = flow[:i+1].string()
                     print 'cut',cut
-                    h = self._analyser._worker.plot( '%s_%s' % (self._name,fkeys[i]),self._var, cut)
+                    h = self._analyser._worker.plot( '%s_%s' % (self._name,fkeys[i]),self._var, cut, bins=self._bins)
                     plots.append(h)
                     print h
-
-                print plots
 
                 return plots
             else:
                 print 'Making hists up to val'
                 cut = self._analyser._cuts[:val].string()
                 return self._analyser._worker.plot(self._name,self._var, cut)
-                
+
+    class BufferedPlotter(Plotter):
+        def __init__(self,*args,**kwargs):
+            super(BufferedPlotter,self).__init__(*args,**kwargs)
+
+        def __getitem__(self,val):
+            elists = self._analyser._ensureentries()
+            if isinstance(val,types.SliceType):
+                pass
+                plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
+            else:
+                pass
+                plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
+
+
 
     #---
     def __init__(self, sample, cuts ):
@@ -341,7 +370,7 @@ class TreeAnalyser:
         if extra:
             cut = '(%s) && (%s)' % (cut,extra)
 
-        return self._worker.plot(name,var,cut,options,bins)
+        return self._worker.plot(name,varexp,cut,options,bins)
 
     #---
     def plotsflow(self, name, varexp, options='', bins=None, extra=None):

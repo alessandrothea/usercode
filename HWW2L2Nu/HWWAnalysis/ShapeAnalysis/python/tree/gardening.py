@@ -594,7 +594,6 @@ def gardener_cli( modules ):
             opt.force or ( confirm('Do you want to continue?') or sys.exit(0) )
 
             iofiles = [ (f,f.replace(input,output)) for f in fileList ]
-#             iofiles = [ (f,os.path.join(output,os.path.basename(f))) for f in fileList ]
 
             execute( module, tree, iofiles )
 
