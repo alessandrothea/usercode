@@ -5,21 +5,14 @@ import os
 import ROOT
 from ROOT import *
 import HWWAnalysis.Misc.odict as odict
+import hwwlimits
 import optparse
 import re
 
 
  
 tagname = 'comb_shape'
-
-
-# basepath = '/shome/jueugste/cmssw/CMSSW_4_2_8_patch3/src/LimitResults/input_shape_mt'
-# basepath = '/shome/thea/HWW/Limits/LimitResults'
 basepath = 'limits/'
-#samplename = [
-#    'higgsCombineHWW.Asymptotic.mH120.root',
-#    'higgsCombineHWW.Asymptotic.mH130.root',
-#    ]
 
 samplename = os.listdir(basepath)
 samplename.sort()
@@ -37,15 +30,6 @@ def getTree( file, tree ):
     if not t.__nonzero__():
         raise NameError('Tree '+str(tree)+' doesn\'t exist in '+file.GetName())
     return t
-
-## def readSamplesList(file):
-##     print 'reading: '+file 
-##     file = open(file)
-##     for line in file:
-##         if (line[0] == '#'):
-##             continue
-## #        s = line.split(':')
-##         samplename.append(line.split('\n')[1])
 
 
 def getValue(file, q):
@@ -69,7 +53,7 @@ def getValue(file, q):
         
     tree = getTree(file,'limit')
     command = 'limit>>h'
-    tree.Draw(command,cut)
+    tree.Draw(command,cut,'goff')
     hist = gDirectory.Get("h")
     value = hist.GetMean()
     hist.Delete()
@@ -96,35 +80,20 @@ def main():
     parser = optparse.OptionParser(usage)
     (opt, args) = parser.parse_args()
     
-    tags = {
-        'comb_0j1j2j':'comb_0j1j2j',
-        'comb_0j1j':'comb_0j1j',
-        'comb_0j':'comb_0j',
-        'comb_1j':'comb_1j',
-        'of_0j':'of_0j',
-        'of_1j':'of_1j',
-        'sf_0j':'sf_0j',
-        'sf_1j':'sf_1j',
-    }
-
-    if not args or args[0] not in tags:
-        print args
-        parser.error('tag must be '+' '.join(tags.keys()))
+    if len(args) != 1:
+        parser.error('One and only one datacard tag at the time')
 
     tag = args[0]
-    if tag not in tags:
-        print 'Tag not recognized'
-        sys.exit(-1)
 
-    tagname = tags[tag]+'_shape'
-##    readSamplesList('limitTableSamples.input')
+    if tag not in hwwlimits.dcnames['all']:
+        parser.error('Wrong tag: '+', '.join(sorted(hwwlimits.dcnames['all'])))
 
-#     print samplename
+    tagname = tag+'_shape'
+
     print tagname
 
     reMass = re.compile('.+\.mH(\d+)\.(.*)root')
     table = odict.OrderedDict()
-    #table = {}
     for sample in samplename:
         if not '.root' in sample:
             continue
@@ -137,10 +106,7 @@ def main():
 
         for point in points:
             value = getValue(f,point)
-#             print point, value
             line[point] = value
-
-#         mass = sample.split('.')[-2]
 
         m = reMass.match(sample)
         if not m: 
@@ -150,7 +116,6 @@ def main():
 
         table[mass] = line
 
-    printTable(sys.stdout, table)
     latex = open(basepath+'/'+tagname+'.tex','w')
     printTable(latex,table)
     latex.close()
@@ -159,7 +124,7 @@ def main():
     ## summary file
     summary = open(basepath+'/'+tagname+'.summary', 'w')
     for mass in table:
-        summary.write('{mass} {observed:.3f} 99 {median:.3f} {minus1sigma:.3f} {plus1sigma:.3f} {minus2sigma:.3f} {plus2sigma:.3f}\n'.format( mass=mass, **(table[mass]) ) )
+        summary.write('{mass} {observed:.3f} 99 {median:.3f} {minus2sigma:.3f} {minus1sigma:.3f} {plus1sigma:.3f} {plus2sigma:.3f}\n'.format( mass=mass, **(table[mass]) ) )
 
     summary.close()
 

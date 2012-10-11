@@ -11,12 +11,14 @@ parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
 (opt, args) = parser.parse_args()
 
 datacards = {}
-datacards['split'] = ['of_0j', 'of_1j', 'sf_0j', 'sf_1j']
-datacards['shape'] = ['comb_0j1j','comb_0j','comb_1j']
+datacards['chans'] = ['of_0j','of_1j','sf_0j','sf_1j']
+datacards['of']    = ['of_0j','of_1j','comb_of']
+datacards['sf']    = ['sf_0j','sf_1j','comb_sf']
+datacards['shape'] = ['comb_0j1j','comb_0j','comb_1j','comb_of','comb_sf']
 datacards['full']  = ['comb_0j1j2j']
 
-datacards['all'] = datacards['split']+datacards['shape']+datacards['full']
-datacards['0j1j'] = datacards['split']+datacards['shape']
+datacards['all']  = datacards['chans']+datacards['shape']+datacards['full']+datacards['of']+datacards['sf']
+datacards['0j1j'] = datacards['chans']+datacards['shape']
 
 if len(args) < 1:
     parser.error('Check the usage!')
@@ -24,7 +26,7 @@ if len(args) < 1:
 prefix = opt.prefix
 prefix = prefix if prefix[-1] != '/' else prefix[:-1]
 
-bins = datacards['split']
+bins = datacards['chans']
 if len(args) >= 1:
     if args[0] not in (datacards['all']+datacards.keys()):
         parser.error('Supported datacards: '+', '.join(datacards['all']+datacards.keys()) )

@@ -4,13 +4,15 @@ import os.path
 import subprocess
 import hwwinfo
 import hwwtools
+import hwwlimits
 
 mypath = os.path.dirname(os.path.abspath(__file__))
 
 plot_tmpl = '''
     makeLimitTable.py {option}
     [[ $? -ne 0 ]] && exit -1
-    root -b -l -q '{mypath}/PlotLimit.C+g({lumi},"limits/{option}_shape.summary","{tag}_{name}_{option}", 1,1)'
+#     mkdir -p plots
+#     root -b -l -q '{mypath}/PlotLimit.C+g("limits/{option}_shape.summary","plots/{tag}_{name}_{option}","{lumi} fb^{{-1}}", 110, 160, 0, 0, "H #rightarrow WW #rightarrow 2l2#nu" , 0)'
     mkdir -p tables
     pdflatex --output-directory tables limits/{option}_shape.tex
     rename {option} {tag}_{name}_{option} tables/{option}_shape*
@@ -19,11 +21,34 @@ plot_tmpl = '''
     rm -r `dir -1 tables/* | grep -v crop`
 '''
 
+# void PlotLimit(string  limitFiles   = "inputs/ana_ICHEP_limits_nj_shape7teV_cut8TeV.txt",
+#            string  outputPrefix = "combined",
+#            string  luminosity   = "5.1 fb^{-1} (8 TeV) + 4.9 fb^{-1} (7 TeV)",
+#            Float_t mhmin        = 110,
+#            Float_t mhmax        = 160,
+#            Int_t   setLogx      = 0,
+#            Int_t   setLogy      = 1,
+#            string  title        = "H #rightarrow WW #rightarrow 2l2#nu",
+#            Bool_t  drawObserved = 1,
+#            Int_t   ratio        = 0,
+#            string  format       = "pdf")
+# {
+
+
+def loadAndCompile(macro,options='g'):
+    import ROOT
+    import os
+    try:
+        code = ROOT.gROOT.LoadMacro(os.path.join(mypath,macro+'+g'))
+    except RuntimeError:
+        code = ROOT.gROOT.LoadMacro(os.path.join(mypath,macro+'++g'))
+    return code
 
 def runTheShape():
     usage = 'usage: %prog -t tag -p prefix channel'
     parser = optparse.OptionParser(usage)
-    parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
+    parser.add_option('--tag'   ,'-t', dest='tag'  , help='tag to identify the plots' , default=None)
+    parser.add_option('--prefix','-p',dest='prefix', help='prefix', default='.')
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
@@ -31,39 +56,57 @@ def runTheShape():
     tag = opt.tag.replace(' ','_')
 
     if not args:
-        raise 'Desired channels missing: check the usage'
-
-    datacards = {}
-    datacards['split'] = ['of_0j', 'of_1j', 'sf_0j', 'sf_1j']
-    datacards['shape'] = ['comb_0j1j','comb_0j','comb_1j']
-    datacards['full']  = ['comb_0j1j2j']
-
-    datacards['all'] = datacards['split']+datacards['shape']+datacards['full']
-    datacards['0j1j'] = datacards['split']+datacards['shape']
+        raise ValueError('Desired channels missing: check the usage')
 
 
-    if args[0] in datacards:
-        plots = datacards[args[0]]
+    
+    if args[0] in hwwlimits.dcnames:
+        plots = hwwlimits.dcnames[args[0]]
     else:
         plots = args[:]
         
     if opt.prefix:
         os.chdir(opt.prefix)
 
-    name=opt.prefix if opt.prefix[-1] != '/' else opt.prefix[:-1] 
+    name = opt.prefix if opt.prefix[-1] != '/' else opt.prefix[:-1] 
+
+
+    macropath = os.path.join(os.path.dirname(mypath),'macros')
 
     import ROOT
-    try:
-        ROOT.gROOT.LoadMacro(os.path.join(mypath,'PlotLimit.C+g'))
-    except RuntimeError:
-        ROOT.gROOT.LoadMacro(os.path.join(mypath,'PlotLimit.C++g'))
+    loadAndCompile(macropath+'/tdrstyle.C')
+    loadAndCompile(macropath+'/PlotLimit.C')
 
+    pars = {
+        'tag' : tag,
+        'option' : '',
+        'mypath' : mypath,
+        'name' : name,
+        'lumi' : opt.lumi
+    }
+    print pars
+    os.system('mkdir -p plots')
     for plot in plots:
         print plot
-        command = plot_tmpl.format(tag=tag,option=plot,mypath=mypath,name=name,lumi=opt.lumi)
+        pars['option'] = plot
+        command = plot_tmpl.format(tag=tag,option=plot,mypath=macropath,name=name,lumi=opt.lumi)
 
         print command
-        p = subprocess.call(command,shell=True)
+        p = os.system(command)
+
+        ROOT.setTDRStyle()
+        ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
+                       "plots/{tag}_{name}_{option}".format(**pars),
+                       "{lumi} fb^{{-1}}".format(**pars), 
+                       110, 600, 1, 1, 
+                       "H #rightarrow WW #rightarrow 2l2#nu",
+                       False, 0, 'pdf')
+        ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
+                       "plots/{tag}_{name}_{option}".format(**pars),
+                       "{lumi} fb^{{-1}}".format(**pars), 
+                       110, 600, 1, 1, 
+                       "H #rightarrow WW #rightarrow 2l2#nu",
+                       False, 0, 'png')
 #     p.communicate()
 #     os.system('; '.join(commands))
     
