@@ -3,9 +3,6 @@
 
 
 
-lumi=5.06
-head="hww-${lumi}fb.mH"
-head2j="hww-${lumi}fb.mH"
 tail="_shape.txt"
 cwd=$PWD
 # masses="110 115 120 130 140 150 160 170 180 190 200 250 300 350 400 450 500 550 600"
@@ -28,13 +25,17 @@ do
     esac
 done
 
+echo `shape-config.py`
+eval $(shape-config.py)
+
 if [[ $prefix ]]; then
     echo "Running in $prefix"
     cd $prefix
 fi
 
-eval `shape-config.py`
-
+echo "Lumi $lumi"
+head="hww-${lumi}fb.mH"
+head2j="hww-${lumi}fb.mH"
 hline=$(printf '%.0s-' {1..80})
 combCmd='combineCards.py -S'
 echo $PWD
@@ -50,6 +51,22 @@ do
 		then
 			echo " ${mass}: of_${jet} sf_${jet} => comb_${jet}"
 			$combCmd "of_"$jet"="$head$mass".of_"$jet$tail  "sf_"$jet"="$head$mass".sf_"$jet$tail > $head$mass".comb_"$jet$tail 
+		fi
+	done
+
+	for fl in of sf
+	do
+		file0="${head}${mass}.${fl}_0j${tail}"
+		file1="${head}${mass}.${fl}_1j${tail}"
+		cmb="${head}${mass}.comb_${fl}${tail}"
+
+        echo $hline
+		echo " Combining cards $mass $fl ( ${file0} + ${file1} )"
+        echo $hline
+		if [ -e "${file0}" ] && [ -e "${file1}" ] 
+		then
+			echo " ${mass}: ${fl}_0j ${fl}_1j => comb_${fl}"
+			$combCmd "${fl}_0j=${file0}"  "${fl}_1j=${file1}"  > "${cmb}"
 		fi
 	done
 
