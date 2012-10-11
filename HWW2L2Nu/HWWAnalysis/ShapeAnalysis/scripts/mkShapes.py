@@ -24,21 +24,22 @@ class ShapeFactory:
         self._systByWeight = {}
 
         ranges = {}
-        ranges['bdtl']        = (400  , -1. , 1.)
-        ranges['bdts']        = (400  , -1. , 1.)
-        ranges['mth']         = (400  , 0.  , 200)
-        ranges['dphill']      = (400  , 0.  , 3.15)
-        ranges['detajj']      = (240  , 0.  , 6.)
-        ranges['mll-vbf']     = (60   , 12  , 135)
-        ranges['mll']         = self._getmllrange
-        ranges['mllsplit']    = self._getmllsplitrange
-        ranges['gammaMRStar'] = self._getGMstarrange
-        ranges['vbf2D']       = self._getVBF2Drange
-        ranges['mth-mll2D']   = self._getMllMth2Drange
+        ranges['counting']         = (1   , 0.  , 2.)
+        ranges['bdtl']             = (400 , -1. , 1.)
+        ranges['bdts']             = (400 , -1. , 1.)
+        ranges['mth']              = (400 , 0.  , 200)
+        ranges['dphill']           = (400 , 0.  , 3.15)
+        ranges['detajj']           = (240 , 0.  , 6.)
+        ranges['mll-vbf']          = (60  , 12  , 135)
+        ranges['mll']              = self._getmllrange
+        ranges['mllsplit']         = self._getmllsplitrange
+        ranges['gammaMRStar']      = self._getGMstarrange
+        ranges['vbf2D']            = self._getVBF2Drange
+        ranges['mth-mll-hilomass'] = self._getMllMth2Drange
         self._ranges = ranges
         
         self._dataTag         = '2012A'
-        self._dataTag         = '0j1j'
+        self._mcTag           = '0j1j'
         self._masses          = []
         self._categories      = []
         self._flavors         = []
@@ -74,7 +75,7 @@ class ShapeFactory:
             return theRange(mass,cat)
 
     # _____________________________________________________________________________
-    def _getMllMth2Drange(self,mass):
+    def _getMllMth2Drange(self,mass,cat):
 
         if cat not in ['0j','1j']:
             raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
