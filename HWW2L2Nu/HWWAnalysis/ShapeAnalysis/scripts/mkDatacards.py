@@ -42,7 +42,7 @@ class ShapeDatacardWriter:
         cardPath = path.format(mass = self._mass, bin = self._bin)
         print 'Writing to '+cardPath 
         card = open( cardPath ,"w")
-        card.write('## Shape input card for H->WW analysis using 2.12/fb\n')
+        card.write('## Shape input card for H->WW analysis\n')
         
         card.write('imax 1 number of channels\n')
         card.write('jmax * number of background\n')
