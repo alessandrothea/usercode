@@ -50,8 +50,6 @@ class H1DiffPlotter:
         self._hists = [ h.Clone() for h in hs ]
 
 
-
-
     def draw(self, options='hist'):
         import ROOT
         if not ROOT.gPad.func():
