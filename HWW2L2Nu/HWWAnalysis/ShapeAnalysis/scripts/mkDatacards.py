@@ -15,6 +15,9 @@ import datadriven
 from HWWAnalysis.Misc.odict import OrderedDict
 from WWAnalysis.AnalysisStep.systematicUncertainties import getCommonSysts,addFakeBackgroundSysts
 
+# da http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/Mangano/WWAnalysis/AnalysisStep/python/systematicUncertainties.py
+
+
 # class AutoVivification(dict):
 #     """Implementation of perl's autovivification feature."""
 #     def __getitem__(self, item):
@@ -186,7 +189,8 @@ class NuisanceMapBuilder:
  
     def _build(self):
         # common 0/1 jet systematics
-        pureMC = [ 'Vg', 'VV', 'DYTT', 'ggH', 'vbfH', 'wzttH'] 
+        #pureMC = [ 'Vg', 'VV', 'DYTT', 'ggH', 'vbfH', 'wzttH'] 
+        pureMC = [ 'Vg', 'VV', 'ggH', 'vbfH', 'wzttH'] 
         dummy = {}
         dummy['CMS_fake_e']    = (1.50, ['WJet']) # take the average of ee/me 
 #         dummy['CMS_fake_m']    = (1.42, ['WJet']) # take the average of mm/em
@@ -510,7 +514,8 @@ if __name__ == '__main__':
     optsNuis['nuisFlags'] = opt.nuisFlags
     lumistr = '{0:.2f}'.format(opt.lumi)
     shapeTmpl = os.path.join(mergedPath,'hww-'+lumistr+'fb.mH{mass}.{channel}_shape.root')
-    mask = ['Vg','DYLL','DYTT']
+    #mask = ['Vg','DYLL','DYTT']
+    mask = ['Vg','DYLL']
 
     builder = NuisanceMapBuilder( opt.path_dd, opt.shape )
     builder.statShapeVeto = mask
@@ -533,6 +538,7 @@ if __name__ == '__main__':
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             
+            # lista systematiche sperimentali (dal file. root)
             effects = loader.effects()
 
             print '   + making nuisance map'
