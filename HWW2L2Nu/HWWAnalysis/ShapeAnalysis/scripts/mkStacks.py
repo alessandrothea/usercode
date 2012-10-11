@@ -12,6 +12,193 @@ import fnmatch
 import ROOT
 import HWWAnalysis.Misc.ROOTAndUtils as utils
 
+class H1UpDownPlotter:
+    def __init__(self, **kwargs):
+        self._ratio   = 0.7
+        self._outer   = 0.1
+        self._inner   = 0.02
+        self._marg    = 0.1
+        self._ltitle  = ''
+        self._rtitle  = ''
+        self._scale   = 1.4
+        self._xtitle  = None
+        self._ytitle  = None
+        self._lumi    = None
+        self._ytitle2 = 'ratio'
+        self._legsize = (0.25,0.25)
+        self._colors  = [ROOT.kBlack, ROOT.kRed, ROOT.kBlue]
+        self._lstyles = [1,1,2]
+        self._lwidths = [3,3,3]
+        self._h0      = None
+        self._hists   = []
+        self._pad0    = None
+        self._pad1    = None
+        self._legend  = None
+        self._logx    = False
+        self._logy    = False
+        self._stack   = None
+        self._dstack   = None
+
+        for k,v in kwargs.iteritems():
+            if not hasattr(self,'_'+k): continue
+            setattr(self,'_'+k,v)
+
+    def __del__(self):
+        del self._h0
+#         del self._h1
+
+    @staticmethod
+    def _resize(x,ratio):
+        x.SetLabelSize(x.GetLabelSize()*ratio/(1-ratio))
+        x.SetTitleSize(x.GetTitleSize()*ratio/(1-ratio))
+
+    def set(self, h0, *hs ):
+        if not hs:
+            raise RuntimeError('cannot compare only 1 histogram')
+        n = h0.GetDimension()
+        if True in [ h.GetDimension() != n for h in hs ]:
+            raise ValueError('Cannot compare histograms with different dimensions')
+        sentry = utils.TH1AddDirSentry()
+        self._h0 = h0.Clone()
+        self._hists = [ h.Clone() for h in hs ]
+
+
+    def draw(self, options='hist'):
+        import ROOT
+        if not ROOT.gPad.func():
+            raise RuntimeError('No active pad defined')
+
+        thePad = ROOT.gPad.func()
+        thePad.cd()
+
+        self._pad0 = ROOT.TPad('pad0','pad0',0.,(1-self._ratio),1.,1.)
+        ROOT.SetOwnership(self._pad0,False)
+        self._pad0.SetLogx( 1 if self._logx else 0 )
+        self._pad0.SetLogy( 1 if self._logy else 0 )
+        self._pad0.SetTopMargin(self._outer/self._ratio)
+        self._pad0.SetBottomMargin(self._inner/self._ratio)
+        self._pad0.SetTicks()
+        self._pad0.Draw()
+
+        self._pad0.cd()
+
+        hists = [self._h0] + self._hists
+        ndim = hists[0].GetDimension()
+
+        marker = 24 if ndim == 1 else 1
+        map(ROOT.TH1.SetLineWidth,hists, self._lwidths)
+#         map(lambda h: ROOT.TH1.SetLineWidth(h,2),hists)
+        map(lambda h: ROOT.TH1.SetMarkerStyle(h,marker),hists)
+
+        for i,h in enumerate(hists):
+            h.SetLineColor(self._colors[i])
+            h.SetMarkerColor(self._colors[i])
+            h.SetLineStyle(self._lstyles[i])
+
+        
+        self._stack = None
+
+        stack = ROOT.THStack('overlap','')
+        ROOT.SetOwnership(stack,True)
+
+        stack.Add(hists[0],'e1')
+        for h in hists[1:]: stack.Add(h,'hist') 
+
+        stack.Draw('nostack')
+        stack.SetMaximum(self._scale*max([h.GetMaximum() for h in hists]))
+        stack.GetXaxis().SetLabelSize(0.00)
+        stack.GetYaxis().SetTitle(self._ytitle if self._ytitle else self._h0.GetYaxis().GetTitle())
+
+        anchor = [1-self._marg,1-self._outer/self._ratio]
+        anchor[1] -= 0.05
+
+
+        self._legend = None
+        legend = ROOT.TLegend(anchor[0]-self._legsize[0],anchor[1]-self._legsize[1],anchor[0],anchor[1],'','NDC')
+        legend.SetFillColor(ROOT.kWhite)
+        legend.SetFillStyle(0)
+        legend.SetBorderSize(0)
+        # leg.SetNColumns(2)
+        map(legend.AddEntry,hists,['Nominal','+1#sigma-shape','-1#sigma-shape'],['fl']*3)
+#         for h in hists: legend.AddEntry(h,'','fl')
+        legend.Draw()
+        self._legend = legend
+
+
+        l = ROOT.TLatex()
+        l.SetNDC()
+        l.SetTextAlign(12)
+        l.DrawLatex(ROOT.gPad.GetLeftMargin(),1-(0.5*self._outer/self._ratio),self._ltitle)
+        l.SetTextAlign(32)
+        l.DrawLatex(1-ROOT.gPad.GetRightMargin(),1-(0.5*self._outer/self._ratio),self._rtitle)
+
+        self._stack = stack
+
+        l.SetTextAlign(22)
+
+        anchorCMS = [0.25,0.09]
+        l.SetTextSize(0.9*l.GetTextSize())
+        l.DrawLatex(ROOT.gPad.GetLeftMargin()+anchorCMS[0],1-ROOT.gPad.GetTopMargin()-anchorCMS[1],'CMS Preliminary')
+
+        if self._lumi:
+            anchorCMS = [0.25,0.15]
+            l.SetTextSize(0.9*l.GetTextSize())
+            l.DrawLatex(ROOT.gPad.GetLeftMargin()+anchorCMS[0],1-ROOT.gPad.GetTopMargin()-anchorCMS[1],'L = %.1f fb^{-1}' % self._lumi)
+
+        #- pad2 ---
+
+        sentry = utils.TH1AddDirSentry()
+#         print thePad
+        thePad.cd()
+        self._pad1 = ROOT.TPad('pad1','pad1',0.,0.0,1.,(1-self._ratio))
+        ROOT.SetOwnership(self._pad1,False)
+        self._pad1.SetTopMargin(self._inner/(1-self._ratio))
+        self._pad1.SetBottomMargin(self._outer/(1-self._ratio))
+        self._pad1.SetTicks()
+        self._pad1.SetGridy()
+        self._pad1.Draw()
+
+        self._pad1.cd()
+
+        hdiffs = []
+        for i,h in enumerate(hists):
+            hd = h.Clone('diff'+h.GetName())
+            hd.Divide(self._h0)
+            hd.SetMarkerStyle(20)
+            hd.SetLineWidth(self._lwidths[i])
+#             hd.SetLineColor(ROOT.kBlack)
+#             hd.SetMarkerColor(ROOT.kBlack)
+            hd.SetLineColor(self._colors[i])
+            hd.SetMarkerColor(self._colors[i])
+            hdiffs.append(hd)
+
+        line = hdiffs[0]
+        for i in xrange(line.GetNbinsX()+1):
+            line.SetAt(1.,i)
+
+
+        self._dstack = None
+
+        dstack = ROOT.THStack('diffs','')
+        ROOT.SetOwnership(dstack,False)
+
+        map(dstack.Add,hdiffs,['hist']*len(hdiffs))
+        dstack.Draw('nostack')
+        dstack.SetMaximum(2.)
+
+        ax = dstack.GetXaxis()
+        ay = dstack.GetYaxis()
+        ax.SetTitle( self._xtitle if self._xtitle else self._h0.GetXaxis().GetTitle() )
+        ay.SetTitle(self._ytitle2)
+        ay.SetTitleOffset(ay.GetTitleOffset()/self._ratio*(1-self._ratio) )
+        self._resize(ax,self._ratio)
+        self._resize(ay,self._ratio)
+
+        self._dstack = dstack
+
+
+
+
 #from ROOT import *
 
 ## legend title dictionary
@@ -53,7 +240,6 @@ def getHist(file, hist):
     if not h.__nonzero__():
         raise NameError('Histogram '+hist+' doesn\'t exist in '+str(file))
     return h
-
 
 def getFiles(dir):
     list = os.listdir(dir)
@@ -113,15 +299,7 @@ def getNominalUpDown(file):
         setattr(nomupdown[process][syst],var,hUpDown)
 
 
-
-#     for nom in nominals:
     return nomupdown
-
-## def mergeHistos(nominals):
-##     histos = {}
-##     nominals['ggH'].ROOT.Add(nominals['vbfH'])
-    
-##     nominals['Data'] = 
 
     
 def makeNominalPlots(file,outputdir, opt):
@@ -181,7 +359,7 @@ def makeNominalPlots(file,outputdir, opt):
     ratio = opt.ratio and opt.showdata
 
 
-    cName = 'c_'+file.split('/')[-1].replace('.root','')
+    cName = 'c_'+file.split('/')[-1].replace('.root','').replace('.','_')
     c = ROOT.TCanvas(cName,cName) if ratio else ROOT.TCanvas(cName,cName,2)
     if opt.logY: c.SetLogy()
     plot.setMass(mass)
@@ -198,7 +376,7 @@ def makeNominalPlots(file,outputdir, opt):
 
     f.Close()
 
-def makeShapeUpDown(file,outputdir, xlabel, filter):
+def makeShapeUpDown(file,outputdir, opt):
 
     # open the file
     f = openTFile(file)
@@ -222,13 +400,27 @@ def makeShapeUpDown(file,outputdir, xlabel, filter):
     updown = getNominalUpDown(f)
     for process,systs in updown.iteritems():
         for syst,vars in systs.iteritems():
-            if not fnmatch.fnmatch(syst, filter):
+            if not fnmatch.fnmatch(syst, opt.filter):
                 continue
-            cName = 'c_'+root+'_'+process+'_'+syst
-            fName = odir+'/'+cName
-            exts = ['pdf','png']
+
+            if vars.Nom.GetEntries() == 0: continue
+            
+            pName = ('%s_%s_%s' % (root,process,syst)).replace('.','_')
+            cName = 'c_'+pName
+            fName = odir+'/'+pName
+            c = ROOT.TCanvas(cName,cName, 650, 794,)
+
+            plotter = H1UpDownPlotter(xtitle=opt.xlabel, ytitle='entries', lumi=opt.lumi)
+            plotter.set(vars.Nom, vars.Up, vars.Down)
+            plotter.draw()
+
             legheader = legproc[process]+', m_{H} = '+str(mass)+', '+root.split('_')[0].split('.')[-1]+' '+root.split('_')[1]
-            c = printUpDown(cName,fName,exts,syst,vars,xlabel,legheader)
+            
+            for ext in ['pdf','png']:
+                c.SaveAs(fName+'.'+ext)
+
+            del plotter
+#             c = printUpDown(cName,fName,exts,syst,vars,xlabel,legheader)
             
             
 def plotCMSText():
@@ -261,282 +453,6 @@ def plotCMSText():
         pave.InsertText(line)
         
     return pave
-
-def printUpDown( cName, fName, exts, syst, vars, xlabel, legheader ):
-#     nom = vars.Nom.DrawClone()
-#     nom.SetTitle('Shape systematics: '+syst)
-
-#     up = vars.Up.DrawClone('same hist')
-#     up.SetLineColor(ROOT.kRed)
-#     up.SetLineWidth(2)
-
-#     down = vars.Down.DrawClone('same hist')
-#     down.SetLineColor(ROOT.kBlue)
-#     down.SetLineWidth(2)
-
-    ROOT.gStyle.SetOptStat(0)
-    ROOT.gStyle.SetOptTitle(0)
-
-
-
-    h_n = vars.Nom
-    h_u = vars.Up
-    h_d = vars.Down
-
-    maxi = []
-    mini = []
-    maxi.append(h_n.GetMaximum())
-    mini.append(h_n.GetMinimum())
-    maxi.append(h_u.GetMaximum())
-    mini.append(h_u.GetMinimum())
-    maxi.append(h_d.GetMaximum())
-    mini.append(h_d.GetMinimum())
-    maxY = max(maxi)
-    minY = min(mini)
-
-    # new canvas
-#     cName = 'c_'+baseName
-    c = ROOT.TCanvas(cName,cName)
-    c.SetTicks()
-
-    frame = h_n.Clone('frame')
-    frame.SetFillStyle(0)
-    frame.SetLineColor(ROOT.gStyle.GetFrameFillColor())
-    frame.Reset()
-    frame.SetBinContent(1,maxY)
-    frame.SetBinContent(frame.GetNbinsX(),minY)
-
-    pad1 = ROOT.TPad()
-    ROOT.SetOwnership(pad1, False)
-    pad1.SetPad('pad1','pad1',0.0,0.4,1.0,1.0, 10)
-    pad1.Draw('same')
-    pad1.cd()
-    pad1.SetTopMargin(0.11)
-    pad1.SetLeftMargin(0.07)
-    pad1.SetRightMargin(0.05)
-    pad1.SetBottomMargin(0.05)
-    
-    c.cd()
-    
-    pad2 = ROOT.TPad()
-    ROOT.SetOwnership(pad2, False)
-    pad2.SetPad('pad2','pad2',0.0,0.,1.0,0.4,10)
-    pad2.Draw()
-    pad2.cd()
-    pad2.SetTopMargin(0.11)
-    pad2.SetLeftMargin(0.07)
-    pad2.SetRightMargin(0.05)
-    pad2.SetBottomMargin(0.15)
-    
-
-    c.cd()
-    pad1.cd()
-
-    frame = h_n.Clone('frame')
-    frame.SetFillStyle(0)
-    frame.SetLineColor(ROOT.gStyle.GetFrameFillColor())
-    frame.Reset()
-    frame.SetBinContent(1,maxY)
-    frame.SetBinContent(frame.GetNbinsX(),minY)
-    frame.SetBit(ROOT.TH1.kNoStats)
-    frame.SetXTitle('')
-    frame.SetYTitle('a. u.')
-    frame.Draw()
-
-    h_n.SetMarkerStyle(21)
-    h_n.SetMarkerSize(0.5)
-    h_u.SetLineColor(2)
-    h_u.SetLineWidth(2)
-    h_u.SetLineStyle(1)
-    h_d.SetLineColor(4)
-    h_d.SetLineWidth(2)
-    h_d.SetLineStyle(2)
-
-    h_n.GetYaxis().SetLabelFont(43) 
-    h_n.GetXaxis().SetLabelFont(43) 
-    h_n.GetYaxis().SetLabelSize(14) 
-    h_n.GetXaxis().SetLabelSize(14) 
-    h_n.GetYaxis().SetTitleFont(43) 
-    h_n.GetXaxis().SetTitleFont(43) 
-    h_n.GetYaxis().SetTitleSize(20) 
-    h_n.GetXaxis().SetTitleSize(20) 
-    h_n.GetYaxis().SetTitleOffset(2.1)
-    h_n.GetXaxis().SetTitleOffset(2)
-
-    h_d.GetYaxis().SetLabelFont(43) 
-    h_d.GetXaxis().SetLabelFont(43) 
-    h_d.GetYaxis().SetLabelSize(14) 
-    h_d.GetXaxis().SetLabelSize(14) 
-    h_d.GetYaxis().SetTitleFont(43) 
-    h_d.GetXaxis().SetTitleFont(43) 
-    h_d.GetYaxis().SetTitleSize(20) 
-    h_d.GetXaxis().SetTitleSize(20) 
-    h_d.GetYaxis().SetTitleOffset(2.1)
-    h_d.GetXaxis().SetTitleOffset(2)
-
-    h_u.GetYaxis().SetLabelFont(43) 
-    h_u.GetXaxis().SetLabelFont(43) 
-    h_u.GetYaxis().SetLabelSize(14) 
-    h_u.GetXaxis().SetLabelSize(14) 
-    h_u.GetYaxis().SetTitleFont(43) 
-    h_u.GetXaxis().SetTitleFont(43) 
-    h_u.GetYaxis().SetTitleSize(20) 
-    h_u.GetXaxis().SetTitleSize(20) 
-    h_u.GetYaxis().SetTitleOffset(2.1)
-    h_u.GetXaxis().SetTitleOffset(2)
-
-    ## h_n.Sumw2()
-    ## h_u.Sumw2()
-    ## h_d.Sumw2()
-
-    h_u.Draw('hist same')
-    h_d.Draw('hist same')
-    h_n.Draw('e1 same')
-
-    ## ratio
-    pad2.cd()
-    frame2 = h_n.Clone('frame2')
-    frame2.SetFillStyle(0)
-    frame2.SetLineColor(ROOT.gStyle.GetFrameFillColor())    
-    frame2.Reset()
-    frame2.SetBit(ROOT.TH1.kNoStats)
-    frame2.SetBinContent(1,1.5)
-    frame2.SetBinContent(frame2.GetNbinsX(),0.0)
-    frame2.SetTitle('')
-    frame2.SetLabelFont(43)
-    frame2.SetLabelSize(12)
-    frame2.SetXTitle(xlabel)
-    frame2.SetYTitle('#pm1#sigma-shape/nominal')
-    frame2.SetTitleSize(20)
-##     frame2.SetYTitle('ratio')
-
-    frame2.GetYaxis().SetLabelFont(43) 
-    frame2.GetXaxis().SetLabelFont(43) 
-    frame2.GetYaxis().SetLabelSize(14) 
-    frame2.GetXaxis().SetLabelSize(14) 
-    frame2.GetYaxis().SetTitleFont(43) 
-    frame2.GetXaxis().SetTitleFont(43) 
-    frame2.GetYaxis().SetTitleSize(20) 
-    frame2.GetXaxis().SetTitleSize(20) 
-    frame2.GetYaxis().SetTitleOffset(2.1)
-    frame2.GetXaxis().SetTitleOffset(2)
-
-    frame2.SetMaximum(1.99)
-    frame2.SetMinimum(0.)
-
-    frame2.Draw()
-
-    ratios = []
-    r_u = h_u.Clone()
-    r_d = h_d.Clone()
-    r_u.SetYTitle('ratio') 
-    r_d.SetYTitle('ratio') 
-
-    r_u.Divide(h_n)
-    r_d.Divide(h_n)
-
-    r_u.SetLineColor(2)
-    r_u.SetLineWidth(2)
-    r_u.SetLineStyle(1)
-    r_d.SetLineColor(4)
-    r_d.SetLineWidth(2)
-    r_d.SetLineStyle(2)    
-
-    r_u.GetYaxis().SetLabelFont(43) 
-    r_u.GetXaxis().SetLabelFont(43) 
-    r_u.GetYaxis().SetLabelSize(14) 
-    r_u.GetXaxis().SetLabelSize(14) 
-    r_u.GetYaxis().SetTitleFont(43) 
-    r_u.GetXaxis().SetTitleFont(43) 
-    r_u.GetYaxis().SetTitleSize(20) 
-    r_u.GetXaxis().SetTitleSize(20) 
-    r_u.GetYaxis().SetTitleOffset(2.1)
-    r_u.GetXaxis().SetTitleOffset(2)
-
-    r_d.GetYaxis().SetLabelFont(43) 
-    r_d.GetXaxis().SetLabelFont(43) 
-    r_d.GetYaxis().SetLabelSize(14) 
-    r_d.GetXaxis().SetLabelSize(14) 
-    r_d.GetYaxis().SetTitleFont(43) 
-    r_d.GetXaxis().SetTitleFont(43) 
-    r_d.GetYaxis().SetTitleSize(20) 
-    r_d.GetXaxis().SetTitleSize(20) 
-    r_d.GetYaxis().SetTitleOffset(2.1)
-    r_d.GetXaxis().SetTitleOffset(2)
-
-    ## ## stat errors
-    ## statn = h_n.Clone('statistics')
-    ## stat  = h_n.Clone('statistics')
-    ## nbins = h_n.GetNbinsX()+1
-    ## for i in range(1,nbins):
-    ##     value = max(stat.GetBinContent(i), 1.+ r_u.GetBinError(i))
-    ##     stat.SetBinContent(i,value)
-
-    ##     stat2 = stat.Clone('statistics2')
-    ##     for i in range(1,nbins):
-    ##         stat2.SetBinContent(i,1.-(stat.GetBinContent(i)-1.))
-    ##     stat.SetFillColor(22)
-    ##     stat.SetLineColor(22)
-    ##     stat.SetLineStyle(1)
-    ##     stat.SetLineWidth(1)
-    ##     stat.SetFillStyle(1001)
-    ##     stat2.SetFillColor(10)
-    ##     stat2.SetLineColor(22)
-    ##     stat2.SetLineStyle(1)
-    ##     stat2.SetLineWidth(1)
-    ##     stat2.SetFillStyle(1001)
-    ##     stat.Draw('hist same')
-    ##     stat2.Draw('hist same')
-
-
-    r_u.Draw('hist same')
-    r_d.Draw('hist same')
-
-
-    line = ROOT.TLine()
-    line.SetX1(h_n.GetBinLowEdge(1))
-    line.SetX2(h_n.GetBinLowEdge(h_n.GetNbinsX()+1))
-    line.SetY1(1.)
-    line.SetY2(1.)
-    line.SetLineWidth(2)
-    line.SetLineStyle(2)
-    line.Draw('same')
-
-    ## # legend
-    ## x0 = 0.2
-    ## x1 = 0.5
-    ## y0 = 0.60
-    ## y1 = 0.80
-
-    # legend
-    x0 = 0.2
-    x1 = 0.5
-    y0 = 0.60
-    y1 = 0.80
-
-    ## xax = h_n.GetXaxis()
-    ## if h_n.GetMean() < (xax.GetXmax()-xax.GetXmin())/2.:
-    ##     x0 = 0.5
-    ##     x1 = 0.8
-
-
-    pad1.cd()
-    legend = ROOT.TLegend(x0,y0,x1,y1)
-    legend.SetFillColor(ROOT.kWhite)
-    legend.SetFillStyle(0)
-    legend.SetBorderSize(0)
-    legend.AddEntry(h_n,'nominal shape')
-    legend.AddEntry(h_u,'+1#sigma-shape')
-    legend.AddEntry(h_d,'-1#sigma-shape')
-    legend.SetHeader(legheader)
-    legend.Draw()
-
-    text = plotCMSText()
-    text.Draw()
-
-    for ext in exts:
-        c.Print(fName+'.'+ext)
-
 
 def main():
 
@@ -595,7 +511,7 @@ def main():
         if not opt.variations:
             makeNominalPlots(path, outputdir, opt)
         else:
-            makeShapeUpDown(path,outputdir, opt.xlabel, opt.filter)
+            makeShapeUpDown(path,outputdir, opt)
 
     print 'Used options'
     print ', '.join([ '{0} = {1}'.format(a,b) for a,b in opt.__dict__.iteritems()])
