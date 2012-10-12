@@ -26,7 +26,8 @@ backgrounds = {
                                 'nominals/latino_078_WZTo2L2QMad.root',
                                 'nominals/latino_079_ZZTo2L2QMad.root',
                                ],
-    'DYTT'                   : ['nominals/latino_036_DY10toLLMad.root',
+    'DYTT'                   : ['nominals/latino_RunABC_DYtt_8fb.root',
+                                'nominals/latino_036_DY10toLLMad.root',
                                 'nominals/latino_037_DY50toLLMad.root',
                                ],
     'DYLL'                   : ['nominals/latino_036_DY10toLLMad.root',
@@ -131,15 +132,20 @@ mcsets = {
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
     ],
-    'vbf' : [
+    'cutbased' : [
+        #signals
+        'ggH','vbfH','wzttH',
+        # bkgs
+        'WW', 'Vg','WJet','Top','VV','DYTT',
+        # replce ggWW and DYLL
+        ('ggWW',    'WW'),
+        ('ggWW',    'DYLL'),
+    ],
+    'vbf_sf' : [
         #signals
         'ggH','vbfH','wzttH',
         # bkgs
         'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYLL',
-        #'WWnlo','WWnloUp','WWnloDown',
-        # vbf mapping
-        # ('WJet-template','WJet-template-vbf'),
-#         ('DYLL-template','DYLL-template-vbf'),
     ],
    'vbf_of' : [
         #signals

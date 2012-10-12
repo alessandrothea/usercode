@@ -101,7 +101,7 @@ class vbfcuts:
 
     _cut   = [
         'detajj>3.5',
-        'mjj>450',
+        'mjj>500',
     ]
     _shape = [
         'detajj>3.',
@@ -207,6 +207,7 @@ del phi
 def massSelections(mass):
 
     mthmin_bdt = 80.
+    mthmin_vbf = 30.
     masscuts = dict([(cut,massDependantCutsbyVar[cut][mass]) for cut in massDependantCutsbyVar])
 
     sel = {}
@@ -218,9 +219,10 @@ def massSelections(mass):
     sel['vbf-shape-2d']           = sel['vbf-shape-2d-lomass'] if mass <= 250 else sel['vbf-shape-2d-himass'] 
     
     sel['shape-lomass'] = 'mth>80 && mth<280 && mll<200'
-    sel['shape-himass'] = 'mth>80 && mth<600 && mll<600 && pt1>50'
+    sel['shape-himass'] = 'mth>80 && mth<380 && mll<450 && pt1>50'
     
     sel['vbf-shape']    = ' && '.join(vbfcuts.vbfshape)
+    sel['vbf-level']    = ' && '.join(vbfcuts.vbfcut)
 
     sel['ww-level']     = sel['ww-common']
     sel['bdt-specific'] = 'mll < {0} && (mth > {1:.0f} && mth < {2:.0f})'.format(masscuts['mllmax_bdt'], mthmin_bdt, int(mass))
@@ -246,9 +248,11 @@ def massSelections(mass):
 
     #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
     #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f}) && mll > {0:.0f}    {0:.0f} {1:.0f} '.format(int(mass), float(12452))
+    sel['vbf-selection']          = ' && '.join([sel['vbf-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
+    sel['vbf-selection']          = sel['vbf-selection'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, int(mass))
     sel['shape-selection']        = sel['ww-level']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-level']+' && '+sel['shape-himass']
  
-    sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
+    #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
 
     # TODO gammastar test
 #     sel['gammaMRStar-selection']  = sel['bdt-selection']

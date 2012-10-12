@@ -591,13 +591,11 @@ if __name__ == '__main__':
                                    |_|                         |___/           
 -------------------------------------------------------------------------------
 '''
-#     logging.basicConfig(level=logging.DEBUG)
     mypath = os.path.dirname(os.path.abspath(__file__))
     #  ___       __           _ _      
     # |   \ ___ / _|__ _ _  _| | |_ ___
     # | |) / -_)  _/ _` | || | |  _(_-<
     # |___/\___|_| \__,_|\_,_|_|\__/__/
-#     scaleFactorPath   = '/shome/thea/HWW/ShapeAnalysis/data/datamcsf.txt'
 
     usage = '''
 
@@ -608,8 +606,8 @@ if __name__ == '__main__':
     parser.add_option('-n', '--dry',   dest='dry',   help='Dry run', action='store_true' )
     parser.add_option('-r', '--rebin', dest='rebin', help='Rebin by', type='int', default=1)
     parser.add_option('-s', '--scale', dest='scale', help='Scale sample by an additional factor (overwrides previously defined factors) <sample>=<value>', action='append',default=[])
-    
 
+    parser.add_option('--no_wwdd_above'     , dest='noWWddAbove'       , help='No WW dd above this mass'         , default=None  , type='int' )
     parser.add_option('--tag'               , dest='tag'               , help='Tag used for the shape file name' , default=None)
     parser.add_option('--statmode'          , dest='statmode'          , help='Production mode for stat-shapes (default = %default)', default='unified')
     parser.add_option('--path_dd'           , dest='path_dd'           , help='Data driven path'                 , default=None)
@@ -755,8 +753,8 @@ if __name__ == '__main__':
             
             if not reader.iszombie:
                 print '  - data driven'
-                # make a filter to remove the dd >= 200 for WW 
-                wwfilter = datadriven.DDWWFilter(reader)
+                # make a filter to remove the dd >= noWWddAbove for WW 
+                wwfilter = datadriven.DDWWFilter(reader, opt.noWWddAbove)
                 (estimates,dummy) = wwfilter.get(mass,chan)
                 m.applyDataDriven( mass,estimates )
 

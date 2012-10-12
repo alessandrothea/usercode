@@ -39,31 +39,33 @@ class DDCardReader:
     def __init__(self, path):
         self._path = path
 
-        self.iszombie = False
+        self._iszombie = False
         self._read()
+
+    @property
+    def iszombie(self): return self._iszombie
 
     def _read(self):
         if not self._path:
             print 'No datadriven'
-            self.iszombie = True
+            self._iszombie = True
             return
 
         print 'Reading data driven estimates from',self._path
 
         # data driven systematics
-        basemapping = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
-                       'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),} 
-        topmapping  = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
+        basemapping  = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
                        'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),
                        'of_2j': ('2j',['of']), 'sf_2j': ('2j',['sf'])}
         llmapping   = {'sf_0j': ('0j',['sf']), 
-                       'sf_1j': ('1j',['sf']),}
+                       'sf_1j': ('1j',['sf']),
+                       'sf_2j': ('2j',['sf'])}
 
         readmap = {}
-        readmap['Top']  = topmapping.copy()
+        readmap['Top']  = basemapping.copy()
         readmap['WW']   = basemapping.copy()
         readmap['ggWW'] = basemapping.copy()
-        readmap['DYLL']   = llmapping.copy()
+        readmap['DYLL'] = llmapping.copy()
 
 
         ddcards = AlienDict()
@@ -152,9 +154,22 @@ class DDEntry:
         return self.Nctr*self.delta
         
 class DDWWFilter:
+    _logger = logging.getLogger("DDWWFilter")
 
-    def __init__(self, reader):
-        self._reader = reader
+    def __init__(self, reader, nowwabove):
+        self._reader    = reader
+        self._nowwabove = nowwabove
+        if self._nowwabove:
+            self._logger.debug('Filtering WW data driven for masses >  %d',self._nowwabove)
+        else:
+            self._logger.debug('WW datadriven will be applied at all masses')
+
+        #print self._nowwabove, not self._nowwabove
+        #for i in xrange(100,1000,50):
+        #    print i,self.haswwdd(i)
+
+    def haswwdd(self, mass):
+        return (not self._nowwabove or mass < self._nowwabove)
 
     def get(self, mass,channel):
         import copy
@@ -162,7 +177,8 @@ class DDWWFilter:
         x,y = self._reader.get(mass,channel)
         z = copy.deepcopy(x)
 
-        if mass >= 2000:
+#         if mass >= self._noddmass:
+        if not self.haswwdd(mass):
             for p in ['WW','ggWW']:
               if p in z:
                 del z[p]

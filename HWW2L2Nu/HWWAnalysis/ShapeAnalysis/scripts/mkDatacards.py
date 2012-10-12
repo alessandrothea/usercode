@@ -173,17 +173,18 @@ class ShapeLoader:
 class NuisanceMapBuilder:
     _logger = logging.getLogger('NuisanceMapBuilder')
 
-    def __init__(self, ddPath, shape=True):
-        self._common    = OrderedDict()
-        self._0jetOnly  = OrderedDict()
-        self._1jetOnly  = OrderedDict()
-        self._ddEstimates = OrderedDict()
-        self._shape = shape
+    def __init__(self, ddPath, noWWddAbove, shape=True):
+        self._common       = OrderedDict()
+        self._0jetOnly     = OrderedDict()
+        self._1jetOnly     = OrderedDict()
+        self._ddEstimates  = OrderedDict()
+        self._shape        = shape
         # to options
-        self.ddPath     = ddPath
         self.statShapeVeto = []
 
-        self.ddreader = datadriven.DDCardReader(ddPath)
+        # data driven reader and filter for the ww
+        self._ddreader      = datadriven.DDCardReader(ddPath)
+        self._wwddfilter    = datadriven.DDWWFilter(self._ddreader, noWWddAbove)
 
         self._build()
  
@@ -204,8 +205,8 @@ class NuisanceMapBuilder:
         for k,v in dummy.iteritems():
             self._common[k] = (['lnN'], dict([( process, v[0]) for process in v[1] ]) )
 
-        self._common['pdf_gg']    = (['lnN'],dict([('ggWW',1.0),('ggH',1.08)]) )
-        self._common['pdf_qqbar'] = (['lnN'],dict([('WW',1.0),('VV',1.04),('vbfH',1.02)]) )
+        self._common['pdf_gg']    = (['lnN'],dict([('ggWW',1.04),('ggH',1.08)]) )
+        self._common['pdf_qqbar'] = (['lnN'],dict([('WW',1.04),('VV',1.04),('vbfH',1.02)]) )
         self._common['pdf_assoc'] = (['lnN'],dict([('WW',1.04)]) )
 
         dummy = {} 
@@ -214,7 +215,7 @@ class NuisanceMapBuilder:
         dummy['QCDscale_VV']            = ([1.03, 1.03], ['VV'])
         dummy['QCDscale_ggH1in']        = ([0.89, 1.39], ['ggH'])
         dummy['QCDscale_ggH_ACEPT']     = ([1.02, 1.02], ['ggH'])
-        dummy['QCDscale_ggVV']          = ([1.5,  1.5],  ['ggWW'])
+        dummy['QCDscale_ggVV']          = ([1.30, 1.30], ['ggWW'])
         dummy['QCDscale_qqH']           = ([1.01, 1.01], ['vbfH'])
         dummy['QCDscale_qqH_ACEPT']     = ([1.02, 1.02], ['vbfH'])
         dummy['QCDscale_wzttH_ACEPT']   = ([1.02, 1.02], ['wzttH'])
@@ -243,10 +244,10 @@ class NuisanceMapBuilder:
     
     def _addDataDrivenNuisances(self, nuisances, yields, mass, channel, jcat):
         
-        if self.ddreader.iszombie: return
+        if self._ddreader.iszombie: return
         # make a filter to remove the dd >= 200 for WW 
-        wwfilter = datadriven.DDWWFilter(self.ddreader)
-        (estimates,dummy) = wwfilter.get(mass, channel)
+#         wwfilter = datadriven.DDWWFilter(self._ddreader)
+        (estimates,dummy) = self._wwddfilter.get(mass, channel)
 
         pdf = 'lnN'
 
@@ -295,30 +296,6 @@ class NuisanceMapBuilder:
                 continue
             value = 1+(1./ROOT.TMath.Sqrt(y._entries) if y._entries > 0 else 0.)
             nuisances[name] = ( ['lnN'], dict({p:value}) )
-
-#     def _addExperimentalMassDepNuisances(self, nuisances, mass, jets, flavor ):
-#         '''Mass dependent experimental nuisances [normalization only]'''
-#         channels = dict([('sf',['ee','mm']),('of',['em','me'])])
-
-#         cards = [ self._expcards[mass][jets][ch] for ch in channels[flavor]]
-#         # further x-check on the items we are going to average
-#         diffEffs = set(cards[0].keys()) ^ set(cards[1].keys())
-#         if diffEffs:
-#             raise RuntimeError('Different systematics found for '+'-'.join(channels[flavor])+': '+' '.join(diffEffs))
-
-#         effects = cards[0].keys()
-#         for eff in effects:
-#             # aslo check the same processes re available for the same eff
-#             diffProcs = set(cards[0][eff].keys()) ^ set(cards[1][eff].keys())
-#             if diffProcs:
-#                 raise RuntimeError('Different systematics found for '+'-'.join(channels[flavor])+', '+eff+': '+' '.join(diffProcs))
-
-#             processes = cards[0][eff].keys()
-#     
-#             tag = 'CMS_'+eff
-#             if tag in nuisances: del nuisances[tag]
-#             values = [(cards[0][eff][p]+cards[1][eff][p])/2. for p in processes]
-#             nuisances[tag] = (['lnN'], dict(zip(processes,values)) )
 
     def _addWWShapeNuisances(self,nuisances, effects):
         '''Generator relates shape nuisances'''
@@ -388,24 +365,19 @@ class NuisanceMapBuilder:
     def nuisances(self, yields, effects, mass, channel, jetcat, flavor, opts):
         '''Add the nuisances according to the options'''
         allNus = OrderedDict()
-#         allNus.update(self._common)
-#         if jets == 0:
-#             allNus.update(self._0jetOnly)
-#         elif jets == 1:
-#             allNus.update(self._1jetOnly)
 
         optMatt = mattOpts()
         optMatt.WJadd = 0.36
         optMatt.WJsub = 0.0
 
-        qqWWfromData = int(mass) < 200
+        qqWWfromData = self._wwddfilter.haswwdd(mass)
 
-        CutBased = getCommonSysts(int(mass),flavor,jetcat,qqWWfromData, optMatt)
+        if jetcat not in ['0j','1j','2j']: raise ValueError('Unsupported jet category found: %s')
+        CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, optMatt)
         common = OrderedDict()
         for k in sorted(CutBased):
             common[k] = CutBased[k]
         allNus.update( common )
-#         print channel
 #         addFakeBackgroundSysts(allNus, mass,channel,jets)#,errWW=0.2,errggWW=0.2,errDY=1.0,errTop0j=1.0,errTop1j=0.3,errWJ=0.5)
 
         self._addStatisticalNuisances(allNus, yields, channel)
@@ -436,9 +408,6 @@ class NuisanceMapBuilder:
         return nuisances
 
 def incexc(option, opt_str, value, parser):
-#     print option
-#     print opt_str
-#     print value
     if not hasattr(parser.values,'shapeFlags'):
         setattr(parser.values,'shapeFlags',[])
 
@@ -459,16 +428,17 @@ if __name__ == '__main__':
 
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
-    parser.add_option('--cutbased',dest='shape',help='Make cutbased datacards (no shapes)', action='store_false', default=True)
-    parser.add_option('-p','--prefix',dest='prefix',help='Datacard directory prefix',default=None)
+    parser.add_option('-p', '--prefix'  , dest='prefix'      , help='Datacard directory prefix'           , default=None)
+    parser.add_option('--cutbased'      , dest='shape'       , help='Make cutbased datacards (no shapes)' , default=True , action='store_false' )
+    parser.add_option('--no_wwdd_above' , dest='noWWddAbove' , help='No WW dd above this mass'            , default=None   , type='int'     )
     parser.set_defaults(shapeFlags=[])
     parser.set_defaults(nuisFlags=[])
-    parser.add_option('--Xsh','--excludeShape',action='callback', dest='shapeFlags', type='string', callback=incexc)#)action='append',default=None)
-    parser.add_option('--Ish','--includeShape',action='callback', dest='shapeFlags', type='string', callback=incexc)#)action='append',default=None)
-    parser.add_option('-X','--exclude',action='callback', dest='nuisFlags', type='string', callback=incexc)#)action='append',default=None)
-    parser.add_option('-I','--include',action='callback', dest='nuisFlags', type='string', callback=incexc)#)action='append',default=None)
-    parser.add_option('--path_dd'           , dest='path_dd'           , help='Data driven path'                 , default=None)
-    parser.add_option('--path_shape_merged' , dest='path_shape_merged' , help='Destination directory for merged' , default=None)
+    parser.add_option('--Xsh','--excludeShape', dest='shapeFlags'        , help='exclude shapes nuisances matching the expression', action='callback', type='string', callback=incexc)
+    parser.add_option('--Ish','--includeShape', dest='shapeFlags'        , help='include shapes nuisances matching the expression', action='callback', type='string', callback=incexc)
+    parser.add_option('-X','--exclude',         dest='shapeFlags'        , help='exclude nuisances matching the expression',        action='callback', type='string', callback=incexc)
+    parser.add_option('-I','--include',         dest='shapeFlags'        , help='include nuisances matching the expression',        action='callback', type='string', callback=incexc)
+    parser.add_option('--path_dd'           ,   dest='path_dd'           , help='Data driven path'                 , default=None)
+    parser.add_option('--path_shape_merged' ,   dest='path_shape_merged' , help='Destination directory for merged' , default=None)
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
 
@@ -517,7 +487,7 @@ if __name__ == '__main__':
     #mask = ['Vg','DYLL','DYTT']
     mask = ['Vg','DYLL']
 
-    builder = NuisanceMapBuilder( opt.path_dd, opt.shape )
+    builder = NuisanceMapBuilder( opt.path_dd, opt.noWWddAbove, opt.shape )
     builder.statShapeVeto = mask
     for mass in masses:
         for ch,(jcat,fl) in channels.iteritems():
@@ -528,7 +498,6 @@ if __name__ == '__main__':
             loader = ShapeLoader(shapeTmpl.format(mass = mass, channel=ch) ) 
             loader.load()
 
-#                 writer = ShapeDatacardWriter( mass,'{0}_{1}j'.format(flavor, jets) )
             writer = ShapeDatacardWriter( mass, ch, opt.shape )
             print '   + loading yields'
             yields = loader.yields()
@@ -542,7 +511,6 @@ if __name__ == '__main__':
             effects = loader.effects()
 
             print '   + making nuisance map'
-#             nuisances = builder.nuisances( yields, effects , mass, jets, flavor, optsNuis)
             nuisances = builder.nuisances( yields, effects , mass, ch, jcat, fl, optsNuis)
 
             basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}_shape'
