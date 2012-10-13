@@ -283,13 +283,17 @@ class NuisanceMapBuilder:
             
             if len(available) != listNctr.count(estimates[available[0]].Nctr):
                 raise RuntimeError('Mismatch between Nctr in the same systematic: '+', '.join([ '{0}{1}'.format(n[0],n[1]) for n in zip(available, listNctr) ]) )
-            
+
+            flagdoextracorr = 0
+
             for process in available:
                 e = estimates[process]
                 extrUnc = 1+e.delta/e.alpha if pdf != 'gmM' else e.delta/e.alpha
 
                 if jcat == '2j' and tag == 'Top' :
-                     extr_corr_entries[process] = 1. + e.deltaCorr/e.alpha
+                     if e.deltaCorr != 0: 
+                         extr_corr_entries[process] = 1. + e.deltaCorr/e.alpha
+                         flagdoextracorr = 1
                 extr_entries[process] = extrUnc
                 stat_entries[process] = e.alpha
                 eff_bin1 = eff_bin1_tmpl.format(process,channel)
@@ -301,7 +305,8 @@ class NuisanceMapBuilder:
             nuisances[eff_stat] = (['gmN',e.Nctr], stat_entries)
 
             if jcat == '2j' and tag == 'Top' :
-                nuisances[eff_extr_corr] = ([pdf], extr_corr_entries )
+                if flagdoextracorr == 1 :
+                    nuisances[eff_extr_corr] = ([pdf], extr_corr_entries )
 
 
 
