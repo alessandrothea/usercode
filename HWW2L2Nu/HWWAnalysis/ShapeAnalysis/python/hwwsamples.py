@@ -33,6 +33,10 @@ backgrounds = {
     'DYLL'                   : ['nominals/latino_036_DY10toLLMad.root',
                                 'nominals/latino_037_DY50toLLMad.root',
                                ],
+    'DYee'                   : ['nominals/latino_000_WWJets2LMad.root',   # dummy, just to have the histogram in cut based
+                               ],
+    'DYmm'                   : ['nominals/latino_000_WWJets2LMad.root',   # dummy, just to have the histogram in cut based
+                               ],
     'DYLL-template-0j1j'     : ['dyTemplate/latino_036_DY10toLLMad.root',
                                 'dyTemplate/latino_037_DY50toLLMad.root',
                                ],
@@ -145,7 +149,8 @@ mcsets = {
         #signals
         'ggH','vbfH','wzttH',
         # bkgs
-        'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYLL',
+        #'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYLL',
+        'WW','ggWW','Vg','WJet','Top','VV','DYee','DYmm'
     ],
    'vbf_of' : [
         #signals

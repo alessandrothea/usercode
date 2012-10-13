@@ -255,14 +255,26 @@ class NuisanceMapBuilder:
         mapping['WW']   = ['WW','ggWW']
         mapping['Top']  = ['Top']
         mapping['DYLL'] = ['DYLL']
+        mapping['DYee'] = ['DYee']
+        mapping['DYmm'] = ['DYmm']
 
         eff_bin1_tmpl = 'CMS_hww_{0}_{1}_stat_bin1'
         for tag,processes in mapping.iteritems(): 
+            extr_corr_entries = {}
             extr_entries = {}
             stat_entries = {}
             eff_extr = 'CMS_hww_{0}_{1}_extr'.format(tag,jcat)
             eff_stat = 'CMS_hww_{0}_{1}_stat'.format(tag,jcat)
-            
+
+            if jcat == '2j' :
+              eff_extr = 'CMS_hww_{0}_{1}_extr'.format(tag,channel)
+              eff_stat = 'CMS_hww_{0}_{1}_stat'.format(tag,channel)
+              if tag == 'Top' :
+                  eff_stat      = 'CMS_hww_{0}_{1}_stat'.format(tag,jcat)
+                  eff_extr = 'CMS_hww_{0}_{1}_extr'.format(tag,jcat)
+                  eff_extr_corr = 'CMS_hww_{0}_{1}_extr_corr'.format(tag,jcat)
+
+
             available = [ p for p in processes if p in estimates ]
             if not available: continue
 
@@ -276,6 +288,8 @@ class NuisanceMapBuilder:
                 e = estimates[process]
                 extrUnc = 1+e.delta/e.alpha if pdf != 'gmM' else e.delta/e.alpha
 
+                if jcat == '2j' and tag == 'Top' :
+                     extr_corr_entries[process] = 1. + e.deltaCorr/e.alpha
                 extr_entries[process] = extrUnc
                 stat_entries[process] = e.alpha
                 eff_bin1 = eff_bin1_tmpl.format(process,channel)
@@ -285,6 +299,13 @@ class NuisanceMapBuilder:
 
             nuisances[eff_extr] = ([pdf], extr_entries )
             nuisances[eff_stat] = (['gmN',e.Nctr], stat_entries)
+
+            if jcat == '2j' and tag == 'Top' :
+                nuisances[eff_extr_corr] = ([pdf], extr_corr_entries )
+
+
+
+
 
 
     def _addStatisticalNuisances(self,nuisances, yields,channel):
@@ -445,6 +466,8 @@ if __name__ == '__main__':
     (opt, args) = parser.parse_args()
     print 'ShapeFlags: ',opt.shapeFlags
     print 'NuisFlags:  ',opt.nuisFlags
+    print 'noWWddAbove:',opt.noWWddAbove
+
 
     # checks
     if not opt.variable or not opt.lumi:
@@ -503,7 +526,8 @@ if __name__ == '__main__':
             yields = loader.yields()
 
             # reshuffle the order
-            order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
+            #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
+            order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             
@@ -513,7 +537,10 @@ if __name__ == '__main__':
             print '   + making nuisance map'
             nuisances = builder.nuisances( yields, effects , mass, ch, jcat, fl, optsNuis)
 
-            basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}_shape'
+            #basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}_shape'
+            basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}'
+            if opt.shape :
+                 basename  = basename + '_shape'
             print '   + dumping all to file'
             writer.write(yields,nuisances,outPath+basename+'.txt',shapeSubDir+basename+'.root')
 

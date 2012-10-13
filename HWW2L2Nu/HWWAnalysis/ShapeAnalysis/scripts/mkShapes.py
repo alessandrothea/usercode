@@ -214,7 +214,7 @@ class ShapeFactory:
                     selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
 
-                    self._addweights(mass,var,'nominals',selections)
+                    self._addweights(mass,var,'nominals',selections,cat.nick)
 
                     print '.'*80
                     # - extract the histogram range
@@ -476,8 +476,8 @@ class ShapeFactory:
 
     # _____________________________________________________________________________
     # add the weights to the selection
-    def _addweights(self,mass,var,syst,selections):
-        sampleWgts =  self._sampleWeights(mass,var)
+    def _addweights(self,mass,var,syst,selections,cat=''):
+        sampleWgts =  self._sampleWeights(mass,var,cat)
         print '--',selections.keys()
         for process,cut in selections.iteritems():
             wgt = self._stdWgt
@@ -493,7 +493,7 @@ class ShapeFactory:
     # _____________________________________________________________________________
     # this is too convoluted
     # define here the mass-dependent weights
-    def _sampleWeights(self,mass,var):
+    def _sampleWeights(self,mass,var,cat):
         weights = {}
         # tocheck
         weights['WJet']              = 'baseW*fakeW'
@@ -509,7 +509,12 @@ class ShapeFactory:
         weights['DYLL-templatesyst'] = self._stdWgt+'*dyWUp*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         weights['ggH']               = self._stdWgt+'*kfW'
         weights['vbfH']              = self._stdWgt+'*kfW'
-        
+
+
+        if cat in ['vbf']:
+            weights['WW']                = self._stdWgt+'*2'
+
+
         if var in ['bdts','bdtl']:
             weights['WW']       = self._stdWgt+'*2*(event%2 == 0)'
             weights['ggH']      = self._stdWgt+'*2*kfW*(event%2 == 0)'

@@ -248,11 +248,17 @@ def massSelections(mass):
 
     #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
     #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f}) && mll > {0:.0f}    {0:.0f} {1:.0f} '.format(int(mass), float(12452))
-    sel['vbf-selection']          = ' && '.join([sel['vbf-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
-    sel['vbf-selection']          = sel['vbf-selection'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, int(mass))
+
+    sel['vbf-selection-temp']     = ' && '.join([sel['vbf-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
+    sel['vbf-selection']          = sel['vbf-selection-temp'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, masscuts['mtmax'])
+    #sel['vbf-selection']          = sel['vbf-selection-temp'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, int(mass))
+
+
+
     sel['shape-selection']        = sel['ww-level']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-level']+' && '+sel['shape-himass']
- 
-    #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
+
+    sel['vbf-shape-selection']    = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
+
 
     # TODO gammastar test
 #     sel['gammaMRStar-selection']  = sel['bdt-selection']

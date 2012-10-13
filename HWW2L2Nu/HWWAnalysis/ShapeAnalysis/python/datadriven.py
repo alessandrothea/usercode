@@ -59,13 +59,18 @@ class DDCardReader:
                        'of_2j': ('2j',['of']), 'sf_2j': ('2j',['sf'])}
         llmapping   = {'sf_0j': ('0j',['sf']), 
                        'sf_1j': ('1j',['sf']),
-                       'sf_2j': ('2j',['sf'])}
+                       }
+        lleemmmapping  = {
+                       'sf_2j': ('2j',['sf'])
+                       }
 
         readmap = {}
         readmap['Top']  = basemapping.copy()
         readmap['WW']   = basemapping.copy()
         readmap['ggWW'] = basemapping.copy()
         readmap['DYLL'] = llmapping.copy()
+        readmap['DYee'] = lleemmmapping.copy()
+        readmap['DYmm'] = lleemmmapping.copy()
 
 
         ddcards = AlienDict()
@@ -111,9 +116,17 @@ class DDCardReader:
             evInCtrlReg = int(float(tokens[1]))
             scale2Sig = float(tokens[2])
             scale2SigUnc = float(tokens[3])
+            if len(tokens) >= 5  :
+              scale2SigUncCorr = float(tokens[4])
+            else :
+              scale2SigUncCorr = -1
 
     #         card[mass] = (evInCtrlReg, scale2Sig, scale2SigUnc)
-            card[mass] = DDEntry(evInCtrlReg, scale2Sig, scale2SigUnc)
+            if scale2SigUncCorr == -1 :
+                card[mass] = DDEntry(evInCtrlReg, scale2Sig, scale2SigUnc)
+            else :
+                card[mass] = DDEntry(evInCtrlReg, scale2Sig, scale2SigUnc, scale2SigUncCorr)
+
         cardFile.close()
         return card
 
@@ -125,10 +138,11 @@ class DDCardReader:
             raise KeyError('{0} {1}'.format(mass,channel))
 
 class DDEntry:
-    def __init__(self,Nctr,alpha,delta):
+    def __init__(self,Nctr,alpha,delta,deltaCorr=0):
         self.Nctr     = Nctr
         self.alpha = alpha
         self.delta = delta
+        self.deltaCorr = deltaCorr
 
     def __repr__(self):
         return self.__str__()
