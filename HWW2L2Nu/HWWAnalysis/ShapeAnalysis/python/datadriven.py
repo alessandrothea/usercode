@@ -57,6 +57,9 @@ class DDCardReader:
         basemapping  = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
                        'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),
                        'of_2j': ('2j',['of']), 'sf_2j': ('2j',['sf'])}
+        wwmapping    = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
+                       'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),
+                       }
         llmapping   = {'sf_0j': ('0j',['sf']), 
                        'sf_1j': ('1j',['sf']),
                        }
@@ -66,8 +69,8 @@ class DDCardReader:
 
         readmap = {}
         readmap['Top']  = basemapping.copy()
-        readmap['WW']   = basemapping.copy()
-        readmap['ggWW'] = basemapping.copy()
+        readmap['WW']   = wwmapping.copy()
+        readmap['ggWW'] = wwmapping.copy()
         readmap['DYLL'] = llmapping.copy()
         readmap['DYee'] = lleemmmapping.copy()
         readmap['DYmm'] = lleemmmapping.copy()
