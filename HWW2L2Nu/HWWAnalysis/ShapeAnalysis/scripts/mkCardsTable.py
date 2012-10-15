@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import optparse
-from HiggsAnalysis.CombinedLimit.DatacardParser import *
+import HiggsAnalysis.CombinedLimit.DatacardParser as cardparser
 from math import sqrt,fabs
 import glob
 
@@ -40,12 +40,13 @@ labels = dict(zip(order,labelsTemp))
 
 
 def getSummary( filename, mass ):
-    options = Options()
-    options.bin = True
-    options.stat = False
-    options.shape = False
 
-    DC = parseCard(file(filename), options)
+    # get the defaults from 
+    dummyp = optparse.OptionParser('dummy')
+    cardparser.addDatacardParserOptions(dummyp)
+    (options, dumbargs) = dummyp.parse_args([])
+
+    DC = cardparser.parseCard(file(filename), options)
     nuisToConsider = [ y for y in DC.systs if 'CMS' in y[0] or y[0] == 'FakeRate']
 
     errors = {}
@@ -165,7 +166,9 @@ def main():
     luminosity after the BDT selection in the '''+njets +' jet bin for the '+flavor+''' flavor final states.
     The data-driven corrections are applied.'''
     label = 'yields_'+tag
-    texfile = open(label+'.tex','w')
+    texpath = label+'.tex'
+    print texpath
+    texfile = open(texpath,'w')
 
     print >> texfile, r'\documentclass[a4paper]{article}'
     print >> texfile, r'\usepackage[landscape]{geometry}'
