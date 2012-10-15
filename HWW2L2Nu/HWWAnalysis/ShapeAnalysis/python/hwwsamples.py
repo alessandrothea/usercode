@@ -143,7 +143,7 @@ mcsets = {
         'WW', 'Vg','WJet','Top','VV','DYTT',
         # replce ggWW and DYLL
         ('ggWW',    'WW'),
-        ('ggWW',    'DYLL'),
+        ('DYLL',    'WW'),
     ],
     'vbf_sf' : [
         #signals
