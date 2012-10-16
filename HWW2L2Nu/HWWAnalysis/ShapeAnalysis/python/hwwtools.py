@@ -46,6 +46,26 @@ def confirm(prompt=None, resp=False):
             return False
 
 #---
+def ensuredir(directory):
+    if not os.path.exists(directory):
+        try:
+            os.makedirs(directory)
+        except OSError as e:
+            if e.errno == 17:
+                pass
+            else:
+                raise e
+#---
+def loadAndCompile(macro,options='g'):
+    import ROOT
+    import os
+    try:
+        code = ROOT.gROOT.LoadMacro(macro+'+'+options)
+    except RuntimeError:
+        code = ROOT.gROOT.LoadMacro(macro+'++'+options)
+    return code
+
+#---
 def filterSamples( samples, voc ):
     
     filtered = {}
@@ -62,6 +82,7 @@ def filterSamples( samples, voc ):
     return filtered
 
 
+#---
 def getChain( sample, mass, path, tag='Data2011', tname='latino' ):
     import ROOT
     files = []
