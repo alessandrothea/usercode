@@ -72,7 +72,7 @@ def PrintTable( table, title, missing, width, all, colhdr=None ):
     print '-'*len(line)
     if colhdr:
         line = ' '*labelLen
-        line += (' | '+' '.join([coljust(x,width) for x in colhdr]))*len(table)
+        line += (' | '+' '.join([coljust(x,width,'right') for x in colhdr]))*len(table)
         line += ' |'
         print line
         
@@ -144,11 +144,11 @@ if __name__ == '__main__':
         for name in sorted(names):
             h = file.Get(name)
             xax = h.GetXaxis()
-            entries[arg][name] = [h.GetEntries(),h.Integral(),h.GetBinContent(0),h.GetBinContent(h.GetNbinsX())]
+            entries[arg][name] = [h.GetEntries(),h.Integral(),h.GetBinContent(0),h.GetBinContent(1),h.GetBinContent(h.GetNbinsX()),h.GetBinContent(h.GetNbinsX()+1)]
         file.Close()
 
 
-    missing=['-']*4 if opt.over else ['-']*2
+    missing=['-']*6 if opt.over else ['-']*2
 
     if opt.stat:
         missing = ['-']
@@ -159,28 +159,29 @@ if __name__ == '__main__':
             zeroes[arg] = {}
             lowstat[arg] = {}
             histograms = entries[arg]
-            for name,(n,i,uf,of) in histograms.iteritems():
+            for name,(n,i,uf,of,b1,bn) in histograms.iteritems():
                 if not n:
                     zeroes[arg][name] = ['\x1b[41m'+console.colorize('white','0')]
 
                 if opt.all or n > 0 and i/n > 1:
                     lowstat[arg][name] = [ '%.2f' % x for x in [i/n if n!=0 else -1,n,i] ]
             
-        PrintTable(zeroes,'zeroes',missing,5,True)
+        PrintTable(zeroes, 'zeroes',missing,5,True)
         PrintTable(lowstat,'lowstat',['-']*3,9,True,lsheader)
         sys.exit(0)
     else:
+        lsheader = ['entries','I']
+        if opt.over: lsheader += ['uf','b1','bn','of']
         table = OrderedDict()
         for arg in sorted(entries):
             table[arg] = {}
             histograms = entries[arg]
-            print 'aaa'
-            for name,(n,i,uf,of) in histograms.iteritems():
+            for name,(n,i,uf,b1,bn,of) in histograms.iteritems():
                 entry = ['%.f'%n,'%.3f'%i]
                 if opt.over:
-                    entry += ['%3.f'%uf,'%3.f'%of]
+                    entry += ['%.3f'%x for x in (uf,b1,bn,of) ]
                 table[arg][name]=entry
-        PrintTable(table,'nentries',missing,5, opt.all)
+        PrintTable(table,'nentries',missing,5, opt.all, lsheader)
 
 
 
