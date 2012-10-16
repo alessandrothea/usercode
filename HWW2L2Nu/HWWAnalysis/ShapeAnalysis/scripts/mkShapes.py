@@ -41,8 +41,6 @@ class ShapeFactory:
         self._dataTag         = '2012A'
         self._mcTag           = '0j1j'
         self._masses          = []
-        self._categories      = []
-        self._flavors         = []
         self._channels        = {}
         # paths (to move out)
         self._outFileFmt      = ''
@@ -172,16 +170,18 @@ class ShapeFactory:
             
             #inner  jet and flavor loops
             for chan,(category,flavor) in self._channels.iteritems():
-                cat = hwwinfo.categories[category]
+#                 cat = hwwinfo.categories[category]
                 flavors = hwwinfo.flavors[flavor]
                 for flavor in flavors:
                     pars = dict([
                         ('mass',mass),
-                        ('category',cat.name),
+#                         ('category',cat.name),
+                        ('category',category),
                         ('flavor',flavor)
                     ])
                     print '-'*80
-                    print ' Processing channel '+chan+': mass',mass,'category',cat.nick,'flavor',flavor
+#                     print ' Processing channel '+chan+': mass',mass,'category',cat.name,'flavor',flavor
+                    print ' Processing channel '+chan+': mass',mass,'category',category,'flavor',flavor
                     print '-'*80
                     
                     # - define the source paths 
@@ -210,15 +210,18 @@ class ShapeFactory:
 
                     # - now build the selection
                     # - make a separate function to cotain the exceptions
-                    catSel = cat.cut;
+#                     catSel = cat.cut;
+                    catSel = hwwinfo.categoryCuts[category]
                     selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
 
-                    self._addweights(mass,var,'nominals',selections,cat.nick)
+#                     self._addweights(mass,var,'nominals',selections,cat.name)
+                    self._addweights(mass,var,'nominals',selections,category)
 
                     print '.'*80
                     # - extract the histogram range
-                    rng = self.getrange(opt.range,mass,cat.name) 
+#                     rng = self.getrange(opt.range,mass,cat.name) 
+                    rng = self.getrange(opt.range,mass,category) 
 
                     # - to finally fill it
                     self._draw(alias, rng, selections, output, inputs)
@@ -251,16 +254,18 @@ class ShapeFactory:
             
             #inner  jet and flavor loops
             for chan,(category,flavor) in self._channels.iteritems():
-                cat = hwwinfo.categories[category]
+#                 cat = hwwinfo.categories[category]
                 flavors = hwwinfo.flavors[flavor]
                 for flavor in flavors:
                     print '-'*80
-                    print ' Processing channel '+chan+': mass',mass,'category',cat.nick,'flavor',flavor
+#                     print ' Processing channel '+chan+': mass',mass,'category',cat.nick,'flavor',flavor
+                    print ' Processing channel '+chan+': mass',mass,'category',category,'flavor',flavor
                     print '-'*80
 
                     pars = dict([
                         ('mass',mass),
-                        ('category',cat.name),
+#                         ('category',cat.name),
+                        ('category',category),
                         ('flavor',flavor),
                         ('syst',syst),
                     ])
@@ -289,14 +294,17 @@ class ShapeFactory:
                     print 'Output file: ',output
 
                     # - now build the selection
-                    catSel = cat.cut;
+#                     catSel = cat.cut;
+                    catSel = hwwinfo.categoryCuts[category]
                     selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
-                    self._addweights(mass,var,syst,selections)
+#                     self._addweights(mass,var,syst,selections, cat.name)
+                    self._addweights(mass,var,syst,selections, category)
 
                     print '.'*80
                     # - extract the histogram range
-                    rng = self.getrange(opt.range,mass,cat.name) 
+#                     rng = self.getrange(opt.range,mass,cat.name) 
+                    rng = self.getrange(opt.range,mass,category) 
                     # - to finally fill it
                     self._draw(alias, rng, selections ,output,inputs)
                     # - then disconnect the files
@@ -395,9 +403,9 @@ class ShapeFactory:
 
     def _reshape(self,h):
         if h.GetDimension() == 1:
-#             nx = h.GetNbinsX()
-#             ShapeFactory._moveAddBin(h, (0,),(1,) )
-#             ShapeFactory._moveAddBin(h, (nx+1,),(nx,) )
+            # nx = h.GetNbinsX()
+            # ShapeFactory._moveAddBin(h, (0,),(1,) )
+            # ShapeFactory._moveAddBin(h, (nx+1,),(nx,) )
             return
         elif h.GetDimension() == 2:
             nx = h.GetNbinsX()
@@ -411,10 +419,10 @@ class ShapeFactory:
                 ShapeFactory._moveAddBin(h,(0,    j),(1, j) )
                 ShapeFactory._moveAddBin(h,(nx+1, j),(nx,j) )
 
-#             0,0 -> 1,1
-#             0,ny+1 -> 1,ny
-#             nx+1,0 -> nx,1
-#             nx+1,ny+1 ->nx,ny
+            # 0,0 -> 1,1
+            # 0,ny+1 -> 1,ny
+            # nx+1,0 -> nx,1
+            # nx+1,ny+1 ->nx,ny
 
             ShapeFactory._moveAddBin(h, (0,0),(1,1) )
             ShapeFactory._moveAddBin(h, (0,ny+1),(1,ny) )
@@ -511,7 +519,7 @@ class ShapeFactory:
         weights['vbfH']              = self._stdWgt+'*kfW'
 
 
-        if cat in ['vbf']:
+        if cat in ['2j']:
             weights['WW']                = self._stdWgt+'*2'
 
 
@@ -754,9 +762,6 @@ if __name__ == '__main__':
 
         masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
         factory._masses   = masses
-        # update here: from cats and flavs to out_chans
-#         factory._categories = [ hwwinfo.categories[c] for c in opt.cats ]
-#         factory._flavors = hwwinfo.flavors[:]
 
         # go through final channels
         factory._channels = dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])
@@ -766,11 +771,11 @@ if __name__ == '__main__':
         factory._paths['bdtl']  = bdtDir
         factory._paths['bdts']  = bdtDir
 
-        factory._dataTag = opt.dataset
-        factory._mcTag   = opt.mcset
-        factory._range   = opt.range
-        factory._splitmode   = opt.splitmode
-        factory._lumi    = opt.lumi
+        factory._dataTag   = opt.dataset
+        factory._mcTag     = opt.mcset
+        factory._range     = opt.range
+        factory._splitmode = opt.splitmode
+        factory._lumi      = opt.lumi
 
 
         if opt.makeNoms:

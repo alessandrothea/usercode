@@ -549,6 +549,7 @@ class ShapeMixer:
         self.histograms = histograms2
 
 
+    # not used anymore
     def applyScaleFactors(self, factors):
         print '    - Applying scaling factors'
         for n,h in self.histograms.iteritems():
@@ -605,7 +606,6 @@ if __name__ == '__main__':
 
     parser.add_option('-n', '--dry',   dest='dry',   help='Dry run', action='store_true' )
     parser.add_option('-r', '--rebin', dest='rebin', help='Rebin by', type='int', default=1)
-    parser.add_option('-s', '--scale', dest='scale', help='Scale sample by an additional factor (overwrides previously defined factors) <sample>=<value>', action='append',default=[])
 
     parser.add_option('--no_wwdd_above'     , dest='noWWddAbove'       , help='No WW dd above this mass'         , default=None  , type='int' )
     parser.add_option('--tag'               , dest='tag'               , help='Tag used for the shape file name' , default=None)
@@ -648,7 +648,6 @@ if __name__ == '__main__':
     nomPath   = opt.path_shape_raw+'/nominals/' 
     systPath  = opt.path_shape_raw+'/systematics/' 
     mergedDir = opt.path_shape_merged
-#     rebin     = int(opt.rebin)
 
     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
 
@@ -656,55 +655,12 @@ if __name__ == '__main__':
         parser.error('The variable and the luminosty must be defined')
 
     tag  = opt.tag if opt.tag else opt.variable
-#     lumi = opt.lumi
     var  = opt.variable
-#     lumiMask = ['Data','WJet','DYTT']
     lumiMask = ['Data']
     nameTmpl  = 'shape_Mh{0}_{1}_'+tag+'_shapePreSel_{2}'
     os.system('mkdir -p '+mergedDir)
 
-   
-    # read the scale factors from the scale factors file 
-
-    if opt.path_scale:
-        scaleFactors = {}
-        for cat in hwwinfo.categories:
-            factors = {}
-            scaleFactors[cat] = factors
-            scalepath = opt.path_scale.format(category=cat)
-            try:
-                f = open(scalepath)
-                for l in f.readlines():
-                    tokens = l.split()
-                    factors[tokens[0]] = float(tokens[1])
-                logging.debug('Scale factor file '+scalepath+' loaded')
-            except IOError as ioe:
-                logging.debug('File '+scalepath+' not found')
-
-            # cmd line override
-            for o in opt.scale:
-                tokens = o.split('=')
-                if len(tokens) != 2:
-                    parser.print_help()
-                    parser.error('Scale option syntax is -s <sample>=<value>')
-            
-                print cat,'Scale override:',tokens[0],tokens[1]
-                factors[tokens[0]] = float(tokens[1])
-    else:
-        scaleFactors = dict([ (cat,{}) for cat in hwwinfo.categories])
-
-    logging.debug('Scale Factors: '+str(scaleFactors))
-
     ROOT.TH1.SetDefaultSumw2(True)
-
-#     channels = {}
-#     channels['of_0j'] = ('0j',['em','me'])
-#     channels['of_1j'] = ('1j',['em','me'])
-#     channels['sf_0j'] = ('0j',['mm','ee'])
-#     channels['sf_1j'] = ('1j',['mm','ee'])
-#     channels['of_0j'] = ('0j',['em','me'])
-#     channels['vbf']   = ('vbf',['mm','ee','em','me'])
-
 
 
 #  _                  
@@ -743,8 +699,6 @@ if __name__ == '__main__':
                 # run
                 print '     - mixing histograms'
                 ss.mix(chan)
-
-                ss.applyScaleFactors( scaleFactors[cat] )
 
                 m.add(ss)
             print '  - summing sets'

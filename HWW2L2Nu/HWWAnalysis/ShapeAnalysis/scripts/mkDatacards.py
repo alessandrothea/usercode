@@ -242,7 +242,7 @@ class NuisanceMapBuilder:
             self._1jetOnly[k] = (['lnN'], dict([( process, v[0]) for process in v[1] ]) )
 
     
-    def _addDataDrivenNuisances(self, nuisances, yields, mass, channel, jcat):
+    def _addDataDrivenNuisances(self, nuisances, yields, mass, channel, jetcat):
         
         if self._ddreader.iszombie: return
         # make a filter to remove the dd >= 200 for WW 
@@ -251,29 +251,23 @@ class NuisanceMapBuilder:
 
         pdf = 'lnN'
 
-        mapping = {}
-        mapping['WW']   = ['WW','ggWW']
-        mapping['Top']  = ['Top']
-        mapping['DYLL'] = ['DYLL']
-        mapping['DYee'] = ['DYee']
-        mapping['DYmm'] = ['DYmm']
+        # this mapping specifies the context of the systematics (i.e. jet category, channel) and how the dds must be combined between channels.
+        mapping = {
+            'WW'   : ( jetcat,  ['WW','ggWW'] ),
+            'Top'  : ( jetcat,  ['Top']       ),
+            'DYLL' : ( jetcat,  ['DYLL']      ),
+            'DYee' : ( channel, ['DYee']      ),
+            'DYmm' : ( channel, ['DYmm']      ),
+        }
 
         eff_bin1_tmpl = 'CMS_hww_{0}_{1}_stat_bin1'
-        for tag,processes in mapping.iteritems(): 
+        for tag,(context, processes) in mapping.iteritems(): 
             extr_corr_entries = {}
             extr_entries = {}
             stat_entries = {}
-            eff_extr = 'CMS_hww_{0}_{1}_extr'.format(tag,jcat)
-            eff_stat = 'CMS_hww_{0}_{1}_stat'.format(tag,jcat)
-
-            if jcat == '2j' :
-              eff_extr = 'CMS_hww_{0}_{1}_extr'.format(tag,channel)
-              eff_stat = 'CMS_hww_{0}_{1}_stat'.format(tag,channel)
-              if tag == 'Top' :
-                  eff_stat      = 'CMS_hww_{0}_{1}_stat'.format(tag,jcat)
-                  eff_extr = 'CMS_hww_{0}_{1}_extr'.format(tag,jcat)
-                  eff_extr_corr = 'CMS_hww_{0}_{1}_extr_corr'.format(tag,jcat)
-
+            eff_extr      = 'CMS_hww_{0}_{1}_extr'.format(tag,context)
+            eff_stat      = 'CMS_hww_{0}_{1}_stat'.format(tag,context)
+            eff_extr_corr = 'CMS_hww_{0}_{1}_extr_corr'.format(tag,context)
 
             available = [ p for p in processes if p in estimates ]
             if not available: continue
@@ -289,11 +283,13 @@ class NuisanceMapBuilder:
             for process in available:
                 e = estimates[process]
                 extrUnc = 1+e.delta/e.alpha if pdf != 'gmM' else e.delta/e.alpha
-
-                if jcat == '2j' and tag == 'Top' :
-                     if e.deltaCorr != 0: 
-                         extr_corr_entries[process] = 1. + e.deltaCorr/e.alpha
-                         flagdoextracorr = 1
+                
+                if e.deltaCorr != 0: 
+                    extr_corr_entries[process] = 1. + e.deltaCorr/e.alpha
+#                 if jetcat == '2j' and tag == 'Top' :
+#                      if e.deltaCorr != 0: 
+#                          extr_corr_entries[process] = 1. + e.deltaCorr/e.alpha
+#                          flagdoextracorr = 1
                 extr_entries[process] = extrUnc
                 stat_entries[process] = e.alpha
                 eff_bin1 = eff_bin1_tmpl.format(process,channel)
@@ -304,10 +300,12 @@ class NuisanceMapBuilder:
             nuisances[eff_extr] = ([pdf], extr_entries )
             nuisances[eff_stat] = (['gmN',e.Nctr], stat_entries)
 
-            if jcat == '2j' and tag == 'Top' :
-                if flagdoextracorr == 1 :
-                    nuisances[eff_extr_corr] = ([pdf], extr_corr_entries )
+#             if jetcat == '2j' and tag == 'Top' :
+#                 if flagdoextracorr == 1 :
+#                     nuisances[eff_extr_corr] = ([pdf], extr_corr_entries )
 
+            if len(extr_corr_entries) > 0:
+                nuisances[eff_extr_corr] = ([pdf], extr_corr_entries )
 
 
 
@@ -396,7 +394,7 @@ class NuisanceMapBuilder:
         optMatt.WJadd = 0.36
         optMatt.WJsub = 0.0
 
-        qqWWfromData = self._wwddfilter.haswwdd(mass)
+        qqWWfromData = self._wwddfilter.haswwdd(mass, channel)
 
         if jetcat not in ['0j','1j','2j']: raise ValueError('Unsupported jet category found: %s')
         CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, optMatt)

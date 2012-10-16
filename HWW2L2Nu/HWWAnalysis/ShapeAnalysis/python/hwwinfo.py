@@ -128,16 +128,21 @@ class vbfcuts:
 
 masses = [110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 170, 180, 190, 200, 250, 300, 350, 400, 450, 500, 550, 600]
 
-class Category:
-    def __init__(self,name,cut,nick):
-        self.name = name
-        self.cut  = cut
-        self.nick = nick
+# class Category:
+#     def __init__(self,name,cut,nick):
+#         self.name = name
+#         self.cut  = cut
+#         self.nick = nick
 
-categories = {}
-categories['0j'] = Category('0j',wwcuts.zerojet,'0jet')
-categories['1j'] = Category('1j',wwcuts.onejet, '1jet')
-categories['2j'] = Category('2j',wwcuts.vbf,    'vbf')
+# categories = {}
+# categories['0j'] = Category('0j',wwcuts.zerojet,'0jet')
+# categories['1j'] = Category('1j',wwcuts.onejet, '1jet')
+# categories['2j'] = Category('2j',wwcuts.vbf,    'vbf')
+
+categoryCuts = {}
+categoryCuts['0j'] = wwcuts.zerojet
+categoryCuts['1j'] = wwcuts.onejet
+categoryCuts['2j'] = wwcuts.vbf
 
 flavorCuts = {}
 flavorCuts['all'] = '1'			       #'channel>-1'
@@ -154,16 +159,16 @@ flavors['of']=['em','me']
 flavors['ll']=['mm','ee','em','me']
 
 channels = {}
-channels['0j']    = ('0j','ll')#,['mm','ee','em','me'])
-channels['1j']    = ('1j','ll')#,['mm','ee','em','me'])
-channels['of_0j'] = ('0j','of')#,['em','me'])
-channels['of_1j'] = ('1j','of')#,['em','me'])
-channels['sf_0j'] = ('0j','sf')#,['mm','ee'])
-channels['sf_1j'] = ('1j','sf')#,['mm','ee'])
+channels['0j']    = ('0j','ll')
+channels['1j']    = ('1j','ll')
+channels['of_0j'] = ('0j','of')
+channels['of_1j'] = ('1j','of')
+channels['sf_0j'] = ('0j','sf')
+channels['sf_1j'] = ('1j','sf')
 
-channels['2j']    = ('2j','ll')#,['mm','ee','em','me'])
-channels['of_2j'] = ('2j','of')#,['em','me'])
-channels['sf_2j'] = ('2j','sf')#,['mm','ee'])
+channels['2j']    = ('2j','ll')
+channels['of_2j'] = ('2j','of')
+channels['sf_2j'] = ('2j','sf')
 
 #  __  __               ___     _      
 # |  \/  |__ _ ______  / __|  _| |_ ___
@@ -244,7 +249,7 @@ def massSelections(mass):
     sel['gammaMRStar-selection']  = ' && '.join([sel['ww-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
     sel['bdt-selection']          = sel['ww-level']+' && '+sel['bdt-specific']
     sel['bdtl-selection']         = sel['bdt-selection']
-    sel['vbf-shape-2d-selection']         = sel['vbf-shape-2d']
+    sel['vbf-shape-2d-selection'] = sel['vbf-shape-2d']
 
     #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
     #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f}) && mll > {0:.0f}    {0:.0f} {1:.0f} '.format(int(mass), float(12452))
@@ -258,10 +263,6 @@ def massSelections(mass):
     sel['shape-selection']        = sel['ww-level']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-level']+' && '+sel['shape-himass']
 
     sel['vbf-shape-selection']    = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
-
-
-    # TODO gammastar test
-#     sel['gammaMRStar-selection']  = sel['bdt-selection']
 
     return sel
 
