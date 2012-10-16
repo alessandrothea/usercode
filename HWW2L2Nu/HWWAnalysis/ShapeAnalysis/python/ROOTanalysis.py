@@ -383,8 +383,14 @@ class TreeAnalyser:
 #         return self._worker.plotsflow(name,varexp,odict.OrderedDict(self._cuts.list()), options, bins)
 
     #---
-    def plotter(self,*args,**kwargs):
-        return self.Plotter(self,*args,**kwargs)
+    def plotter(self,buffered=False,*args,**kwargs):
+        
+        if buffered:
+            cls = self.BufferedPlotter
+        else:
+            cls = self.Plotter
+
+        return cls(self,*args,**kwargs)
 
 
 if __name__ == '__main__':

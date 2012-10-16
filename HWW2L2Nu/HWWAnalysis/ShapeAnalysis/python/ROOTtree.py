@@ -445,16 +445,6 @@ class TreeWorker:
     #---
     def yieldsflow(self, cuts, options=''):
 
-#         yields = odict.OrderedDict()
-
-#         elists = self._makeentrylists(cuts)
-#         for c,l in elists.iteritems():
-#             self._chain.SetEntryList(l)
-#             yields[c] = self.yields( '', options )
-
-#         # restore the preselection
-#         self._chain.SetEntryList(self._elist if self._elist else 0x0)
-
         # make the entries
         elists = self._makeentrylists(cuts)
         
@@ -496,16 +486,6 @@ class TreeWorker:
 
     #---
     def plotsflow(self, name, varexp, cuts, options='', bins=None, *args, **kwargs):
-
-#         plots = odict.OrderedDict()
-
-#         elists = self._makeentrylists(cuts)
-#         for c,l in elists.iteritems():
-#             self._chain.SetEntryList(l)
-#             plots[c] = self.plot('%s_%s' % (name,c),varexp,'',options,bins,*args, **kwargs) 
-
-#         # restore the preselection
-#         self._chain.SetEntryList(self._elist if self._elist else 0x0)
 
         # make the entries
         elists = self._makeentrylists(cuts)
