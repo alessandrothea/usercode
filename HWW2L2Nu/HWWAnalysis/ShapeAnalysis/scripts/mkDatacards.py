@@ -13,7 +13,7 @@ import hwwinfo
 import hwwtools
 import datadriven
 from HWWAnalysis.Misc.odict import OrderedDict
-from WWAnalysis.AnalysisStep.systematicUncertainties import getCommonSysts,addFakeBackgroundSysts
+from systematicUncertainties import getCommonSysts,addFakeBackgroundSysts
 
 # da http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/Mangano/WWAnalysis/AnalysisStep/python/systematicUncertainties.py
 
@@ -75,11 +75,12 @@ class ShapeDatacardWriter:
         keyline.extend([ (-i,s,yields[s]._N) for i,s in enumerate(sigs) ])
         keyline.extend([ (i+1,b,yields[b]._N) for i,b in enumerate(bkgs) ])
 
+        coldef = 10
 
-        card.write('bin'.ljust(48)+''.join([self._bin.ljust(8)*len(keyline)])+'\n')
-        card.write('process'.ljust(48)+''.join([n.ljust(8) for (i,n,N) in keyline])+'\n' )
-        card.write('process'.ljust(48)+''.join([('%d' % i).ljust(8) for (i,n,N) in keyline])+'\n' )
-        card.write('rate'.ljust(48)+''.join([('%-.2f' % N).ljust(8) for (i,n,N) in keyline])+'\n' )
+        card.write('bin'.ljust(48)+''.join([self._bin.ljust(coldef)*len(keyline)])+'\n')
+        card.write('process'.ljust(48)+''.join([n.ljust(coldef) for (i,n,N) in keyline])+'\n' )
+        card.write('process'.ljust(48)+''.join([('%d' % i).ljust(coldef) for (i,n,N) in keyline])+'\n' )
+        card.write('rate'.ljust(48)+''.join([('%-.3f' % N).ljust(coldef) for (i,n,N) in keyline])+'\n' )
         card.write('-'*100+'\n')
 
         for name in nuisances:
@@ -88,10 +89,10 @@ class ShapeDatacardWriter:
             else:             card.write('{0:<31} {1:<7} {2:<7} '.format(name,pdf[0],pdf[1]))
             for i,p,y in keyline:
                 if p in effect: 
-                    if pdf[0]=='gmN':   card.write('%6.4f  ' % effect[p])
-                    elif (pdf[0]=='shape' or pdf[0]=='shapeN2'): card.write('%-7d ' % effect[p])
-                    else:               card.write('%5.3f   ' % effect[p] )
-                else: card.write('-'.ljust(8))
+                    if pdf[0]=='gmN':   card.write('%-10.4f' % effect[p])
+                    elif (pdf[0]=='shape' or pdf[0]=='shapeN2'): card.write('%-10d' % effect[p])
+                    else:               card.write('%-10.3f' % effect[p] )
+                else: card.write('-'.ljust(coldef))
             card.write('\n')
 
         card.close()
@@ -245,8 +246,6 @@ class NuisanceMapBuilder:
     def _addDataDrivenNuisances(self, nuisances, yields, mass, channel, jetcat):
         
         if self._ddreader.iszombie: return
-        # make a filter to remove the dd >= 200 for WW 
-#         wwfilter = datadriven.DDWWFilter(self._ddreader)
         (estimates,dummy) = self._wwddfilter.get(mass, channel)
 
         pdf = 'lnN'
@@ -402,7 +401,6 @@ class NuisanceMapBuilder:
         for k in sorted(CutBased):
             common[k] = CutBased[k]
         allNus.update( common )
-#         addFakeBackgroundSysts(allNus, mass,channel,jets)#,errWW=0.2,errggWW=0.2,errDY=1.0,errTop0j=1.0,errTop1j=0.3,errWJ=0.5)
 
         self._addStatisticalNuisances(allNus, yields, channel)
         self._addDataDrivenNuisances(allNus, yields, mass, channel, jetcat)
@@ -449,6 +447,14 @@ def incexc(option, opt_str, value, parser):
 class mattOpts: pass
 
 if __name__ == '__main__':
+    print '''
+.------..------..------.       .------..------..------.       .------..------..------.
+|B.--. ||E.--. ||T.--. | .-.   |T.--. ||H.--. ||E.--. | .-.   |P.--. ||O.--. ||T.--. |
+| :(): || (\/) || :/\: |((5))  | :/\: || :/\: || (\/) |((5))  | :/\: || :/\: || :/\: |
+| ()() || :\/: || (__) | '-.-. | (__) || (__) || :\/: | '-.-. | (__) || :\/: || (__) |
+| '--'B|| '--'E|| '--'T|  ((1))| '--'T|| '--'H|| '--'E|  ((1))| '--'P|| '--'O|| '--'T|
+`------'`------'`------'   '-' `------'`------'`------'   '-' `------'`------'`------'
+'''
 
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
