@@ -120,7 +120,7 @@ class ShapeGluer:
         h = self._makeHisto('histo_'+process, process)
 
         if self._fit:
-            self._logger.debug('Using fitted shapes')
+            self._logger.debug('Using fitted shapes %s', self._fit)
             norms, res = self._fit
             norm = norms.find('n_exp_bin{0}_proc_{1}'.format(self._bin, process))
             if not norm:
@@ -271,8 +271,8 @@ def fitAndPlot( dcpath, opts ):
             if not o: raise StopIteration
             return o
             
-    print 'Signal fit parameters'
-    sig_fit[1].printMultiline(ROOT.std.cout,5,True)
+#     print 'Signal fit parameters'
+#     sig_fit[1].printMultiline(ROOT.std.cout,5,True)
     print 'Signal fit normalization'
     sig_norm  = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[0].fwdIterator()) ])
     sig_final = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[1].floatParsFinal().fwdIterator()) ])
@@ -291,14 +291,32 @@ def fitAndPlot( dcpath, opts ):
     print DC.bins
     bin = DC.bins[0]
 
-    if opts.mode=='sig':
-        fit = sig_fit
-    elif opts.mode == 'bkg':
-        fit = bkg_fit
-    elif opts.mode == 'input':
-        fit = None
-    else:
-        raise ValueError('mode can be only sig, bkg or input')
+    modes = {
+        'sig' :sig_fit,
+        'bkg' :bkg_fit,
+        'init':None,
+    }
+
+    allshapes = {}
+    for mode,fit in modes.iteritems():
+        allshapes[mode] = export(bin, DC, w, mode, fit, opts)
+    
+    if opts.dump:
+        logging.debug('Dumping histograms to %s',opts.dump)
+        dump = ROOT.TFile.Open(opts.dump,'recreate')
+        here = ROOT.gDirectory.func()
+        dump.cd()
+        for mode,shapes in allshapes.iteritems():
+            d = dump.mkdir(mode)
+            d.cd()
+            for s in shapes.itervalues(): s.Write()
+
+        dump.Write()
+        dump.Close()
+        here.cd()
+
+#---
+def export( bin, DC, w, mode, fit, opts):
 
     logging.debug('Plotting %s', fit)
 
@@ -315,7 +333,7 @@ def fitAndPlot( dcpath, opts ):
 
     plot = ROOT.MWLPlot()
     plot.setDataHist(shapes2plot['Data'])
-    if opts.mode != 'bkg':
+    if mode != 'bkg':
         plot.setStackSignal(True)
         plot.setHWWHist(shapes2plot['Hsum'])
 
@@ -336,22 +354,11 @@ def fitAndPlot( dcpath, opts ):
     if opts.output:
         hwwtools.ensuredir(opts.output)
 
-        outbasename = os.path.join(opts.output,'fitshapes_%s_%s' % (bin,opts.mode))
+        outbasename = os.path.join(opts.output,'fitshapes_%s_%s' % (bin,mode))
         c.Print(outbasename+'.pdf')
         c.Print(outbasename+'.png')
 
-    print opts
-    if opts.dump:
-#         logging.dump('Dumping histograms to '+opts.dump)
-        dump = ROOT.TFile.Open(opts.dump,'recreate')
-        here = ROOT.gDirectory.func()
-        dump.cd()
-        for s in shapes.itervalues():
-            s.Write()
-
-        dump.Write()
-        dump.Close()
-        here.cd()
+    return shapes
 
 
 #---
@@ -360,7 +367,7 @@ def addOptions( parser ):
     parser.add_option('-o' , '--output' , dest='output' , help='Output directory (%default)' , default=None)
     parser.add_option('-x' , '--xlabel' , dest='xlabel' , help='X-axis label'                , default='')
     parser.add_option('-r' , '--ratio'  , dest='ratio'  , help='Plot the data/mc ration'     , default=True    , action='store_false')
-    parser.add_option('-M' , '--mode'   , dest='mode'   , help='Select the plot mode [input, sig, bkg]' , default='sig')
+#     parser.add_option('-M' , '--mode'   , dest='mode'   , help='Select the plot mode [input, sig, bkg]' , default='sig')
     parser.add_option('--dump'          , dest='dump'   , help='Dump the histograms to file' , default=None)
     parser.add_option('--tmpdir'        , dest='tmpdir' , help='Temporary directory'         , default=None)
 
