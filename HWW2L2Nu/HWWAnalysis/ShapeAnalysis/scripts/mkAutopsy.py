@@ -123,10 +123,8 @@ class ShapeGluer:
             self._logger.debug('Using fitted shapes')
             norms, res = self._fit
             norm = norms.find('n_exp_bin{0}_proc_{1}'.format(self._bin, process))
-            print '---->',norm, norm.__nonzero__()
             if not norm:
                 norm = norms.find('n_exp_final_bin{0}_proc_{1}'.format(self._bin, process))
-                print '---??',norm, norm.__nonzero__()
 
             self._rooPdf2TH1(h,shape,data, norm, self._fit[1].floatParsFinal())
         else:
@@ -308,36 +306,39 @@ def fitAndPlot( dcpath, opts ):
 
     shapes = gluer.glue()
 
-    shapes['Hsum']  = THSum(shapes,['ggH','vbfH','wzttH'],'histo_higgs','higgs')
-    shapes['WWsum'] = THSum(shapes,['WW','ggWW'],'histo_WWsum','WWsum')
-    shapes['VVsum'] = THSum(shapes,['VV','Vg'],'histo_VVsum','VVsum')
-    shapes['DYsum'] = THSum(shapes,['DYLL','DYTT'],'histo_DYsum','DYsum')
+
+    shapes2plot = shapes.copy()
+    shapes2plot['Hsum']  = THSum(shapes2plot,['ggH','vbfH','wzttH'],'histo_higgs','higgs')
+    shapes2plot['WWsum'] = THSum(shapes2plot,['WW','ggWW'],'histo_WWsum','WWsum')
+    shapes2plot['VVsum'] = THSum(shapes2plot,['VV','Vg'],'histo_VVsum','VVsum')
+    shapes2plot['DYsum'] = THSum(shapes2plot,['DYLL','DYTT'],'histo_DYsum','DYsum')
 
     plot = ROOT.MWLPlot()
-    plot.setDataHist(shapes['Data'])
+    plot.setDataHist(shapes2plot['Data'])
     if opts.mode != 'bkg':
         plot.setStackSignal(True)
-        plot.setHWWHist(shapes['Hsum'])
+        plot.setHWWHist(shapes2plot['Hsum'])
 
-    plot.setWWHist(shapes['WWsum'])  
-    plot.setZJetsHist(shapes['DYsum'])
-    plot.setTopHist(shapes['Top'])
-    plot.setVVHist(shapes['VVsum'])
-    plot.setWJetsHist(shapes['WJet'])
+    plot.setWWHist(shapes2plot['WWsum'])  
+    plot.setZJetsHist(shapes2plot['DYsum'])
+    plot.setTopHist(shapes2plot['Top'])
+    plot.setVVHist(shapes2plot['VVsum'])
+    plot.setWJetsHist(shapes2plot['WJet'])
 
     cName = 'c_fitshapes'
-    ratio = False
+    ratio = opts.ratio
     c = ROOT.TCanvas(cName,cName) if ratio else ROOT.TCanvas(cName,cName,1000,1000)
     plot.setMass(opts.mass)
     plot.setLumi(opts.lumi)
     plot.setLabel(opts.xlabel)
     plot.Draw(c,1,ratio)
 
-    hwwtools.ensuredir(opts.output)
+    if opts.output:
+        hwwtools.ensuredir(opts.output)
 
-    outbasename = os.path.join(opts.output,'fitshapes_%s_%s' % (bin,opts.mode))
-    c.Print(outbasename+'.pdf')
-    c.Print(outbasename+'.png')
+        outbasename = os.path.join(opts.output,'fitshapes_%s_%s' % (bin,opts.mode))
+        c.Print(outbasename+'.pdf')
+        c.Print(outbasename+'.png')
 
     print opts
     if opts.dump:
@@ -356,7 +357,7 @@ def fitAndPlot( dcpath, opts ):
 #---
 def addOptions( parser ):
     
-    parser.add_option('-o' , '--output' , dest='output' , help='Output directory (%default)' , default='fits')
+    parser.add_option('-o' , '--output' , dest='output' , help='Output directory (%default)' , default=None)
     parser.add_option('-x' , '--xlabel' , dest='xlabel' , help='X-axis label'                , default='')
     parser.add_option('-r' , '--ratio'  , dest='ratio'  , help='Plot the data/mc ration'     , default=True    , action='store_false')
     parser.add_option('-M' , '--mode'   , dest='mode'   , help='Select the plot mode [input, sig, bkg]' , default='sig')
