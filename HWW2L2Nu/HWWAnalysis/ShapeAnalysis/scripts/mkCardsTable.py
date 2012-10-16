@@ -5,7 +5,7 @@ import HiggsAnalysis.CombinedLimit.DatacardParser as cardparser
 from math import sqrt,fabs
 import glob
 
-allowedtags = ['sf_0j','sf_1j','of_0j','of_1j','comb_0j', 'comb_1j', 'comb']
+allowedtags = ['sf_0j','sf_1j','sf_2j','of_0j','of_1j','of_2j','comb_0j', 'comb_1j', 'comb']
 
 #basedir = '/shome/jueugste/cmssw/CMSSW_4_2_4/src/HWWAnalysis/CutBasedAnalyzer'
 
@@ -32,14 +32,14 @@ def findVals(samp,thisExp,thisErr):
 class Options: pass
 
 order = [ 'DYLL', 'Top', 'WJet','VV', 'ggWW', 'WW', 'sum', 'signal', 'data'  ]
-samplesTemp = [ ['DYLL','DYTT'], ['Top'], ['WJet'], ['VV','Vg'], ['ggWW'], ['WW'], [], ['ggH','vbfH','wzttH'], [] ]
+samplesTemp = [ ['DYee','DYmm','DYLL','DYTT'], ['Top'], ['WJet'], ['VV','Vg'], ['ggWW'], ['WW'], [], ['ggH','vbfH','wzttH'], [] ]
 labelsTemp  = [ 'Z$\\/\\gamma*$', '$t\\bar{t}$/single $t$', 'W+jets', 'WZ+ZZ', 'ggWW', 'WW', "all bkg.", "signal", 'data' ]
 
 samples = dict(zip(order,samplesTemp))
 labels = dict(zip(order,labelsTemp))
 
 
-def getSummary( filename, mass ):
+def getSummary( filename, mass, blind ):
 
     # get the defaults from 
     dummyp = optparse.OptionParser('dummy')
@@ -75,13 +75,13 @@ def getSummary( filename, mass ):
             errors[channel][process] = sqrt(errors[channel][process])
 
     for x in DC.exp:
-        if '0j' not in x and '1j' not in x: continue
+        if '0j' not in x and '1j' not in x and '2j' not in x: continue
         for y in DC.exp[x]:
             try:
                 expected = DC.exp[x][y]
             except KeyError:
                 expected = 0.
-                
+
             try: error = errors[x][y]
             except KeyError:
                 error = 0.
@@ -118,15 +118,22 @@ def getSummary( filename, mass ):
         if samp in ['signal','sum','data']: continue;
         (val,err) = findVals(samples[samp],thisExp,thisErr)
         totVal += val; totErr += err*err;
-        line += " & $%.1f\pm%.1f$" % (val,err)
+        #line += " & $%.1f\pm%.1f$" % (val,err)
+        line += " & $%.2f\pm%.2f$" % (val,err)
         sums[samp] += val; errs[samp] += err*err
         sums['sum'] += val; errs['sum'] += err*err
-    line += " & $%.1f\pm%.1f$" % (totVal,sqrt(totErr))
+    #line += " & $%.1f\pm%.1f$" % (totVal,sqrt(totErr))
+    line += " & $%.2f\pm%.2f$" % (totVal,sqrt(totErr))
     (val,err) = findVals(samples['signal'],thisExp,thisErr)
     sums['signal'] += val; errs['signal'] += err*err
-    line += " & $%.1f\pm%.1f$" %  (val,err)
-    line += " & $%d$ \\\\" % thisDat
-    sums['data'] += thisDat
+    #line += " & $%.1f\pm%.1f$" %  (val,err)
+    line += " & $%.2f\pm%.2f$" %  (val,err)
+    if (blind == 0) :
+       line += " & $%d$ \\\\" % thisDat
+       sums['data'] += thisDat
+    else :
+       line += " & XXX \\\\"
+       sums['data'] = "XXX"
 
     return line
 
@@ -136,6 +143,7 @@ def main():
     usage = 'usage: %prog tag -i dir -o dir'
     parser = optparse.OptionParser(usage)
     
+    parser.add_option('-b','--blind', dest='blind',    help='Blind or not blind? (0 = unblind, 1=blind)', default = 0)
     parser.add_option('-i','--input', dest='inputdir', help='Input directory')   
     parser.add_option('-o','--output',dest='outputdir',help='Output directory')   
 
@@ -149,6 +157,7 @@ def main():
     tag = args[0]
     dir = opt.inputdir
     outdir = opt.outputdir
+    blind = opt.blind
 
     if outdir:
         if outdir[:-1]!='/':
@@ -160,9 +169,9 @@ def main():
     filenames.sort()
     print filenames
     flavor = 'same' if 'sf' in tag else 'opposite'
-    njets = 'zero' if '0' in tag else 'one'
+    njets = 'zero' if '0' in tag else 'one' if '1' in tag else 'two'
     caption = '''
-    Background contributions and data yields for 4.63 $\mathrm{fb^{-1}}$ of integrated 
+    Background contributions and data yields for 12.1 $\mathrm{fb^{-1}}$ of integrated 
     luminosity after the BDT selection in the '''+njets +' jet bin for the '+flavor+''' flavor final states.
     The data-driven corrections are applied.'''
     label = 'yields_'+tag
@@ -181,7 +190,7 @@ def main():
     print >> texfile, r'\footnotesize'
     print >> texfile, 'Mass &',r' & '.join(order),r'\\'
     print >> texfile, r'\hline'
-    
+
     for file in filenames:
         print '-'*80
         print file
@@ -190,7 +199,7 @@ def main():
 #             continue
         mass = file.split('.')[-3].replace('mH','')
 
-        print >> texfile,getSummary(file,int(mass))
+        print >> texfile,getSummary(file,int(mass), blind)
 
     print >> texfile, r'\hline'
     print >> texfile, r'\end{tabular}'
