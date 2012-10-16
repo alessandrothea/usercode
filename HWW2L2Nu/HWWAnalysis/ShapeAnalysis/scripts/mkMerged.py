@@ -550,7 +550,7 @@ class ShapeMixer:
 
 
     # not used anymore
-    def applyScaleFactors(self, factors):
+    def applyScaleFactors(self, factors={}):
         print '    - Applying scaling factors'
         for n,h in self.histograms.iteritems():
             # get the identification token
@@ -700,6 +700,8 @@ if __name__ == '__main__':
                 print '     - mixing histograms'
                 ss.mix(chan)
 
+                ss.applyScaleFactors()
+                
                 m.add(ss)
             print '  - summing sets'
             m.sum()
