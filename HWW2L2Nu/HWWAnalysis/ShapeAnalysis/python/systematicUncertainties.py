@@ -46,7 +46,7 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,options):
     if channel == 'of': MCPROC += ['DYLL']
     if not qqWWfromData: MCPROC+=['WW','ggWW']
     # -- Luminosity ---------------------
-    nuisances['lumi'] = [ ['lnN'], dict([(p,1.050) for p in MCPROC])]
+    nuisances['lumi'] = [ ['lnN'], dict([(p,1.044) for p in MCPROC])]
     # -- PDF ---------------------
     #nuisances['pdf_gg']    = [ ['lnN'], { 'ggH':ggH_pdfErrYR[mass], 'ggWW':(1.00 if qqWWfromData else 1.04) }]
     nuisances['pdf_gg']    = [ ['lnN'], { 'ggH':ggH_pdfErrYR[mass], 'ggWW':1.04 }]
