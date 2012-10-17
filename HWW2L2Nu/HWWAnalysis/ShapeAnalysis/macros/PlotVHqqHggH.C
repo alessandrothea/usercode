@@ -20,7 +20,7 @@
 #include <utility>
 
 
-float xPos[] = {0.0,0.0,0.0,0.0,1.3,1.3,1.3,1.3,2.3,2.3,3.3,0.0,1.3,2.3,3.3,0.0,1.3,2.3,3.3}; 
+float xPos[] = {0.0,0.0,0.0,0.0,1.3,1.3,1.3,1.3,2.3,3.0,3.3,0.0,1.3,2.3,3.3,0.0,1.3,2.3,3.3}; 
 float yOff[] = {  0,  1,  2,  3,  0,  1,  2,  3,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,  5};
 
 //              1 2 3 4 5 6 7 8 9 101112131415161718
@@ -79,8 +79,10 @@ class PlotVHqqHggH {
 	    _blindBinDx       = 0;
 	    _addSignal        = 1;
             _addSignalOnBackground = 0;
-	    _cutSx            = -999;
+            _mergeSignal      = 0;
+            _cutSx            = -999;
 	    _cutDx            = -999;
+            _mass             = -1;
         }
         
         ///---- data
@@ -212,6 +214,12 @@ class PlotVHqqHggH {
         std::cout << " addSignalOnBackground = " << _addSignalOnBackground << std::endl;
        }
        
+       //---- merge signal in one unique histogram:  merge = 1, no merge = 0
+       void set_mergeSignal (int mergeSignal) {
+        _mergeSignal = mergeSignal;
+        std::cout << " mergeSignal = " << _mergeSignal << std::endl;
+       }
+         
        //---- blind bins
        void setBlindBinSx(int blindBinSx) {
 	_blindBinSx = blindBinSx;
@@ -458,10 +466,15 @@ class PlotVHqqHggH {
             hstack->Draw("hist");
 //             std::cout << " Disegnato lo stack! " << std::endl;
 
-	    for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) {
-	     _vectTHstackSig.at(iSig) -> Draw("hist,same");
-	    }
-
+            for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) {
+             if (_mergeSignal == 0 ||  iSig == (_vectTHstackSig.size()-1)) {
+              if (_mergeSignal == 1) {
+               _vectTHstackSig.at(iSig) -> SetLineColor (kRed);
+              }
+              _vectTHstackSig.at(iSig) -> Draw("hist,same");
+             }
+            }
+            
             if (data)     data->Draw("ep,same");
             DrawLabels();
             pad1->GetFrame()->DrawClone();
@@ -792,8 +805,26 @@ class PlotVHqqHggH {
               _vectTHSig.at (iSig) -> SetLineColor( _vectColourSig.at (iSig) );
               _vectTHSig.at (iSig) -> SetFillColor( _vectColourSig.at (iSig) );
               _vectTHSig.at (iSig) -> SetFillStyle(3003);
-              hstack->Add(_vectTHSig.at (iSig));
+              if (_mergeSignal == 0) {
+               hstack->Add(_vectTHSig.at (iSig));
+              }
              }             
+             
+             if (_mergeSignal == 1) {
+              for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) {
+               if (iSig == (_vectTHstackSig.size() -1 ) ){
+//                 _vectTHstackSig.at (iSig) -> SetLineColor( _vectColourSig.at (iSig) );
+//                 _vectTHstackSig.at (iSig) -> SetFillColor( _vectColourSig.at (iSig) );
+//                 _vectTHstackSig.at (iSig) -> SetFillStyle(3003);
+                TH1F* tempHist = (TH1F*) _vectTHstackSig.at (iSig)->Clone("allSignal");
+                tempHist -> SetFillStyle(1001);
+                tempHist -> SetLineColor(kRed);
+                tempHist -> SetLineStyle(1);
+                tempHist -> SetLineWidth(3);
+                hstack->Add(tempHist);
+               }
+              }             
+             }
             }
 	    
             hstack->Draw("GOFF");
@@ -841,6 +872,7 @@ class PlotVHqqHggH {
             return hstack;
          }
 
+        void setMass(const float &m) { _mass = m; }
         void setLumi(const float &l) { _lumi = l; }
         void setLabel(const TString &s) { _xLabel = s; }
         void setUnits(const TString &s) { _units = s; }
@@ -879,7 +911,21 @@ class PlotVHqqHggH {
 	     j++; 
 	    }
 	    for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) {
-	     DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHstackSig.at(iSig)         , _vectNameSig.at(iSig) ,           "l" );
+             if (_mergeSignal == 0 ||  iSig == (_vectTHstackSig.size()-1)) {
+              if (_mergeSignal == 1) {
+               TString name4Legend;
+               if (_mass == -1) {
+                name4Legend = Form ("Higgs");
+               }
+               else {
+                name4Legend = Form ("Higgs %d GeV", _mass);
+               }
+               DrawLegend(x0+pos[1]*wx, _globalYoffset - off[1]*_yoffset, _vectTHstackSig.at(iSig)         , name4Legend.Data() ,           "l" );
+              }
+              else {
+               DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHstackSig.at(iSig)         , _vectNameSig.at(iSig) ,           "l" );
+              }
+             }
 	     j++;
 	    }
 	    for (unsigned int iBkg = 0; iBkg<_vectTHBkg.size(); iBkg++) {
@@ -1019,6 +1065,10 @@ class PlotVHqqHggH {
 	
 	int     _addSignal      ;
         int     _addSignalOnBackground      ;
+        
+        int     _mergeSignal    ;
+        
+        int     _mass           ;
         
 };
 
