@@ -93,6 +93,9 @@ class MWLPlot {
             _axisLabelSize  = 0.050;
             _titleOffset    = 1.6;
             _extraLabel     = 0x0;
+            _pad1           = 0x0;
+            _pad2           = 0x0;
+
         }
 
         void setDataHist (TH1D * h)                        { _data          = h;        } 
@@ -143,16 +146,15 @@ class MWLPlot {
 			if ( div && !GetDataHist() )
 				div = false;
 
-            TPad *pad1;
             if(div) {
-                pad1 = new TPad("pad1","pad1",0,1-0.614609572,1,1);
-                pad1->SetTopMargin(0.0983606557);
-                pad1->SetBottomMargin(0.025);
+                _pad1 = new TPad("pad1","pad1",0,1-0.614609572,1,1);
+                _pad1->SetTopMargin(0.0983606557);
+                _pad1->SetBottomMargin(0.025);
             } else {
-                pad1 = new TPad("pad1","pad1",0,0,1,1);
+                _pad1 = new TPad("pad1","pad1",0,0,1,1);
             }
-            pad1->Draw();
-            pad1->cd();
+            _pad1->Draw();
+            _pad1->cd();
 
             RebinHists(rebin);
             THStack *hstack = GetStack(c1->GetLogy());
@@ -167,7 +169,7 @@ class MWLPlot {
             if(signal && !_stackSignal) signal->Draw("hist,same");
             if(data)     data->Draw("ep,same");
             DrawLabels();
-            //            pad1->GetFrame()->DrawClone();
+            //            _pad1->GetFrame()->DrawClone();
 
             if(div) {
 
@@ -206,12 +208,12 @@ class MWLPlot {
                 }
 
                 c1->cd();
-                TPad *pad2 = new TPad("pad2","pad2",0,0,1,1-0.614609572);
+                _pad2 = new TPad("pad2","pad2",0,0,1,1-0.614609572);
 
-                pad2->SetTopMargin(0.0261437908);
-                pad2->SetBottomMargin(0.392156863);
-                pad2->Draw();
-                pad2->cd();
+                _pad2->SetTopMargin(0.0261437908);
+                _pad2->SetBottomMargin(0.392156863);
+                _pad2->Draw();
+                _pad2->cd();
 
                 TLine *line = new TLine(rref->GetXaxis()->GetXmin(), 1.0, rref->GetXaxis()->GetXmax(), 1.0);
                 line->SetLineColor(kBlack);
@@ -233,7 +235,7 @@ class MWLPlot {
                 rdat->Draw("E SAME p");
                 line->Draw("SAME"); 
                 c1->Update();
-/*                 pad2->GetFrame()->DrawClone(); */
+/*                 _pad2->GetFrame()->DrawClone(); */
             }
 
         }
@@ -361,6 +363,8 @@ class MWLPlot {
             _extraLabel->SetTextSize(_legendTextSize*0.9);
         }
 
+		TPad* pad1() { return _pad1; }
+		TPad* pad2() { return _pad2; }
     private: 
         int GetSampCount() {
             int sampCount = 0;
@@ -508,6 +512,8 @@ class MWLPlot {
         Float_t _labelOffset    ;
         Float_t _axisLabelSize  ;
         Float_t _titleOffset    ;
+        TPad *_pad1;
+        TPad *_pad2;
 
 
 };

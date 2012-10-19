@@ -10,13 +10,13 @@ void LatinoStyle2()
   //----------------------------------------------------------------------------
   // Canvas
   //----------------------------------------------------------------------------
-  LatinosStyle->SetCanvasBorderMode(  0);
-  LatinosStyle->SetCanvasBorderSize( 10);
-  LatinosStyle->SetCanvasColor     (  0);
-  LatinosStyle->SetCanvasDefH      (794);
-  LatinosStyle->SetCanvasDefW      (550);
-  LatinosStyle->SetCanvasDefX      ( 10);
-  LatinosStyle->SetCanvasDefY      ( 10);
+  LatinosStyle->SetCanvasBorderMode(   0);
+  LatinosStyle->SetCanvasBorderSize(  10);
+  LatinosStyle->SetCanvasColor     (   0);
+  LatinosStyle->SetCanvasDefH      (1588);
+  LatinosStyle->SetCanvasDefW      (1100);
+  LatinosStyle->SetCanvasDefX      (  10);
+  LatinosStyle->SetCanvasDefY      (  10);
 
 
   //----------------------------------------------------------------------------

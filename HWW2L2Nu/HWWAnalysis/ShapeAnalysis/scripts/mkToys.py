@@ -41,6 +41,7 @@ if __name__ == '__main__':
     shdir = dcdir+'/shapes'
 
     for k in xrange(opt.ntoys):
+        print '==> Instance',k
         toypath = 'toys/instance_%d/' % k
         toydcpath = toypath+'datacards'
         toyshpath = toypath+'datacards/shapes'
@@ -53,34 +54,40 @@ if __name__ == '__main__':
         rndm = ROOT.TRandom3()
 
         for chan in opt.chans:
+
+            # the file for signal injection must be unique for all masses
+            # let's take 125 as a reference
+            refname = siname.format(lumi=opt.lumi, mass=125, channel=chan)
+            refpath = os.path.join(shdir,refname+'.root')
+            reffile = ROOT.TFile.Open(refpath)
+            data_si = reffile.Get('histo_Data')
+            if not data_si.__nonzero__():
+                reffile.Close()
+                raise ValueError('cant\'t find histo_data')
+            print 'histo_Data',data_si.GetEntries(),data_si.Integral()
+            sentry = TH1AddDirSentry()
+
+            data_toy = data_si.Clone('histo_Toy')
+            data_toy.Reset()
+
+            toyentries = rndm.Poisson(data_si.GetEntries())
+            print 'Filling the toy with',toyentries,'entries'
+            
+            data_toy.FillRandom(data_si,toyentries)
+
             for mass in masses:
                 print chan, mass
 
                 basename = siname.format(lumi=opt.lumi, mass=mass, channel=chan)
                 dcpath  = os.path.join(dcdir,basename+'.txt')
-                shpath = os.path.join(shdir,basename+'.root')
     #             print os.path.exists(dcpath),dcpath
     #             print os.path.exists(shpath),shpath
 
-                fsh = ROOT.TFile.Open(shpath)
-                data_si = fsh.Get('histo_Data')
-                if not data_si.__nonzero__():
-                    fsh.Close()
-                    raise ValueError('cant\'t find histo_data')
-                print 'histo_Data',data_si.GetEntries(),data_si.Integral()
-                sentry = TH1AddDirSentry()
-
-                data_toy = data_si.Clone('histo_Toy')
-                data_toy.Reset()
-
-                toyentries = rndm.Poisson(data_si.GetEntries())
-                print 'Filling the toy with',toyentries,'entries'
-                
-                data_toy.FillRandom(data_si,toyentries)
-
                 newshpath = os.path.join(toydcpath+'/pseudo',basename+'.root')
                 newfsh = ROOT.TFile.Open(newshpath,'recreate')
-                data_toy.SetDirectory(newfsh)
+                
+                newdata = data_toy.Clone()
+                newdata.SetDirectory(newfsh)
                 newfsh.Write()
                 newfsh.Close()
 
@@ -100,5 +107,6 @@ if __name__ == '__main__':
                 dc.close()
                 newdc.close()
 
-                del sentry
+            del sentry
+            reffile.Close()
             

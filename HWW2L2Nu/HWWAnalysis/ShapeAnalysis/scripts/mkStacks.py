@@ -360,7 +360,7 @@ def makeNominalPlots(file,outputdir, opt):
 
 
     cName = 'c_'+file.split('/')[-1].replace('.root','').replace('.','_')
-    c = ROOT.TCanvas(cName,cName) if ratio else ROOT.TCanvas(cName,cName,2)
+    c = ROOT.TCanvas(cName,cName) if ratio else ROOT.TCanvas(cName,cName,1000,1000)
     if opt.logY: c.SetLogy()
     plot.setMass(mass)
     plot.setLumi(opt.lumi)

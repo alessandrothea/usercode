@@ -5,6 +5,8 @@ import os.path
 import hwwtools
 import logging
 import array
+import re
+import math
 
 from HiggsAnalysis.CombinedLimit.DatacardParser import *
 from HWWAnalysis.Misc.ROOTAndUtils import TH1AddDirSentry
@@ -150,8 +152,101 @@ class ShapeGluer:
         syst = self._syst(process)
         return h
 
+    #---
     def _glueerrors(self):
 
+        shapere = re.compile('_shape$')
+        if not self._fit: 
+            # here we can use w.set('nuisances') :D
+            nuisances = self._ws.set('nuisances')
+            POI = self._ws.set('POI')
+
+            return None
+
+        (norm,res,model) = self._fit
+        # take ebin centers
+        ax      = self._template.GetXaxis()
+        nbins   = ax.GetNbins()
+        xs      = array.array('d',[ ax.GetBinCenter(i) for i in xrange(1,nbins+1) ])
+        wu      = array.array('d',[ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ])
+        wd      = array.array('d',[ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ])
+        
+        # now the real thing
+        nms = res.floatParsFinal().snapshot()
+
+        # sort the nuisances
+        shapes = [ arg.GetName() for arg in roofiter(nms.fwdIterator()) if shapere.search(arg.GetName())]
+        norms  = [ arg.GetName() for arg in roofiter(nms.fwdIterator()) if not shapere.search(arg.GetName())]
+
+        grouping = [norms] + [ [arg] for arg in shapes ]
+
+        # nominal valuse from the best fit values
+        data = self._ws.data('data_obs')
+        nmarray = self._roo2array(model, data, nms)
+        # and the errors to be filled
+        uperrs = array.array('d',[0]*nbins)
+        dwerrs = array.array('d',[0]*nbins)
+        for g in grouping:
+            upfloat,dwfloat = self._variate(model,nms,g)
+            for i in xrange(nbins):
+                uperrs[i] += upfloat[i]*upfloat[i]
+                dwerrs[i] += dwfloat[i]*dwfloat[i]
+
+        for i in xrange(nbins):
+            uperrs[i] = math.sqrt(uperrs[i])
+            dwerrs[i] = math.sqrt(dwerrs[i])
+
+        zeroes  = array.array('d',[0]*nbins)
+        
+        # normalize to data
+        A = data.sum(False)
+
+        for i in xrange(nbins):
+            nmarray[i] = nmarray[i] * A
+            uperrs[i] = uperrs[i] * A
+            dwerrs[i] = dwerrs[i] * A
+
+        errs = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerrs,uperrs)
+        errs.SetNameTitle('model_errs','model_errs')
+        return errs
+
+    #---
+    def _variate(self,model,pars,tofloat):
+        '''variates a subgroup of nuisances by their error and calculate the fluctuation from the nominal value'''
+        ups = pars.snapshot()
+        dws = pars.snapshot()
+
+        print tofloat
+
+        for var in tofloat:
+            up = ups.find(var) 
+            up.setVal(up.getVal()+up.getError())
+            dw = dws.find(var) 
+            dw.setVal(dw.getVal()-dw.getError())
+
+        data = self._ws.data('data_obs')
+
+        # convert the modified parameters to a model
+        nmarray = self._roo2array(model, data, pars)
+        uparray = self._roo2array(model, data, ups)
+        dwarray = self._roo2array(model, data, dws)
+        
+        upfloat = array.array('d',[0]*data.numEntries())
+        dwfloat = array.array('d',[0]*data.numEntries())
+
+        # and calculate the fluctuations in terms of the model
+        for i in xrange(data.numEntries()):
+            u =  max(uparray[i],dwarray[i])-nmarray[i]
+            d = -min(uparray[i],dwarray[i])+nmarray[i]
+            upfloat[i] = u if u > 0 else 0
+            dwfloat[i] = d if d > 0 else 0
+
+        return (upfloat,dwfloat)
+
+    #---
+    def _glueerrors2(self):
+
+        shapere = re.compile('_shape$')
         if not self._fit: return None
 
 #         h = self._makeHisto('what','what')
@@ -159,10 +254,14 @@ class ShapeGluer:
         ups = self._fit[1].floatParsFinal().snapshot()
         dws = self._fit[1].floatParsFinal().snapshot()
 
+        # shift up the non-shape nuisances
         for arg in roofiter(ups.fwdIterator()):
+            if shapere.search(arg.GetName()): continue
             arg.setVal(arg.getVal()+arg.getError())
 
+        # shift down the non-shape nuisances
         for arg in roofiter(dws.fwdIterator()):
+            if shapere.search(arg.GetName()): continue
             arg.setVal(arg.getVal()-arg.getError())
 
 #         t_1 = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(nms.fwdIterator()) ])
@@ -179,11 +278,6 @@ class ShapeGluer:
         wu      = array.array('d',[ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ])
         wd      = array.array('d',[ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ])
 
-
-#         self._rooPdf2TH1(h,model,data,data.sum(False))
-#         for i in xrange(1,nbins+1):
-#             print i,h.GetBinContent(i)
-
         nmarray = self._roo2array(model, data, nms)
         uparray = self._roo2array(model, data, ups)
         dwarray = self._roo2array(model, data, dws)
@@ -196,8 +290,6 @@ class ShapeGluer:
             d = -min(uparray[i],dwarray[i])+nmarray[i]
             uperr[i] = u if u > 0 else 0
             dwerr[i] = d if d > 0 else 0
-
-            
 
         zeroes  = array.array('d',[0]*nbins)
         
@@ -312,6 +404,13 @@ def fitAndPlot( dcpath, opts ):
 
 '''
 
+    remass = re.compile('mH(\d*)')
+    m = remass.search(dcpath)
+    if not m: raise ValueError('porcocazzo')
+
+    print 'Mass',m.group(1)
+    opt.mass = int(m.group(1))
+
     mypath = os.path.dirname(os.path.abspath(__file__))
     ROOT.gInterpreter.ExecuteMacro(mypath+'/LatinoStyle2.C')
     hwwtools.loadAndCompile(mypath+'/MWLPlot.C','g')
@@ -355,6 +454,7 @@ def fitAndPlot( dcpath, opts ):
         raise IOError('Could not open '+wspath)
     
     w = wsfile.Get('w')
+    w.saveSnapshot('clean',w.allVars())
 
     # 3. prepare the temp direcotry
     import tempfile
@@ -380,25 +480,6 @@ def fitAndPlot( dcpath, opts ):
 
     sig_fit = ( mlffile.Get('norm_fit_s'),  mlffile.Get('fit_s'), w.pdf('model_s') )
     bkg_fit = ( mlffile.Get('norm_fit_b'),  mlffile.Get('fit_b'), w.pdf('model_b') )
-
-#     print sig_fit[1].floatParsInit()
-#     xxx = sig_fit[1].floatParsInit().clone('') 
-#     print xxx
-#     for arg in roofiter(xxx.fwdIterator()):
-#         if '_shape' not in arg.GetName(): continue
-#         arg.setVal(1.)
-
-#         print arg,arg.GetName(),arg.getVal()
-#     sys.exit(0)
-#             
-#     sig_norm  = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[0].fwdIterator()) ])
-#     sig_final = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[1].floatParsFinal().fwdIterator()) ])
-#     sig_init  = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[1].floatParsInit().fwdIterator()) ])
-
-#     for no in sorted(sig_norm):
-#         logging.debug( '%-40s %-10g',no, sig_norm[no] ) 
-#     for nu in sorted(sig_final):
-#         logging.debug( '%-40s %-10g %-10g',nu,sig_init[nu],sig_final[nu])
 
     print DC.bins
     bin = DC.bins[0]
@@ -465,7 +546,7 @@ def export( bin, DC, w, mode, fit, opts):
     print 'Errs',errs
     if errs:
         plot.pad1().cd()
-        errs.SetFillStyle(3004)
+        errs.SetFillStyle(3153)
         errs.SetFillColor(1)
         errs.SetLineColor(3)
         errs.SetMarkerColor(3)
@@ -483,7 +564,7 @@ def export( bin, DC, w, mode, fit, opts):
     if opts.output:
         hwwtools.ensuredir(opts.output)
 
-        outbasename = os.path.join(opts.output,'fitshapes_%s_%s' % (bin,mode))
+        outbasename = os.path.join(opts.output,'fitshapes_mH%d_%s_%s' % (opt.mass,bin,mode))
         c.Print(outbasename+'.pdf')
         c.Print(outbasename+'.png')
         c.Print(outbasename+'.root')

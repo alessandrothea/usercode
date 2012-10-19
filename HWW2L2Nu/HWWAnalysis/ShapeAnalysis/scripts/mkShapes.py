@@ -175,12 +175,10 @@ class ShapeFactory:
                 for flavor in flavors:
                     pars = dict([
                         ('mass',mass),
-#                         ('category',cat.name),
                         ('category',category),
                         ('flavor',flavor)
                     ])
                     print '-'*80
-#                     print ' Processing channel '+chan+': mass',mass,'category',cat.name,'flavor',flavor
                     print ' Processing channel '+chan+': mass',mass,'category',category,'flavor',flavor
                     print '-'*80
                     
@@ -210,17 +208,14 @@ class ShapeFactory:
 
                     # - now build the selection
                     # - make a separate function to cotain the exceptions
-#                     catSel = cat.cut;
                     catSel = hwwinfo.categoryCuts[category]
                     selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
 
-#                     self._addweights(mass,var,'nominals',selections,cat.name)
                     self._addweights(mass,var,'nominals',selections,category)
 
                     print '.'*80
                     # - extract the histogram range
-#                     rng = self.getrange(opt.range,mass,cat.name) 
                     rng = self.getrange(opt.range,mass,category) 
 
                     # - to finally fill it
@@ -258,13 +253,11 @@ class ShapeFactory:
                 flavors = hwwinfo.flavors[flavor]
                 for flavor in flavors:
                     print '-'*80
-#                     print ' Processing channel '+chan+': mass',mass,'category',cat.nick,'flavor',flavor
                     print ' Processing channel '+chan+': mass',mass,'category',category,'flavor',flavor
                     print '-'*80
 
                     pars = dict([
                         ('mass',mass),
-#                         ('category',cat.name),
                         ('category',category),
                         ('flavor',flavor),
                         ('syst',syst),
@@ -294,16 +287,13 @@ class ShapeFactory:
                     print 'Output file: ',output
 
                     # - now build the selection
-#                     catSel = cat.cut;
                     catSel = hwwinfo.categoryCuts[category]
                     selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
-#                     self._addweights(mass,var,syst,selections, cat.name)
                     self._addweights(mass,var,syst,selections, category)
 
                     print '.'*80
                     # - extract the histogram range
-#                     rng = self.getrange(opt.range,mass,cat.name) 
                     rng = self.getrange(opt.range,mass,category) 
                     # - to finally fill it
                     self._draw(alias, rng, selections ,output,inputs)
