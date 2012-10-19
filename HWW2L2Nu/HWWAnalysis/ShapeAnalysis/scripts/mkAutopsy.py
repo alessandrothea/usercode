@@ -4,12 +4,25 @@ import sys
 import os.path
 import hwwtools
 import logging
+import array
 
 from HiggsAnalysis.CombinedLimit.DatacardParser import *
 from HWWAnalysis.Misc.ROOTAndUtils import TH1AddDirSentry
 
 import ROOT
 
+#---
+class roofiter:
+    def __init__(self,iter):
+        self._iter = iter
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        o = self._iter.next()
+        if not o: raise StopIteration
+        return o
 
 mlfdir = '.'
 
@@ -59,14 +72,17 @@ class ShapeGluer:
         self._template.SetTitle('shape_template')
         self._template.Reset()
 
+        self._dummy = hdata.Clone('dummy')
+
     
     #---
     def glue(self):
         exp = self._DC.exp[self._bin]
+        errs = self._glueerrors()
         shapes = dict([ (p,self._glueprocess(p)) for p in self._DC.processes if exp[p] != 0])
         shapes['Data'] = self._gluedata()
 
-        return shapes
+        return shapes,errs,self._dummy
 
     #---
     def _makeHisto(self, name, title):
@@ -97,22 +113,20 @@ class ShapeGluer:
         data = self._ws.data('data_obs')
         tag = 'Sig' if process in self._DC.signals else 'Bkg'
 
-#         self._ws.allPdfs().printMultiline(ROOT.std.cout,3)
         mname  = 'shape{0}_{1}_{2}_morph'.format(tag,self._bin,process)
         sname  = 'shape{0}_{2}_{1}Pdf'.format(tag,self._bin,process)
         morph  = self._ws.pdf('shape{0}_{1}_{2}_morph'.format(tag,self._bin,process))
         static = self._ws.pdf('shape{0}_{2}_{1}Pdf'.format(tag,self._bin,process))
-        errs   = self._ws.pdf('shape{0}_{2}_{1}_CMS_hww_{2}_{1}_stat_shapeUpPdf'.format(tag,self._bin,process))
-#         for the errors one needs to take the 2 original histograms
-#  'shape{0}_{2}_{1}.format(tag,self.bin,process)
-#  'shape{0}_{2}_{1}_CMS_hww_{2}_{1}_stat_shapeUpPdf'.format(tag,self.bin,process)
+        # errs   = self._ws.pdf('shape{0}_{2}_{1}_CMS_hww_{2}_{1}_stat_shapeUpPdf'.format(tag,self._bin,process))
+        # 'shape{0}_{2}_{1}.format(tag,self.bin,process)
+        # 'shape{0}_{2}_{1}_CMS_hww_{2}_{1}_stat_shapeUpPdf'.format(tag,self.bin,process)
 
         if morph.__nonzero__():
             shape = morph
         elif static.__nonzero__():
             shape = static
         else:
-            self._ws.allPdfs().printMultiline(ROOT.std.cout,3)
+            self._ws.allPdfs().Print('V')
             print morph.__nonzero__(),morph, mname
             print static.__nonzero__(),static, sname
             raise ValueError('Can\'t find the nether the morph nor the shape!!! '+process)
@@ -121,18 +135,123 @@ class ShapeGluer:
 
         if self._fit:
             self._logger.debug('Using fitted shapes %s', self._fit)
-            norms, res = self._fit
+            norms, res, model = self._fit
             norm = norms.find('n_exp_bin{0}_proc_{1}'.format(self._bin, process))
             if not norm:
                 norm = norms.find('n_exp_final_bin{0}_proc_{1}'.format(self._bin, process))
 
             self._rooPdf2TH1(h,shape,data, norm, self._fit[1].floatParsFinal())
+
         else:
             self._logger.debug('Using expected shapes')
             self._rooPdf2TH1(h,shape,data, self._DC.exp[self._bin][process])
 
+        
+        syst = self._syst(process)
         return h
 
+    def _glueerrors(self):
+
+        if not self._fit: return None
+
+#         h = self._makeHisto('what','what')
+        nms = self._fit[1].floatParsFinal().snapshot()
+        ups = self._fit[1].floatParsFinal().snapshot()
+        dws = self._fit[1].floatParsFinal().snapshot()
+
+        for arg in roofiter(ups.fwdIterator()):
+            arg.setVal(arg.getVal()+arg.getError())
+
+        for arg in roofiter(dws.fwdIterator()):
+            arg.setVal(arg.getVal()-arg.getError())
+
+#         t_1 = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(nms.fwdIterator()) ])
+#         t_2 = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(ups.fwdIterator()) ])
+#         t_3 = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(dws.fwdIterator()) ])
+
+        model = self._fit[2]
+        data = self._ws.data('data_obs')
+
+        # tak ebin centers
+        ax      = self._template.GetXaxis()
+        nbins   = ax.GetNbins()
+        xs      = array.array('d',[ ax.GetBinCenter(i) for i in xrange(1,nbins+1) ])
+        wu      = array.array('d',[ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ])
+        wd      = array.array('d',[ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ])
+
+
+#         self._rooPdf2TH1(h,model,data,data.sum(False))
+        for i in xrange(1,nbins+1):
+            print i,h.GetBinContent(i)
+
+        nmarray = self._roo2array(model, data, nms)
+        uparray = self._roo2array(model, data, ups)
+        dwarray = self._roo2array(model, data, dws)
+        
+        uperr   = array.array('d',[0]*nbins)
+        dwerr   = array.array('d',[0]*nbins)
+
+        for i in xrange(nbins):
+            u =  max(uparray[i],dwarray[i])-nmarray[i]
+            d = -min(uparray[i],dwarray[i])+nmarray[i]
+            uperr[i] = u if u > 0 else 0
+            dwerr[i] = d if d > 0 else 0
+
+            
+
+        zeroes  = array.array('d',[0]*nbins)
+        
+        A = data.sum(False)
+
+        for i in xrange(nbins):
+            nmarray[i] = nmarray[i] * A
+            uperr[i] = uperr[i] * A
+            dwerr[i] = dwerr[i] * A
+
+            print '[',dwerr[i],',',uperr[i],']'
+
+        errs = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerr,uperr)
+        errs.SetNameTitle('model_s_errs','model_s_errs')
+        return errs
+
+    #---
+    def _syst(self,process):
+        '''sum all the uncertainties in quadrature for a given process'''
+        import math
+        sum2 = 0
+        for (name, nofloat, pdf, args, errline) in self._DC.systs:
+            if 'shape' in pdf: continue
+            if pdf == 'gmN': continue
+            
+            try:
+                x = errline[self._bin][process]
+                if not x: continue 
+                sum2 += (x-1)*(x-1)
+            except:
+                pass
+        return math.sqrt(sum2)
+
+    #---
+    def _roo2array(self, pdf, data, pars):
+
+        pdf_obs  = pdf.getObservables(data)
+        pdf_pars = pdf.getParameters(data)
+
+        bins = array.array('d',[0]*data.numEntries())
+
+        if isinstance(pars,ROOT.RooArgList):
+            pars = RooList2Set(pars)
+
+        pdf_pars.__assign__(pars)
+
+        for i in xrange(data.numEntries()):
+            pdf_obs.__assign__(data.get(i))
+            bins[i] = pdf.getVal(pdf_obs)
+
+        return bins
+
+
+        
 
 #     @staticmethod
     def _rooPdf2TH1(self,h, pdf, data, norm=None, pars=None):
@@ -151,15 +270,18 @@ class ShapeGluer:
 
         for i in xrange(data.numEntries()):
             pdf_obs.__assign__(data.get(i))
-            h.SetBinContent(i+1,pdf.getVal())
+            h.SetBinContent(i+1,pdf.getVal(pdf_obs))
 
         if norm:
             if isinstance(norm,ROOT.RooAbsReal):
                 norm = norm.getVal()
             self._logger.debug('pdf %s, h %s, Normalization %f -> %f',pdf.GetName(), h.GetName(),h.Integral(), norm)
             h.Scale(norm/h.Integral())
-        else:
+        elif norm==0:
+            # just in case we are normalizing a 0 integral to 0 (0/0 is bad)
             h.Scale(0)
+        elif norm==None:
+            print 'No norm'
 
 
 def THSum( shapes, labels, name=None, title=None):
@@ -256,37 +378,27 @@ def fitAndPlot( dcpath, opts ):
     if not mlffile.__nonzero__():
         raise IOError('Could not open '+wspath)
 
-    sig_fit = ( mlffile.Get('norm_fit_s'),  mlffile.Get('fit_s') )
-    bkg_fit = ( mlffile.Get('norm_fit_b'),  mlffile.Get('fit_b') )
+    sig_fit = ( mlffile.Get('norm_fit_s'),  mlffile.Get('fit_s'), w.pdf('model_s') )
+    bkg_fit = ( mlffile.Get('norm_fit_b'),  mlffile.Get('fit_b'), w.pdf('model_b') )
 
-    class roofiter:
-        def __init__(self,iter):
-            self._iter = iter
+#     print sig_fit[1].floatParsInit()
+#     xxx = sig_fit[1].floatParsInit().clone('') 
+#     print xxx
+#     for arg in roofiter(xxx.fwdIterator()):
+#         if '_shape' not in arg.GetName(): continue
+#         arg.setVal(1.)
 
-        def __iter__(self):
-            return self
+#         print arg,arg.GetName(),arg.getVal()
+#     sys.exit(0)
+#             
+#     sig_norm  = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[0].fwdIterator()) ])
+#     sig_final = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[1].floatParsFinal().fwdIterator()) ])
+#     sig_init  = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[1].floatParsInit().fwdIterator()) ])
 
-        def next(self):
-            o = self._iter.next()
-            if not o: raise StopIteration
-            return o
-            
-#     print 'Signal fit parameters'
-#     sig_fit[1].printMultiline(ROOT.std.cout,5,True)
-    print 'Signal fit normalization'
-    sig_norm  = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[0].fwdIterator()) ])
-    sig_final = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[1].floatParsFinal().fwdIterator()) ])
-    sig_init  = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(sig_fit[1].floatParsInit().fwdIterator()) ])
-
-    for no in sorted(sig_norm):
-        logging.debug( '%-40s %-10g',no, sig_norm[no] ) 
-    for nu in sorted(sig_final):
-        logging.debug( '%-40s %-10g %-10g',nu,sig_init[nu],sig_final[nu])
-#     
-#     print 'Signal fit normalizations'
-#     bkg_fit[0].printMultiline(ROOT.std.cout,5)
-#     print 'Signal fit parameters'
-#     bkg_fit[1].printMultiline(ROOT.std.cout,5)
+#     for no in sorted(sig_norm):
+#         logging.debug( '%-40s %-10g',no, sig_norm[no] ) 
+#     for nu in sorted(sig_final):
+#         logging.debug( '%-40s %-10g %-10g',nu,sig_init[nu],sig_final[nu])
 
     print DC.bins
     bin = DC.bins[0]
@@ -322,7 +434,7 @@ def export( bin, DC, w, mode, fit, opts):
 
     gluer = ShapeGluer(bin, DC, w, fit)
 
-    shapes = gluer.glue()
+    shapes,errs,dummy = gluer.glue()
 
 
     shapes2plot = shapes.copy()
@@ -343,13 +455,30 @@ def export( bin, DC, w, mode, fit, opts):
     plot.setVVHist(shapes2plot['VVsum'])
     plot.setWJetsHist(shapes2plot['WJet'])
 
-    cName = 'c_fitshapes'
+    cName = 'c_fitshapes_'+mode
     ratio = opts.ratio
     c = ROOT.TCanvas(cName,cName) if ratio else ROOT.TCanvas(cName,cName,1000,1000)
     plot.setMass(opts.mass)
     plot.setLumi(opts.lumi)
     plot.setLabel(opts.xlabel)
     plot.Draw(c,1,ratio)
+    print 'Errs',errs
+    if errs:
+        plot.pad1().cd()
+        errs.SetFillStyle(3004)
+        errs.SetFillColor(1)
+        errs.SetLineColor(3)
+        errs.SetMarkerColor(3)
+        errs.Draw('2')
+
+#     if dummy:
+#         plot.pad1().cd()
+#         dummy.SetLineColor(6)
+#         dummy.SetLineWidth(3)
+#         dummy.Draw('same')
+
+    ROOT.gPad.Modified()
+    ROOT.gPad.Update()
 
     if opts.output:
         hwwtools.ensuredir(opts.output)
@@ -357,8 +486,10 @@ def export( bin, DC, w, mode, fit, opts):
         outbasename = os.path.join(opts.output,'fitshapes_%s_%s' % (bin,mode))
         c.Print(outbasename+'.pdf')
         c.Print(outbasename+'.png')
+        c.Print(outbasename+'.root')
 
-    return shapes
+    del c
+    return shapes[:]+[errs]
 
 
 #---
@@ -402,6 +533,8 @@ if __name__ == '__main__':
     
     try:
         fitAndPlot(dcpath, opt)
+    except SystemExit:
+        pass
     except:
         import traceback
         exc_type, exc_value, exc_traceback = sys.exc_info()

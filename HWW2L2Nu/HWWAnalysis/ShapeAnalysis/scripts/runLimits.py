@@ -18,6 +18,7 @@ def main():
     parser.add_option('-s','--stepping',dest='stepping',help='Switch stepping on ', action='store_true', default=False)
     parser.add_option('-1',dest='minuit1',help='Minuit ', action='store_true', default=False)
     parser.add_option('-n',dest='dryrun',help='Dry run ', action='store_true', default=False)
+    parser.add_option('-o',dest='observed',help='Observed only', action='store_true', default=False)
     parser.add_option('--prefix','-p',dest='prefix',help='prefix',default=None)
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
@@ -64,6 +65,8 @@ def main():
             flags = ' --minosAlgo stepping'+flags
         if opt.minuit1:
             flags = ' --minimizerAlgo Minuit'+flags
+        if opt.observed:
+            flags = ' --run observed'+flags
         for c,flag in constraints.iteritems():
             if fnmatch.fnmatch(str(mass),c):
                 flags = ' '+flag+flags
