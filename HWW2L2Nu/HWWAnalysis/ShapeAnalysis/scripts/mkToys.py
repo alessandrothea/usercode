@@ -10,19 +10,6 @@ import ROOT
 
 from HWWAnalysis.Misc.ROOTAndUtils import TH1AddDirSentry
 
-class ToyFactory:
-
-    def __init__(self, sipath, opts):
-        self._sipath = sipath
-        self._opts = opts
-        self._toydir = 'toys'
-
-    def _make(self, channel, mass, lumi):
-        f = ROOT.TFile.Open(sipath.format( lumi=lumi, mass=mass, channel=channel ))
-        
-
-
-
 
 if __name__ == '__main__':
     usage = 'usage: %prog [options]'

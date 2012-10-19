@@ -181,8 +181,8 @@ class ShapeGluer:
 
 
 #         self._rooPdf2TH1(h,model,data,data.sum(False))
-        for i in xrange(1,nbins+1):
-            print i,h.GetBinContent(i)
+#         for i in xrange(1,nbins+1):
+#             print i,h.GetBinContent(i)
 
         nmarray = self._roo2array(model, data, nms)
         uparray = self._roo2array(model, data, ups)
@@ -208,10 +208,10 @@ class ShapeGluer:
             uperr[i] = uperr[i] * A
             dwerr[i] = dwerr[i] * A
 
-            print '[',dwerr[i],',',uperr[i],']'
+#             print '[',dwerr[i],',',uperr[i],']'
 
         errs = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerr,uperr)
-        errs.SetNameTitle('model_s_errs','model_s_errs')
+        errs.SetNameTitle('model_errs','model_errs')
         return errs
 
     #---
@@ -489,7 +489,10 @@ def export( bin, DC, w, mode, fit, opts):
         c.Print(outbasename+'.root')
 
     del c
-    return shapes[:]+[errs]
+    all = {}
+    all.update(shapes)
+    all[errs] = errs
+    return all
 
 
 #---
