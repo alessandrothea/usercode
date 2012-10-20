@@ -7,6 +7,7 @@ import logging
 import array
 import re
 import math
+import numpy as np
 
 from HiggsAnalysis.CombinedLimit.DatacardParser import *
 from HWWAnalysis.Misc.ROOTAndUtils import TH1AddDirSentry
@@ -157,9 +158,16 @@ class ShapeGluer:
 
         shapere = re.compile('_shape$')
         if not self._fit: 
+            self._ws.loadSnapshot('clean')
             # here we can use w.set('nuisances') :D
             nuisances = self._ws.set('nuisances')
             POI = self._ws.set('POI')
+
+            pars = ROOT.RooArgList()
+            pars.add(nuisances)
+            pars.add(POI)
+
+            pars = pars.snapshot()
 
             return None
 
@@ -167,44 +175,52 @@ class ShapeGluer:
         # take ebin centers
         ax      = self._template.GetXaxis()
         nbins   = ax.GetNbins()
-        xs      = array.array('d',[ ax.GetBinCenter(i) for i in xrange(1,nbins+1) ])
-        wu      = array.array('d',[ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ])
-        wd      = array.array('d',[ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ])
+        xs      = np.array( [ ax.GetBinCenter(i) for i in xrange(1,nbins+1) ], np.float32)
+        wu      = np.array( [ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ], np.float32)
+        wd      = np.array( [ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ], np.float32)
         
         # now the real thing
-        nms = res.floatParsFinal().snapshot()
+        pars = res.floatParsFinal().snapshot()
 
         # sort the nuisances
-        shapes = [ arg.GetName() for arg in roofiter(nms.fwdIterator()) if shapere.search(arg.GetName())]
-        norms  = [ arg.GetName() for arg in roofiter(nms.fwdIterator()) if not shapere.search(arg.GetName())]
+        shapes = [ arg.GetName() for arg in roofiter(pars.fwdIterator()) if shapere.search(arg.GetName())]
+        norms  = [ arg.GetName() for arg in roofiter(pars.fwdIterator()) if not shapere.search(arg.GetName())]
 
+        # groups the nuis to float: all norms together, shapes 1 by 1
         grouping = [norms] + [ [arg] for arg in shapes ]
 
         # nominal valuse from the best fit values
         data = self._ws.data('data_obs')
-        nmarray = self._roo2array(model, data, nms)
+        nmarray = self._roo2array(model, data, pars)
         # and the errors to be filled
-        uperrs = array.array('d',[0]*nbins)
-        dwerrs = array.array('d',[0]*nbins)
+        uperrs = np.zeros(nbins, np.float32)
+        dwerrs = np.zeros(nbins, np.float32)
         for g in grouping:
-            upfloat,dwfloat = self._variate(model,nms,g)
-            for i in xrange(nbins):
-                uperrs[i] += upfloat[i]*upfloat[i]
-                dwerrs[i] += dwfloat[i]*dwfloat[i]
+            upfloat,dwfloat = self._variate(model,pars,g)
+            uperrs += np.square(upfloat)
+            dwerrs += np.square(dwfloat)
+#             for i in xrange(nbins):
+#                 uperrs[i] += upfloat[i]*upfloat[i]
+#                 dwerrs[i] += dwfloat[i]*dwfloat[i]
 
-        for i in xrange(nbins):
-            uperrs[i] = math.sqrt(uperrs[i])
-            dwerrs[i] = math.sqrt(dwerrs[i])
+#         for i in xrange(nbins):
+#             uperrs[i] = math.sqrt(uperrs[i])
+#             dwerrs[i] = math.sqrt(dwerrs[i])
 
-        zeroes  = array.array('d',[0]*nbins)
-        
+        uperrs = np.sqrt(uperrs)
+        dwerrs = np.sqrt(dwerrs)
+
         # normalize to data
         A = data.sum(False)
 
-        for i in xrange(nbins):
-            nmarray[i] = nmarray[i] * A
-            uperrs[i] = uperrs[i] * A
-            dwerrs[i] = dwerrs[i] * A
+#         for i in xrange(nbins):
+#             nmarray[i] = nmarray[i] * A
+#             uperrs[i] = uperrs[i] * A
+#             dwerrs[i] = dwerrs[i] * A
+
+        nmarray *= A
+        uperrs  *= A
+        dwerrs  *= A
 
         errs = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerrs,uperrs)
         errs.SetNameTitle('model_errs','model_errs')
@@ -231,8 +247,8 @@ class ShapeGluer:
         uparray = self._roo2array(model, data, ups)
         dwarray = self._roo2array(model, data, dws)
         
-        upfloat = array.array('d',[0]*data.numEntries())
-        dwfloat = array.array('d',[0]*data.numEntries())
+        upfloat = np.zeros(data.numEntries(), np.float32)
+        dwfloat = np.zeros(data.numEntries(), np.float32)
 
         # and calculate the fluctuations in terms of the model
         for i in xrange(data.numEntries()):
@@ -274,16 +290,16 @@ class ShapeGluer:
         # tak ebin centers
         ax      = self._template.GetXaxis()
         nbins   = ax.GetNbins()
-        xs      = array.array('d',[ ax.GetBinCenter(i) for i in xrange(1,nbins+1) ])
-        wu      = array.array('d',[ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ])
-        wd      = array.array('d',[ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ])
+        xs      = np.array([ ax.GetBinCenter(i) for i in xrange(1,nbins+1) ], np.float32)
+        wu      = np.array([ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ], np.float32)
+        wd      = np.array([ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ], np.float32)
 
         nmarray = self._roo2array(model, data, nms)
         uparray = self._roo2array(model, data, ups)
         dwarray = self._roo2array(model, data, dws)
         
-        uperr   = array.array('d',[0]*nbins)
-        dwerr   = array.array('d',[0]*nbins)
+        uperr   = np.zeros(nbins, np.float32)
+        dwerr   = np.zeros(nbins, np.float32)
 
         for i in xrange(nbins):
             u =  max(uparray[i],dwarray[i])-nmarray[i]
@@ -291,8 +307,6 @@ class ShapeGluer:
             uperr[i] = u if u > 0 else 0
             dwerr[i] = d if d > 0 else 0
 
-        zeroes  = array.array('d',[0]*nbins)
-        
         A = data.sum(False)
 
         for i in xrange(nbins):
@@ -324,17 +338,16 @@ class ShapeGluer:
         return math.sqrt(sum2)
 
     #---
-    def _roo2array(self, pdf, data, pars):
+    def _roo2array(self, pdf, data, pars=None):
 
         pdf_obs  = pdf.getObservables(data)
         pdf_pars = pdf.getParameters(data)
 
-        bins = array.array('d',[0]*data.numEntries())
+        # make 1 double (float32) array
+        bins = np.zeros(data.numEntries(),dtype=np.float32)
 
-        if isinstance(pars,ROOT.RooArgList):
-            pars = RooList2Set(pars)
-
-        pdf_pars.__assign__(pars)
+        if pars:
+            pdf_pars.__assign__(ROOT.RooArgSet(pars))
 
         for i in xrange(data.numEntries()):
             pdf_obs.__assign__(data.get(i))
@@ -355,10 +368,7 @@ class ShapeGluer:
             raise ValueError('bins mismatch!')
         
         if pars:
-            if isinstance(pars,ROOT.RooArgList):
-                pars = RooList2Set(pars)
-
-            pdf_pars.__assign__(pars)
+            pdf_pars.__assign__(ROOT.RooArgSet(pars))
 
         for i in xrange(data.numEntries()):
             pdf_obs.__assign__(data.get(i))
@@ -487,7 +497,7 @@ def fitAndPlot( dcpath, opts ):
     modes = {
         'sig' :sig_fit,
         'bkg' :bkg_fit,
-        'init':None,
+        'init':None, #(None, None, model_s)
     }
 
     allshapes = {}
@@ -572,7 +582,8 @@ def export( bin, DC, w, mode, fit, opts):
     del c
     all = {}
     all.update(shapes)
-    all[errs] = errs
+    if errs:
+        all[errs] = errs
     return all
 
 
