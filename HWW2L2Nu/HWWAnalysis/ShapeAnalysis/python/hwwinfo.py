@@ -224,7 +224,7 @@ def massSelections(mass):
     sel['vbf-shape-2d']           = sel['vbf-shape-2d-lomass'] if mass <= 250 else sel['vbf-shape-2d-himass'] 
     
     sel['shape-lomass'] = 'mth>80 && mth<280 && mll<200'
-    sel['shape-himass'] = 'mth>80 && mth<380 && mll<450 && pt1>50'
+    sel['shape-himass'] = 'mth>80 && mth<600 && mll<600 && pt1>50'
     
     sel['vbf-shape']    = ' && '.join(vbfcuts.vbfshape)
     sel['vbf-level']    = ' && '.join(vbfcuts.vbfcut)
