@@ -136,9 +136,10 @@ class ShapeGluer:
 
         h = self._makeHisto('histo_'+process, process)
 
-        if self._fit:
+        model, res, norms = self._fit
+        if res:
             self._logger.debug('Using fitted shapes %s', self._fit)
-            norms, res, model = self._fit
+#             norms, res, model = self._fit
             norm = norms.find('n_exp_bin{0}_proc_{1}'.format(self._bin, process))
             if not norm:
                 norm = norms.find('n_exp_final_bin{0}_proc_{1}'.format(self._bin, process))
@@ -156,9 +157,14 @@ class ShapeGluer:
     #---
     def _glueerrors(self):
 
+        # clean the parameters
+        self._ws.loadSnapshot('clean')
         shapere = re.compile('_shape$')
-        if not self._fit: 
-            self._ws.loadSnapshot('clean')
+        model, res, norms = self._fit
+        if res: 
+            # now the real thing
+            pars = res.floatParsFinal().snapshot()
+        else:
             # here we can use w.set('nuisances') :D
             nuisances = self._ws.set('nuisances')
             POI = self._ws.set('POI')
@@ -168,10 +174,11 @@ class ShapeGluer:
             pars.add(POI)
 
             pars = pars.snapshot()
+            
+            # set the errors to 1. sigma for the priors
+            for arg in roofiter(pars.fwdIterator()):
+                arg.setError(1.)
 
-            return None
-
-        (norm,res,model) = self._fit
         # take ebin centers
         ax      = self._template.GetXaxis()
         nbins   = ax.GetNbins()
@@ -179,9 +186,6 @@ class ShapeGluer:
         wu      = np.array( [ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ], np.float32)
         wd      = np.array( [ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ], np.float32)
         
-        # now the real thing
-        pars = res.floatParsFinal().snapshot()
-
         # sort the nuisances
         shapes = [ arg.GetName() for arg in roofiter(pars.fwdIterator()) if shapere.search(arg.GetName())]
         norms  = [ arg.GetName() for arg in roofiter(pars.fwdIterator()) if not shapere.search(arg.GetName())]
@@ -199,24 +203,12 @@ class ShapeGluer:
             upfloat,dwfloat = self._variate(model,pars,g)
             uperrs += np.square(upfloat)
             dwerrs += np.square(dwfloat)
-#             for i in xrange(nbins):
-#                 uperrs[i] += upfloat[i]*upfloat[i]
-#                 dwerrs[i] += dwfloat[i]*dwfloat[i]
-
-#         for i in xrange(nbins):
-#             uperrs[i] = math.sqrt(uperrs[i])
-#             dwerrs[i] = math.sqrt(dwerrs[i])
 
         uperrs = np.sqrt(uperrs)
         dwerrs = np.sqrt(dwerrs)
 
         # normalize to data
         A = data.sum(False)
-
-#         for i in xrange(nbins):
-#             nmarray[i] = nmarray[i] * A
-#             uperrs[i] = uperrs[i] * A
-#             dwerrs[i] = dwerrs[i] * A
 
         nmarray *= A
         uperrs  *= A
@@ -258,67 +250,6 @@ class ShapeGluer:
             dwfloat[i] = d if d > 0 else 0
 
         return (upfloat,dwfloat)
-
-    #---
-    def _glueerrors2(self):
-
-        shapere = re.compile('_shape$')
-        if not self._fit: return None
-
-#         h = self._makeHisto('what','what')
-        nms = self._fit[1].floatParsFinal().snapshot()
-        ups = self._fit[1].floatParsFinal().snapshot()
-        dws = self._fit[1].floatParsFinal().snapshot()
-
-        # shift up the non-shape nuisances
-        for arg in roofiter(ups.fwdIterator()):
-            if shapere.search(arg.GetName()): continue
-            arg.setVal(arg.getVal()+arg.getError())
-
-        # shift down the non-shape nuisances
-        for arg in roofiter(dws.fwdIterator()):
-            if shapere.search(arg.GetName()): continue
-            arg.setVal(arg.getVal()-arg.getError())
-
-#         t_1 = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(nms.fwdIterator()) ])
-#         t_2 = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(ups.fwdIterator()) ])
-#         t_3 = dict([ (arg.GetName(),arg.getVal()) for arg in roofiter(dws.fwdIterator()) ])
-
-        model = self._fit[2]
-        data = self._ws.data('data_obs')
-
-        # tak ebin centers
-        ax      = self._template.GetXaxis()
-        nbins   = ax.GetNbins()
-        xs      = np.array([ ax.GetBinCenter(i) for i in xrange(1,nbins+1) ], np.float32)
-        wu      = np.array([ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ], np.float32)
-        wd      = np.array([ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ], np.float32)
-
-        nmarray = self._roo2array(model, data, nms)
-        uparray = self._roo2array(model, data, ups)
-        dwarray = self._roo2array(model, data, dws)
-        
-        uperr   = np.zeros(nbins, np.float32)
-        dwerr   = np.zeros(nbins, np.float32)
-
-        for i in xrange(nbins):
-            u =  max(uparray[i],dwarray[i])-nmarray[i]
-            d = -min(uparray[i],dwarray[i])+nmarray[i]
-            uperr[i] = u if u > 0 else 0
-            dwerr[i] = d if d > 0 else 0
-
-        A = data.sum(False)
-
-        for i in xrange(nbins):
-            nmarray[i] = nmarray[i] * A
-            uperr[i] = uperr[i] * A
-            dwerr[i] = dwerr[i] * A
-
-#             print '[',dwerr[i],',',uperr[i],']'
-
-        errs = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerr,uperr)
-        errs.SetNameTitle('model_errs','model_errs')
-        return errs
 
     #---
     def _syst(self,process):
@@ -488,8 +419,10 @@ def fitAndPlot( dcpath, opts ):
     if not mlffile.__nonzero__():
         raise IOError('Could not open '+wspath)
 
-    sig_fit = ( mlffile.Get('norm_fit_s'),  mlffile.Get('fit_s'), w.pdf('model_s') )
-    bkg_fit = ( mlffile.Get('norm_fit_b'),  mlffile.Get('fit_b'), w.pdf('model_b') )
+    model_s = w.pdf('model_s')
+    model_b = w.pdf('model_b')
+    sig_fit = ( model_s, mlffile.Get('fit_s'), mlffile.Get('norm_fit_s'), )
+    bkg_fit = ( model_b, mlffile.Get('fit_b'), mlffile.Get('norm_fit_b'), )
 
     print DC.bins
     bin = DC.bins[0]
@@ -497,7 +430,7 @@ def fitAndPlot( dcpath, opts ):
     modes = {
         'sig' :sig_fit,
         'bkg' :bkg_fit,
-        'init':None, #(None, None, model_s)
+        'init':(model_s,None,None), #(None, None, model_s)
     }
 
     allshapes = {}
