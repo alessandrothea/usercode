@@ -502,9 +502,13 @@ class ShapeFactory:
         # select the dy -> tt mc events decaying only in ee/mm, in other words:
         # remove the mc (ds==37) events which are not tau decays (truth !=2) or are em/me (ch > 1.5)
         weights['DYTT']              = self._stdWgt+'*(!( dataset == 36 || dataset == 37 ) || (mctruth == 2 && channel<1.5))'
-        weights['DYLL']              = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
+        weights['DYLL']              = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))*(channel<1.5)'
+        weights['DYee']              = self._stdWgt+'*(channel<1.5)'
+        weights['DYmm']              = self._stdWgt+'*(channel<1.5)'
         weights['DYLL-template']     = self._stdWgt+'* dyW *(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         weights['DYLL-templatesyst'] = self._stdWgt+'*dyWUp*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
+        #filter for buggy events in dataset==082
+        weights['Vg']                = self._stdWgt+'(dataset!=082 || (chmet<(0.75*pt1+100) && chmet<(0.75*jetpt1+100)))'
         weights['ggH']               = self._stdWgt+'*kfW'
         weights['vbfH']              = self._stdWgt+'*kfW'
 
