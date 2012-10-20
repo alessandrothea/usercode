@@ -115,6 +115,7 @@ class DDCardReader:
         for line in cardFile:
             # <mass> <events in ctrl region> <scale factor> <unc scale factor>
             tokens = line.split()
+            if not tokens: continue
             mass = int(tokens[0])
             evInCtrlReg = int(float(tokens[1]))
             scale2Sig = float(tokens[2])
