@@ -85,6 +85,13 @@ class ShapeGluer:
         shapes = dict([ (p,self._glueprocess(p)) for p in self._DC.processes if exp[p] != 0])
         shapes['Data'] = self._gluedata()
 
+        if not self._fit[2]:
+            print 'Expected values'
+            print self._DC.exp[self._bin]
+
+            print 'Total expected',sum(self._DC.exp[self._bin].itervalues())
+
+
         return shapes,errs,self._dummy
 
     #---
@@ -161,9 +168,14 @@ class ShapeGluer:
         self._ws.loadSnapshot('clean')
         shapere = re.compile('_shape$')
         model, res, norms = self._fit
+
+        data = self._ws.data('data_obs')
         if res: 
             # now the real thing
             pars = res.floatParsFinal().snapshot()
+
+            # normalize to data
+            A = data.sum(False)
         else:
             # here we can use w.set('nuisances') :D
             nuisances = self._ws.set('nuisances')
@@ -178,6 +190,10 @@ class ShapeGluer:
             # set the errors to 1. sigma for the priors
             for arg in roofiter(pars.fwdIterator()):
                 arg.setError(1.)
+
+            # normalize to the expected from the DC
+            A = sum(self._DC.exp[self._bin].itervalues())
+
 
         # take ebin centers
         ax      = self._template.GetXaxis()
@@ -194,7 +210,6 @@ class ShapeGluer:
         grouping = [norms] + [ [arg] for arg in shapes ]
 
         # nominal valuse from the best fit values
-        data = self._ws.data('data_obs')
         nmarray = self._roo2array(model, data, pars)
         # and the errors to be filled
         uperrs = np.zeros(nbins, np.float32)
@@ -207,8 +222,7 @@ class ShapeGluer:
         uperrs = np.sqrt(uperrs)
         dwerrs = np.sqrt(dwerrs)
 
-        # normalize to data
-        A = data.sum(False)
+
 
         nmarray *= A
         uperrs  *= A
