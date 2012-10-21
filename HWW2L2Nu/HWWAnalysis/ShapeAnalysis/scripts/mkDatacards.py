@@ -89,7 +89,7 @@ class ShapeDatacardWriter:
             else:             card.write('{0:<31} {1:<7} {2:<7} '.format(name,pdf[0],pdf[1]))
             for i,p,y in keyline:
                 if p in effect: 
-                    if pdf[0]=='gmN':   card.write('%-10.4f' % effect[p])
+                    if pdf[0]=='gmN':   card.write('%-10.5f' % effect[p])
                     elif (pdf[0]=='shape' or pdf[0]=='shapeN2'): card.write('%-10d' % effect[p])
                     else:               card.write('%-10.3f' % effect[p] )
                 else: card.write('-'.ljust(coldef))
@@ -261,12 +261,18 @@ class NuisanceMapBuilder:
 
         eff_bin1_tmpl = 'CMS_hww_{0}_{1}_stat_bin1'
         for tag,(context, processes) in mapping.iteritems(): 
+            extr_uncorr_entries = {}
             extr_corr_entries = {}
             extr_entries = {}
             stat_entries = {}
-            eff_extr      = 'CMS_hww_{0}_{1}_extr'.format(tag,context)
-            eff_stat      = 'CMS_hww_{0}_{1}_stat'.format(tag,context)
-            eff_extr_corr = 'CMS_hww_{0}_{1}_extr_corr'.format(tag,context)
+
+            if (tag=="WW" and (jetcat=="0j" or jetcat=="1j")) :
+                eff_extr    = 'CMS_hww_{0}_extr'.format(tag)
+            else :
+                eff_extr    = 'CMS_hww_{0}_{1}_extr'.format(tag,context)
+            eff_stat        = 'CMS_hww_{0}_{1}_stat'.format(tag,context)
+            eff_extr_corr   = 'CMS_hww_{0}_{1}_extr_corr'.format(tag,context)
+            eff_extr_uncorr = 'CMS_hww_{0}_{1}_extr_uncorr'.format(tag,channel)
 
             available = [ p for p in processes if p in estimates ]
             if not available: continue
@@ -278,11 +284,14 @@ class NuisanceMapBuilder:
                 raise RuntimeError('Mismatch between Nctr in the same systematic: '+', '.join([ '{0}{1}'.format(n[0],n[1]) for n in zip(available, listNctr) ]) )
 
             flagdoextracorr = 0
+            flagdoextrauncorr = 0
 
             for process in available:
                 e = estimates[process]
                 extrUnc = 1+e.delta/e.alpha if pdf != 'gmM' else e.delta/e.alpha
-                
+
+                if e.deltaUnCorr != 0:
+                    extr_uncorr_entries[process] = 1. + e.deltaUnCorr/e.alpha
                 if e.deltaCorr != 0: 
                     extr_corr_entries[process] = 1. + e.deltaCorr/e.alpha
 #                 if jetcat == '2j' and tag == 'Top' :
@@ -305,6 +314,9 @@ class NuisanceMapBuilder:
 
             if len(extr_corr_entries) > 0:
                 nuisances[eff_extr_corr] = ([pdf], extr_corr_entries )
+                
+            if len(extr_uncorr_entries) > 0:
+                nuisances[eff_extr_uncorr] = ([pdf], extr_uncorr_entries )
 
 
 

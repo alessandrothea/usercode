@@ -121,8 +121,9 @@ class DDCardReader:
             scale2Sig = float(tokens[2])
             scale2SigUnc = float(tokens[3])
             scale2SigUncCorr = float(tokens[4]) if (len(tokens) > 4) else 0
+            scale2SigUncUnCorr = float(tokens[5]) if (len(tokens) > 5) else 0
 
-            card[mass] = DDEntry(evInCtrlReg, scale2Sig, scale2SigUnc, scale2SigUncCorr)
+            card[mass] = DDEntry(evInCtrlReg, scale2Sig, scale2SigUnc, scale2SigUncCorr, scale2SigUncUnCorr)
 
         cardFile.close()
         return card
@@ -140,17 +141,18 @@ class DDCardReader:
             raise KeyError('{0} {1}'.format(mass,channel))
 
 class DDEntry:
-    def __init__(self,Nctr,alpha,delta,deltaCorr=0):
+    def __init__(self,Nctr,alpha,delta,deltaCorr=0,deltaUnCorr=0):
         self.Nctr     = Nctr
         self.alpha    = alpha
         self.delta    = delta
         self.deltaCorr = deltaCorr
+        self.deltaUnCorr = deltaUnCorr
 
     def __repr__(self):
         return self.__str__()
 
     def __str__(self):
-        return '(Nctr = {Nctr}, alpha = {alpha:.3f}, delta = {delta:.3f})'.format(**self.__dict__)
+        return '(Nctr = {Nctr}, alpha = {alpha:.5f}, delta = {delta:.5f})'.format(**self.__dict__)
 
     def __add__(self,other):
         sum = DDEntry(0,0,0)
@@ -161,6 +163,7 @@ class DDEntry:
         sum.alpha     = self.alpha+other.alpha
         sum.delta     = self.delta+other.delta
         sum.deltaCorr = self.deltaCorr+other.deltaCorr
+        sum.deltaUnCorr = self.deltaUnCorr+other.deltaUnCorr
 
         return sum
 
