@@ -17,7 +17,7 @@ class TriggerEff:
 
         # read every line
         for line in fits:
-            m = re.match(r"2012[AB]?_(\d+)-(\d+)_(\w+)_(barrel|endcap|forward)\s+.*", line)
+            m = re.match(r"2012[ABC]?_(\d+)-(\d+)_(\w+)_(barrel|endcap|forward|absetabin[0123])\s+.*", line)
             if not m: continue
             numbers = [float(x) for x in line.split()[1:]]
             (start, end) = int(m.group(1)), int(m.group(2))
@@ -75,21 +75,25 @@ class TriggerEff:
             return e
 
 
-
-
-
 ## Giovannis classes:
 
 class LegEfficiency:
     def __init__(self,name,params):
         self._name    = name
         self._isMu    = ("Mu" in name)
-        if self._isMu:
+        self._isSingleMu = ("SingleMu" in name)
+        if self._isSingleMu:
+            self._plateau = [params['absetabin0'][0], params['absetabin1'][0], params['absetabin2'][0], params['absetabin3'][0]]
+            self._turnon  = [params['absetabin0'][1], params['absetabin1'][1], params['absetabin2'][1], params['absetabin3'][1]]
+            self._resol   = [params['absetabin0'][2], params['absetabin1'][2], params['absetabin2'][2], params['absetabin3'][2]]
+            self._ptcut   = [params['absetabin0'][3], params['absetabin1'][3], params['absetabin2'][3], params['absetabin3'][3]]
+            self._plat2   = [params['absetabin0'][4], params['absetabin1'][4], params['absetabin2'][4], params['absetabin3'][4]]            
+        elif self._isMu:
             self._plateau = [params['barrel'][0], params['endcap'][0], params['forward'][0]]
             self._turnon  = [params['barrel'][1], params['endcap'][1], params['forward'][1]]
             self._resol   = [params['barrel'][2], params['endcap'][2], params['forward'][2]]
             self._ptcut   = [params['barrel'][3], params['endcap'][3], params['forward'][3]]
-            self._plat2   = [params['barrel'][4], params['endcap'][4], params['forward'][4]]
+            self._plat2   = [params['barrel'][4], params['endcap'][4], params['forward'][4]]            
         else:
             self._plateau = [params['barrel'][0], params['endcap'][0]]
             self._turnon  = [params['barrel'][1], params['endcap'][1]]
@@ -98,7 +102,11 @@ class LegEfficiency:
             self._plat2   = [params['barrel'][4], params['endcap'][4]]
     def __call__(self,pt,eta,verbose=0):
         ieta = 0
-        if self._isMu:
+        if self._isSingleMu:
+            if abs(eta) > 0.8: ieta = 1
+            if abs(eta) > 1.2: ieta = 2
+            if abs(eta) > 2.1: ieta = 3
+        elif self._isMu:
             if abs(eta) > 1.2: ieta = 1
             if abs(eta) > 2.1: ieta = 2
         else:
@@ -131,10 +139,7 @@ class DiMuEventEfficiency:
             self._single = legs["SingleMu"] if "SingleMu" in legs else ZeroEfficiency("NoSingleMu")
         else:
             self._single = ZeroEfficiency()
-        if "Mu13leg_Mu8" in legs:
-            self._doubleHighPt = legs["Mu13leg_Mu8"]
-            self._doubleLowPt  = legs["Mu13_Mu8leg"]
-        elif "Mu17_Mu8_Mu17Leg" in legs:
+        if "Mu17_Mu8_Mu17Leg" in legs:
             self._doubleHighPt = legs["Mu17_Mu8_Mu17Leg"]
             self._doubleLowPt  = legs["Mu17_Mu8_Mu8Leg"]
         else:
@@ -145,39 +150,16 @@ class DiMuEventEfficiency:
         else:
             self._tkMuExclusive = ZeroEfficiency()
     def __call__(self,pt1,eta1,pt2,eta2,verbose=0):
-        # The event passes the trigger if:
-        # - leading lepton passes single mu
-        # - or leading passes high pt double leg and sub-leading passes low pt double or tracker double
-        # - or leading passes double mu low pt and sub-leanding passes single mu
-        # - or leading passes tracker mu and sub-leading passes high pt double leg
-        # - or leading passes nothing but sub-leading passes single mu
-        # in the above, leading legs are exclusive while sub-leading are inclusive.
-        #
-        # 1. compute efficiencies for first leg
         effs_leg1 = [x(pt1,eta1,verbose-1) for x in self._single, self._doubleHighPt, self._doubleLowPt, self._tkMuExclusive]
-        # 2. make them exclusive, add efficiency of everything failing
-        effs_leg1[1] -= effs_leg1[0]
-        effs_leg1[2] -= effs_leg1[0] + effs_leg1[1]
-        effs_leg1.append(1.0 - sum(effs_leg1))
-        # 3. compute efficiencies for second leg
         effs_leg2 = [x(pt2,eta2,verbose-1) for x in self._single, self._doubleHighPt, self._doubleLowPt, self._tkMuExclusive]
-        # 4. make them inclusive adding tkMu to low pt double mu
-        effs_leg2[3] += effs_leg2[2]
-        # 5. do the running sum
-        eff = [
-            effs_leg1[0] * 1,            # single lead
-            effs_leg1[1] * effs_leg2[3], # double with lead high pt leg
-            effs_leg1[2] * effs_leg2[0], # single sublead (lead passes low pt leg exclusive)
-            effs_leg1[3] * effs_leg2[1], # tracker double with sublead high pt leg          
-            effs_leg1[4] * effs_leg2[0], # single sublead (lead fails everything)          
-        ]
-        if verbose > 0: 
-            print "  - %6.2f%% single mu leading" % (100*eff[0])
-            print "  - %6.2f%% plus double with lead high pt leg" % (100*sum(eff[0:1]))
-            print "  - %6.2f%% plus single sublead (lead passes low pt leg exclusive)" % (100*sum(eff[0:2]))
-            print "  - %6.2f%% plus tracker double with sublead high pt leg" % (100*sum(eff[0:3]))
-            print "  - %6.2f%% plus single sublead (lead fails everything)" % (100*sum(eff))
-        return sum(eff)
+        p0 = effs_leg1[0]
+        p1 = effs_leg1[1]
+        p2 = effs_leg1[2]
+        q0 = effs_leg2[0]
+        q1 = effs_leg2[1]
+        q2 = effs_leg2[2]
+        eff = p0 + (1-p0)*q0 + (1-p0)*(1-q0)*(p1*q2 + (1-p1*q2)*p2*q1)
+        return eff
 
 class DiElEventEfficiency:
     def __init__(self,legs,mode="default"):
@@ -189,27 +171,20 @@ class DiElEventEfficiency:
         if "Ele17_Ele8_Ele17Leg_fromEle8" in legs:
             self._doubleElHighPt = legs["Ele17_Ele8_Ele17Leg_fromEle8"]
             self._doubleElLowPt  = legs["Ele17_Ele8_Ele8Leg_fromEle8"]
-        elif "Ele17_Ele8_Tighter_Ele17Leg_fromEle8" in legs:
-            self._doubleElHighPt = legs["Ele17_Ele8_Tighter_Ele17Leg_fromEle8"]
-            self._doubleElLowPt  = legs["Ele17_Ele8_Tighter_Ele8Leg_fromEle8"]
         else:
             self._doubleElHighPt = ZeroEfficiency("NoDoubleEl_HighPt")
             self._doubleElLowPt  = ZeroEfficiency("NoDoubleEl_LowPt") 
     def __call__(self,pt1,eta1,pt2,eta2,verbose=0):
-        effs_leg1 = [x(pt1,eta1,verbose-1) for x in self._singleEl, self._doubleElHighPt]
-        effs_leg2 = [x(pt2,eta2,verbose-1) for x in self._singleEl, self._doubleElLowPt]
-        effs_leg1[1] -= effs_leg1[0]
-        effs_leg1.append(1.0 - sum(effs_leg1))
-        eff = [
-            effs_leg1[0] * 1,            # single leading
-            effs_leg1[1] * effs_leg2[1], # double 
-            effs_leg1[2] * effs_leg2[0], # single electron          
-        ]
-        if verbose > 0: 
-            print "  - %6.2f%% single el leading" % (100*eff[0])
-            print "  - %6.2f%% plus double "      % (100*sum(eff[0:1]))
-            print "  - %6.2f%% plus single el subleading" % (100*sum(eff))
-        return sum(eff)
+        effs_leg1 = [x(pt1,eta1,verbose-1) for x in self._singleEl, self._doubleElHighPt, self._doubleElLowPt]
+        effs_leg2 = [x(pt2,eta2,verbose-1) for x in self._singleEl, self._doubleElHighPt, self._doubleElLowPt]
+        p0 = effs_leg1[0]
+        p1 = effs_leg1[1]
+        p2 = effs_leg1[2]
+        q0 = effs_leg2[0]
+        q1 = effs_leg2[1]
+        q2 = effs_leg2[2]
+        eff = p0 + (1-p0)*q0 + (1-p0)*(1-q0)*(p1*q2 + (1-p1*q2)*p2*q1)
+        return eff
 
 class ElMuEventEfficiency:
     def __init__(self,legs,mode="default"):
@@ -241,23 +216,14 @@ class ElMuEventEfficiency:
     def __call__(self,ptmu,etamu,ptel,etael,verbose=0):
         effs_leg1 = [x(ptmu,etamu,verbose-1) for x in self._singleMu, self._doubleMuHighPt, self._doubleMuLowPt]
         effs_leg2 = [x(ptel,etael,verbose-1) for x in self._singleEl, self._doubleElHighPt, self._doubleElLowPt]
-        # 2. make them exclusive, add efficiency of everything failing
-        effs_leg1[1] -= effs_leg1[0]
-        effs_leg1[2] -= effs_leg1[0] + effs_leg1[1]
-        effs_leg1.append(1.0 - sum(effs_leg1))
-        # 5. do the running sum
-        eff = [
-            effs_leg1[0] * 1,            # single mu
-            effs_leg1[1] * effs_leg2[2], # double with lead high pt mu
-            effs_leg1[2] * effs_leg2[1], # double with low pt mu (but not high pt mu)
-            effs_leg1[3] * effs_leg2[0], # single electron          
-        ]
-        if verbose > 0: 
-            print "  - %6.2f%% single mu" % (100*eff[0])
-            print "  - %6.2f%% plus double with lead high pt mu" % (100*sum(eff[0:2]))
-            print "  - %6.2f%% plus double with low pt mu" % (100*sum(eff[0:3]))
-            print "  - %6.2f%% plus single el" % (100*sum(eff))
-        return sum(eff)
+        p0 = effs_leg1[0]
+        p1 = effs_leg1[1]
+        p2 = effs_leg1[2]
+        q0 = effs_leg2[0]
+        q1 = effs_leg2[1]
+        q2 = effs_leg2[2]
+        eff = p0 + (1-p0)*q0 + (1-p0)*(1-q0)*(p1*q2 + (1-p1*q2)*p2*q1)
+        return eff
 
 class LuminosityWeightedAverage:
     def __init__(self,lumiEffPairs):
