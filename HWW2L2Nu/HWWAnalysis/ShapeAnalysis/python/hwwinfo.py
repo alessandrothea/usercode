@@ -128,17 +128,6 @@ class vbfcuts:
 
 masses = [110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 170, 180, 190, 200, 250, 300, 350, 400, 450, 500, 550, 600]
 
-# class Category:
-#     def __init__(self,name,cut,nick):
-#         self.name = name
-#         self.cut  = cut
-#         self.nick = nick
-
-# categories = {}
-# categories['0j'] = Category('0j',wwcuts.zerojet,'0jet')
-# categories['1j'] = Category('1j',wwcuts.onejet, '1jet')
-# categories['2j'] = Category('2j',wwcuts.vbf,    'vbf')
-
 categoryCuts = {}
 categoryCuts['0j'] = wwcuts.zerojet
 categoryCuts['1j'] = wwcuts.onejet

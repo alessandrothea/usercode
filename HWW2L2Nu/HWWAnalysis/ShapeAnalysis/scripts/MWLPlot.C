@@ -13,6 +13,7 @@
 #include "TROOT.h"
 #include "TStyle.h"
 #include "TPaveText.h"
+#include "TGraphAsymmErrors.h"
 #endif
 
 #include <iostream>
@@ -76,6 +77,33 @@ Float_t GetMaximumIncludingErrors(TH1D* h)
 
 
 class MWLPlot {
+    private:
+        std::vector<TH1D*> _hist;
+        std::vector<std::pair<std::string,TH1D*> > _autreHists;
+        TH1D* _data;
+        TGraphAsymmErrors* _nuisances;
+
+        //MWL
+        float    _lumi;
+        TString  _xLabel;
+        TString  _units;
+        TLatex * _extraLabel;
+        bool     _breakdown;
+        bool     _stackSignal;
+        int      _mass;
+        int      _nbins;
+        double   _low;
+        double   _high;
+        Int_t   _labelFont      ;
+        Float_t _legendTextSize ;
+        Float_t _xoffset        ;
+        Float_t _yoffset        ;
+        Float_t _labelOffset    ;
+        Float_t _axisLabelSize  ;
+        Float_t _titleOffset    ;
+        TPad *_pad1;
+        TPad *_pad2;
+
 
     public: 
         MWLPlot() { 
@@ -95,19 +123,21 @@ class MWLPlot {
             _extraLabel     = 0x0;
             _pad1           = 0x0;
             _pad2           = 0x0;
+            _nuisances      = 0x0;
 
         }
 
-        void setDataHist (TH1D * h)                        { _data          = h;        } 
-        void setHWWHist  (TH1D * h)                        { setMCHist(iHWW  ,h);       } 
-        void setWWHist   (TH1D * h)                        { setMCHist(iWW   ,h);       } 
-        void setZJetsHist(TH1D * h)                        { setMCHist(iZJets,h);       } 
-        void setTopHist  (TH1D * h)                        { setMCHist(iTop  ,h);       } 
-        void setVVHist   (TH1D * h)                        { setMCHist(iVV   ,h);       } 
-        void setWZHist   (TH1D * h)                        { setMCHist(iWZ   ,h);       } 
-        void setZZHist   (TH1D * h)                        { setMCHist(iZZ   ,h);       } 
-        void setFakesHist(TH1D * h)                        { setMCHist(iFakes,h);       } 
-        void setWJetsHist(TH1D * h)                        { setMCHist(iWJets,h);       }
+        void setDataHist (TH1D * h)         { _data          = h;        } 
+        void setHWWHist  (TH1D * h)         { setMCHist(iHWW  ,h);       } 
+        void setWWHist   (TH1D * h)         { setMCHist(iWW   ,h);       } 
+        void setZJetsHist(TH1D * h)         { setMCHist(iZJets,h);       } 
+        void setTopHist  (TH1D * h)         { setMCHist(iTop  ,h);       } 
+        void setVVHist   (TH1D * h)         { setMCHist(iVV   ,h);       } 
+        void setWZHist   (TH1D * h)         { setMCHist(iWZ   ,h);       } 
+        void setZZHist   (TH1D * h)         { setMCHist(iZZ   ,h);       } 
+        void setFakesHist(TH1D * h)         { setMCHist(iFakes,h);       } 
+        void setWJetsHist(TH1D * h)         { setMCHist(iWJets,h);       }
+        void setNuisances(TGraphAsymmErrors* g)  { _nuisances = g; }        
 
         void setMCHist   (const samp &s,        TH1D * h)  { 
             if ( _nbins == -1 ) {
@@ -130,12 +160,6 @@ class MWLPlot {
         } 
 
         void setMass(const int &m) {_mass=m;}
-
-//         void Draw(const int &rebin=1,const bool &div=false) {
-
-//             Draw(new TCanvas(),rebin,div);
-
-//         }
 
         void Draw(TCanvas *c1, int rebin=1, bool div=false) {
 
@@ -168,6 +192,10 @@ class MWLPlot {
             hstack->Draw("hist");
             if(signal && !_stackSignal) signal->Draw("hist,same");
             if(data)     data->Draw("ep,same");
+            if (_nuisances) {
+                _nuisances->SetFillStyle(3153);
+                _nuisances->Draw("2");
+            }
             DrawLabels();
             //            _pad1->GetFrame()->DrawClone();
 
@@ -176,7 +204,9 @@ class MWLPlot {
                 TH1D *summed = GetSummedMCHist();
 
                 TH1D *rdat = (TH1D*)data->Clone("rdat");   
+
                 if(gROOT->FindObject("rref")) gROOT->FindObject("rref")->Delete();
+
 				TH1D *rref = (TH1D*)summed->Clone("rref");
 				rref->SetTitle("rref");
 				rref->Reset();
@@ -186,7 +216,6 @@ class MWLPlot {
                     rref->SetBinError(i,summed->GetBinError(i));
                 }
                 rref->SetTitle("");
-/*                 rref->SetLineWidth(0); */
                 rref->SetFillColor(kGray+1);
                 rref->SetFillStyle(1001);
                 double absmax = 0;
@@ -207,6 +236,21 @@ class MWLPlot {
                     }
                 }
 
+                TGraphAsymmErrors *rnuis = 0x0; 
+                if (_nuisances) {
+                
+                    if(gROOT->FindObject("rnuis")) gROOT->FindObject("rnuis")->Delete();
+
+                    rnuis = (TGraphAsymmErrors*)_nuisances->Clone("rnuis");
+                    rnuis->SetTitle("rnuis");
+
+                    for( int i(0); i<rnuis->GetN(); ++i) {
+                        double scale = summed->GetBinContent(i+1);
+                        rnuis->GetY()[i]      /= scale;
+                        rnuis->GetEYhigh()[i] /= scale;
+                        rnuis->GetEYlow()[i]  /= scale;
+                    }
+                }
                 c1->cd();
                 _pad2 = new TPad("pad2","pad2",0,0,1,1-0.614609572);
 
@@ -221,7 +265,6 @@ class MWLPlot {
                 line->SetLineStyle(1);
 
                 rref->GetYaxis()->SetRangeUser(TMath::Max(0.,1.-absmax), absmax+1.);
-//                 AxisFonts(rref->GetYaxis(), "y", "ratio");
                 AxisFonts(rref->GetXaxis(), "x", hstack->GetXaxis()->GetTitle());
                 rref->GetYaxis()->SetTitle("data/mc");
                 rref->GetYaxis()->SetLabelSize(0.09);
@@ -230,16 +273,23 @@ class MWLPlot {
                 rref->GetXaxis()->SetLabelSize(0.09);
                 rref->GetXaxis()->SetTitleSize(0.09);
                 rref->GetXaxis()->SetTitleOffset(1.5);
-                rref->Draw("E2"); 
+
+                if (rnuis) {
+                    rref->SetFillStyle(0);
+                    rref->Draw("hist");
+                    rnuis->SetFillStyle(3153);
+                    rnuis->SetFillColor(1);
+                    rnuis->SetLineColor(3);
+                    rnuis->SetMarkerColor(3);
+                    rnuis->Draw("2");
+                } else {
+                    rref->Draw("E2"); 
+                }
                 rdat->SetMarkerStyle(20);
                 rdat->Draw("E SAME p");
                 line->Draw("SAME"); 
                 c1->Update();
-/*                 _pad2->GetFrame()->DrawClone(); */
-            }
-
-        }
-
+            }        } 
 
         TH1D* GetDataHist() { 
         
@@ -280,7 +330,7 @@ class MWLPlot {
         }
 
         THStack* GetStack(bool isLog) {
-            THStack* hstack = new THStack();
+            THStack* hstack = new THStack("HWWStack","HWWStack");
 
             float binWidth = 0;
             for (int i=0; i<nSamples; i++) if( _hist[i] && i != iHWW) {
@@ -489,31 +539,6 @@ class MWLPlot {
             AxisFonts(axis, coordinate, title);
         }
         
-
-        std::vector<TH1D*> _hist;
-        std::vector<std::pair<std::string,TH1D*> > _autreHists;
-        TH1D* _data;
-
-        //MWL
-        float    _lumi;
-        TString  _xLabel;
-        TString  _units;
-        TLatex * _extraLabel;
-        bool     _breakdown;
-        bool     _stackSignal;
-        int      _mass;
-        int      _nbins;
-        double   _low;
-        double   _high;
-        Int_t   _labelFont      ;
-        Float_t _legendTextSize ;
-        Float_t _xoffset        ;
-        Float_t _yoffset        ;
-        Float_t _labelOffset    ;
-        Float_t _axisLabelSize  ;
-        Float_t _titleOffset    ;
-        TPad *_pad1;
-        TPad *_pad2;
 
 
 };

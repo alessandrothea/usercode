@@ -6,6 +6,7 @@ import sys
 import hwwinfo
 import hwwsamples
 import hwwtools
+import math
 import ROOT
 
 from HWWAnalysis.Misc.ROOTAndUtils import TH1AddDirSentry
@@ -40,6 +41,8 @@ if __name__ == '__main__':
     dcdir = opt.input+'/datacards'
     shdir = dcdir+'/shapes'
 
+    rndm = ROOT.TRandom3()
+
     for k in xrange(opt.ntoys):
         print '==> Instance',k
         toypath = 'toys/instance_%d/' % k
@@ -51,7 +54,6 @@ if __name__ == '__main__':
         if os.path.exists(toyshpath):
             os.unlink(toyshpath)
         os.symlink(os.path.abspath(shdir),toyshpath)
-        rndm = ROOT.TRandom3()
 
         for chan in opt.chans:
 
@@ -67,13 +69,30 @@ if __name__ == '__main__':
             print 'histo_Data',data_si.GetEntries(),data_si.Integral()
             sentry = TH1AddDirSentry()
 
+            # make a new data histogram w/o  
             data_toy = data_si.Clone('histo_Toy')
             data_toy.Reset()
+            toyentries = 0
 
-            toyentries = rndm.Poisson(data_si.GetEntries())
-            print 'Filling the toy with',toyentries,'entries'
-            
-            data_toy.FillRandom(data_si,toyentries)
+            for i in xrange(data_toy.GetNbinsX()+2):
+                mean = data_si.GetBinContent(i)
+                if mean == 0: continue
+
+                n = rndm.Poisson(mean)
+                data_toy.SetBinContent(i,n)
+                data_toy.SetBinError(i,math.sqrt(n))
+                toyentries += n
+
+                print 'bin',i,':',mean,n,data_toy.GetBinContent(i), data_toy.GetBinError(i), data_toy.GetBinError(i)* data_toy.GetBinError(i)
+
+            data_toy.ResetStats()
+
+#             toyentries = rndm.Poisson(data_si.Integral())
+#             print 'Filling the toy with',toyentries,'entries'
+#             
+#             data_toy.FillRandom(data_si,toyentries)
+#             data_toy.SetEntries(toyentries)
+            print 'histo_Toy stats: ',data_si.Integral(),'-->',toyentries, data_toy.GetEntries(),data_toy.Integral()
 
             for mass in masses:
                 print chan, mass

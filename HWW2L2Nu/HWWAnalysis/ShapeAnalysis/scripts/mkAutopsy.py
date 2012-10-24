@@ -29,16 +29,6 @@ class roofiter:
 
 mlfdir = '.'
 
-def RooList2Set( alist ):
-
-    next =  alist.createIterator()
-    aset = ROOT.RooArgSet()
-    while True: 
-        p = next.Next()
-        if not p: break
-        aset.add( p )
-    return aset
-
 class ShapeGluer:
     _logger = logging.getLogger('ShapeGluer')
     def __init__(self, bin, DC, ws, fit=None): 
@@ -85,11 +75,11 @@ class ShapeGluer:
         shapes = dict([ (p,self._glueprocess(p)) for p in self._DC.processes if exp[p] != 0])
         shapes['Data'] = self._gluedata()
 
-        if not self._fit[2]:
-            print 'Expected values'
-            print self._DC.exp[self._bin]
+#         if not self._fit[2]:
+#             print 'Expected values'
+#             print self._DC.exp[self._bin]
 
-            print 'Total expected',sum(self._DC.exp[self._bin].itervalues())
+#             print 'Total expected',sum(self._DC.exp[self._bin].itervalues())
 
 
         return shapes,errs,self._dummy
@@ -151,7 +141,7 @@ class ShapeGluer:
             if not norm:
                 norm = norms.find('n_exp_final_bin{0}_proc_{1}'.format(self._bin, process))
 
-            self._rooPdf2TH1(h,shape,data, norm, self._fit[1].floatParsFinal())
+            self._rooPdf2TH1(h,shape,data, norm, res.floatParsFinal())
 
         else:
             self._logger.debug('Using expected shapes')
@@ -222,8 +212,6 @@ class ShapeGluer:
         uperrs = np.sqrt(uperrs)
         dwerrs = np.sqrt(dwerrs)
 
-
-
         nmarray *= A
         uperrs  *= A
         dwerrs  *= A
@@ -238,7 +226,7 @@ class ShapeGluer:
         ups = pars.snapshot()
         dws = pars.snapshot()
 
-        print tofloat
+#         print tofloat
 
         for var in tofloat:
             up = ups.find(var) 
@@ -492,6 +480,8 @@ def export( bin, DC, w, mode, fit, opts):
     plot.setTopHist(shapes2plot['Top'])
     plot.setVVHist(shapes2plot['VVsum'])
     plot.setWJetsHist(shapes2plot['WJet'])
+    if errs:
+        plot.setNuisances(errs)
 
     cName = 'c_fitshapes_'+mode
     ratio = opts.ratio
@@ -501,7 +491,7 @@ def export( bin, DC, w, mode, fit, opts):
     plot.setLabel(opts.xlabel)
     plot.Draw(c,1,ratio)
     print 'Errs',errs
-    if errs:
+    if errs and False:
         plot.pad1().cd()
         errs.SetFillStyle(3153)
         errs.SetFillColor(1)
