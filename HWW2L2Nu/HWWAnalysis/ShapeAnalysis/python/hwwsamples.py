@@ -151,7 +151,7 @@ mcsets = {
         'ggH','vbfH','wzttH',
         # bkgs
         #'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYLL',
-        'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYee','DYmm'
+        'WW','ggWW','Vg','WJet','Top','VV','DYee','DYmm'
     ],
    'vbf_of' : [
         #signals
