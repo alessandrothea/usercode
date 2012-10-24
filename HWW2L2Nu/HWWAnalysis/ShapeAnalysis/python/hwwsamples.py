@@ -8,6 +8,7 @@ backgrounds = {
                                 'nominals/latino_083_WGstarToMuNuMad.root',
                                 'nominals/latino_084_WGstarToTauNuMad.root',
                                 'nominals/latino_085_WgammaToLNuG.root',
+                                'nominals/latino_086_ZgammaToLLuG.root',
                                ],
     'WJet'                   : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
                                 'wjets/latino_RunB_4404pbinv_LooseLoose.root',
@@ -150,7 +151,7 @@ mcsets = {
         'ggH','vbfH','wzttH',
         # bkgs
         #'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYLL',
-        'WW','ggWW','Vg','WJet','Top','VV','DYee','DYmm'
+        'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYee','DYmm'
     ],
    'vbf_of' : [
         #signals
