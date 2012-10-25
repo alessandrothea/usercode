@@ -94,19 +94,20 @@ def runTheShape():
         print command
         p = os.system(command)
 
+        ROOT.gROOT.SetBatch(True)
         ROOT.setTDRStyle()
         ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
                        "plots/{tag}_{name}_{option}".format(**pars),
                        "{lumi} fb^{{-1}}".format(**pars), 
                        110, 600, 1, 1, 
                        "H #rightarrow WW #rightarrow 2l2#nu",
-                       False, 0, 'pdf')
+                       True, 0, 'pdf')
         ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
                        "plots/{tag}_{name}_{option}".format(**pars),
                        "{lumi} fb^{{-1}}".format(**pars), 
                        110, 600, 1, 1, 
                        "H #rightarrow WW #rightarrow 2l2#nu",
-                       False, 0, 'png')
+                       True, 0, 'png')
 #     p.communicate()
 #     os.system('; '.join(commands))
     
