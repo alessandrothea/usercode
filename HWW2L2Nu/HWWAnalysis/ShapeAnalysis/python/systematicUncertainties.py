@@ -37,6 +37,7 @@ for X in 450, 550:
 
 ggH_jets = dict([(m, dict(zip(['f0','f1','f2','k1','k2'], vals))) for m,vals in file2map(SYST_PATH+"ggH_jetBins.txt").items()]) 
 
+ggH_UEPS = dict([(m, dict(zip(['u0','u1','u2'], vals))) for m,vals in file2map(SYST_PATH+"ggH_UEPS.txt").items()])
 
 def getCommonSysts(mass,channel,jets,qqWWfromData,options):
     nuisances = {} 
@@ -83,9 +84,9 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,options):
     # -- Experimental ---------------------
     nuisances['QCDscale_ggH_ACCEPT'] = [ ['lnN'], {'ggH':1.02}]
     nuisances['QCDscale_qqH_ACCEPT'] = [ ['lnN'], {'vbfH':1.02}]
-    if   jets == 0: nuisances['UEPS'] = [ ['lnN'], {'ggH':0.943}]
-    elif jets == 1: nuisances['UEPS'] = [ ['lnN'], {'ggH':1.084}]
-    elif jets == 2: nuisances['UEPS'] = [ ['lnN'], {'ggH':1.138}]
+    if   jets == 0: nuisances['UEPS'] = [ ['lnN'], {'ggH':ggH_UEPS[mass]['u0']}]
+    elif jets == 1: nuisances['UEPS'] = [ ['lnN'], {'ggH':ggH_UEPS[mass]['u1']}]
+    elif jets == 2: nuisances['UEPS'] = [ ['lnN'], {'ggH':ggH_UEPS[mass]['u2']}]
     if ((not qqWWfromData) and (jets != 2)): nuisances['QCDscale_WW_EXTRAP'] = [ ['lnN'], {'WW':1.06}]
     # --- new ---
     # not needed with line-shape reweighting
