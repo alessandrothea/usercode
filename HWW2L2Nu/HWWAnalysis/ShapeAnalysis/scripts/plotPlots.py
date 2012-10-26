@@ -35,15 +35,6 @@ plot_tmpl = '''
 # {
 
 
-def loadAndCompile(macro,options='g'):
-    import ROOT
-    import os
-    try:
-        code = ROOT.gROOT.LoadMacro(os.path.join(mypath,macro+'+g'))
-    except RuntimeError:
-        code = ROOT.gROOT.LoadMacro(os.path.join(mypath,macro+'++g'))
-    return code
-
 def runTheShape():
     usage = 'usage: %prog -t tag -p prefix channel'
     parser = optparse.OptionParser(usage)
@@ -74,8 +65,8 @@ def runTheShape():
     macropath = os.path.join(os.path.dirname(mypath),'macros')
 
     import ROOT
-    loadAndCompile(macropath+'/tdrstyle.C')
-    loadAndCompile(macropath+'/PlotLimit.C')
+    hwwtools.loadAndCompile(macropath+'/tdrstyle.C')
+    hwwtools.loadAndCompile(macropath+'/PlotLimit.C')
 
     pars = {
         'tag' : tag,

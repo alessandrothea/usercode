@@ -454,14 +454,8 @@ def plotCMSText():
         
     return pave
 
-def main():
 
-
-
-    ## option parser
-    usage = 'usage: %prog [options]'
-    parser = optparse.OptionParser(usage)
-    
+def addOptions(parser):
     parser.add_option('-i' , '--input'       , dest='inputdir'    , help='Input dir')
     parser.add_option('-o' , '--output'      , dest='outputdir'   , help='Output dir'                          , default='.' )
     parser.add_option('-V' , '--variations'  , dest='variations'  , help='make the scale up/down stacks'       , default=False , action='store_true' )
@@ -473,10 +467,7 @@ def main():
     parser.add_option('-f' , '--filter'      , dest='filter'      , help='Filter on the variations'            , default='*')
     parser.add_option('-Y' , '--logY'        , dest='logY'        , help='Log Y axis'                          , default=False , action='store_true' )
 
- 
-
-    hwwtools.addOptions(parser)
-    hwwtools.loadOptDefaults(parser)
+def parseOptions(parser):
     # use
     # (opt, args) = parser.parse_args([])
     # with [] as arguments to have an opt object with the defaults
@@ -487,18 +478,32 @@ def main():
     if opt.inputdir is None:
         parser.error('No input file defined')
 
+    return (opt, args)
+
+def main():
+    ## option parser
+    usage = 'usage: %prog [options]'
+    parser = optparse.OptionParser(usage)
+
+    hwwtools.addOptions(parser)
+    hwwtools.loadOptDefaults(parser)
+
+    addOptions(parser)
+    (opt, args) = parseOptions(parser)
+
     inputdir = opt.inputdir
     outputdir = opt.outputdir
     mass = opt.mass    
 
     # get MWLPlot.C
-    mypath = os.path.dirname(os.path.abspath(__file__))
-#     print mypath
-    ROOT.gInterpreter.ExecuteMacro(mypath+'/LatinoStyle2.C')
-    try:
-        ROOT.gROOT.LoadMacro(mypath+'/MWLPlot.C+g')
-    except RuntimeError:
-        ROOT.gROOT.LoadMacro(mypath+'/MWLPlot.C++g')
+    shapepath = os.path.abspath(os.path.dirname(os.path.normpath(__file__))+'/..')
+    print 'Shape main directory is',shapepath
+    ROOT.gInterpreter.ExecuteMacro(shapepath+'/macros/LatinoStyle2.C')
+    hwwtools.loadAndCompile(shapepath+'/macros/MWLPlot.C')
+#     try:
+#         ROOT.gROOT.LoadMacro(mypath+'/MWLPlot.C+g')
+#     except RuntimeError:
+#         ROOT.gROOT.LoadMacro(mypath+'/MWLPlot.C++g')
 
     filenames = getFiles(inputdir)
     # loop over all files

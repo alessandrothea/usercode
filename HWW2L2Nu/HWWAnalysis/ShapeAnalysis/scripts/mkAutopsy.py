@@ -1,5 +1,36 @@
 #!/bin/env python
 
+# void MaxLikelihoodFit::getNormalizations(RooAbsPdf *pdf, const RooArgSet &obs, RooArgSet &out) {
+#     RooSimultaneous *sim = dynamic_cast<RooSimultaneous *>(pdf);
+#     if (sim != 0) {
+#         RooAbsCategoryLValue &cat = const_cast<RooAbsCategoryLValue &>(sim->indexCat());
+#         for (int i = 0, n = cat.numBins((const char *)0); i < n; ++i) {
+#             cat.setBin(i);
+#             RooAbsPdf *pdfi = sim->getPdf(cat.getLabel());
+#             if (pdfi) getNormalizations(pdfi, obs, out);
+#         }        
+#         return;
+#     }
+#     RooProdPdf *prod = dynamic_cast<RooProdPdf *>(pdf);
+#     if (prod != 0) {
+#         RooArgList list(prod->pdfList());
+#         for (int i = 0, n = list.getSize(); i < n; ++i) {
+#             RooAbsPdf *pdfi = (RooAbsPdf *) list.at(i);
+#             if (pdfi->dependsOn(obs)) getNormalizations(pdfi, obs, out);
+#         }
+#         return;
+#     }
+#     RooAddPdf *add = dynamic_cast<RooAddPdf *>(pdf);
+#     if (add != 0) {
+#         RooArgList list(add->coefList());
+#         for (int i = 0, n = list.getSize(); i < n; ++i) {
+#             RooAbsReal *coeff = (RooAbsReal *) list.at(i);
+#             out.addOwned(*(new RooConstVar(coeff->GetName(), "", coeff->getVal())));
+#         }
+#         return;
+#     }
+# }
+
 import sys
 import os.path
 import hwwtools
@@ -14,10 +45,35 @@ from HWWAnalysis.Misc.ROOTAndUtils import TH1AddDirSentry
 
 import ROOT
 
+def getnorms(pdf, obs, norms = None ):
+
+    out = norms if norms!=None else {}
+
+    if isinstance(pdf,ROOT.RooSimultaneous):
+        cat = sim.indexCat()
+        for i in xrange(cat.numBins(0)):
+            cat.setBin(i)
+            pdfi = sim.getPdf(cat.getLabel());
+            if pdfi.__nonzero__(): getnorms(pdfi, obs, out);
+        pass
+
+    if isinstance(pdf,ROOT.RooProdPdf):
+#         print 'ROOT.RooProdPdf'
+        pdfs = ROOT.RooArgList(pdf.pdfList())
+        for pdfi in roofiter(pdfs):
+            if pdfi.dependsOn(obs): getnorms(pdfi,obs,out)
+
+    if isinstance(pdf,ROOT.RooAddPdf):
+        coefs = ROOT.RooArgList(pdf.coefList())
+        for c in roofiter(coefs):
+            out[c.GetName()] =  c.getVal(obs)
+
+    return out
+
 #---
 class roofiter:
-    def __init__(self,iter):
-        self._iter = iter
+    def __init__(self,collection):
+        self._iter = collection.fwdIterator()
 
     def __iter__(self):
         return self
@@ -38,6 +94,9 @@ class ShapeGluer:
         self._fit = fit
         
         self._build()
+
+
+
 
     #---
     def _build(self):
@@ -74,13 +133,6 @@ class ShapeGluer:
         errs = self._glueerrors()
         shapes = dict([ (p,self._glueprocess(p)) for p in self._DC.processes if exp[p] != 0])
         shapes['Data'] = self._gluedata()
-
-#         if not self._fit[2]:
-#             print 'Expected values'
-#             print self._DC.exp[self._bin]
-
-#             print 'Total expected',sum(self._DC.exp[self._bin].itervalues())
-
 
         return shapes,errs,self._dummy
 
@@ -133,19 +185,20 @@ class ShapeGluer:
 
         h = self._makeHisto('histo_'+process, process)
 
-        model, res, norms = self._fit
-        if res:
+        model, pars, norms = self._fit
+        if norms:
             self._logger.debug('Using fitted shapes %s', self._fit)
-#             norms, res, model = self._fit
+#             norms, pars, model = self._fit
             norm = norms.find('n_exp_bin{0}_proc_{1}'.format(self._bin, process))
             if not norm:
                 norm = norms.find('n_exp_final_bin{0}_proc_{1}'.format(self._bin, process))
 
-            self._rooPdf2TH1(h,shape,data, norm, res.floatParsFinal())
+#             self._rooPdf2TH1(h,shape,data, norm, pars.floatParsFinal())
+            self._rooPdf2TH1(h,shape,data, norm, pars)
 
         else:
             self._logger.debug('Using expected shapes')
-            self._rooPdf2TH1(h,shape,data, self._DC.exp[self._bin][process])
+            self._rooPdf2TH1(h,shape,data, self._DC.exp[self._bin][process],pars)
 
         
         syst = self._syst(process)
@@ -156,30 +209,32 @@ class ShapeGluer:
 
         # clean the parameters
         self._ws.loadSnapshot('clean')
-        shapere = re.compile('_shape$')
-        model, res, norms = self._fit
+        model, pars, norms = self._fit
 
         data = self._ws.data('data_obs')
-        if res: 
+        if norms: 
             # now the real thing
-            pars = res.floatParsFinal().snapshot()
+            pars = pars.snapshot()
 
             # normalize to data
             A = data.sum(False)
         else:
             # here we can use w.set('nuisances') :D
-            nuisances = self._ws.set('nuisances')
-            POI = self._ws.set('POI')
+#             nuisances = self._ws.set('nuisances')
+#             POI = self._ws.set('POI')
 
-            pars = ROOT.RooArgList()
-            pars.add(nuisances)
-            pars.add(POI)
+#             pars = ROOT.RooArgList()
+#             pars.add(nuisances)
+#             pars.add(POI)
 
+#             pars = pars.snapshot()
             pars = pars.snapshot()
             
             # set the errors to 1. sigma for the priors
-            for arg in roofiter(pars.fwdIterator()):
+            for arg in roofiter(pars):
+                if arg.GetName() == 'r': continue
                 arg.setError(1.)
+
 
             # normalize to the expected from the DC
             A = sum(self._DC.exp[self._bin].itervalues())
@@ -193,14 +248,48 @@ class ShapeGluer:
         wd      = np.array( [ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ], np.float32)
         
         # sort the nuisances
-        shapes = [ arg.GetName() for arg in roofiter(pars.fwdIterator()) if shapere.search(arg.GetName())]
-        norms  = [ arg.GetName() for arg in roofiter(pars.fwdIterator()) if not shapere.search(arg.GetName())]
+        shapes = [n for (n,nf,p,a,e) in self._DC.systs if 'shape' in p]
+
+        nushapes = [ arg.GetName() for arg in roofiter(pars) if arg.GetName() in shapes]
+        nunorms  = [ arg.GetName() for arg in roofiter(pars) if not arg.GetName() in shapes ]
 
         # groups the nuis to float: all norms together, shapes 1 by 1
-        grouping = [norms] + [ [arg] for arg in shapes ]
+        grouping = [nunorms] + [ [arg] for arg in nushapes ]
 
         # nominal valuse from the best fit values
         nmarray = self._roo2array(model, data, pars)
+
+        pdf_obs  = model.getObservables(data)
+        ns = getnorms(model,pdf_obs)
+        I = J = 0
+
+        print '-'*80
+        fn = {}
+        if norms:
+            for n in roofiter(norms):
+                fn[n.GetName()] = n.getVal()
+                J+=n.getVal()
+
+        for m,v in sorted(self._DC.exp[self._bin].iteritems()):
+            for n in ns:
+                if '_'+m not in n: continue
+
+                print '%-10s %10.3f %10.3f %10.3f' % (m,ns[n],fn[n] if fn else 0,v)
+                I += ns[n]
+
+#         for n in sorted(ns):
+#             print n,ns[n]
+#             I += ns[n]
+#         if norms:
+#             print norms
+#             norms.Print("V")
+#             for n in roofiter(norms):
+# #                 print n.GetName(), n.getVal()
+#                 J+=n.getVal()
+        print 'Integrals I,J,A,sum',I, J, A,sum(self._DC.exp[self._bin].itervalues())
+        print '-'*80
+
+
         # and the errors to be filled
         uperrs = np.zeros(nbins, np.float32)
         dwerrs = np.zeros(nbins, np.float32)
@@ -225,8 +314,6 @@ class ShapeGluer:
         '''variates a subgroup of nuisances by their error and calculate the fluctuation from the nominal value'''
         ups = pars.snapshot()
         dws = pars.snapshot()
-
-#         print tofloat
 
         for var in tofloat:
             up = ups.find(var) 
@@ -354,10 +441,10 @@ def fitAndPlot( dcpath, opts ):
     print 'Mass',m.group(1)
     opt.mass = int(m.group(1))
 
-    mypath = os.path.dirname(os.path.abspath(__file__))
-    ROOT.gInterpreter.ExecuteMacro(mypath+'/LatinoStyle2.C')
-    hwwtools.loadAndCompile(mypath+'/MWLPlot.C','g')
-
+    shapepath = os.path.abspath(os.path.dirname(os.path.normpath(__file__))+'/..')
+    print 'Shape directory is',shapepath
+    ROOT.gInterpreter.ExecuteMacro(shapepath+'/macros/LatinoStyle2.C')
+    hwwtools.loadAndCompile(shapepath+'/macros/MWLPlot.C')
 
     # 1. load the datacard
     dcfile = open(dcpath,'r')
@@ -423,8 +510,10 @@ def fitAndPlot( dcpath, opts ):
 
     model_s = w.pdf('model_s')
     model_b = w.pdf('model_b')
-    sig_fit = ( model_s, mlffile.Get('fit_s'), mlffile.Get('norm_fit_s'), )
-    bkg_fit = ( model_b, mlffile.Get('fit_b'), mlffile.Get('norm_fit_b'), )
+    res_s   = mlffile.Get('fit_s')
+    res_b   = mlffile.Get('fit_b')
+    sig_fit = ( model_s, res_s.floatParsFinal(), mlffile.Get('norm_fit_s'), )
+    bkg_fit = ( model_b, res_b.floatParsFinal(), mlffile.Get('norm_fit_b'), )
 
     print DC.bins
     bin = DC.bins[0]
@@ -432,11 +521,12 @@ def fitAndPlot( dcpath, opts ):
     modes = {
         'sig' :sig_fit,
         'bkg' :bkg_fit,
-        'init':(model_s,None,None), #(None, None, model_s)
+        'init':(model_s,res_s.floatParsInit(),None), #(None, None, model_s)
     }
 
     allshapes = {}
     for mode,fit in modes.iteritems():
+        print 'mode',mode
         allshapes[mode] = export(bin, DC, w, mode, fit, opts)
     
     if opts.dump:
@@ -485,25 +575,27 @@ def export( bin, DC, w, mode, fit, opts):
 
     cName = 'c_fitshapes_'+mode
     ratio = opts.ratio
-    c = ROOT.TCanvas(cName,cName) if ratio else ROOT.TCanvas(cName,cName,1000,1000)
-    plot.setMass(opts.mass)
-    plot.setLumi(opts.lumi)
-    plot.setLabel(opts.xlabel)
-    plot.Draw(c,1,ratio)
-    print 'Errs',errs
-    if errs and False:
-        plot.pad1().cd()
-        errs.SetFillStyle(3153)
-        errs.SetFillColor(1)
-        errs.SetLineColor(3)
-        errs.SetMarkerColor(3)
-        errs.Draw('2')
+#     c = ROOT.TCanvas(cName,cName) #if ratio else ROOT.TCanvas(cName,cName,1000,1000)
+    
+#     if opt.csize:
+#         (w,h) = opt.csize
+#     elif ratio: w = 1000; h = 1400
+    if ratio: w = 1000; h = 1400
+    else:     w = 1000; h = 1000
 
-#     if dummy:
-#         plot.pad1().cd()
-#         dummy.SetLineColor(6)
-#         dummy.SetLineWidth(3)
-#         dummy.Draw('same')
+    if opts.stretch:
+        plot.stretch(opts.stretch)
+        w = int(w*opts.stretch)
+        print w
+
+    c = ROOT.TCanvas(cName,cName, w+4, h+28) #if ratio else ROOT.TCanvas(cName,cName,1000,1000)
+    print w,h, c.GetWw(), c.GetWh()
+
+    plot.setMass(opts.mass)
+    plot.setLumi(opts.lumi if opt.lumi else 0)
+    plot.setLabel(opts.xlabel)
+    plot.setRatioRange(0.,2.)
+    plot.Draw(c,1,ratio)
 
     ROOT.gPad.Modified()
     ROOT.gPad.Update()
@@ -514,7 +606,7 @@ def export( bin, DC, w, mode, fit, opts):
         outbasename = os.path.join(opts.output,'fitshapes_mH%d_%s_%s' % (opt.mass,bin,mode))
         c.Print(outbasename+'.pdf')
         c.Print(outbasename+'.png')
-        c.Print(outbasename+'.root')
+#         c.Print(outbasename+'.root')
 
     del c
     all = {}
@@ -530,22 +622,15 @@ def addOptions( parser ):
     parser.add_option('-o' , '--output' , dest='output' , help='Output directory (%default)' , default=None)
     parser.add_option('-x' , '--xlabel' , dest='xlabel' , help='X-axis label'                , default='')
     parser.add_option('-r' , '--ratio'  , dest='ratio'  , help='Plot the data/mc ration'     , default=True    , action='store_false')
-#     parser.add_option('-M' , '--mode'   , dest='mode'   , help='Select the plot mode [input, sig, bkg]' , default='sig')
     parser.add_option('--dump'          , dest='dump'   , help='Dump the histograms to file' , default=None)
     parser.add_option('--tmpdir'        , dest='tmpdir' , help='Temporary directory'         , default=None)
+    parser.add_option('--stretch'       , dest='stretch', help='Stretch'                     , default=None, type='float')
 
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
 
-
-if __name__ == '__main__':
-    import optparse
-    ## option parser
-    usage = 'usage: %prog [options] datacard'
-    parser = optparse.OptionParser(usage)
-
-    addOptions(parser)
-    
+#---
+def parseOptions(parser):
     (opt, args) = parser.parse_args()
     sys.argv.append('-b')
 
@@ -557,6 +642,18 @@ if __name__ == '__main__':
     elif opt.debug == 1:
         print 'Logging level set to INFO (%d)' % opt.debug
         logging.basicConfig(level=logging.INFO)
+
+    return (opt,args)
+
+
+if __name__ == '__main__':
+    import optparse
+    ## option parser
+    usage = 'usage: %prog [options] datacard'
+    parser = optparse.OptionParser(usage)
+
+    addOptions(parser)
+    (opt, args) = parseOptions(parser)
 
     try:
         dcpath = args[0]

@@ -13,8 +13,8 @@ void LatinoStyle2()
   LatinosStyle->SetCanvasBorderMode(   0);
   LatinosStyle->SetCanvasBorderSize(  10);
   LatinosStyle->SetCanvasColor     (   0);
-  LatinosStyle->SetCanvasDefH      (1588);
-  LatinosStyle->SetCanvasDefW      (1100);
+  LatinosStyle->SetCanvasDefH      (1428);
+  LatinosStyle->SetCanvasDefW      (1004);
   LatinosStyle->SetCanvasDefX      (  10);
   LatinosStyle->SetCanvasDefY      (  10);
 

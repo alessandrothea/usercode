@@ -90,17 +90,23 @@ class MWLPlot {
         TLatex * _extraLabel;
         bool     _breakdown;
         bool     _stackSignal;
+        bool     _overlayNuisances;
         int      _mass;
         int      _nbins;
         double   _low;
         double   _high;
         Int_t   _labelFont      ;
         Float_t _legendTextSize ;
+        Float_t _x0             ;
         Float_t _xoffset        ;
         Float_t _yoffset        ;
         Float_t _labelOffset    ;
         Float_t _axisLabelSize  ;
         Float_t _titleOffset    ;
+        Float_t _ratioMin       ;
+        Float_t _ratioMax       ;
+        Float_t _leftMargin     ;
+        Float_t _rightMargin    ;
         TPad *_pad1;
         TPad *_pad2;
 
@@ -108,24 +114,39 @@ class MWLPlot {
     public: 
         MWLPlot() { 
             _hist.resize(nSamples,0); 
-            _data           = 0;
-            _stackSignal    = false;
-            _breakdown      = false;
-            _mass           = 0;
+            _data             = 0;
+            _stackSignal      = false;
+            _breakdown        = false;
+            _mass             = 0;
+            _labelFont        = 42;
+            _legendTextSize   = 0.04;
+            _x0               = 0.22;
+            _xoffset          = 0.25;
+            _yoffset          = 0.06;
+            _labelOffset      = 0.015;
+            _axisLabelSize    = 0.050;
+            _titleOffset      = 1.6;
+            _leftMargin       = 0.18;
+            _rightMargin      = 0.05;
+            _extraLabel       = 0x0;
+            _pad1             = 0x0;
+            _pad2             = 0x0;
+            _nuisances        = 0x0;
+            _overlayNuisances = false;
             _nbins = _low = _high = -1;
-            _labelFont      = 42;
-            _legendTextSize = 0.04;
-            _xoffset        = 0.20;
-            _yoffset        = 0.06;
-            _labelOffset    = 0.015;
-            _axisLabelSize  = 0.050;
-            _titleOffset    = 1.6;
-            _extraLabel     = 0x0;
-            _pad1           = 0x0;
-            _pad2           = 0x0;
-            _nuisances      = 0x0;
+            _ratioMin = _ratioMax = 0.;
 
         }
+
+        void stretch( float s ) {
+            _xoffset     /= s;
+            _x0          /= s;
+            _titleOffset /= s;
+            _rightMargin /= s;
+            _leftMargin  /= s;
+        }
+
+        void setRatioRange( Float_t min = 0.0, Float_t max = 0.0 ) { _ratioMin = min; _ratioMax = max;} 
 
         void setDataHist (TH1D * h)         { _data          = h;        } 
         void setHWWHist  (TH1D * h)         { setMCHist(iHWW  ,h);       } 
@@ -137,7 +158,7 @@ class MWLPlot {
         void setZZHist   (TH1D * h)         { setMCHist(iZZ   ,h);       } 
         void setFakesHist(TH1D * h)         { setMCHist(iFakes,h);       } 
         void setWJetsHist(TH1D * h)         { setMCHist(iWJets,h);       }
-        void setNuisances(TGraphAsymmErrors* g)  { _nuisances = g; }        
+        void setNuisances(TGraphAsymmErrors* g, bool overlay=false)  { _nuisances = g; _overlayNuisances=overlay;}        
 
         void setMCHist   (const samp &s,        TH1D * h)  { 
             if ( _nbins == -1 ) {
@@ -167,6 +188,9 @@ class MWLPlot {
             c1->cd();
             c1->Clear();
 
+            // adapt legend
+            
+
 			if ( div && !GetDataHist() )
 				div = false;
 
@@ -177,8 +201,20 @@ class MWLPlot {
             } else {
                 _pad1 = new TPad("pad1","pad1",0,0,1,1);
             }
+            _pad1->SetRightMargin(_rightMargin);
+            _pad1->SetLeftMargin(_leftMargin);
+            std::cout << "w:" << _pad1->GetAbsWNDC()*c1->GetWw() << " h:" << _pad1->GetAbsHNDC()*c1->GetWh()  << std::endl;
             _pad1->Draw();
             _pad1->cd();
+
+/*             Float_t padw = _pad1->GetAbsWNDC()*c1->GetWw(); */
+/*             Float_t padh = _pad1->GetAbsHNDC()*c1->GetWh(); */
+
+/*             if ( padw > padh ) { */
+/*                 _xoffset *= padh/padw; */
+/*             } else if ( padw <  padh ) { */
+/*                 _yoffset *= padw/padh; */
+/*             } */
 
             RebinHists(rebin);
             THStack *hstack = GetStack(c1->GetLogy());
@@ -192,7 +228,7 @@ class MWLPlot {
             hstack->Draw("hist");
             if(signal && !_stackSignal) signal->Draw("hist,same");
             if(data)     data->Draw("ep,same");
-            if (_nuisances) {
+            if (_nuisances && _overlayNuisances ) {
                 _nuisances->SetFillStyle(3153);
                 _nuisances->Draw("2");
             }
@@ -256,6 +292,8 @@ class MWLPlot {
 
                 _pad2->SetTopMargin(0.0261437908);
                 _pad2->SetBottomMargin(0.392156863);
+                _pad2->SetRightMargin(_rightMargin);
+                _pad2->SetLeftMargin(_leftMargin);
                 _pad2->Draw();
                 _pad2->cd();
 
@@ -264,7 +302,10 @@ class MWLPlot {
                 line->SetLineWidth(1);
                 line->SetLineStyle(1);
 
-                rref->GetYaxis()->SetRangeUser(TMath::Max(0.,1.-absmax), absmax+1.);
+                if ( _ratioMin==0. && _ratioMax==0.)
+                    rref->GetYaxis()->SetRangeUser(TMath::Max(0.,1.-absmax), absmax+1.);
+                else
+                    rref->GetYaxis()->SetRangeUser(_ratioMin,_ratioMax);
                 AxisFonts(rref->GetXaxis(), "x", hstack->GetXaxis()->GetTitle());
                 rref->GetYaxis()->SetTitle("data/mc");
                 rref->GetYaxis()->SetLabelSize(0.09);
@@ -276,12 +317,15 @@ class MWLPlot {
 
                 if (rnuis) {
                     rref->SetFillStyle(0);
+                    rref->SetLineColor(0);
+                    rref->SetLineWidth(0);
                     rref->Draw("hist");
                     rnuis->SetFillStyle(3153);
                     rnuis->SetFillColor(1);
-                    rnuis->SetLineColor(3);
+                    rnuis->SetLineColor(2);
                     rnuis->SetMarkerColor(3);
                     rnuis->Draw("2");
+/*                     rnuis->Draw("P"); */
                 } else {
                     rref->Draw("E2"); 
                 }
@@ -308,6 +352,7 @@ class MWLPlot {
 
         }
 
+        //---
         TH1D *GetSummedMCHist() {
 
             if(gROOT->FindObject("hMC")) gROOT->FindObject("hMC")->Delete();
@@ -329,6 +374,7 @@ class MWLPlot {
 
         }
 
+        //---
         THStack* GetStack(bool isLog) {
             THStack* hstack = new THStack("HWWStack","HWWStack");
 
@@ -358,7 +404,7 @@ class MWLPlot {
 
 
             hstack->Draw("GOFF");
-            hstack->SetTitle("CMS preliminary");
+            hstack->SetTitle("");
 
             Float_t theMax = hstack->GetMaximum();
             Float_t theMin = hstack->GetMinimum();
@@ -446,7 +492,7 @@ class MWLPlot {
             if(sampCount == 12 || sampCount == 15) { pos = xPosA; off = yOffA; }
             else if(sampCount == 11 )              { pos = xPosB; off = yOffB; }
             else                                   { pos = xPos;  off = yOff;  }
-            float x0=0.22; float wx=0.19;
+            float x0=_x0; float wx=_xoffset;
             if(_data        ) { DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _data,                  " data",                "lp"); j++; }
             if(_hist[iHWW  ]) { DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _hist[iHWW  ]         , higgsLabel,             "l" ); j++; }
             if(_hist[iWW   ]) { DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _hist[iWW   ]         , " WW",                  "f" ); j++; }
@@ -455,18 +501,25 @@ class MWLPlot {
             if(_hist[iVV   ]) { DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _hist[iVV   ]         , " WZ/ZZ",               "f" ); j++; }
             if(_hist[iWJets]) { DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _hist[iWJets]         , " W+jets",              "f" ); j++; }
             if(_hist[iWZ   ]) { DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _hist[iWZ   ]         , " WZ",                  "f" ); j++; }
-//             if(_hist[iZZ   ]) { DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _hist[iZZ   ]         , " ZZ",                  "f" ); j++; }
-//             if(_hist[iFakes]) { DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _hist[iFakes]         , " fakes",               "f" ); j++; }
             for(size_t i=0;i<_autreHists.size();++i) {
                                 DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _autreHists[i].second , _autreHists[i].first,   "f" ); j++; 
             }
 
-            TLatex* luminosity = new TLatex(0.896, 0.781, TString::Format("L = %.1f fb^{-1}",_lumi));
-            luminosity->SetNDC();
-            luminosity->SetTextAlign(32);
-            luminosity->SetTextFont(42);
-            luminosity->SetTextSize(_legendTextSize*0.95);
-            luminosity->Draw("same");
+            TLatex* preliminary = new TLatex(0.896, 0.830, "CMS Preliminary");
+            preliminary->SetNDC();
+            preliminary->SetTextAlign(32);
+            preliminary->SetTextFont(42);
+            preliminary->SetTextSize(_legendTextSize*0.95);
+            preliminary->Draw("same");
+
+            if ( _lumi ) {
+                TLatex* luminosity = new TLatex(0.896, 0.781, TString::Format("L = %.1f fb^{-1}",_lumi));
+                luminosity->SetNDC();
+                luminosity->SetTextAlign(32);
+                luminosity->SetTextFont(42);
+                luminosity->SetTextSize(_legendTextSize*0.95);
+                luminosity->Draw("same");
+            }
             if(_extraLabel) _extraLabel->Draw("same");
 
             TPaveText* title = (TPaveText*)gPad->FindObject("title");
@@ -538,7 +591,5 @@ class MWLPlot {
         
             AxisFonts(axis, coordinate, title);
         }
-        
-
 
 };
