@@ -259,6 +259,7 @@ void PlotLimit(string  limitFiles   = "inputs/ana_ICHEP_limits_nj_shape7teV_cut8
   Float_t uxmin = canvas->GetUxmin();
   Float_t uxmax = canvas->GetUxmax();
   Float_t uymin = canvas->GetUymin();
+  Float_t uymax = canvas->GetUymax();
 
 
   // x-axis ticks
@@ -278,12 +279,15 @@ void PlotLimit(string  limitFiles   = "inputs/ana_ICHEP_limits_nj_shape7teV_cut8
 
       Float_t xx = i;
 
-      if (canvas->GetLogy())
-	tick.DrawLine(xx, pow(10,uymin), xx, pow(10,uymin) + (i%100 == 0 ? 0.025 : 0.01));
-      else
+      if (canvas->GetLogy()) {
+	//tick.DrawLine(xx, pow(10,uymin), xx, pow(10,uymin) + (i%100 == 0 ? 0.025 : 0.01));
+	tick.DrawLine(xx, pow(10,uymin), xx, (i%100 == 0 ? pow(10,uymin+0.04*(uymax-uymin)) : pow(10,uymin+0.022*(uymax-uymin))));
+      } else {
 	tick.DrawLine(xx, uymin, xx, uymin + (i%100 == 0 ? 0.75 : 0.3));
+      }
     }
-
+    
+    canvas->Update();
 
     // TLatex
     //--------------------------------------------------------------------------
@@ -312,7 +316,7 @@ void PlotLimit(string  limitFiles   = "inputs/ana_ICHEP_limits_nj_shape7teV_cut8
   //----------------------------------------------------------------------------
   DrawTLatex(0.92, 0.850, 0.050, "CMS preliminary");
   DrawTLatex(0.92, 0.795, 0.035, title.c_str());
-  DrawTLatex(0.92, 0.740, 0.035, TString("L = "+ luminosity).Data());
+  DrawTLatex(0.92, 0.740, 0.035, TString("L = "+ luminosity+" (8 TeV)").Data());
 
   TLegend* leg = new TLegend(0.18, 0.66, 0.355, 0.88, "");
 
