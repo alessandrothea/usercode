@@ -362,6 +362,52 @@ class ShapeMixer:
             self.generators[wwScaleDown.GetTitle()] = wwScaleDown
 
         #
+        # To shapes
+        #
+        fracTW = {} 
+        pytTop = self.nominals['Top']
+        fracTWs = ['TopTW']
+
+        if set(fracTW).issubset(self.nominals):
+            for t in fracTWs:
+                fracTW[t] = self.nominals[t]
+                del self.nominals[t]
+
+            topGenUp = fracTW['TopTW'].Clone('histo_Top_CMS_hww_Top_fTWUp')
+            topGenUp.SetTitle('Top CMS_hww_Top_fTW Up')
+            topGenUp.Scale(pytTop.Integral()/topGenUp.Integral())
+            self.generators[topGenUp.GetTitle()] = topGenUp
+
+            #copy the nominal
+            topGenDown = pytTop.Clone('histo_Top_CMS_hww_Top_fTWDown')
+            topGenDown.SetTitle('Top CMS_hww_Top_fTW Down')
+            topGenDown.Scale(2.)
+            topGenDown.Add(topGenUp, -1)
+            topGenDown.Scale(pytTop.Integral()/topGenDown.Integral())
+            self.generators[topGenDown.GetTitle()] = topGenDown
+
+        ctrlTT = {} 
+        ctrlTTs = ['TopCtrl']
+
+        if set(ctrlTT).issubset(self.nominals):
+            for t in ctrlTTs:
+                ctrlTT[t] = self.nominals[t]
+                del self.nominals[t]
+
+            topCtrlUp = ctrlTT['TopCtrl'].Clone('histo_Top_CMS_hww_Top_ctrlTTUp')
+            topCtrlUp.SetTitle('Top CMS_hww_Top_ctrlTT Up')
+            topCtrlUp.Scale(pytTop.Integral()/topCtrlUp.Integral())
+            self.generators[topCtrlUp.GetTitle()] = topCtrlUp
+
+            #copy the nominal
+            topCtrlDown = pytTop.Clone('histo_Top_CMS_hww_Top_ctrlTTDown')
+            topCtrlDown.SetTitle('Top CMS_hww_Top_ctrlTT Down')
+            topCtrlDown.Scale(2.)
+            topCtrlDown.Add(topCtrlUp, -1)
+            topCtrlDown.Scale(pytTop.Integral()/topCtrlDown.Integral())
+            self.generators[topCtrlDown.GetTitle()] = topCtrlDown
+
+        #
         # Statistical
         #
         def _pushbin(h,bin,alpha):

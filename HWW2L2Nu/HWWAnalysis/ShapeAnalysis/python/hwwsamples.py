@@ -1,6 +1,9 @@
 import hwwtools
 import re
 
+addtional = {
+    'Vg'                     : ['nominals/latino_086_ZgammaToLLuG.root'],
+    }
 backgrounds = {
     'WW'                     : ['nominals/latino_000_WWJets2LMad.root'],
     'ggWW'                   : ['nominals/latino_001_GluGluToWWTo4L.root'],
@@ -47,13 +50,16 @@ backgrounds = {
     'WWnlo'                  : ['nominals/latino_002_WWto2L2NuMCatNLO.root'],
     'WWnloUp'                : ['nominals/latino_004_WWto2L2NuMCatNLOUp.root'],
     'WWnloDown'              : ['nominals/latino_003_WWto2L2NuMCatNLODown.root'],
+    'TopTW'                  : ['nominals/latino_019_TTTo2L2Nu2B.root',
+                                'tW/latino_011_TtWFullDR.root',
+                                'tW/latino_012_TbartWFullDR.root',
+                                ],
+    'TopCtrl'                : ['nominals/latino_019_TTTo2L2Nu2B.root',
+                                'nominals/latino_011_TtWFullDR.root',
+                                'nominals/latino_012_TbartWFullDR.root',
+                                ],
     'DYLL-template-dd'       : ['dyTemplate-dd/latino_036_DY10toLLMad.root',
                                 'dyTemplate-dd/latino_037_DY50toLLMad.root',
-                               ],
-
-    'TopTT'                  : ['nominals/latino_019_TTTo2L2Nu2B.root'],
-    'TopTW'                  : ['nominals/latino_011_TtWFullDR.root',
-                                'nominals/latino_012_TbartWFullDR.root',
                                ],
     'DYLL-template-vbf'      : ['dyTemplate/latino_036_DY10toLLMad.root',
                                 'dyTemplate/latino_037_DY50toLLMad.root',
@@ -132,7 +138,7 @@ mcsets = {
         #signals
         'ggH','vbfH','wzttH',
         # bkgs
-        'WW','ggWW','Vg','WJet','WJetFakeRate','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown',
+        'WW','ggWW','Vg','WJet','WJetFakeRate','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl',
         # 0j1j specific
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
@@ -151,7 +157,7 @@ mcsets = {
         'ggH','vbfH','wzttH',
         # bkgs
         #'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYLL',
-        'WW','ggWW','Vg','WJet','Top','VV','DYee','DYmm'
+        'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYee','DYmm'
     ],
    'vbf_of' : [
         #signals

@@ -507,8 +507,9 @@ class ShapeFactory:
         weights['DYmm']              = self._stdWgt+'*(channel<1.5)'
         weights['DYLL-template']     = self._stdWgt+'* dyW *(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         weights['DYLL-templatesyst'] = self._stdWgt+'*dyWUp*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
+        #systematics
+        weights['TopCtrl']           = self._stdWgt+'*bvetoW'
         #filter for buggy events in dataset==082
-        #weights['Vg']                = self._stdWgt+'*(dataset!=082 || (chmet<(0.75*pt1+100) && chmet<(0.75*jetpt1+100)))'
         weights['Vg']                = self._stdWgt+'*(dataset!=082 || (chmet<(0.75*pt1+100) && chmet<(0.75*jetpt1+100)))*(1+0.6*(dataset>=82 && dataset<=84))'
         weights['ggH']               = self._stdWgt+'*kfW'
         weights['vbfH']              = self._stdWgt+'*kfW'
