@@ -508,13 +508,14 @@ class ShapeFactory:
         weights['DYLL-template']     = self._stdWgt+'* dyW *(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         weights['DYLL-templatesyst'] = self._stdWgt+'*dyWUp*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         #filter for buggy events in dataset==082
-        weights['Vg']                = self._stdWgt+'*(dataset!=082 || (chmet<(0.75*pt1+100) && chmet<(0.75*jetpt1+100)))'
+        #weights['Vg']                = self._stdWgt+'*(dataset!=082 || (chmet<(0.75*pt1+100) && chmet<(0.75*jetpt1+100)))'
+        weights['Vg']                = self._stdWgt+'*(dataset!=082 || (chmet<(0.75*pt1+100) && chmet<(0.75*jetpt1+100)))*(1+0.6*(dataset>=82 && dataset<=84))'
         weights['ggH']               = self._stdWgt+'*kfW'
         weights['vbfH']              = self._stdWgt+'*kfW'
 
 
         if cat in ['2j']:
-            weights['WW']                = self._stdWgt+'*2'
+            weights['WW']                = self._stdWgt+'*(1+(mjj>500)*(detajj>3.5))'
 
 
         if var in ['bdts','bdtl']:
