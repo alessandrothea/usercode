@@ -124,7 +124,8 @@ class MWLPlot {
             _xoffset          = 0.25;
             _yoffset          = 0.06;
             _labelOffset      = 0.015;
-            _axisLabelSize    = 0.050;
+/*             _axisLabelSize    = 0.050; */
+            _axisLabelSize    = 40;
             _titleOffset      = 1.6;
             _leftMargin       = 0.18;
             _rightMargin      = 0.05;
@@ -297,20 +298,22 @@ class MWLPlot {
                 _pad2->Draw();
                 _pad2->cd();
 
-                TLine *line = new TLine(rref->GetXaxis()->GetXmin(), 1.0, rref->GetXaxis()->GetXmax(), 1.0);
-                line->SetLineColor(kBlack);
-                line->SetLineWidth(1);
-                line->SetLineStyle(1);
+
+/*                 TLine *line = new TLine(rref->GetXaxis()->GetXmin(), 1.0, rref->GetXaxis()->GetXmax(), 1.0); */
+/*                 line->SetLineColor(kBlack); */
+/*                 line->SetLineWidth(1); */
+/*                 line->SetLineStyle(1); */
 
                 if ( _ratioMin==0. && _ratioMax==0.)
                     rref->GetYaxis()->SetRangeUser(TMath::Max(0.,1.-absmax), absmax+1.);
                 else
                     rref->GetYaxis()->SetRangeUser(_ratioMin,_ratioMax);
                 AxisFonts(rref->GetXaxis(), "x", hstack->GetXaxis()->GetTitle());
+                AxisFonts(rref->GetYaxis(), "y", "data/mc");
                 rref->GetYaxis()->SetTitle("data/mc");
                 rref->GetYaxis()->SetLabelSize(0.09);
                 rref->GetYaxis()->SetTitleSize(0.09);
-                rref->GetYaxis()->SetTitleOffset(1.02);
+                rref->GetYaxis()->SetTitleOffset(_titleOffset*0.66);
                 rref->GetXaxis()->SetLabelSize(0.09);
                 rref->GetXaxis()->SetTitleSize(0.09);
                 rref->GetXaxis()->SetTitleOffset(1.5);
@@ -331,9 +334,19 @@ class MWLPlot {
                 }
                 rdat->SetMarkerStyle(20);
                 rdat->Draw("E SAME p");
-                line->Draw("SAME"); 
+/*                 line->Draw("SAME");  */
+
+                TLine line;
+                line.SetLineColor(kBlack);
+                line.SetLineWidth(1);
+                line.SetLineStyle(1);
+                line.DrawLine(rref->GetXaxis()->GetXmin(), 1.0, rref->GetXaxis()->GetXmax(), 1.0);
+                line.SetLineStyle(7);
+                line.DrawLine(rref->GetXaxis()->GetXmin(), 1.5, rref->GetXaxis()->GetXmax(), 1.5);
+                line.DrawLine(rref->GetXaxis()->GetXmin(), 0.5, rref->GetXaxis()->GetXmax(), 0.5);
                 c1->Update();
-            }        } 
+            }   
+        } 
 
         TH1D* GetDataHist() { 
         

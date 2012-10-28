@@ -232,10 +232,27 @@ class ShapeGluer:
             
             # set the errors to 1. sigma for the priors
             for arg in roofiter(pars):
-                if arg.GetName() == 'r': continue
-                arg.setError(1.)
+                name = arg.GetName()
+                # don't add errors to the signal strength
+                if name == 'r': continue
+                # find the functional form
+                ptype = None
+                for (n,nf,p,a,e) in self._DC.systs:
+                    if n==name:
+                        ptype = p
+                        break
+                
+                # add errors
+                if   ptype == 'lnN' or 'shape' in ptype:
+                    # +/- 1 for lnN (and shapes)
+                    arg.setError(1.)
+                elif ptype == 'gmN':
+                    # +/- sqrt(N) for gmN
+                    arg.setError(math.sqrt(arg.getVal()))
+                else:
+                    raise ValueError('Pdf type %s not known',ptype)
 
-
+            pars.Print("V")
             # normalize to the expected from the DC
             A = sum(self._DC.exp[self._bin].itervalues())
 
@@ -471,7 +488,11 @@ def fitAndPlot( dcpath, opts ):
     # 2. convert to ws
     wspath = os.path.splitext(dcpath)[0]+'.root'
     logging.debug('Working with workspace %s',wspath)
-    if not os.path.exists(wspath):
+
+    mkws = (not os.path.exists(wspath) or
+            os.path.getmtime(wspath) < os.path.getmtime(dcpath) or
+            opts.clean)
+    if mkws:
         # workspace + parameters = shapes
         print 'Making the workspace...',
         sys.stdout.flush()
@@ -622,6 +643,7 @@ def addOptions( parser ):
     parser.add_option('-o' , '--output' , dest='output' , help='Output directory (%default)' , default=None)
     parser.add_option('-x' , '--xlabel' , dest='xlabel' , help='X-axis label'                , default='')
     parser.add_option('-r' , '--ratio'  , dest='ratio'  , help='Plot the data/mc ration'     , default=True    , action='store_false')
+    parser.add_option('--clean'         , dest='clean'  , help='Clean the ws (regenerate it' , default=False   , action='store_true')
     parser.add_option('--dump'          , dest='dump'   , help='Dump the histograms to file' , default=None)
     parser.add_option('--tmpdir'        , dest='tmpdir' , help='Temporary directory'         , default=None)
     parser.add_option('--stretch'       , dest='stretch', help='Stretch'                     , default=None, type='float')
