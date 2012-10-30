@@ -366,9 +366,9 @@ class ShapeMixer:
         #
         fracTW = {} 
         pytTop = self.nominals['Top']
-        fracTWs = ['TopTW']
+        fracTWs = ['TopTW',]
 
-        if set(fracTW).issubset(self.nominals):
+        if set(fracTWs).issubset(self.nominals):
             for t in fracTWs:
                 fracTW[t] = self.nominals[t]
                 del self.nominals[t]
@@ -387,9 +387,9 @@ class ShapeMixer:
             self.generators[topGenDown.GetTitle()] = topGenDown
 
         ctrlTT = {} 
-        ctrlTTs = ['TopCtrl']
+        ctrlTTs = ['TopCtrl',]
 
-        if set(ctrlTT).issubset(self.nominals):
+        if set(ctrlTTs).issubset(self.nominals):
             for t in ctrlTTs:
                 ctrlTT[t] = self.nominals[t]
                 del self.nominals[t]
