@@ -497,11 +497,8 @@ class ShapeFactory:
         weights['WJet']              = 'baseW*fakeW'
         weights['WJetFakeRate']      = 'baseW*fakeWUp'
         weights['Data']              = '1'
-        # problem with DYTT using embedded for em/me + MC for ee/mm
-        # puWobs doesn't exist for embedded sample and lumi normalisation only applies for MC
-        # select the dy -> tt mc events decaying only in ee/mm, in other words:
-        # remove the mc (ds==37) events which are not tau decays (truth !=2) or are em/me (ch > 1.5)
-        weights['DYTT']              = self._stdWgt+'*(!( dataset == 36 || dataset == 37 ) || (mctruth == 2 && channel<1.5))'
+        # problem with DYTT using embedded for em/me, for ee/mm it is inlcuded in DD DY estimate
+        weights['DYTT']              = self._stdWgt
         weights['DYLL']              = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))*(channel<1.5)'
         weights['DYee']              = self._stdWgt+'*(channel<1.5)'
         weights['DYmm']              = self._stdWgt+'*(channel<1.5)'

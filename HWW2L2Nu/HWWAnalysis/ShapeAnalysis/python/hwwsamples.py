@@ -1,9 +1,6 @@
 import hwwtools
 import re
 
-addtional = {
-    'Vg'                     : ['nominals/latino_086_ZgammaToLLuG.root'],
-    }
 backgrounds = {
     'WW'                     : ['nominals/latino_000_WWJets2LMad.root'],
     'ggWW'                   : ['nominals/latino_001_GluGluToWWTo4L.root'],
@@ -30,10 +27,7 @@ backgrounds = {
                                 'nominals/latino_078_WZTo2L2QMad.root',
                                 'nominals/latino_079_ZZTo2L2QMad.root',
                                ],
-    'DYTT'                   : ['nominals/latino_RunABC_DYtt_8fb.root',
-                                'nominals/latino_036_DY10toLLMad.root',
-                                'nominals/latino_037_DY50toLLMad.root',
-                               ],
+    'DYTT'                   : ['nominals/latino_RunABC_DYtt_8fb.root'], # for ee/mm channels DYTT is included in DD
     'DYLL'                   : ['nominals/latino_036_DY10toLLMad.root',
                                 'nominals/latino_037_DY50toLLMad.root',
                                ],
