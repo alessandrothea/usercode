@@ -247,6 +247,93 @@ class ShapeMixer:
         return (up, down)
 
 
+    @staticmethod
+    def _pushbin(h,bin,alpha):
+        c = h.GetBinContent(bin)
+        e = h.GetBinError(bin)
+        x = c+alpha*e
+        h.SetAt( x if x > 0. else c*0.001, bin)
+
+    @staticmethod
+    def _morphstat(h, eff):
+
+        nx = h.GetNbinsX()
+        statName  = h.GetName()+'_'+eff
+        statTitle = h.GetTitle()+' '+eff
+
+        morphed = {}
+        # global shape morphing 
+        # clone the nominal twice
+        statUp = h.Clone(statName+'Up')
+        statUp.SetTitle(statTitle+' Up')
+
+        statDown = h.Clone(statName+'Down')
+        statDown.SetTitle(statTitle+' Down')
+
+        morphed[statUp.GetTitle()] = statUp
+        morphed[statDown.GetTitle()] = statDown
+
+        # the histogram is empty, skip the rest
+        if h.GetEntries() == 0. and h.Integral() == 0.0: return morphed
+
+        for i in xrange(0,nx+2):
+            ShapeMixer._pushbin(statUp,  i, +1)
+            ShapeMixer._pushbin(statDown,i, -1)
+
+        # rescale to the original, shape only
+        if statUp.Integral() != 0.:
+            statUp.Scale(h.Integral()/statUp.Integral())
+        # rescale to the original, shape only
+        if statDown.Integral() != 0.:
+            statDown.Scale(h.Integral()/statDown.Integral())
+
+        return morphed
+
+    @staticmethod
+    def _morphstatbbb(h, eff):
+
+        nx = h.GetNbinsX()
+        statName  = h.GetName()+'_'+eff
+        statTitle = h.GetTitle()+' '+eff
+
+        morphed = {}
+        # bin-by-bin morphing
+        # clone the histogram once per bin
+        for i in xrange(1,nx+1):
+            binName  = '{0}_bin{1}'.format(statName,i) 
+            binTitle = '{0}_bin{1}'.format(statTitle,i) 
+
+            binUp   = h.Clone(binName+'Up' )
+            binUp.SetTitle(binTitle+' Up' )
+            binDown = h.Clone(binName+'Down' )
+            binDown.SetTitle(binTitle+' Down' )
+
+            morphed[binUp.GetTitle()] = binUp
+            morphed[binDown.GetTitle()] = binDown
+
+            # the histogram is empty, skip the rest
+            if h.GetEntries() == 0. and h.Integral() == 0.0: continue
+            
+            ShapeMixer._pushbin( binUp,   i, +1)
+            ShapeMixer._pushbin( binDown, i, -1)
+
+            if i == 1:
+                ShapeMixer._pushbin( binUp,   0, +1)
+                ShapeMixer._pushbin( binDown, 0, -1)
+            elif i == nx:
+                ShapeMixer._pushbin( binUp,   nx, +1)
+                ShapeMixer._pushbin( binDown, nx, -1)
+
+            # rescale to the original, shape only
+            if binUp.Integral() != 0.:
+                binUp.Scale(h.Integral()/binUp.Integral())
+
+            # rescale to the original, shape only
+            if binDown.Integral() != 0.:
+                binDown.Scale(h.Integral()/binDown.Integral())
+
+        return morphed
+
 
 #     def mix(self, cat, flavor):
     def mix(self, chan):
@@ -320,7 +407,7 @@ class ShapeMixer:
                     self.templates[dyLLShapeDown.GetTitle()] = dyLLShapeDown
 
 
-        #
+        # -----------------------------------------------------------------
         # WW generator shapes
         #
         mcAtNLO = {} 
@@ -361,7 +448,7 @@ class ShapeMixer:
             wwScaleDown.Scale(madWW.Integral()/wwScaleDown.Integral())
             self.generators[wwScaleDown.GetTitle()] = wwScaleDown
 
-        #
+        # -----------------------------------------------------------------
         # To shapes
         #
         fracTW = {} 
@@ -407,92 +494,42 @@ class ShapeMixer:
             topCtrlDown.Scale(pytTop.Integral()/topCtrlDown.Integral())
             self.generators[topCtrlDown.GetTitle()] = topCtrlDown
 
-        #
+        # -----------------------------------------------------------------
         # Statistical
         #
-        def _pushbin(h,bin,alpha):
-            c = h.GetBinContent(bin)
-            e = h.GetBinError(bin)
-            x = c+alpha*e
-            h.SetAt( x if x > 0. else c*0.001, bin)
-
+        # prepare the dictionary
+        nomkeys = self.nominals.keys()
+        if self.statmode == 'unified':
+            # all unified
+            statmodes = dict(zip(nomkeys,['unified']*len(nomkeys)))
+        elif self.statmode == 'bybin':
+            # all bybin
+            statmodes = dict(zip(nomkeys,['bybin']*len(nomkeys)))
+        elif isinstance(self.statmode, list):
+            # use the list as a mask for the bybin
+            statmodes = {}
+            for n in nomkeys:
+                statmodes[n] = 'bybin' if n in self.statmode else 'unified'
+        else:
+            raise ValueError('Invalid option %s (can be \'unified\',\'bybin\')' % self.statmode)
 
         for n,h in self.nominals.iteritems():
             # skip data or injected sample
             if n in ['Data'] or '-SI' in n:
                 continue
-#             if h.GetEntries() == 0. and h.Integral() == 0.0:
-#                 self._logger.info('Warning: nominal shape %s is empty. The stat histograms won\'t be produced',n)
-#                 continue
             effName = 'CMS_hww_{0}_{1}_stat_shape'.format(n,chan)
 
-            nx = h.GetNbinsX()
-            statName  = h.GetName()+'_'+effName
-            statTitle = h.GetTitle()+' '+effName
+            if statmodes[n] == 'unified' :
+                self._logger.debug('Generating unified morphs for %s', n)
+                morphs = self._morphstat(h,effName)
 
-            if self.statmode == 'unified' :
-                # global shape morphing 
-                # clone the nominal twice
-                statUp = h.Clone(statName+'Up')
-                statUp.SetTitle(statTitle+' Up')
-
-                statDown = h.Clone(statName+'Down')
-                statDown.SetTitle(statTitle+' Down')
-
-                self.statistical[statUp.GetTitle()] = statUp
-                self.statistical[statDown.GetTitle()] = statDown
-
-                # the histogram is empty, skip the rest
-                if h.GetEntries() == 0. and h.Integral() == 0.0: continue
-
-                for i in xrange(0,nx+2):
-                    _pushbin(statUp,  i, +1)
-                    _pushbin(statDown,i, -1)
-
-                # rescale to the original, shape only
-                if statUp.Integral() != 0.:
-                    statUp.Scale(h.Integral()/statUp.Integral())
-                # rescale to the original, shape only
-                if statDown.Integral() != 0.:
-                    statDown.Scale(h.Integral()/statDown.Integral())
-            elif self.statmode == 'bybin' :
-                # bin-by-bin morphing
-                # clone the histogram once per bin
-                for i in xrange(1,nx+1):
-                    binName  = '{0}_bin{1}'.format(statName,i) 
-                    binTitle = '{0}_bin{1}'.format(statTitle,i) 
-
-                    binUp   = h.Clone(binName+'Up' )
-                    binUp.SetTitle(binTitle+' Up' )
-                    binDown = h.Clone(binName+'Down' )
-                    binDown.SetTitle(binTitle+' Down' )
-
-                    self.statistical[binUp.GetTitle()] = binUp
-                    self.statistical[binDown.GetTitle()] = binDown
-
-                    # the histogram is empty, skip the rest
-                    if h.GetEntries() == 0. and h.Integral() == 0.0: continue
-                    
-                    _pushbin( binUp,   i, +1)
-                    _pushbin( binDown, i, -1)
-
-                    if i == 1:
-                        _pushbin( binUp,   0, +1)
-                        _pushbin( binDown, 0, -1)
-                    elif i == nx:
-                        _pushbin( binUp,   nx, +1)
-                        _pushbin( binDown, nx, -1)
-
-                    # rescale to the original, shape only
-                    if binUp.Integral() != 0.:
-                        binUp.Scale(h.Integral()/binUp.Integral())
-
-                    # rescale to the original, shape only
-                    if binDown.Integral() != 0.:
-                        binDown.Scale(h.Integral()/binDown.Integral())
-
+            elif statmodes[n] == 'bybin' :
+                self._logger.debug('Generating bybin morphs for %s', n)
+                morphs = self._morphstatbbb(h,effName)
             else:
                 raise ValueError('Invalid option %s (can be \'unified\',\'bybin\')' % self.statmode)
+
+            self.statistical.update(morphs)
 
         #
         # Experimental
@@ -709,12 +746,12 @@ if __name__ == '__main__':
     ROOT.TH1.SetDefaultSumw2(True)
 
 
-#  _                  
-# | |   ___  ___ _ __ 
-# | |__/ _ \/ _ \ '_ \
-# |____\___/\___/ .__/
-#               |_|   
-#     
+    #  _                  
+    # | |   ___  ___ _ __ 
+    # | |__/ _ \/ _ \ '_ \
+    # |____\___/\___/ .__/
+    #               |_|   
+    #     
     reader = datadriven.DDCardReader( opt.path_dd )
 
     channels =  dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])

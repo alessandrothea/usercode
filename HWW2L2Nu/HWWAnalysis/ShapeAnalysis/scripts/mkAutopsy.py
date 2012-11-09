@@ -252,7 +252,6 @@ class ShapeGluer:
                 else:
                     raise ValueError('Pdf type %s not known',ptype)
 
-            pars.Print("V")
             # normalize to the expected from the DC
             A = sum(self._DC.exp[self._bin].itervalues())
 

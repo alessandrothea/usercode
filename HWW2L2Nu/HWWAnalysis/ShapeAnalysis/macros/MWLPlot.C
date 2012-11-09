@@ -53,12 +53,10 @@ float yOffA[] = {0,1,2,0,1,2,3,3,3,4,4,4,5,5,5};
 float xPosB[] = {0,0,0,1,1,1,0,1,0,1,2}; 
 float yOffB[] = {0,1,2,0,1,2,3,3,4,4,4};
 
-#define TH1D TH1
-
 //------------------------------------------------------------------------------
 // GetMaximumIncludingErrors
 //------------------------------------------------------------------------------
-Float_t GetMaximumIncludingErrors(TH1D* h)
+Float_t GetMaximumIncludingErrors(TH1* h)
 {
     Float_t maxWithErrors = 0;
 
@@ -72,15 +70,11 @@ Float_t GetMaximumIncludingErrors(TH1D* h)
     return maxWithErrors;
 }
 
-
-
-
-
 class MWLPlot {
     private:
-        std::vector<TH1D*> _hist;
-        std::vector<std::pair<std::string,TH1D*> > _autreHists;
-        TH1D* _data;
+        std::vector<TH1*> _hist;
+        std::vector<std::pair<std::string,TH1*> > _autreHists;
+        TH1* _data;
         TGraphAsymmErrors* _nuisances;
 
         //MWL
@@ -149,19 +143,19 @@ class MWLPlot {
 
         void setRatioRange( Float_t min = 0.0, Float_t max = 0.0 ) { _ratioMin = min; _ratioMax = max;} 
 
-        void setDataHist (TH1D * h)         { _data          = h;        } 
-        void setHWWHist  (TH1D * h)         { setMCHist(iHWW  ,h);       } 
-        void setWWHist   (TH1D * h)         { setMCHist(iWW   ,h);       } 
-        void setZJetsHist(TH1D * h)         { setMCHist(iZJets,h);       } 
-        void setTopHist  (TH1D * h)         { setMCHist(iTop  ,h);       } 
-        void setVVHist   (TH1D * h)         { setMCHist(iVV   ,h);       } 
-        void setWZHist   (TH1D * h)         { setMCHist(iWZ   ,h);       } 
-        void setZZHist   (TH1D * h)         { setMCHist(iZZ   ,h);       } 
-        void setFakesHist(TH1D * h)         { setMCHist(iFakes,h);       } 
-        void setWJetsHist(TH1D * h)         { setMCHist(iWJets,h);       }
+        void setDataHist (TH1 * h)         { _data          = h;        } 
+        void setHWWHist  (TH1 * h)         { setMCHist(iHWW  ,h);       } 
+        void setWWHist   (TH1 * h)         { setMCHist(iWW   ,h);       } 
+        void setZJetsHist(TH1 * h)         { setMCHist(iZJets,h);       } 
+        void setTopHist  (TH1 * h)         { setMCHist(iTop  ,h);       } 
+        void setVVHist   (TH1 * h)         { setMCHist(iVV   ,h);       } 
+        void setWZHist   (TH1 * h)         { setMCHist(iWZ   ,h);       } 
+        void setZZHist   (TH1 * h)         { setMCHist(iZZ   ,h);       } 
+        void setFakesHist(TH1 * h)         { setMCHist(iFakes,h);       } 
+        void setWJetsHist(TH1 * h)         { setMCHist(iWJets,h);       }
         void setNuisances(TGraphAsymmErrors* g, bool overlay=false)  { _nuisances = g; _overlayNuisances=overlay;}        
 
-        void setMCHist   (const samp &s,        TH1D * h)  { 
+        void setMCHist   (const samp &s,        TH1 * h)  { 
             if ( _nbins == -1 ) {
                 _nbins  = h->GetNbinsX();
                 _low    = h->GetXaxis()->GetBinLowEdge(1);
@@ -173,7 +167,7 @@ class MWLPlot {
             _hist[s]       = h;        
         } 
 
-        void setMCHist   (const std::string &s, TH1D * h)  { 
+        void setMCHist   (const std::string &s, TH1 * h)  { 
             if (sampByName(s) == Undefined) {
                 _autreHists.push_back(make_pair(s,h));
             } else {
@@ -219,8 +213,8 @@ class MWLPlot {
 
             RebinHists(rebin);
             THStack *hstack = GetStack(c1->GetLogy());
-            TH1D *signal = GetSignalHist();
-            TH1D *data   = GetDataHist();
+            TH1 *signal = GetSignalHist();
+            TH1 *data   = GetDataHist();
 
             if(c1->GetLogy()) gPad->SetLogy();
             if(div) hstack->GetHistogram()->SetLabelSize(0.00,"X");
@@ -238,13 +232,13 @@ class MWLPlot {
 
             if(div) {
 
-                TH1D *summed = GetSummedMCHist();
+                TH1 *summed = GetSummedMCHist();
 
-                TH1D *rdat = (TH1D*)data->Clone("rdat");   
+                TH1 *rdat = (TH1*)data->Clone("rdat");   
 
                 if(gROOT->FindObject("rref")) gROOT->FindObject("rref")->Delete();
 
-				TH1D *rref = (TH1D*)summed->Clone("rref");
+				TH1 *rref = (TH1*)summed->Clone("rref");
 				rref->SetTitle("rref");
 				rref->Reset();
 
@@ -348,14 +342,14 @@ class MWLPlot {
             }   
         } 
 
-        TH1D* GetDataHist() { 
+        TH1* GetDataHist() { 
         
             if(_data) _data->SetLineColor  (kBlack);
             if(_data) _data->SetMarkerStyle(kFullCircle);
             return _data; 
         }
 
-        TH1D *GetSignalHist() {
+        TH1 *GetSignalHist() {
 
             if( _hist[iHWW] ) {
                 _hist[iHWW]->SetLineColor(sampleColor[iHWW]);
@@ -366,13 +360,13 @@ class MWLPlot {
         }
 
         //---
-        TH1D *GetSummedMCHist() {
+        TH1 *GetSummedMCHist() {
 
             if(gROOT->FindObject("hMC")) gROOT->FindObject("hMC")->Delete();
 
-			TH1D* hMC = 0x0;
+			TH1* hMC = 0x0;
 			for (int i=0; i<nSamples; i++) if( _hist[i] && i != iHWW)
-				hMC = (TH1D*)_hist[i]->Clone("hMC");
+				hMC = (TH1*)_hist[i]->Clone("hMC");
 
 			hMC->SetTitle("hMC");
 			hMC->Reset();
@@ -517,6 +511,9 @@ class MWLPlot {
             for(size_t i=0;i<_autreHists.size();++i) {
                                 DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _autreHists[i].second , _autreHists[i].first,   "f" ); j++; 
             }
+            if (_nuisances && _overlayNuisances) {
+                                DrawLegend(x0+pos[j]*wx, 0.80 - off[j]*_yoffset, _nuisances            , " syst #oplus stat",    "f" ); j++;
+            }
 
             TLatex* preliminary = new TLatex(0.896, 0.830, "CMS Preliminary");
             preliminary->SetNDC();
@@ -568,7 +565,7 @@ class MWLPlot {
         //------------------------------------------------------------------------------
         void DrawLegend(Float_t x1,
                 Float_t y1,
-                TH1D*   hist,
+                TObject* obj,
                 TString label,
                 TString option)
         {
@@ -584,7 +581,7 @@ class MWLPlot {
             legend->SetTextFont  (_labelFont);
             legend->SetTextSize  (_legendTextSize);
         
-            legend->AddEntry(hist, label.Data(), option.Data());
+            legend->AddEntry(obj, label.Data(), option.Data());
         
             legend->Draw();
         }
