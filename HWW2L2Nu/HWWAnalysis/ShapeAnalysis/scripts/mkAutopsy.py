@@ -566,15 +566,16 @@ def fitAndPlot( dcpath, opts ):
 #---
 def export( bin, DC, w, mode, fit, opts):
 
+    import hwwsamples
+
     logging.debug('Plotting %s', fit)
 
     gluer = ShapeGluer(bin, DC, w, fit)
 
     shapes,errs,dummy = gluer.glue()
 
-
     shapes2plot = shapes.copy()
-    shapes2plot['Hsum']  = THSum(shapes2plot,['ggH','vbfH','wzttH'],'histo_higgs','higgs')
+    shapes2plot['Hsum']  = THSum(shapes2plot,hwwsamples.signals,'histo_higgs','higgs')
     shapes2plot['WWsum'] = THSum(shapes2plot,['WW','ggWW'],'histo_WWsum','WWsum')
     shapes2plot['VVsum'] = THSum(shapes2plot,['VV','Vg'],'histo_VVsum','VVsum')
     shapes2plot['DYsum'] = THSum(shapes2plot,['DYLL','DYTT'],'histo_DYsum','DYsum')
