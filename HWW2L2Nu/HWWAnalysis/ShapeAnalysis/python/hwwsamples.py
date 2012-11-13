@@ -105,29 +105,50 @@ data['Data2011'] = data['Data2011A']+data['Data2011B']
 data['Data2012'] = data['Data2012A']+data['Data2012B']+data['Data2012C']
 
 #--------------
-def signalSamples(mass):
+# signal samples labels and generation
+
+signals = ['ggH','vbfH','wzttH','jhu','jhu_ALT']
+
+def signalSamples(sigtag,mass=125):
+
     signals = {}
-    ggH   = ['nominals/latino_1{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root',
-            ]
-    vbfH  = ['nominals/latino_2{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root',
-            ]
-    wzttH = ['nominals/latino_3{mass}_wzttH{mass}ToWW.root']
+
+    if sigtag == 'SM':
+        ggH   = ['nominals/latino_1{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root',
+                ]
+        vbfH  = ['nominals/latino_2{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root',
+                ]
+        wzttH = ['nominals/latino_3{mass}_wzttH{mass}ToWW.root']
 
 
-    if mass <= 300:
-        signals['ggH']   = [f.format(mass = mass) for f in ggH]
-        signals['vbfH']  = [f.format(mass = mass) for f in vbfH]
-        signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
+        if mass <= 300:
+            signals['ggH']   = [f.format(mass = mass) for f in ggH]
+            signals['vbfH']  = [f.format(mass = mass) for f in vbfH]
+            signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
+        else:
+            signals['ggH']   = [f.format(mass = mass) for f in ggH]
+            signals['vbfH']  = [f.format(mass = mass) for f in vbfH]
+    elif sigtag == 'JHU' and mass==125:
+        signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_ALT'] = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
     else:
-        signals['ggH']   = [f.format(mass = mass) for f in ggH]
-        signals['vbfH']  = [f.format(mass = mass) for f in vbfH]
+        raise ValueError('Signal tag %s not found for mass %d' % (sigtag,mass) )
     return signals
 
-#
+#--------------
 # mcsets,
 # list of samples and compact dictionary
 #
 mcsets = {
+    '0j1j-JHU' : [
+        #signals
+        'jhu','jhu_ALT',
+        # bkgs
+        'WW','ggWW','Vg','WJet','WJetFakeRate','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl',
+        # 0j1j specific
+        ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
+        ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
+    ],
     '0j1j' : [
         #signals
         'ggH','vbfH','wzttH',
@@ -162,14 +183,14 @@ mcsets = {
 }
 
 #--------------
-def samples(mass, datatag='Data2012', mctag='all'):
+def samples(mass, datatag='Data2012', sigtag='SM', mctag='all'):
     '''
     mass: mass for the higgs samples'
     datatag: tag for the dataset to be included
     mctag: tag for the set of mc to be included
     '''
 
-    signals = signalSamples(mass)
+    signals = signalSamples(sigtag,mass)
 
     mcsamples = {}
     mcsamples.update(signals)
@@ -183,7 +204,7 @@ def samples(mass, datatag='Data2012', mctag='all'):
         mclabels = mcsets[mctag]
 
     selectedMc = hwwtools.filterSamples( mcsamples, mclabels )
-        
+
     # add data
     selectedData = {}
     if datatag == 'NoData':
@@ -196,7 +217,7 @@ def samples(mass, datatag='Data2012', mctag='all'):
         if not m:
             raise ValueError('Signal injection must have the format SImmm where mmm is the mass')
         simass = int(m.group(1))
-        siSamples = signalSamples(simass)
+        siSamples = signalSamples(sigtag, simass)
         # add the signal samples to the list with a _SI tag
         for s,f in siSamples.iteritems():
             selectedData[s+'-SI']=f

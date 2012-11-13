@@ -11,6 +11,8 @@ import fnmatch
 
 import hwwinfo
 import hwwtools
+import hwwsamples
+
 import datadriven
 from HWWAnalysis.Misc.odict import OrderedDict
 from systematicUncertainties import getCommonSysts,addFakeBackgroundSysts
@@ -40,7 +42,8 @@ class ShapeDatacardWriter:
     def __del__(self):
         pass
 
-    def write(self, yields, nuisances, path, fileFmt, signals = ['ggH', 'vbfH', 'wzttH']):
+#     def write(self, yields, nuisances, path, fileFmt, signals = ['ggH', 'vbfH', 'wzttH']):
+    def write(self, yields, nuisances, path, fileFmt, signals = hwwsamples.signals ):
 
         cardPath = path.format(mass = self._mass, bin = self._bin)
         print 'Writing to '+cardPath 
@@ -115,8 +118,6 @@ class ShapeLoader:
     _logger = logging.getLogger('ShapeLoader')
 
     def __init__(self, path):
-        self._systRegex = re.compile('^histo_([^_]+)_(.+)(Up|Down)$')
-        self._nomRegex  = re.compile('^histo_([^_]+)$')
         self._src = ROOT.TFile.Open(path)
         self._yields = OrderedDict()
 
@@ -130,15 +131,35 @@ class ShapeLoader:
         return self._effects.copy()
 
     def load(self):
+        # load the list of processes
+        processes = sorted([ p.GetName() for p in self._src.Get('processes') ])
         # load the histograms and calculate the yields
-        names = [ k.GetName() for k in self._src.GetListOfKeys()]
-        self._nominals = sorted([ name for name in names if self._nomRegex.match(name) ]) 
-#         print self._nominals
-        self._systematics = sorted([ name for name in names if self._systRegex.match(name) ])
-#         print '\n'.join(self._nominals)
-#         print '\n'.join(self._systematics)
-        for name in self._nominals:
-            process = self._nomRegex.match(name).group(1)
+        names = sorted([ k.GetName() for k in self._src.GetListOfKeys() ])
+        names.remove('processes')
+
+
+        self._nominals    = []
+        self._systematics = []
+        
+        self._nominals = [ ('histo_'+p,p) for p in processes if 'histo_'+p in names] 
+        if len(self._nominals) != len(processes):
+            raise RuntimeError('Not all process shapes have been found')
+        
+        for p in processes:
+            systre = re.compile('^histo_%s_(.+)(Up|Down)$' % p)
+            systp = []
+            for name in names:
+                m = systre.match(name)
+                if not m: continue
+                systp.append( (name,p,m.group(1),m.group(2)) )
+#             systs = [ (name,p, for name in names if systre.match(name) ]
+#             print 'xxx',p,systp
+            self._systematics += systp
+
+        self._systematics = sorted(self._systematics)
+
+        for name,process in self._nominals:
+#             process = self._nomRegex.match(name).group(1)
             h = self._src.Get(name)
             N =  h.Integral(0,h.GetNbinsX())
             entries = h.GetEntries()
@@ -151,9 +172,9 @@ class ShapeLoader:
         
         ups = {}
         downs = {}
-        for name in self._systematics:
+        for name,process,effect,var in self._systematics:
             # check for Up/Down
-            (process,effect,var) = self._systRegex.match(name).group(1,2,3)
+#             (process,effect,var) = self._systRegex.match(name).group(1,2,3)
             if var == 'Up': 
                 if effect not in ups: ups[effect]= []
                 ups[effect].append(process)
@@ -548,7 +569,7 @@ if __name__ == '__main__':
 
             # reshuffle the order
             #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
-            order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
+            order = [ 'jhu','jhu_ALT','vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             

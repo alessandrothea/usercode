@@ -30,26 +30,25 @@ def coljust( str, width, align='left' ):
 
 
 #------------------------------------------------------------------------------
-def GetHistograms( path ):
+def GetHistPaths( path ):
     rootFile = ROOT.TFile.Open(path)
 
-    finder = utils.ObjFinder("TH1D")
+    finder = utils.ObjFinder('TH1D')
 
     names = finder.findRecursive(rootFile)
-    return rootFile,names
+
+    plist = rootFile.Get('processes')
+    processes = [ p.GetName() for p in plist ] if plist.__nonzero__() else None
+
+    return rootFile,names,processes
 
 #------------------------------------------------------------------------------
-def PrintTable( table, title, missing, width, all, colhdr=None ):
+def PrintTable( table, title, missing, width, colhdr=None ):
     allNames=set()
     for arg,histograms in table.iteritems():
         allNames.update(set(histograms))
 
-    allmaxlen = max(map(len,list(allNames)+[title]))
-    nommaxlen = max(map(len,filter(nomRegex.match,allNames) + [title]))
-
-    labelLen = allmaxlen if all else nommaxlen
-
-
+    labelLen = max(map(len,list(allNames)+[title]))
 
     hdr = []
     print '*'*labelLen
@@ -79,8 +78,6 @@ def PrintTable( table, title, missing, width, all, colhdr=None ):
         print '-'*len(line)
     sortNames = sorted(allNames)
     for name in sortNames:
-        if not ( all or nomRegex.match(name)):
-            continue
         line = name.ljust(labelLen)
         for arg,entry in table.iteritems():
             if name in entry:
@@ -107,18 +104,22 @@ if __name__ == '__main__':
 
     sys.argv.append('-b')
 
-    nomRegex  = re.compile('^histo_([^_]+)$')
     files = OrderedDict()
 
     
     entries = OrderedDict()
     for arg in args:
-        (file,names) = GetHistograms(arg)
-        files[arg] = (file,names)
+        (file,names,processes) = GetHistPaths(arg)
+
+        if processes and not opt.all:
+            hp = [ 'histo_'+p for p in processes]
+            names = [ n for n in names if n in hp ]
+        
+        files[arg] = (file,names,processes)
 
 
     if opt.diff:
-        for arg,(file,names) in files.iteritems():
+        for arg,(file,names,processes) in files.iteritems():
             
             others = files.copy()
             del others[arg]
@@ -133,12 +134,13 @@ if __name__ == '__main__':
         sys.exit(0)
 
 
-    #     print 'Histogram names consistency check: OK'
 
     entries = OrderedDict()
 
-    for arg in files:
-        (file,names) = GetHistograms(arg)
+#     for arg in files:
+#         (file,names,processes) = GetHistPaths(arg)
+
+    for arg,(file,names,processes) in files.iteritems():
         entries[arg] = {}
         
         for name in sorted(names):
@@ -166,8 +168,8 @@ if __name__ == '__main__':
                 if opt.all or n > 0 and i/n > 1:
                     lowstat[arg][name] = [ '%.2f' % x for x in [i/n if n!=0 else -1,n,i] ]
             
-        PrintTable(zeroes, 'zeroes',missing,5,True)
-        PrintTable(lowstat,'lowstat',['-']*3,9,True,lsheader)
+        PrintTable(zeroes, 'zeroes',missing,5)
+        PrintTable(lowstat,'lowstat',['-']*3,9,lsheader)
         sys.exit(0)
     else:
         lsheader = ['entries','I']
@@ -181,14 +183,10 @@ if __name__ == '__main__':
                 if opt.over:
                     entry += ['%.3f'%x for x in (uf,b1,bn,of) ]
                 table[arg][name]=entry
-        PrintTable(table,'nentries',missing,5, opt.all, lsheader)
+        PrintTable(table,'nentries',missing,5, lsheader)
 
 
 
 
-
-#     print entries
-
-#     PrintTable(entries,'nentries',missing)
 
 

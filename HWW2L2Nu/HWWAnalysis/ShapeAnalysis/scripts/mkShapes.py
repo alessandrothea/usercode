@@ -39,6 +39,7 @@ class ShapeFactory:
         self._ranges = ranges
         
         self._dataTag         = '2012A'
+        self._sigTag          = 'SM'
         self._mcTag           = '0j1j'
         self._masses          = []
         self._channels        = {}
@@ -157,7 +158,7 @@ class ShapeFactory:
 
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
-            samples = hwwsamples.samples(mass, self._dataTag, self._mcTag)
+            samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
             # mass and variable selection
             allCuts = hwwinfo.massSelections( mass )
 
@@ -235,7 +236,7 @@ class ShapeFactory:
         nicks = kwargs['nicks'] if 'nicks' in kwargs else None
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
-            samples = hwwsamples.samples(mass, self._dataTag, self._mcTag)
+            samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
             
             # remove the dirname
             for tag,files in samples.iteritems():
@@ -689,6 +690,7 @@ if __name__ == '__main__':
 
     parser.add_option('--tag'            , dest='tag'            , help='Tag used for the shape file name'           , default=None)
     parser.add_option('--selection'      , dest='selection'      , help='Selection cut'                              , default=None)
+    parser.add_option('--sigset'         , dest='sigset'         , help='Signal samples [SM]'                           , default=None)
     parser.add_option('--dataset'        , dest='dataset'        , help='Dataset to process'                         , default=None)
     parser.add_option('--mcset'          , dest='mcset'          , help='Mcset to process'                           , default=None)
     parser.add_option('--path_latino'    , dest='path_latino'    , help='Root of the master trees'                   , default=None)
@@ -720,11 +722,12 @@ if __name__ == '__main__':
     try:
 #    if True:
         checks = [
-            ('mcset','MonteCarlo not defined'),
-            ('dataset','Dataset not defined'),
-            ('selection','Selection not defined'),
-            ('path_latino','Master tree path not defined'),
-            ('path_shape_raw','Where shall I put the shapes?'),
+            ('sigset'         , 'Signal not defined')            , 
+            ('mcset'          , 'MonteCarlo not defined')        , 
+            ('dataset'        , 'Dataset not defined')           , 
+            ('selection'      , 'Selection not defined')         , 
+            ('path_latino'    , 'Master tree path not defined')  , 
+            ('path_shape_raw' , 'Where shall I put the shapes?') , 
         ]
         
         for dest,msg in checks:
@@ -765,6 +768,7 @@ if __name__ == '__main__':
         factory._paths['bdts']  = bdtDir
 
         factory._dataTag   = opt.dataset
+        factory._sigTag    = opt.sigset
         factory._mcTag     = opt.mcset
         factory._range     = opt.range
         factory._splitmode = opt.splitmode

@@ -7,6 +7,7 @@ import re
 import glob
 import optparse
 import hwwinfo
+import hwwsamples
 import hwwtools
 import numpy
 import array
@@ -26,6 +27,7 @@ class ShapeMerger:
     def __init__(self):
         self.sets = []
         self.histograms = {}
+        self.processes = []
 
     def add(self,s):
         # add a collection to be summed
@@ -36,8 +38,15 @@ class ShapeMerger:
         if len(self.sets) == 0:
             print 'No sets defined'
             return
-        signals = ['ggH', 'vbfH', 'wzttH']
         
+
+        # collect processames
+        procs = set()
+        for s in self.sets:
+            procs |= set(s.nominals)
+
+        self.processes = list(procs)
+
         # build an histogram template
         shapes = {}
         
@@ -67,7 +76,7 @@ class ShapeMerger:
 
 
     def injectSignal(self):
-        signals = ['ggH', 'vbfH', 'wzttH']
+        signals = hwwsamples.signals
         if 'Data' in self.histograms:
             return
 
@@ -166,6 +175,13 @@ class ShapeMerger:
         outFile = ROOT.TFile.Open(path,'recreate')
         for n,h in self.histograms.iteritems():
             h.Write()
+
+        names = ROOT.TObjArray()
+        for name in self.processes:
+            names.Add(ROOT.TObjString(name))
+
+        names.Write('processes',ROOT.TObject.kSingleKey)
+
         outFile.Close()
 
 
