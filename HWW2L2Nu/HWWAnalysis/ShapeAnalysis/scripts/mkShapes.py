@@ -803,7 +803,7 @@ if __name__ == '__main__':
 
             factory._systByWeight = systByWeight
 
-            processMask = ['ggH', 'vbfH', 'ggWW', 'Top', 'WW', 'VV']
+            processMask = ['ggH', 'vbfH', 'ggWW', 'Top', 'WW', 'VV', 'jhu', 'jhu_ALT']
             systMasks = dict([(s,processMask[:]) for s in systematics])
             systDirs  = dict([(s,systInputDir if s not in systByWeight else 'nominals/' ) for s in systematics])
 
