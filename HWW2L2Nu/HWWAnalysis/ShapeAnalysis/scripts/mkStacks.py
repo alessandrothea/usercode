@@ -500,17 +500,14 @@ def main():
     print 'Shape main directory is',shapepath
     ROOT.gInterpreter.ExecuteMacro(shapepath+'/macros/LatinoStyle2.C')
     hwwtools.loadAndCompile(shapepath+'/macros/MWLPlot.C')
-#     try:
-#         ROOT.gROOT.LoadMacro(mypath+'/MWLPlot.C+g')
-#     except RuntimeError:
-#         ROOT.gROOT.LoadMacro(mypath+'/MWLPlot.C++g')
 
     filenames = getFiles(inputdir)
     # loop over all files
     for file in filenames:
         path = inputdir+'/'+file
-        if str(mass) not in file and mass > 0:
-            continue
+        if not any([ (str(m) in file) for m in mass ]): continue
+#         if str(mass) not in file and mass > 0:
+#             continue
 
         print 'Making',path
         if not opt.variations:

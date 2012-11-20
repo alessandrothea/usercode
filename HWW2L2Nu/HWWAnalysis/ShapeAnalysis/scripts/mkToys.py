@@ -36,7 +36,8 @@ if __name__ == '__main__':
 
 
     siname = 'hww-{lumi:.2f}fb.mH{mass}.{channel}_shape'
-    masses = [m for m in hwwinfo.masses if m <= 250] if opt.mass == 0 else [opt.mass]
+#     masses = [m for m in hwwinfo.masses if m <= 250] if opt.mass == 0 else [opt.mass]
+    masses = [m for m in opt.mass if m <= 250]
 
     dcdir = opt.input+'/datacards'
     shdir = dcdir+'/shapes'

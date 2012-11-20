@@ -39,7 +39,8 @@ def main():
         parser.error('Wrong tag: '+', '.join(sorted(hwwlimits.dcnames['all'])))
 
     tmpl = 'hww-{lumi:.2f}fb.mH{mass}.{tag}_shape.txt'
-    masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
+#     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
+    masses = opt.mass
 
     if opt.prefix:
         os.chdir(opt.prefix)
