@@ -1,35 +1,5 @@
 #!/bin/env python
 
-# void MaxLikelihoodFit::getNormalizations(RooAbsPdf *pdf, const RooArgSet &obs, RooArgSet &out) {
-#     RooSimultaneous *sim = dynamic_cast<RooSimultaneous *>(pdf);
-#     if (sim != 0) {
-#         RooAbsCategoryLValue &cat = const_cast<RooAbsCategoryLValue &>(sim->indexCat());
-#         for (int i = 0, n = cat.numBins((const char *)0); i < n; ++i) {
-#             cat.setBin(i);
-#             RooAbsPdf *pdfi = sim->getPdf(cat.getLabel());
-#             if (pdfi) getNormalizations(pdfi, obs, out);
-#         }        
-#         return;
-#     }
-#     RooProdPdf *prod = dynamic_cast<RooProdPdf *>(pdf);
-#     if (prod != 0) {
-#         RooArgList list(prod->pdfList());
-#         for (int i = 0, n = list.getSize(); i < n; ++i) {
-#             RooAbsPdf *pdfi = (RooAbsPdf *) list.at(i);
-#             if (pdfi->dependsOn(obs)) getNormalizations(pdfi, obs, out);
-#         }
-#         return;
-#     }
-#     RooAddPdf *add = dynamic_cast<RooAddPdf *>(pdf);
-#     if (add != 0) {
-#         RooArgList list(add->coefList());
-#         for (int i = 0, n = list.getSize(); i < n; ++i) {
-#             RooAbsReal *coeff = (RooAbsReal *) list.at(i);
-#             out.addOwned(*(new RooConstVar(coeff->GetName(), "", coeff->getVal())));
-#         }
-#         return;
-#     }
-# }
 
 import sys
 import os.path
@@ -41,6 +11,7 @@ import math
 import numpy as np
 
 from HiggsAnalysis.CombinedLimit.DatacardParser import *
+from HiggsAnalysis.CombinedLimit.ShapeTools import *
 from HWWAnalysis.Misc.ROOTAndUtils import TH1AddDirSentry
 
 import ROOT
@@ -87,8 +58,9 @@ mlfdir = '.'
 
 class ShapeGluer:
     _logger = logging.getLogger('ShapeGluer')
-    def __init__(self, bin, DC, ws, fit=None): 
+    def __init__(self, bin, DC, MB, ws, fit=None): 
         self._DC = DC
+        self._MB = MB
         self._bin = bin
         self._ws = ws
         self._fit = fit
@@ -101,23 +73,24 @@ class ShapeGluer:
     #---
     def _build(self):
         
-        if self._bin in self._DC.shapeMap:  bintag = self._bin
-        elif '*' in self._DC.shapeMap:      bintag = '*'
-        else:
-            raise ValueError('Couldn\'t find '+bin+' or * in shapeMap')
+#         if self._bin in self._DC.shapeMap:  bintag = self._bin
+#         elif '*' in self._DC.shapeMap:      bintag = '*'
+#         else:
+#             raise ValueError('Couldn\'t find '+bin+' or * in shapeMap')
 
-        try:
-            hpath, hname =  self._DC.shapeMap[bintag]['data_obs']
-        except KeyError as e:
-            raise KeyError('Shape for '+str(e) +'not found!') 
+#         try:
+#             hpath, hname =  self._DC.shapeMap[bintag]['data_obs']
+#         except KeyError as e:
+#             raise KeyError('Shape for '+str(e) +'not found!') 
 
-        sentry = TH1AddDirSentry()
-        hpath = os.path.join(os.path.dirname(dcpath),hpath)
-        hfile = ROOT.TFile.Open(os.path.join(hpath))
-        if not hfile.__nonzero__():
-            raise IOError('Could not open '+wspath)
+#         sentry = TH1AddDirSentry()
+#         hpath = os.path.join(os.path.dirname(dcpath),hpath)
+#         hfile = ROOT.TFile.Open(os.path.join(hpath))
+#         if not hfile.__nonzero__():
+#             raise IOError('Could not open '+wspath)
 
-        hdata = hfile.Get(hname)
+        hdata = self._MB.getShape(self._bin,'data_obs')
+#         hdata = hfile.Get(hname)
 
         # the Xaxis label has to be cheked
         self._template = hdata.Clone('shape_template')
@@ -220,14 +193,6 @@ class ShapeGluer:
             A = data.sum(False)
         else:
             # here we can use w.set('nuisances') :D
-#             nuisances = self._ws.set('nuisances')
-#             POI = self._ws.set('POI')
-
-#             pars = ROOT.RooArgList()
-#             pars.add(nuisances)
-#             pars.add(POI)
-
-#             pars = pars.snapshot()
             pars = pars.snapshot()
             
             # set the errors to 1. sigma for the priors
@@ -277,6 +242,7 @@ class ShapeGluer:
 
         pdf_obs  = model.getObservables(data)
         ns = getnorms(model,pdf_obs)
+        print ns
         I = J = 0
 
         print '-'*80
@@ -286,22 +252,19 @@ class ShapeGluer:
                 fn[n.GetName()] = n.getVal()
                 J+=n.getVal()
 
-        for m,v in sorted(self._DC.exp[self._bin].iteritems()):
-            for n in ns:
-                if '_'+m not in n: continue
+        for p,v in sorted(self._DC.exp[self._bin].iteritems()):
+            # associate the normalization to the process
+            endswith = re.compile('_%s$' % p)
+            matches = [ n for n in ns if endswith.search(n)]
+            if not matches: continue
+            if len(matches) > 1:
+                raise RuntimeError('Can\'t match normalisation to process: %s,%s' % (p,matches))
+            n = matches[0]
 
-                print '%-10s %10.3f %10.3f %10.3f' % (m,ns[n],fn[n] if fn else 0,v)
-                I += ns[n]
+            print '%-10s %10.3f %10.3f %10.3f' % (p,ns[n],fn[n] if fn else 0,v)
+            I += ns[n]
 
-#         for n in sorted(ns):
-#             print n,ns[n]
-#             I += ns[n]
-#         if norms:
-#             print norms
-#             norms.Print("V")
-#             for n in roofiter(norms):
-# #                 print n.GetName(), n.getVal()
-#                 J+=n.getVal()
+
         print 'Integrals I,J,A,sum',I, J, A,sum(self._DC.exp[self._bin].itervalues())
         print '-'*80
 
@@ -394,8 +357,18 @@ class ShapeGluer:
 
         
 
+
 #     @staticmethod
     def _rooPdf2TH1(self,h, pdf, data, norm=None, pars=None):
+        # consider the othe option
+        # 
+        # Check upstream the dependencies:
+        # data = w.data('data_obs')
+        # model_s = w.pdf('model_s')
+        # obs = model_s.getObservables(data)
+        # if ( obs.getSize() != 1 ) raise ValueError('Only 1D shapes are supported')
+        # x = obs.first()
+        # h = model_s.createHistogram(name,x)
 
         pdf_obs  = pdf.getObservables(data)
         pdf_pars = pdf.getParameters(data)
@@ -464,14 +437,31 @@ def fitAndPlot( dcpath, opts ):
 
     # 1. load the datacard
     dcfile = open(dcpath,'r')
-    class dummy: pass
 
+
+    
+    class dummy: pass
     options = dummy()
     options.stat = False
     options.bin = True
     options.noJMax = False
     options.nuisancesToExclude = []
     options.nuisancesToRescale = []
+
+    # get some default arguments
+#     dummy = optparse.OptionParser()
+#     addDatacardParserOptions(dummy)
+#     options = dummy.parse_args([])
+#     del dummy
+
+    options.fileName = dcpath
+    options.out = None
+    options.cexpr = False
+    options.fixpars = False
+    options.libs = []
+    options.verbose = 0
+    options.poisson = 0
+    options.mass = opt.mass
 
     DC = parseCard(dcfile, options)
 
@@ -518,7 +508,7 @@ def fitAndPlot( dcpath, opts ):
     logging.debug(mlcmd)
     print 'Fitting the workspace...',
     sys.stdout.flush()
-    os.system(mlcmd)
+    if opts.fit: os.system(mlcmd)
     os.chdir(here)
     print 'done.'
 
@@ -544,10 +534,13 @@ def fitAndPlot( dcpath, opts ):
         'init':(model_s,res_s.floatParsInit(),None), #(None, None, model_s)
     }
 
+    # experimental
+    MB = ShapeBuilder(DC, options)
+    
     allshapes = {}
     for mode,fit in modes.iteritems():
         print 'mode',mode
-        allshapes[mode] = export(bin, DC, w, mode, fit, opts)
+        allshapes[mode] = export(bin, DC, MB, w, mode, fit, opts)
     
     if opts.dump:
         logging.debug('Dumping histograms to %s',opts.dump)
@@ -564,13 +557,13 @@ def fitAndPlot( dcpath, opts ):
         here.cd()
 
 #---
-def export( bin, DC, w, mode, fit, opts):
+def export( bin, DC, MB, w, mode, fit, opts):
 
     import hwwsamples
 
     logging.debug('Plotting %s', fit)
 
-    gluer = ShapeGluer(bin, DC, w, fit)
+    gluer = ShapeGluer(bin, DC, MB, w, fit)
 
     shapes,errs,dummy = gluer.glue()
 
@@ -643,6 +636,7 @@ def addOptions( parser ):
     parser.add_option('-o' , '--output' , dest='output' , help='Output directory (%default)' , default=None)
     parser.add_option('-x' , '--xlabel' , dest='xlabel' , help='X-axis label'                , default='')
     parser.add_option('-r' , '--ratio'  , dest='ratio'  , help='Plot the data/mc ration'     , default=True    , action='store_false')
+    parser.add_option('--nofit'         , dest='fit'    , help='Don\'t fit'                  , default=True    , action='store_false')
     parser.add_option('--clean'         , dest='clean'  , help='Clean the ws (regenerate it' , default=False   , action='store_true')
     parser.add_option('--dump'          , dest='dump'   , help='Dump the histograms to file' , default=None)
     parser.add_option('--tmpdir'        , dest='tmpdir' , help='Temporary directory'         , default=None)

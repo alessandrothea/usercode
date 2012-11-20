@@ -86,6 +86,8 @@ class ShapeDatacardWriter:
         card.write('rate'.ljust(48)+''.join([('%-.3f' % N).ljust(coldef) for (i,n,N) in keyline])+'\n' )
         card.write('-'*100+'\n')
 
+#         nmax = max([len(n) for n in nuisances]
+
         for name in nuisances:
             (pdf,effect) = nuisances[name]
             if len(pdf) == 1: card.write('{0:<31} {1:<7}         '.format(name,pdf[0]))
@@ -524,7 +526,8 @@ if __name__ == '__main__':
     sys.argv.append('-b')
     ROOT.gROOT.SetBatch()
 
-    masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
+#     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
+    masses = opt.mass
     channels =  dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])
 
     print channels
@@ -578,6 +581,11 @@ if __name__ == '__main__':
 
             print '   + making nuisance map'
             nuisances = builder.nuisances( yields, effects , mass, ch, jcat, fl, optsNuis)
+
+            for n,(pdf, eff) in nuisances.iteritems():
+                if 'ggH' in eff and 'shape' not in pdf[0] :
+                    eff['jhu']     =  eff['ggH']
+                    eff['jhu_ALT'] =  eff['ggH']
 
             #basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}_shape'
             basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}'

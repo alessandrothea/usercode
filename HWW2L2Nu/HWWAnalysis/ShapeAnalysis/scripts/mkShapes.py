@@ -756,8 +756,9 @@ if __name__ == '__main__':
         factory = ShapeFactory()
         factory._outFileFmt  = nominalOutFile
 
-        masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
-        factory._masses   = masses
+#         masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
+#         factory._masses   = masses
+        factory._masses = opt.mass
 
         # go through final channels
         factory._channels = dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])

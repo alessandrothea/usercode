@@ -24,10 +24,11 @@ import logging
 
 class ShapeMerger:
     _logger = logging.getLogger('ShapeMerger')
-    def __init__(self):
+    def __init__(self, simask = None):
         self.sets = []
         self.histograms = {}
         self.processes = []
+        self._simask = simask
 
     def add(self,s):
         # add a collection to be summed
@@ -82,9 +83,17 @@ class ShapeMerger:
 
         print ' '*4+' - injecting signal!'
         nomRegex = re.compile('^([^ ]+)$')
+        injRegex = re.compile('^([^ ]+)-SI$')
 
-        injected = [ n for n in self.histograms if '-SI' in n and nomRegex.match(n) ]
-        backgrounds = [ n for n in self.histograms if n not in injected and n not in signals and nomRegex.match(n) ]
+        sisignals = [ n for n in self.processes if injRegex.match(n) ]
+        backgrounds = [ n for n in self.histograms if n not in sisignals and n not in signals and nomRegex.match(n) ]
+
+#         print sisignals
+#         print backgrounds
+
+
+        # filter the sisignals on simask
+        injected = [ n for n in sisignals if n[:-3] in self._simask ] if self._simask else sisignals 
 
         pseudo = self.histograms[backgrounds[0]].Clone('histo_PseudoData')
         pseudo.SetTitle('Data')
@@ -93,14 +102,15 @@ class ShapeMerger:
         inputs.extend(injected)
         inputs.extend(backgrounds)
 
-        print injected
-        print backgrounds
-
         for n in inputs:
+            self._logger.debug('SI: adding %s',n)
             pseudo.Add(self.histograms[n])
 
-        for n in injected:
-            self.histograms.pop(n)
+#         for n in injected:
+#             self.histograms.pop(n)
+        # remove the injected from the histograms and processes
+        map(self.histograms.pop,   sisignals)
+        map(self.processes.remove, sisignals)
 
         nBins = pseudo.GetNbinsX()
         xax = pseudo.GetXaxis()
@@ -115,7 +125,7 @@ class ShapeMerger:
                 data.Fill(xax.GetBinCenter(i))
 
         self.histograms['Data'] = data
-
+        self.processes.append('Data')
 
     def _removeNegativeBins(self,h):
         # move it in the merger as last step
@@ -714,6 +724,8 @@ if __name__ == '__main__':
     parser.add_option('--path_shape_raw'    , dest='path_shape_raw'    , help='Input directory of raw shapes'    , default=None)
     parser.add_option('--path_shape_merged' , dest='path_shape_merged' , help='Destination directory for merged' , default=None)
 
+    parser.add_option('--simask'            , dest='simask'            , help='Signal injection mask' , default=None, type='string' , action='callback' , callback=hwwtools.list_maker('simask'))
+
 # discontined
 #     parser.add_option('--scale2nominal', dest='scale2nom', help='Systematics to normalize to nominal ', default='')
 #     parser.add_option('--ninja', dest='ninja', help='Ninja', action='store_true', default=False )
@@ -723,6 +735,8 @@ if __name__ == '__main__':
 
 
     (opt, args) = parser.parse_args()
+
+    print opt.simask
 
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
@@ -748,7 +762,8 @@ if __name__ == '__main__':
     systPath  = opt.path_shape_raw+'/systematics/' 
     mergedDir = opt.path_shape_merged
 
-    masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
+#     masses = hwwinfo.masses[:] if opt.mass == 0 else [opt.mass]
+    masses = opt.mass
 
     if not opt.variable or not opt.lumi:
         parser.error('The variable and the luminosty must be defined')
@@ -777,7 +792,7 @@ if __name__ == '__main__':
             flavors = hwwinfo.flavors[fl]
             # print chan,cat,fl,flavors
             # open output file
-            m = ShapeMerger()
+            m = ShapeMerger( simask = opt.simask)
             print '-'*100
             print 'ooo Processing',mass, chan
             print '-'*100
