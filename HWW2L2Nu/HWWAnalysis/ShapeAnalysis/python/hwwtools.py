@@ -147,15 +147,19 @@ def loadOptDefaults(parser,pycfg=None,quiet=False):
 
 #---
 class list_maker:
-    def __init__(self, var ):
+    def __init__(self, var, sep=',', type=None ):
+        self._type= type
         self._var = var
+        self._sep = sep
 
     def __call__(self,option, opt_str, value, parser):
         if not hasattr(parser.values,self._var):
                setattr(parser.values,self._var,[])
 
         try:
-           array = value.split(',')
+           array = value.split(self._sep)
+           if self._type:
+               array = [ self._type(e) for e in array ]
            setattr(parser.values, self._var, array)
 
         except:
@@ -178,7 +182,8 @@ class list_maker:
 def addOptions(parser):
     parser.add_option('-l', '--lumi'     , dest='lumi'        , help='Luminosity'                            , default=None   , type='float'   )
     parser.add_option('-v', '--variable' , dest='variable'    , help='variable'                              , default=None )
-    parser.add_option('-m', '--mass'     , dest='mass'        , help='run on one mass point only '           , default=0      , type='int'     )
+#     parser.add_option('-m', '--mass'     , dest='mass'        , help='run on one mass point only '           , default=0      , type='int'     )
+    parser.add_option('-m', '--mass'     , dest='mass'        , help='run on one mass point only '           , default=hwwinfo.masses[:]      , type='string' , action='callback' , callback=list_maker('mass',',',int))
     parser.add_option('-d', '--debug'    , dest='debug'       , help='Debug level'                           , default=0      , action='count' )
     parser.add_option('-c', '--chans'    , dest='chans'       , help='list of channels'                      , default=['0j'] , type='string' , action='callback' , callback=list_maker('chans'))
     parser.add_option('--pycfg'          , dest='pycfg'       , help='configuration file (default=%default)' , default='shape.py')
