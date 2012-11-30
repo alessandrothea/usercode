@@ -400,6 +400,57 @@ class ShapeMixer:
             wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
+
+        # -----------------------------------------------------------------
+        # WJets shape syst
+        #
+        #   take the shape from the detajj and Mjj loosened sample
+        #   down is mirrored
+        #   -> no effect of 0/1 jet bin since detajj and Mjj is not useful in 0/1 jet bin
+        #
+        if 'WJet-template' in self.nominals:
+            WJetmc        = self.nominals.pop('WJet')
+            WJetShape     = self.nominals.pop('WJet-template')
+            WJetSystName = 'CMS_hww_WJet_template_shape'
+            WJetShapeSyst = self.nominals.pop('WJet-templatesyst') if 'WJet-templatesyst' in self.nominals else None
+
+            WJetnom = WJetShape.Clone('histo_WJet')
+            WJetnom.SetTitle('WJet')
+            if WJetnom.Integral() == 0.:
+                # no entries in the reference shape
+                # 
+                if WJetmc.Integral() != 0.:
+                    self._logger.warn('WJet shape template has no entries, but the standard mc is not (%f,%d)', WJetmc.Integral(), WJetmc.GetEntries())
+                    self.nominals['WJet'] = WJetmc
+                else:
+                    self.nominals['WJet'] = WJetnom
+            else:
+                WJetnom.Scale( (WJetmc.Integral() if WJetmc.Integral() != 0. else 0.001)/WJetnom.Integral() )
+                self.nominals['WJet'] = WJetnom
+
+
+                if WJetShapeSyst and WJetShapeSyst.Integral() != 0.:
+                    WJetShapeUp, WJetShapeDown = self._mirror('WJet',WJetnom,WJetShapeSyst, WJetSystName,True)
+
+                    self.templates[WJetShapeUp.GetTitle()]   = WJetShapeUp
+                    self.templates[WJetShapeDown.GetTitle()] = WJetShapeDown
+
+        if 'WJetFakeRate-template' in self.nominals: 
+            wJetEff = self.nominals.pop('WJetFakeRate-template')
+            wJetSystName = 'CMS_hww_WJet_FakeRate_jet_shape'
+            wJetShapeUp = wJetEff.Clone('histo_WJet_'+wJetSystName+'Up')
+            wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
+            wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
+            self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
+
+            wJetShapeDown = wJet.Clone('histo_WJet_'+wJetSystName+'Down')
+            wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
+            wJetShapeDown.Scale(2)
+            wJetShapeDown.Add(wJetShapeUp,-1)
+            wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
+            self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
+
+
         # -----------------------------------------------------------------
         # DY shape syst
         #
@@ -429,7 +480,7 @@ class ShapeMixer:
                 if dyLLShapeSyst and dyLLShapeSyst.Integral() != 0.:
                     dyLLShapeUp, dyLLShapeDown = self._mirror('DYLL',dyLLnom,dyLLShapeSyst, dyLLSystName,True)
 
-                    self.templates[dyLLShapeUp.GetTitle()] = dyLLShapeUp
+                    self.templates[dyLLShapeUp.GetTitle()]   = dyLLShapeUp
                     self.templates[dyLLShapeDown.GetTitle()] = dyLLShapeDown
 
 

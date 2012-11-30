@@ -497,6 +497,11 @@ class ShapeFactory:
         # tocheck
         weights['WJet']              = 'baseW*fakeW'
         weights['WJetFakeRate']      = 'baseW*fakeWUp'
+
+        weights['WJet-template']              = 'baseW*fakeW'
+        weights['WJetFakeRate-template']      = 'baseW*fakeWUp'
+        weights['WJet-templatesyst']          = 'baseW*fakeWUp'
+
         weights['Data']              = '1'
         # problem with DYTT using embedded for em/me, for ee/mm it is inlcuded in DD DY estimate
         weights['DYTT']              = self._stdWgt

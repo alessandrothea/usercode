@@ -2,62 +2,70 @@ import hwwtools
 import re
 
 backgrounds = {
-    'WW'                     : ['nominals/latino_000_WWJets2LMad.root'],
-    'ggWW'                   : ['nominals/latino_001_GluGluToWWTo4L.root'],
-    'Vg'                     : ['nominals/latino_082_WGstarToElNuMad.root',
-                                'nominals/latino_083_WGstarToMuNuMad.root',
-                                'nominals/latino_084_WGstarToTauNuMad.root',
-                                'nominals/latino_085_WgammaToLNuG.root',
-                                'nominals/latino_086_ZgammaToLLuG.root',
-                               ],
-    'WJet'                   : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
-                                'wjets/latino_RunB_4404pbinv_LooseLoose.root',
-                                'wjets/latino_RunC_6807pbinv_LooseLoose.root',
-                               ],
-    'WJetFakeRate'           : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
-                                'wjets/latino_RunB_4404pbinv_LooseLoose.root',
-                                'wjets/latino_RunC_6807pbinv_LooseLoose.root',
-                               ],
-    'Top'                    : ['nominals/latino_019_TTTo2L2Nu2B.root',
-                                'nominals/latino_011_TtWFullDR.root',
-                                'nominals/latino_012_TbartWFullDR.root',
-                               ],
-    'VV'                     : ['nominals/latino_074_WZJetsMad.root',
-                                'nominals/latino_075_ZZJetsMad.root',
-                                'nominals/latino_078_WZTo2L2QMad.root',
-                                'nominals/latino_079_ZZTo2L2QMad.root',
-                               ],
-    'DYTT'                   : ['nominals/latino_RunABC_DYtt_8fb.root'], # for ee/mm channels DYTT is included in DD
-    'DYLL'                   : ['nominals/latino_036_DY10toLLMad.root',
-                                'nominals/latino_037_DY50toLLMad.root',
-                               ],
-    'DYee'                   : ['nominals/latino_000_WWJets2LMad.root',   # dummy, just to have the histogram in cut based
-                               ],
-    'DYmm'                   : ['nominals/latino_000_WWJets2LMad.root',   # dummy, just to have the histogram in cut based
-                               ],
-    'DYLL-template-0j1j'     : ['dyTemplate/latino_036_DY10toLLMad.root',
-                                'dyTemplate/latino_037_DY50toLLMad.root',
-                               ],
-    'DYLL-templatesyst-0j1j' : ['dyTemplate/latino_036_DY10toLLMad.root',
-                                'dyTemplate/latino_037_DY50toLLMad.root',
-                               ],
-    'WWnlo'                  : ['nominals/latino_002_WWto2L2NuMCatNLO.root'],
-    'WWnloUp'                : ['nominals/latino_004_WWto2L2NuMCatNLOUp.root'],
-    'WWnloDown'              : ['nominals/latino_003_WWto2L2NuMCatNLODown.root'],
-    'TopTW'                  : ['nominals/latino_019_TTTo2L2Nu2B.root',
-                                'tW/latino_011_TtWFullDR.root',
-                                'tW/latino_012_TbartWFullDR.root',
+    'WW'                      : ['nominals/latino_000_WWJets2LMad.root'],
+    'ggWW'                    : ['nominals/latino_001_GluGluToWWTo4L.root'],
+    'Vg'                      : ['nominals/latino_082_WGstarToElNuMad.root',
+                                 'nominals/latino_083_WGstarToMuNuMad.root',
+                                 'nominals/latino_084_WGstarToTauNuMad.root',
+                                 'nominals/latino_085_WgammaToLNuG.root',
+                                 'nominals/latino_086_ZgammaToLLuG.root',
                                 ],
-    'TopCtrl'                : ['nominals/latino_019_TTTo2L2Nu2B.root',
-                                'nominals/latino_011_TtWFullDR.root',
-                                'nominals/latino_012_TbartWFullDR.root',
+    'WJet'                    : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
+                                 'wjets/latino_RunB_4404pbinv_LooseLoose.root',
+                                 'wjets/latino_RunC_6807pbinv_LooseLoose.root',
                                 ],
-    'DYLL-template-dd'       : ['dyTemplate-dd/latino_036_DY10toLLMad.root',
-                                'dyTemplate-dd/latino_037_DY50toLLMad.root',
-                               ],
-    'DYLL-template-vbf'      : ['dyTemplate/latino_036_DY10toLLMad.root',
-                                'dyTemplate/latino_037_DY50toLLMad.root',
-                               ],
+    'WJetFakeRate'            : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
+                                 'wjets/latino_RunB_4404pbinv_LooseLoose.root',
+                                 'wjets/latino_RunC_6807pbinv_LooseLoose.root',
+                                ],
+    'WJet-template-2j'        : ['wjetsTemplate/latino_RunA_892pbinv_LooseLoose.root',
+                                 'wjetsTemplate/latino_RunB_4404pbinv_LooseLoose.root',
+                                 'wjetsTemplate/latino_RunC_6807pbinv_LooseLoose.root',
+                                ],
+    'WJetFakeRate-template-2j': ['wjetsTemplate/latino_RunA_892pbinv_LooseLoose.root',
+                                 'wjetsTemplate/latino_RunB_4404pbinv_LooseLoose.root',
+                                 'wjetsTemplate/latino_RunC_6807pbinv_LooseLoose.root',
+                                ],
+    'Top'                     : ['nominals/latino_019_TTTo2L2Nu2B.root',
+                                 'nominals/latino_011_TtWFullDR.root',
+                                 'nominals/latino_012_TbartWFullDR.root',
+                                ],
+    'VV'                      : ['nominals/latino_074_WZJetsMad.root',
+                                 'nominals/latino_075_ZZJetsMad.root',
+                                 'nominals/latino_078_WZTo2L2QMad.root',
+                                 'nominals/latino_079_ZZTo2L2QMad.root',
+                                ],
+    'DYTT'                    : ['nominals/latino_RunABC_DYtt_8fb.root'], # for ee/mm channels DYTT is included in DD
+    'DYLL'                    : ['nominals/latino_036_DY10toLLMad.root',
+                                 'nominals/latino_037_DY50toLLMad.root',
+                                ],
+    'DYee'                    : ['nominals/latino_000_WWJets2LMad.root',   # dummy, just to have the histogram in cut based
+                                ],
+    'DYmm'                    : ['nominals/latino_000_WWJets2LMad.root',   # dummy, just to have the histogram in cut based
+                                ],
+    'DYLL-template-0j1j'      : ['dyTemplate/latino_036_DY10toLLMad.root',
+                                 'dyTemplate/latino_037_DY50toLLMad.root',
+                                ],
+    'DYLL-templatesyst-0j1j'  : ['dyTemplate/latino_036_DY10toLLMad.root',
+                                 'dyTemplate/latino_037_DY50toLLMad.root',
+                                ],
+    'WWnlo'                   : ['nominals/latino_002_WWto2L2NuMCatNLO.root'],
+    'WWnloUp'                 : ['nominals/latino_004_WWto2L2NuMCatNLOUp.root'],
+    'WWnloDown'               : ['nominals/latino_003_WWto2L2NuMCatNLODown.root'],
+    'TopTW'                   : ['nominals/latino_019_TTTo2L2Nu2B.root',
+                                 'tW/latino_011_TtWFullDR.root',
+                                 'tW/latino_012_TbartWFullDR.root',
+                                 ],
+    'TopCtrl'                 : ['nominals/latino_019_TTTo2L2Nu2B.root',
+                                 'nominals/latino_011_TtWFullDR.root',
+                                 'nominals/latino_012_TbartWFullDR.root',
+                                 ],
+    'DYLL-template-dd'        : ['dyTemplate-dd/latino_036_DY10toLLMad.root',
+                                 'dyTemplate-dd/latino_037_DY50toLLMad.root',
+                                ],
+    'DYLL-template-vbf'       : ['dyTemplate/latino_036_DY10toLLMad.root',
+                                 'dyTemplate/latino_037_DY50toLLMad.root',
+                                ],
 }
 
 data = {
@@ -139,6 +147,11 @@ def signalSamples(sigtag,mass=125):
 # mcsets,
 # list of samples and compact dictionary
 #
+# filter the list of samples
+# and create association     label          -> label                  -> vector of root files
+#                       used by mkShapes      just for association       blabla.root
+#
+
 mcsets = {
     '0j1j-JHU' : [
         #signals
@@ -179,6 +192,9 @@ mcsets = {
         'ggH','vbfH','wzttH',
         # bkgs
         'WW','ggWW','Vg','WJet','Top','VV','DYTT',
+        # 2j specific
+        ('WJet-template',    'WJet-template-2j'),              #    A   <-   sorgente
+        ('WJet-templatesyst','WJet-templatesyst-2j')           #    mkmerged vuole "-template"
     ],
 }
 
@@ -187,6 +203,7 @@ def samples(mass, datatag='Data2012', sigtag='SM', mctag='all'):
     '''
     mass: mass for the higgs samples'
     datatag: tag for the dataset to be included
+    sigtag: kind of signal (SM or Graviton)
     mctag: tag for the set of mc to be included
     '''
 
