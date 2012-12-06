@@ -579,7 +579,7 @@ if __name__ == '__main__':
 
             # reshuffle the order
             #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
-            order = [ 'jhu','jhu_ALT','vbfH', 'ggH', 'wzttH', 'wH', 'zH', 'ttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
+            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             
@@ -590,9 +590,13 @@ if __name__ == '__main__':
             nuisances = builder.nuisances( yields, effects , mass, ch, jcat, fl, optsNuis)
 
             for n,(pdf, eff) in nuisances.iteritems():
-                if 'ggH' in eff and 'shape' not in pdf[0] :
+                if 'ggH' in eff and 'shape' not in pdf[0] and 'stat_bin' not in n :
                     eff['jhu']     =  eff['ggH']
                     eff['jhu_ALT'] =  eff['ggH']
+                if 'vbfH' in eff and 'shape' not in pdf[0] and 'stat_bin' not in n :
+                    eff['vbfH_ALT'] =  eff['vbfH']
+                if 'wzttH' in eff and 'shape' not in pdf[0] and 'stat_bin' not in n :
+                    eff['wzttH_ALT'] =  eff['wzttH']
 
             #basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}_shape'
             basename = 'hww-'+lumistr+'fb.mH{mass}.{bin}'

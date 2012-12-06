@@ -11,6 +11,11 @@ import HWWAnalysis.Misc.odict as odict
 # masses               = [ 110 , 115 , 118 , 120 , 122 , 124 , 126 , 128 , 130 , 135 , 140 , 150 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
 # jets 				 = [0,1]
 
+# HCP
+ptllCut = 45. 
+# Spin/Moriond
+# ptllCut = 30. 
+
 class wwcutsB:
     wwcommon = odict.OrderedDict([
         ('trigger',                'trigger==1.'),
@@ -21,7 +26,7 @@ class wwcutsB:
         ('Soft #mu veto',          'bveto_mu==1'),
         ('Extra Lepton',           'nextra==0'),
         ('B veto',                 '(bveto_ip==1 && (nbjettche==0 || njet>3)  )'),
-        ('p_{T}^{ll}',             'ptll>45.'),                     # ema 14
+        ('p_{T}^{ll}',             'ptll>%f'%ptllCut),                     # ema 14
         ('Extra Jet',              'njet<4'),
     ])
 
@@ -65,7 +70,7 @@ class wwcuts:
         'bveto_mu==1',
         'nextra==0',
         '(bveto_ip==1 && (nbjettche==0 || njet>3)  )',
-        'ptll>45.',                     # ema 14
+        'ptll>%f'%ptllCut,                     # ema 14
     ]
 
     # minimum for skimming
@@ -244,6 +249,16 @@ del phi
 
 def massSelections(mass):
 
+    # HCP
+    mthmin_2dlomass = 80. 
+    mthmax_2dlomass = 280.
+    mllmax_2dlomass = 200
+
+    # Spin
+    #mthmin_2dlomass = 60.
+    #mthmax_2dlomass = 280.
+    #mllmax_2dlomass = 200
+
     mthmin_bdt = 80.
     mthmin_vbf = 30.
     mthmin_vh  = 50.
@@ -258,7 +273,7 @@ def massSelections(mass):
     sel['vbf-shape-2d-lomass']    = ' && '.join(vbfcuts.vbfloshape)
     sel['vbf-shape-2d']           = sel['vbf-shape-2d-lomass'] if mass <= 250 else sel['vbf-shape-2d-himass'] 
     
-    sel['shape-lomass'] = 'mth>80 && mth<280 && mll<200'
+    sel['shape-lomass'] = 'mth>%f && mth<%f && mll<%f '%(mthmin_2dlomass,mthmax_2dlomass,mllmax_2dlomass)
     sel['shape-himass'] = 'mth>80 && mth<600 && mll<600 && pt1>50'
     
     sel['vbf-shape']    = ' && '.join(vbfcuts.vbfshape)
@@ -275,8 +290,8 @@ def massSelections(mass):
     hwwlvl['mth']    = '(mth > {0:.1f} && mth < {1:.1f})'.format(masscuts['mtmin'], masscuts['mtmax'])
 
     sel['ww-selection']           = sel['ww-level']
-    sel['wwtight-selection']      = sel['ww-level']+' && mth > 80'
-    sel['wwloose-selection']      = sel['ww-level'].replace('ptll>45','ptll>20')+' && mth > 80'
+    sel['wwtight-selection']      = sel['ww-level']+' && mth > %f'%mthmin_2dlomass
+    sel['wwloose-selection']      = sel['ww-level'].replace('ptll>%f'%ptllCut,'ptll>20')+' && mth > %f'%mthmin_2dlomass
     sel['hww-selection']          = ' && '.join([sel['ww-level']]+[cut for cut     in hwwlvl.itervalues()])
     sel['mll-selection']          = ' && '.join([sel['ww-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
     sel['mth-selection']          = ' && '.join([sel['ww-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
