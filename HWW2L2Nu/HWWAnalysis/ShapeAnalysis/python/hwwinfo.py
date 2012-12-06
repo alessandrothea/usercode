@@ -125,13 +125,45 @@ class vbfcuts:
 
 
 
+class vhcuts:
+    _massindepincommonwithvbf = [
+        'pfmet>20.',
+        'mll>12 ',
+        'zveto==1',
+        'mpmet>20.',
+        '(njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  )',
+        'bveto_mu==1 ',
+        'nextra==0' ,
+        'ptll>45.',
+        '( !sameflav ||  (pfmet > 45.0))'
+    ]
+
+    _massindep = [
+        'abs(jeteta1)<2.5    && abs(jeteta2)<2.5',
+        'drll < 1.3',
+        'njet==2',
+        '(mjj<105 && mjj>65)',
+        'detajj<2.1',
+        '(bveto_ip==1 &&   jettche1<1.6 && jettche2<1.6 )',
+        'pt2>15',
+        'sqrt((jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))*(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))+(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))*(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2)))/sqrt((pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))*(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))+(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))*(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi)))>0.75',
+        'sqrt((jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))*(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))+(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))*(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2)))/sqrt((pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))*(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))+(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))*(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi)))<1.5',
+        '(abs(atan((jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))/(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2)))-atan((pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))/(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))))>3.14159265)*(2*3.14159265-abs(atan((jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))/(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2)))-atan((pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))/(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi)))))+(abs(atan((jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))/(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2)))-atan((pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))/(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))))<3.14159265)*(abs(atan((jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))/(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2)))-atan((pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))/(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))))) < 30*pi/180.'
+    ]
+
+    vhcut     = wwcuts.wwcommon+_massindepincommonwithvbf+_massindep
+
+
+
 
 masses = [110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 170, 180, 190, 200, 250, 300, 350, 400, 450, 500, 550, 600]
 
 categoryCuts = {}
 categoryCuts['0j'] = wwcuts.zerojet
 categoryCuts['1j'] = wwcuts.onejet
-categoryCuts['2j'] = wwcuts.vbf
+categoryCuts['2j']   = wwcuts.vbf        # 2 or 3 jets, but the third not between the first two in \eta
+categoryCuts['vh2j'] = wwcuts.vbf        # 2 or 3 jets, but the third not between the first two in \eta
+
 
 flavorCuts = {}
 flavorCuts['all'] = '1'			       #'channel>-1'
@@ -159,6 +191,10 @@ channels['2j']    = ('2j','ll')
 channels['of_2j'] = ('2j','of')
 channels['sf_2j'] = ('2j','sf')
 
+channels['of_vh2j'] = ('vh2j','of')
+channels['sf_vh2j'] = ('vh2j','sf')
+
+
 #  __  __               ___     _      
 # |  \/  |__ _ ______  / __|  _| |_ ___
 # | |\/| / _` (_-<_-< | (_| || |  _(_-<
@@ -166,7 +202,15 @@ channels['sf_2j'] = ('2j','sf')
 #
 # smurfs index              1     1     3     6     8     9    10    10    11    11    12    13    14    15    16   20     21    22    23    24    25    26    27
 # masses              = [ 110 , 115 , 120 , 125 , 130 , 135 , 140 , 145 , 150 , 155 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
-cutmap = {}                                                                     
+#  normal index             0     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22
+
+
+#  normal index             1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23
+
+cutmap = {}
+cutmap['mtmin_vh']    = [ 50  , 50  , 50  , 50  , 50  , 50  , 50  ,  50 ,  50 ,  50 ,  50 ,  50 ,  60 ,  60 ,  60 ,  60 ,  60 , 100 , 100 , 100 , 100 , 100 , 100 ]
+cutmap['mllmax_vh']   = [ 70  , 70  , 70  , 80  , 80  , 90  , 90  , 100 , 100 , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600 ]
+
 cutmap['mllmax_bdt']  = [ 70  , 70  , 70  , 80  , 80  , 90  , 90  , 100 , 100 , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600 ]
 cutmap['pt1min']      = [ 20  , 20  , 20  , 23  , 25  , 25  , 25  , 25  , 27  , 27  , 30  , 34  , 36  , 38  , 40  , 55  , 70  , 80  , 90  , 110 , 120 , 130 , 140 ]
 cutmap['pt2min']      = [ 10  , 10  , 10  , 10  , 10  , 12  , 15  , 15  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  , 25  ]
@@ -202,6 +246,8 @@ def massSelections(mass):
 
     mthmin_bdt = 80.
     mthmin_vbf = 30.
+    mthmin_vh  = 50.
+
     masscuts = dict([(cut,massDependantCutsbyVar[cut][mass]) for cut in massDependantCutsbyVar])
 
     sel = {}
@@ -253,5 +299,14 @@ def massSelections(mass):
 
     sel['vbf-shape-selection']    = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
 
+    # vh #
+    sel['vh-level']    = ' && '.join(vhcuts.vhcut)
+    sel['vh-selection'] = sel['vh-level']     + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(masscuts['mtmin_vh'], int(mass))
+    sel['vh-selection'] = sel['vh-selection'] + ' && (mll < {0:.1f})'.format(masscuts['mllmax_vh'])
+
+
     return sel
+
+
+
 

@@ -517,6 +517,10 @@ class ShapeFactory:
         weights['ggH']               = self._stdWgt+'*kfW'
         weights['vbfH']              = self._stdWgt+'*kfW'
 
+        weights['wH']                = self._stdWgt+'*(mctruth == 26)'
+        weights['zH']                = self._stdWgt+'*(mctruth == 24)'
+        weights['ttH']               = self._stdWgt+'*(mctruth == 121)'
+
 
         if cat in ['2j']:
             weights['WW']                = self._stdWgt+'*(1+(mjj>500)*(detajj>3.5))'

@@ -115,7 +115,7 @@ data['Data2012'] = data['Data2012A']+data['Data2012B']+data['Data2012C']
 #--------------
 # signal samples labels and generation
 
-signals = ['ggH','vbfH','wzttH','jhu','jhu_ALT']
+signals = ['ggH','vbfH','wzttH','jhu','jhu_ALT','wH','zH','ttH']
 
 def signalSamples(sigtag,mass=125):
 
@@ -126,13 +126,20 @@ def signalSamples(sigtag,mass=125):
                 ]
         vbfH  = ['nominals/latino_2{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root',
                 ]
-        wzttH = ['nominals/latino_3{mass}_wzttH{mass}ToWW.root']
+        #wzttH = ['nominals/latino_3{mass}_wzttH{mass}ToWW.root']
+        wH    = ['nominals/latino_3{mass}_wzttH{mass}ToWW.root']
+        zH    = ['nominals/latino_3{mass}_wzttH{mass}ToWW.root']
+        ttH   = ['nominals/latino_3{mass}_wzttH{mass}ToWW.root']
+
 
 
         if mass <= 300:
             signals['ggH']   = [f.format(mass = mass) for f in ggH]
             signals['vbfH']  = [f.format(mass = mass) for f in vbfH]
-            signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
+            #signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
+            signals['wH']    = [f.format(mass = mass) for f in wH]
+            signals['zH']    = [f.format(mass = mass) for f in zH]
+            signals['ttH']   = [f.format(mass = mass) for f in ttH]
         else:
             signals['ggH']   = [f.format(mass = mass) for f in ggH]
             signals['vbfH']  = [f.format(mass = mass) for f in vbfH]
@@ -195,6 +202,22 @@ mcsets = {
         # 2j specific
         ('WJet-template',    'WJet-template-2j'),              #    A   <-   sorgente
         ('WJet-templatesyst','WJet-templatesyst-2j')           #    mkmerged vuole "-template"
+    ],
+    'vh_sf' : [
+        #signals
+        'ggH','vbfH','wH','zH','ttH',
+        # bkgs
+        #'WW','ggWW','Vg','WJet','Top','VV','DYTT','DYLL',
+        'WW','ggWW','Vg','WJet','Top','VV','DYee','DYmm'
+    ],
+   'vh_of' : [
+        #signals
+        'ggH','vbfH','wH','zH','ttH',
+        # bkgs
+        'WW','ggWW','Vg','WJet','Top','VV','DYTT',
+        # 2j specific
+        #('WJet-template',    'WJet-template-2j'),              #    A   <-   sorgente
+        #('WJet-templatesyst','WJet-templatesyst-2j')           #    mkmerged vuole "-template"
     ],
 }
 

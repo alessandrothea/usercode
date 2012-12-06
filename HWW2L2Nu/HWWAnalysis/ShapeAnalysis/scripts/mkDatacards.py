@@ -430,6 +430,13 @@ class NuisanceMapBuilder:
 
         qqWWfromData = self._wwddfilter.haswwdd(mass, channel)
 
+        # vh and vbf mapped to "2j" category
+        if (jetcat == 'vh2j') :
+           jetcat = '2j'
+           optMatt.VH = 1
+        else :
+           optMatt.VH = 0
+
         if jetcat not in ['0j','1j','2j']: raise ValueError('Unsupported jet category found: %s')
         CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, optMatt)
         common = OrderedDict()
@@ -572,7 +579,7 @@ if __name__ == '__main__':
 
             # reshuffle the order
             #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
-            order = [ 'jhu','jhu_ALT','vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
+            order = [ 'jhu','jhu_ALT','vbfH', 'ggH', 'wzttH', 'wH', 'zH', 'ttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             

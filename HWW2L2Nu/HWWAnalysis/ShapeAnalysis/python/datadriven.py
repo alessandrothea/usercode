@@ -56,7 +56,9 @@ class DDCardReader:
         # data driven systematics
         basemapping  = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
                        'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),
-                       'of_2j': ('2j',['of']), 'sf_2j': ('2j',['sf'])}
+                       'of_2j': ('2j',['of']), 'sf_2j': ('2j',['sf']),
+                       'of_vh2j': ('vh2j',['of']), 'sf_vh2j': ('vh2j',['sf'])
+                       }
         wwmapping    = {'of_0j': ('0j',['of']), 'sf_0j': ('0j',['sf']),
                        'of_1j': ('1j',['of']), 'sf_1j': ('1j',['sf']),
                        }
@@ -64,7 +66,8 @@ class DDCardReader:
                        'sf_1j': ('1j',['sf']),
                        }
         lleemmmapping  = {
-                       'sf_2j': ('2j',['sf'])
+                       'sf_2j': ('2j',['sf']),
+                       'sf_vh2j': ('vh2j',['sf'])
                        }
 
         readmap = {}
