@@ -233,13 +233,36 @@ class XYShiftVarFiller(TreeCloner):
                 dmetx = -1.94451e-2 - 4.38986e-3*itree.nvtx
                 dmety = -4.31368e-1 - 1.90753e-1*itree.nvtx
 
+            #if self.kindMCDATA == "DATA2012" :
+                #dmetx =  3.54233e-01 + 2.65299e-01*itree.nvtx
+                #dmety =  1.88923e-01 - 1.66425e-01*itree.nvtx
+
+            #if self.kindMCDATA == "MC2012" :
+                #dmetx = -2.99576e-02 - 6.61932e-02*itree.nvtx
+                #dmety =  3.70819e-01 - 1.48617e-01*itree.nvtx
+
             if self.kindMCDATA == "DATA2012" :
-                dmetx =  3.54233e-01 + 2.65299e-01*itree.nvtx
-                dmety =  1.88923e-01 - 1.66425e-01*itree.nvtx
+                dmetx =  0.09178  + 0.3131 * itree.nvtx
+                dmety =  -0.218   - 0.2019 * itree.nvtx
+
+
+# X
+#   MC   = 0.108857 +/- 0.229322 +  nvtx * 0.0643355 +/- 0.0158042
+# Y
+#   MC   = 0.0867385 +/- 0.231408 +  nvtx * -0.0694738 +/- 0.0159204
+
 
             if self.kindMCDATA == "MC2012" :
-                dmetx = -2.99576e-02 - 6.61932e-02*itree.nvtx
-                dmety =  3.70819e-01 - 1.48617e-01*itree.nvtx
+                dmetx =  0.108857   + 0.064335  * itree.nvtx
+                dmety =  0.0867385  - 0.0694738 * itree.nvtx
+
+            #if self.kindMCDATA == "MC2012" :
+                #dmetx =  -0.413115 - 0.00210106  * itree.nvtx
+                #dmety =  0.108857  + 0.0643355   * itree.nvtx
+
+#            if self.kindMCDATA == "MC2012" :
+#                dmetx =  0.05442 + 0.003874 * itree.nvtx
+#                dmety =  0.3403  - 0.1934   * itree.nvtx
 
             if self.kindMCDATA == "NOCHANGE" :
                 dmetx = 0
