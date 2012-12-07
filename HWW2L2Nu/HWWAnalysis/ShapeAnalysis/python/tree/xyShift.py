@@ -233,14 +233,15 @@ class XYShiftVarFiller(TreeCloner):
                 dmetx = -1.94451e-2 - 4.38986e-3*itree.nvtx
                 dmety = -4.31368e-1 - 1.90753e-1*itree.nvtx
 
+
             if self.kindMCDATA == "DATA2012" :
                 dmetx =  0.035912  + 0.326549 * itree.nvtx
                 dmety = -0.120266 -0.225262 * itree.nvtx
 
-
             if self.kindMCDATA == "MC2012" :
                 dmetx =  0.108857   + 0.064336  * itree.nvtx
                 dmety =  0.086738   - 0.069474   * itree.nvtx
+
 
             if self.kindMCDATA == "NOCHANGE" :
                 dmetx = 0
