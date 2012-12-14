@@ -85,7 +85,8 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,options):
             nuisances['QCDscale_WW2in'] = [ ['lnN'], {'WW': 0.914 }]
     elif jets == 2:
         if options.VH:
-            nuisances['QCDscale_ggH2in_vh'] = [  ['lnN'], { 'ggH':1.70 }]
+            nuisances['QCDscale_ggH2in_vh'] = [  ['lnN'], { 'ggH':1.30 }]
+            #nuisances['QCDscale_ggH2in_vh'] = [  ['lnN'], { 'ggH':1.70 }]
         else :
             nuisances['QCDscale_ggH2in'] = [  ['lnN'], { 'ggH':ggH_jets[mass]['k2'] }]
         if not qqWWfromData:
