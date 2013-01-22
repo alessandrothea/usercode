@@ -12,9 +12,9 @@ import HWWAnalysis.Misc.odict as odict
 # jets 				 = [0,1]
 
 # HCP
-ptllCut = 45. 
+#ptllCut = 45. 
 # Spin/Moriond
-# ptllCut = 30. 
+ptllCut = 30. 
 
 class wwcutsB:
     wwcommon = odict.OrderedDict([
@@ -250,14 +250,14 @@ del phi
 def massSelections(mass):
 
     # HCP
-    mthmin_2dlomass = 80. 
-    mthmax_2dlomass = 280.
-    mllmax_2dlomass = 200
-
-    # Spin
-    #mthmin_2dlomass = 60.
+    #mthmin_2dlomass = 80. 
     #mthmax_2dlomass = 280.
     #mllmax_2dlomass = 200
+
+    # Spin
+    mthmin_2dlomass = 60.
+    mthmax_2dlomass = 280.
+    mllmax_2dlomass = 200
 
     mthmin_bdt = 80.
     mthmin_vbf = 30.

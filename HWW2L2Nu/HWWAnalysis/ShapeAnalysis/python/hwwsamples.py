@@ -12,11 +12,13 @@ backgrounds = {
                                 ],
     'WJet'                    : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
                                  'wjets/latino_RunB_4404pbinv_LooseLoose.root',
-                                 'wjets/latino_RunC_6807pbinv_LooseLoose.root',
+                                 'wjets/latino_RunC_7032pbinv_LooseLoose.root',
+                                 'wjets/latino_RunD_7274pbinv_LooseLoose.root',
                                 ],
     'WJetFakeRate'            : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
                                  'wjets/latino_RunB_4404pbinv_LooseLoose.root',
-                                 'wjets/latino_RunC_6807pbinv_LooseLoose.root',
+                                 'wjets/latino_RunC_7032pbinv_LooseLoose.root',
+                                 'wjets/latino_RunD_7274pbinv_LooseLoose.root',
                                 ],
     'WJet-template-2j'        : ['wjetsTemplate/latino_RunA_892pbinv_LooseLoose.root',
                                  'wjetsTemplate/latino_RunB_4404pbinv_LooseLoose.root',
@@ -35,7 +37,7 @@ backgrounds = {
                                  'nominals/latino_078_WZTo2L2QMad.root',
                                  'nominals/latino_079_ZZTo2L2QMad.root',
                                 ],
-    'DYTT'                    : ['nominals/latino_RunABC_DYtt_8fb.root'], # for ee/mm channels DYTT is included in DD
+    'DYTT'                    : ['nominals/latino_DYtt_12.1fb.root'], # for ee/mm channels DYTT is included in DD
     'DYLL'                    : ['nominals/latino_036_DY10toLLMad.root',
                                  'nominals/latino_037_DY50toLLMad.root',
                                 ],
@@ -105,12 +107,14 @@ data = {
 
     'Data2012B' : ['data/latino_RunB_4404pbinv.root'],
 
-    'Data2012C' : ['data/latino_RunC_6807pbinv.root'],
+    'Data2012C' : ['data/latino_RunC_7032pbinv.root'],
+
+    'Data2012D' : ['data/latino_RunD_7274pbinv.root'],
 }
 
 data['Data2011'] = data['Data2011A']+data['Data2011B']
 
-data['Data2012'] = data['Data2012A']+data['Data2012B']+data['Data2012C']
+data['Data2012'] = data['Data2012A']+data['Data2012B']+data['Data2012C']+data['Data2012D']
 
 #--------------
 # signal samples labels and generation
@@ -144,27 +148,27 @@ def signalSamples(sigtag,mass=125):
             signals['ggH']   = [f.format(mass = mass) for f in ggH]
             signals['vbfH']  = [f.format(mass = mass) for f in vbfH]
 
-# Test from Alessandro:
-    elif sigtag == 'JHU' and mass==125:
-       signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
-       signals['jhu_ALT'] = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
-
+# and the JHU case:
     elif sigtag == 'JHUSMONLY' and mass==125:
         signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
                               'nominals/latino_8004_SMH125ToWW2Tau2Nu.root',
                               'nominals/latino_8007_SMH125ToWWLTau2Nu.root' 
                              ]
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
 
     elif sigtag == 'JHU0MONLY' and mass==125:
         signals['jhu']     = ['nominals/latino_8002_Higgs0M125ToWW2L2Nu.root',
                               'nominals/latino_8005_Higgs0M125ToWW2Tau2Nu.root',
                               'nominals/latino_8008_Higgs0M125ToWWLTau2Nu.root'
                              ]
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+
     elif sigtag == 'JHU2MONLY' and mass==125:
         signals['jhu']     = ['nominals/latino_8003_Graviton2PM.root',
                               'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
                               'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
                              ]
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
 
     elif sigtag == 'JHUSMvs0M' and mass==125:
         signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
@@ -175,6 +179,7 @@ def signalSamples(sigtag,mass=125):
                               'nominals/latino_8005_Higgs0M125ToWW2Tau2Nu.root', 
                               'nominals/latino_8008_Higgs0M125ToWWLTau2Nu.root' 
                              ]
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
 
     elif sigtag == 'JHUSMvs2M' and mass==125:
         signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
@@ -185,6 +190,8 @@ def signalSamples(sigtag,mass=125):
                               'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
                               'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
                              ]
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_NLO']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
 
     elif sigtag == 'JHUSMvs2MplOthers' and mass==125:
         signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
@@ -200,6 +207,7 @@ def signalSamples(sigtag,mass=125):
                              ]
         signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
         signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
 
     elif sigtag == 'PWGSMvs2MplOthers' and mass==125:
         signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
@@ -212,7 +220,7 @@ def signalSamples(sigtag,mass=125):
                              ]
         signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
         signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
-
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
 
     else:
         raise ValueError('Signal tag %s not found for mass %d' % (sigtag,mass) )
@@ -230,7 +238,7 @@ def signalSamples(sigtag,mass=125):
 mcsets = {
     '0j1j-JHU' : [
         #signals
-        'jhu','jhu_ALT',
+        'jhu','jhu_ALT','jhu_NORM','jhu_NLO',
         # bkgs
         'WW','ggWW','Vg','WJet','WJetFakeRate','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl',
         # 0j1j specific
@@ -239,7 +247,7 @@ mcsets = {
     ],
     '0j1j-JHUOthers' : [
         #signals
-        'jhu','jhu_ALT','vbfH','vbfH_ALT','wzttH','wzttH_ALT',
+        'jhu','jhu_ALT','jhu_NORM','jhu_NLO','vbfH','vbfH_ALT','wzttH','wzttH_ALT',
         # bkgs
         'WW','ggWW','Vg','WJet','WJetFakeRate','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl',
         # 0j1j specific

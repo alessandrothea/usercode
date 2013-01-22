@@ -526,7 +526,7 @@ class ShapeMixer:
             self.generators[wwScaleDown.GetTitle()] = wwScaleDown
 
         # -----------------------------------------------------------------
-        # To shapes
+        # Top shapes
         #
         fracTW = {} 
         pytTop = self.nominals['Top']
@@ -570,6 +570,57 @@ class ShapeMixer:
             topCtrlDown.Add(topCtrlUp, -1)
             topCtrlDown.Scale(pytTop.Integral()/topCtrlDown.Integral())
             self.generators[topCtrlDown.GetTitle()] = topCtrlDown
+
+        # -----------------------------------------------------------------
+        # JHU Normaliartion
+
+        if 'jhu' in self.nominals:
+           print "Normalising JHU"
+           jhuNORM  = self.nominals['jhu_NORM']
+           jhuShape = self.nominals['jhu']
+           jhuShape.Scale( (jhuNORM.Integral() if jhuNORM.Integral() !=0. else jhuShape.Integral()) / jhuShape.Integral() )
+
+        if 'jhu_ALT' in self.nominals:
+           jhuNORM  = self.nominals['jhu_NORM']
+           jhuShape = self.nominals['jhu_ALT']
+           jhuShape.Scale( (jhuNORM.Integral() if jhuNORM.Integral() !=0. else jhuShape.Integral()) / jhuShape.Integral() )
+
+        if 'jhu_NORM' in self.nominals: 
+           self.nominals.pop('jhu_NORM')
+
+        # -----------------------------------------------------------------
+        # JHU vs PowHeg
+        #
+
+        if 'jhu_NLO' in self.nominals:
+           jhuNLO = self.nominals.pop('jhu_NLO')
+           if 'jhu' in self.nominals:
+             jhuNom    = self.nominals['jhu']
+             jhuRel    = jhuNLO.Clone('jhuRel') 
+             jhuRel.Divide(jhuNom)
+
+             jhuNLOUp  = jhuNom.Clone('histo_jhu_Gen_JHU_NLOUp')
+             jhuNLOUp.SetTitle('JHU NLO Up')
+             jhuNLOUp.Multiply(jhuRel) 
+             self.generators[jhuNLOUp.GetTitle()] = jhuNLOUp
+ 
+             jhuNLODown= jhuNom.Clone('histo_jhu_Gen_JHU_NLODown')
+             jhuNLODown.SetTitle('JHU NLO Down')
+             jhuNLODown.Divide(jhuRel)
+             self.generators[jhuNLODown.GetTitle()] = jhuNLODown
+
+             if 'jhu_ALT' in self.nominals: 
+                jhu_ALTNom = self.nominals['jhu_ALT']
+
+                jhu_ALTNLOUp  = jhu_ALTNom.Clone('histo_jhu_ALT_Gen_JHU_NLOUp')
+                jhu_ALTNLOUp.SetTitle('JHU_ALT NLO Up')
+                jhu_ALTNLOUp.Multiply(jhuRel)
+                self.generators[jhu_ALTNLOUp.GetTitle()] = jhu_ALTNLOUp
+
+                jhu_ALTNLODown= jhu_ALTNom.Clone('histo_jhu_ALT_Gen_JHU_NLODown')
+                jhu_ALTNLODown.SetTitle('JHU_ALT NLO Down')
+                jhu_ALTNLODown.Divide(jhuRel)             
+                self.generators[jhu_ALTNLODown.GetTitle()] = jhu_ALTNLODown
 
         # -----------------------------------------------------------------
         # Statistical

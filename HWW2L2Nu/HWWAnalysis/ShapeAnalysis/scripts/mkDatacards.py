@@ -146,7 +146,7 @@ class ShapeLoader:
         self._nominals = [ ('histo_'+p,p) for p in processes if 'histo_'+p in names] 
         if len(self._nominals) != len(processes):
             raise RuntimeError('Not all process shapes have been found')
-        
+
         for p in processes:
             systre = re.compile('^histo_%s_(.+)(Up|Down)$' % p)
             systp = []
@@ -155,7 +155,8 @@ class ShapeLoader:
                 if not m: continue
                 systp.append( (name,p,m.group(1),m.group(2)) )
 #             systs = [ (name,p, for name in names if systre.match(name) ]
-#             print 'xxx',p,systp
+#               print 'xxx',p,systp
+#                print 'xxx',p,m.group(1),m.group(2)
             self._systematics += systp
 
         self._systematics = sorted(self._systematics)

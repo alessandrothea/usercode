@@ -20,7 +20,7 @@ class ShapeFactory:
  
     # _____________________________________________________________________________
     def __init__(self):
-        self._stdWgt = 'baseW*puW60ABC*effW*triggW'
+        self._stdWgt = 'baseW*puW*effW*triggW'
         self._systByWeight = {}
 
         ranges = {}
@@ -495,14 +495,14 @@ class ShapeFactory:
     def _sampleWeights(self,mass,var,cat):
         weights = {}
         # tocheck
-        weights['WJet']              = 'baseW*fakeW'
-        weights['WJetFakeRate']      = 'baseW*fakeWUp'
+        weights['WJet']              = 'baseW*fakeW*(run!=201191)'
+        weights['WJetFakeRate']      = 'baseW*fakeWUp*(run!=201191)'
 
         weights['WJet-template']              = 'baseW*fakeW'
         weights['WJetFakeRate-template']      = 'baseW*fakeWUp'
         weights['WJet-templatesyst']          = 'baseW*fakeWUp'
 
-        weights['Data']              = '1'
+        weights['Data']              = '(run!=201191)'
         # problem with DYTT using embedded for em/me, for ee/mm it is inlcuded in DD DY estimate
         weights['DYTT']              = self._stdWgt
         weights['DYLL']              = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))*(channel<1.5)'
@@ -513,7 +513,7 @@ class ShapeFactory:
         #systematics
         weights['TopCtrl']           = self._stdWgt+'*bvetoW'
         #filter for buggy events in dataset==082
-        weights['Vg']                = self._stdWgt+'*(dataset!=082 || (chmet<(0.75*pt1+100) && chmet<(0.75*jetpt1+100)))*(1+0.6*(dataset>=82 && dataset<=84))'
+        weights['Vg']                = self._stdWgt+'*(dataset!=082 || (chmet<(0.75*pt1+100) && chmet<(0.75*jetpt1+100)))*(1+0.5*(dataset>=82 && dataset<=84))'
         weights['ggH']               = self._stdWgt+'*kfW'
         weights['vbfH']              = self._stdWgt+'*kfW'
 
@@ -699,7 +699,7 @@ if __name__ == '__main__':
 
     parser.add_option('--tag'            , dest='tag'            , help='Tag used for the shape file name'           , default=None)
     parser.add_option('--selection'      , dest='selection'      , help='Selection cut'                              , default=None)
-    parser.add_option('--sigset'         , dest='sigset'         , help='Signal samples [SM]'                           , default=None)
+    parser.add_option('--sigset'         , dest='sigset'         , help='Signal samples [SM]'                        , default='SM')
     parser.add_option('--dataset'        , dest='dataset'        , help='Dataset to process'                         , default=None)
     parser.add_option('--mcset'          , dest='mcset'          , help='Mcset to process'                           , default=None)
     parser.add_option('--path_latino'    , dest='path_latino'    , help='Root of the master trees'                   , default=None)
