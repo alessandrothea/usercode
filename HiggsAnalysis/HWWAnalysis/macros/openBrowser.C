@@ -1,3 +1,0 @@
-{
-    TBrowser* b = new TBrowser();
-}
