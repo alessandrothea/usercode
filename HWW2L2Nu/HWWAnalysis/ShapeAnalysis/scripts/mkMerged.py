@@ -597,29 +597,34 @@ class ShapeMixer:
            if 'jhu' in self.nominals:
              jhuNom    = self.nominals['jhu']
              jhuRel    = jhuNLO.Clone('jhuRel') 
+             jhuRel.Add(jhuNom,-1)
              jhuRel.Divide(jhuNom)
 
+             jhuSys    = jhuNom.Clone('jhuSys')
+             jhuSys.Multiply(jhuRel)
              jhuNLOUp  = jhuNom.Clone('histo_jhu_Gen_JHU_NLOUp')
              jhuNLOUp.SetTitle('JHU NLO Up')
-             jhuNLOUp.Multiply(jhuRel) 
+             jhuNLOUp.Add(jhuSys,1.) 
              self.generators[jhuNLOUp.GetTitle()] = jhuNLOUp
  
              jhuNLODown= jhuNom.Clone('histo_jhu_Gen_JHU_NLODown')
              jhuNLODown.SetTitle('JHU NLO Down')
-             jhuNLODown.Divide(jhuRel)
+             jhuNLODown.Add(jhuSys,-1.)
              self.generators[jhuNLODown.GetTitle()] = jhuNLODown
 
              if 'jhu_ALT' in self.nominals: 
                 jhu_ALTNom = self.nominals['jhu_ALT']
 
+                jhu_ALTSys    = jhu_ALTNom.Clone('jhuALTSys')
+                jhu_ALTSys.Multiply(jhuRel)
                 jhu_ALTNLOUp  = jhu_ALTNom.Clone('histo_jhu_ALT_Gen_JHU_NLOUp')
                 jhu_ALTNLOUp.SetTitle('JHU_ALT NLO Up')
-                jhu_ALTNLOUp.Multiply(jhuRel)
+                jhu_ALTNLOUp.Add(jhu_ALTSys,1.)
                 self.generators[jhu_ALTNLOUp.GetTitle()] = jhu_ALTNLOUp
 
                 jhu_ALTNLODown= jhu_ALTNom.Clone('histo_jhu_ALT_Gen_JHU_NLODown')
                 jhu_ALTNLODown.SetTitle('JHU_ALT NLO Down')
-                jhu_ALTNLODown.Divide(jhuRel)             
+                jhu_ALTNLODown.Add(jhu_ALTSys,-1.)
                 self.generators[jhu_ALTNLODown.GetTitle()] = jhu_ALTNLODown
 
         # -----------------------------------------------------------------
