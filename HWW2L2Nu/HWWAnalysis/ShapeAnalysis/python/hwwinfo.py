@@ -75,12 +75,16 @@ class wwcuts:
 
     # minimum for skimming
     wwmin = [
+        'pt1>20',
+        'pt2>10',
+        '(ch1*ch2)<0',
         'trigger==1',
         'pfmet>20',
         'mll>12',
         'mpmet>20',
         'bveto_mu==1',
         'nextra==0',
+        '(bveto_ip==1 && nbjettche==0)',
         'njet<4',
     ]
     
@@ -89,10 +93,14 @@ class wwcuts:
 
     # met cuts
     met  = '( !sameflav || ( (njet!=0 || dymva1>0.88) && (njet!=1 || dymva1>0.84) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
+    mpmet  = '( !sameflav || ( (njet>1 || (mpmet>45 && dphiveto)) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
+
+    # met or
+    metor = '( !sameflav || ( (njet!=0 || dymva1>0.88 || mpmet>35) && (njet!=1 || dymva1>0.84 || mpmet>35) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
 
     wwcommon = wwcommon+[dphilljj, met]
-    wwmin    = wwmin   +[dphilljj]
-    
+    wwmin    = wwmin   +[dphilljj, metor]
+                
     zerojet = 'njet == 0'
     onejet  = 'njet == 1'
     vbf     = '(njet >= 2 && njet <= 3 && (jetpt3 <= 30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0))))) '
@@ -279,7 +287,7 @@ def massSelections(mass):
     sel['vbf-shape']    = ' && '.join(vbfcuts.vbfshape)
     sel['vbf-level']    = ' && '.join(vbfcuts.vbfcut)
 
-    sel['ww-level']     = sel['ww-common']
+    sel['ww-level']     = sel['ww-common']+'&& ptll>45'
     sel['bdt-specific'] = 'mll < {0} && (mth > {1:.0f} && mth < {2:.0f})'.format(masscuts['mllmax_bdt'], mthmin_bdt, int(mass))
 
     hwwlvl = {}
@@ -290,6 +298,7 @@ def massSelections(mass):
     hwwlvl['mth']    = '(mth > {0:.1f} && mth < {1:.1f})'.format(masscuts['mtmin'], masscuts['mtmax'])
 
     sel['ww-selection']           = sel['ww-level']
+    sel['wwr-selection']          = sel['ww-common']
     sel['wwtight-selection']      = sel['ww-level']+' && mth > %f'%mthmin_2dlomass
     sel['wwloose-selection']      = sel['ww-level'].replace('ptll>%f'%ptllCut,'ptll>20')+' && mth > %f'%mthmin_2dlomass
     sel['hww-selection']          = ' && '.join([sel['ww-level']]+[cut for cut     in hwwlvl.itervalues()])
@@ -310,7 +319,7 @@ def massSelections(mass):
 
 
 
-    sel['shape-selection']        = sel['ww-level']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-level']+' && '+sel['shape-himass']
+    sel['shape-selection']        = sel['ww-common']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common']+' && '+sel['shape-himass']
 
     sel['vbf-shape-selection']    = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
 
