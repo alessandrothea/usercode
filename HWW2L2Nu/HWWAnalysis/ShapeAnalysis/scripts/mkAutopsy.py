@@ -20,13 +20,13 @@ def getnorms(pdf, obs, norms = None ):
 
     out = norms if norms!=None else {}
 
-    if isinstance(pdf,ROOT.RooSimultaneous):
-        cat = sim.indexCat()
-        for i in xrange(cat.numBins(0)):
-            cat.setBin(i)
-            pdfi = sim.getPdf(cat.getLabel());
-            if pdfi.__nonzero__(): getnorms(pdfi, obs, out);
-        pass
+    #if isinstance(pdf,ROOT.RooSimultaneous):
+        #cat = sim.indexCat()
+        #for i in xrange(cat.numBins(0)):
+            #cat.setBin(i)
+            #pdfi = sim.getPdf(cat.getLabel());
+            #if pdfi.__nonzero__(): getnorms(pdfi, obs, out);
+        #pass
 
     if isinstance(pdf,ROOT.RooProdPdf):
 #         print 'ROOT.RooProdPdf'
@@ -208,7 +208,7 @@ class ShapeGluer:
                         break
                 
                 # add errors
-                if   ptype == 'lnN' or 'shape' in ptype:
+                if   ptype == 'lnN' or ptype == 'lnU' or 'shape' in ptype:
                     # +/- 1 for lnN (and shapes)
                     arg.setError(1.)
                 elif ptype == 'gmN':
