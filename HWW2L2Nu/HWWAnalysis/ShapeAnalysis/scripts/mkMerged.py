@@ -844,7 +844,8 @@ class ShapeMixer:
                 if sample not in self.nominals:
                     raise RuntimeError('Nominal histogram '+sample+' not found')
                 hNom = self.nominals[sample]
-                hSys.Scale(hNom.Integral()/hSys.Integral())
+                if hNom.Integral() and hSys.Integral():
+                    hSys.Scale(hNom.Integral()/hSys.Integral())
         
         for ss,k in sanityCheck.iteritems():
             if k == 0:
