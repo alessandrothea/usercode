@@ -36,6 +36,7 @@ class ShapeFactory:
         ranges['gammaMRStar']      = self._getGMstarrange
         ranges['vbf2D']            = self._getVBF2Drange
         ranges['mth-mll-hilomass'] = self._getMllMth2Drange
+        ranges['mth-mll-hilospin'] = self._getMllMth2DSpinrange
         self._ranges = ranges
         
         self._dataTag         = '2012A'
@@ -83,6 +84,17 @@ class ShapeFactory:
             return (10,80,280,8,0,200) 
         else:
             return (10,80,380,8,0,450) 
+
+    # _____________________________________________________________________________
+    def _getMllMth2DSpinrange(self,mass,cat):
+
+        if cat not in ['0j','1j']:
+            raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
+        
+        if mass < 300.:
+            return ([60,70,80,90,100,110,120,140,160,180,200,220,240,260,280],[12,30,45,60,75,100,125,150,175,200])
+        else:
+            return (10,80,380,8,0,450)
 
     # _____________________________________________________________________________
     def _getVBF2Drange(self,mass,cat):
@@ -163,6 +175,8 @@ class ShapeFactory:
             allCuts = hwwinfo.massSelections( mass )
 
             alias = var if not self._splitmode else var+'*(-1+2*('+allCuts[self._splitmode+'-selection']+') )'
+            alias = alias if not 'btag' in alias else '(bveto_mu && bveto_ip && nbjettche==0)'
+            
             try:
                 varSelection = allCuts[sel+'-selection']
             except KeyError as ke:
@@ -247,7 +261,8 @@ class ShapeFactory:
             varSelection = allCuts[sel+'-selection']
 
             alias = var if not self._splitmode else var+'*(-1+2*('+allCuts[self._splitmode+'-selection']+') )'
-            
+            alias = alias if not 'btag' in alias else '(bveto_mu && bveto_ip && nbjettche==0)'
+
             #inner  jet and flavor loops
             for chan,(category,flavor) in self._channels.iteritems():
 #                 cat = hwwinfo.categories[category]
@@ -320,6 +335,9 @@ class ShapeFactory:
 
         if vdim != hdim:
             raise ValueError('The variable\'s and range number of dimensions are mismatching')
+
+        print 'var: '+var
+        print 'selection: '+selections['Data']
 
         for process,tree  in inputs.iteritems():
 #             print ' '*3,process.ljust(20),':',tree.GetEntries(),
@@ -496,7 +514,11 @@ class ShapeFactory:
         weights = {}
         # tocheck
         weights['WJet']              = 'baseW*fakeW*(run!=201191)'
-        weights['WJetFakeRate']      = 'baseW*fakeWUp*(run!=201191)'
+        weights['WJetFakeRate-eUp']  = 'baseW*fakeWElUp*(run!=201191)'
+        weights['WJetFakeRate-eDn']  = 'baseW*fakeWElDown*(run!=201191)'
+        weights['WJetFakeRate-mUp']  = 'baseW*fakeWMuUp*(run!=201191)'
+        weights['WJetFakeRate-mDn']  = 'baseW*fakeWMuDown*(run!=201191)'
+        weights['WJetSS']            = 'baseW*fakeW*ssW*(run!=201191)'
 
         weights['WJet-template']              = 'baseW*fakeW'
         weights['WJetFakeRate-template']      = 'baseW*fakeWUp'
@@ -512,8 +534,10 @@ class ShapeFactory:
         weights['DYLL-templatesyst'] = self._stdWgt+'*dyWUp*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         #systematics
         weights['TopCtrl']           = self._stdWgt+'*bvetoW'
-        #filter for buggy events in dataset==082
-        weights['Vg']                = self._stdWgt+'*(dataset!=082 || (chmet<(0.75*pt1+100) && chmet<(0.75*jetpt1+100)))*(1+0.5*(dataset>=82 && dataset<=84))'
+        weights['Top-template']      = self._stdWgt+'*bvetoW'
+        #filter and k-factor on Vg* done by kfW
+        weights['VgS']               = self._stdWgt+'*kfW'
+        weights['Vg']                = self._stdWgt+'*kfW'
         weights['ggH']               = self._stdWgt+'*kfW'
         weights['vbfH']              = self._stdWgt+'*kfW'
 
@@ -813,7 +837,7 @@ if __name__ == '__main__':
 
             factory._systByWeight = systByWeight
 
-            processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'jhu', 'jhu_ALT']
+            processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT']
             systMasks = dict([(s,processMask[:]) for s in systematics])
             systDirs  = dict([(s,systInputDir if s not in systByWeight else 'nominals/' ) for s in systematics])
 

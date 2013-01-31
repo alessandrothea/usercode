@@ -15,7 +15,7 @@ import hwwsamples
 
 import datadriven
 from HWWAnalysis.Misc.odict import OrderedDict
-from systematicUncertainties import getCommonSysts,addFakeBackgroundSysts
+from systematicUncertainties import getCommonSysts,addFakeBackgroundSysts,floatNorm
 
 # da http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/Mangano/WWAnalysis/AnalysisStep/python/systematicUncertainties.py
 
@@ -38,6 +38,7 @@ class ShapeDatacardWriter:
         self._mass = mass
         self._bin = bin
         self._shape = shape
+        self._dataTag         = '2012A'
 
     def __del__(self):
         pass
@@ -93,7 +94,8 @@ class ShapeDatacardWriter:
             if len(pdf) == 1: card.write('{0:<31} {1:<7}         '.format(name,pdf[0]))
             else:             card.write('{0:<31} {1:<7} {2:<7} '.format(name,pdf[0],pdf[1]))
             for i,p,y in keyline:
-                if p in effect: 
+                if p in effect:
+                    #if 'FakeRate' in name:
                     if pdf[0]=='gmN':   card.write('%-10.5f' % effect[p])
                     elif (pdf[0]=='shape' or pdf[0]=='shapeN2'): card.write('%-10d' % effect[p])
                     else:               card.write('%-10.3f' % effect[p] )
@@ -215,8 +217,7 @@ class NuisanceMapBuilder:
  
     def _build(self):
         # common 0/1 jet systematics
-        #pureMC = [ 'Vg', 'VV', 'DYTT', 'ggH', 'vbfH', 'wzttH'] 
-        pureMC = [ 'Vg', 'VV', 'ggH', 'vbfH', 'wzttH'] 
+        pureMC = [ 'VgS', 'Vg', 'VV', 'ggH', 'vbfH', 'wzttH'] 
         dummy = {}
         dummy['CMS_fake_e']    = (1.50, ['WJet']) # take the average of ee/me 
 #         dummy['CMS_fake_m']    = (1.42, ['WJet']) # take the average of mm/em
@@ -275,12 +276,17 @@ class NuisanceMapBuilder:
         pdf = 'lnN'
 
         # this mapping specifies the context of the systematics (i.e. jet category, channel) and how the dds must be combined between channels.
+        # separate cut-based DD estimates from shape since the control region is different
+        if (self._shape) :
+            cb = ''
+        else :
+            cb = '_cb'
         mapping = {
-            'WW'   : ( jetcat,  ['WW','ggWW'] ),
-            'Top'  : ( jetcat,  ['Top']       ),
-            'DYLL' : ( jetcat,  ['DYLL']      ),
-            'DYee' : ( channel, ['DYee']      ),
-            'DYmm' : ( channel, ['DYmm']      ),
+            'WW'   : ( jetcat+cb,  ['WW','ggWW'] ),
+            'Top'  : ( jetcat+cb,  ['Top']       ),
+            'DYLL' : ( jetcat+cb,  ['DYLL']      ),
+            'DYee' : ( channel+cb, ['DYee']      ),
+            'DYmm' : ( channel+cb, ['DYmm']      ),
         }
 
         eff_bin1_tmpl = 'CMS_hww_{0}_{1}_stat_bin1'
@@ -439,7 +445,14 @@ class NuisanceMapBuilder:
            optMatt.VH = 0
 
         if jetcat not in ['0j','1j','2j']: raise ValueError('Unsupported jet category found: %s')
-        CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, optMatt)
+        CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, self._shape, optMatt)
+        if self._shape:
+            # float WW+ggWW background normalisation float together
+            for p in opts['floatN'].split(' '):
+                print p
+                floatN = floatNorm(p)
+                CutBased.update( floatN )
+                    
         common = OrderedDict()
         for k in sorted(CutBased):
             common[k] = CutBased[k]
@@ -448,7 +461,8 @@ class NuisanceMapBuilder:
         self._addStatisticalNuisances(allNus, yields, channel)
         self._addDataDrivenNuisances(allNus, yields, mass, channel, jetcat)
 
-        if self._shape: self._addShapeNuisances(allNus,effects, opts)
+        if self._shape:
+            self._addShapeNuisances(allNus,effects, opts)
 
         if 'nuisFlags' not in opts:
             raise RuntimeError('nuisFlags not found among the allNus options')
@@ -512,6 +526,7 @@ if __name__ == '__main__':
     parser.add_option('-I','--include',         dest='shapeFlags'        , help='include nuisances matching the expression',        action='callback', type='string', callback=incexc)
     parser.add_option('--path_dd'           ,   dest='path_dd'           , help='Data driven path'                 , default=None)
     parser.add_option('--path_shape_merged' ,   dest='path_shape_merged' , help='Destination directory for merged' , default=None)
+    parser.add_option('--floatN',               dest='floatN'            , help='float normalisation of particular processes, separate by space ', default=' ')
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
 
@@ -520,6 +535,7 @@ if __name__ == '__main__':
     print 'NuisFlags:  ',opt.nuisFlags
     print 'noWWddAbove:',opt.noWWddAbove
 
+    #self._dataTag   = opt.dataset
 
     # checks
     if not opt.variable or not opt.lumi:
@@ -558,10 +574,11 @@ if __name__ == '__main__':
     optsNuis = {}
     optsNuis['shapeFlags'] = opt.shapeFlags
     optsNuis['nuisFlags'] = opt.nuisFlags
+    optsNuis['floatN'] = opt.floatN
     lumistr = '{0:.2f}'.format(opt.lumi)
     shapeTmpl = os.path.join(mergedPath,'hww-'+lumistr+'fb.mH{mass}.{channel}_shape.root')
     #mask = ['Vg','DYLL','DYTT']
-    mask = ['Vg','DYLL']
+    mask = ['DYLL']
 
     builder = NuisanceMapBuilder( opt.path_dd, opt.noWWddAbove, opt.shape )
     builder.statShapeVeto = mask
@@ -580,7 +597,7 @@ if __name__ == '__main__':
 
             # reshuffle the order
             #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
-            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
+            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             

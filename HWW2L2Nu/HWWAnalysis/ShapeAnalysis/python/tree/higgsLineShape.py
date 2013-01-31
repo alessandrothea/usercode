@@ -53,7 +53,57 @@ class HiggsLineshapeWeightAdder(TreeCloner):
             1000 : 2.0193,
         },
     }
-
+    _interf = {
+        'ggH':  {
+            250  : 1.0,
+            300  : 1.0,
+            350  : 1.0,
+            400  : 0.9979665200,
+#            420  : 0.9973644000,
+#            440  : 1.0163872112,
+            450  : 1.0264436689,
+#            460  : 1.0365001265,
+#            480  : 1.0652680626,
+            500  : 1.0932697009,
+#            520  : 1.1217136719,
+#            540  : 1.1457909461,
+            550  : 1.1622655466,
+#            560  : 1.1787401470,
+#            580  : 1.2145965883,
+            600  : 1.2697380560,
+#            620  : 1.3130814036,
+#            640  : 1.3592299637,
+#            660  : 1.4082594910,
+#            680  : 1.4603888461,
+            700  : 1.5160605911,
+#            720  : 1.5751212640,
+#            740  : 1.6376827699,
+#            760  : 1.7039012956,
+#            780  : 1.7740012982,
+            800  : 1.8482963461,
+#            820  : 1.9258143934,
+#            840  : 2.0067943194,
+#            860  : 2.0921212543,
+#            880  : 2.1819660879,
+            900  : 2.2618724091,
+            1000 : 2.3417787303,
+        },
+        'qqH':  {
+            250  : 1.0, 
+            300  : 1.0,
+            350  : 1.0,
+            400  : 1.0,
+            450  : 1.0,
+            500  : 1.0,
+            550  : 1.0,
+            600  : 1.0,
+            700  : 1.0,
+            800  : 1.0,
+            900  : 1.0,
+            1000 : 1.0,
+        },
+        
+    }
 
     #---
     def __init__(self):
@@ -116,8 +166,9 @@ class HiggsLineshapeWeightAdder(TreeCloner):
         lib = cdll.LoadLibrary('libMMozerpowhegweight.so')
         
         cl = self.__class__
-        width = cl._widths[self._mass]
-        scale = cl._scales[self._process][self._mass] if self._scale else 1.
+        width  = cl._widths[self._mass]
+        scale  = cl._scales[self._process][self._mass] if self._scale else 1.
+        interf = cl._interf[self._process][self._mass] if self._interf else 1.
 
         # prepare the vars to feed to the function
         mh = c_double(self._mass)
@@ -140,7 +191,7 @@ class HiggsLineshapeWeightAdder(TreeCloner):
             lib.pwhg_cphto_reweight_(byref(mh),byref(gh),byref(mt),byref(BWflag),byref(m),byref(w))
 #             print mh,gh,mt,BWflag,m,w
 
-            weight.value = w.value*scale
+            weight.value = w.value*scale*interf
 
             otree.Fill()
 

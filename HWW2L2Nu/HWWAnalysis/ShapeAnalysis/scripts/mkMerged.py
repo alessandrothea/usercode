@@ -383,24 +383,56 @@ class ShapeMixer:
         # WJet shape syst
         #
         #   add the WJets shape systematics derived from miscalculated weights
-        #   down is mirrored
+        #   e and mu fake separated
         wJet = self.nominals['WJet']
-        if 'WJetFakeRate' in self.nominals: 
-            wJetEff = self.nominals.pop('WJetFakeRate')
-            wJetSystName = 'CMS_hww_WJet_FakeRate_jet_shape'
-            wJetShapeUp = wJetEff.Clone('histo_WJet_'+wJetSystName+'Up')
+        if 'WJetFakeRate-eUp' in self.nominals:
+            wJetSystName = 'CMS_hww_WJet_FakeRate_e_shape'
+            wJetEffeUp = self.nominals.pop('WJetFakeRate-eUp')
+            wJetShapeUp = wJetEffeUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
             wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
             self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
-            wJetShapeDown = wJet.Clone('histo_WJet_'+wJetSystName+'Down')
+        if 'WJetFakeRate-eDn' in self.nominals:
+            wJetSystName = 'CMS_hww_WJet_FakeRate_e_shape'
+            wJetEffeDown = self.nominals.pop('WJetFakeRate-eDn')
+            wJetShapeDown = wJetEffeDown.Clone('histo_WJet_'+wJetSystName+'Down')
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
-            wJetShapeDown.Scale(2)
-            wJetShapeDown.Add(wJetShapeUp,-1)
             wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
+        if 'WJetFakeRate-mUp' in self.nominals:
+            wJetSystName = 'CMS_hww_WJet_FakeRate_m_shape'
+            wJetEffmUp = self.nominals.pop('WJetFakeRate-mUp')
+            wJetShapeUp = wJetEffmUp.Clone('histo_WJet_'+wJetSystName+'Up')
+            wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
+            wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
+            self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
+        if 'WJetFakeRate-mDn' in self.nominals:
+            wJetSystName = 'CMS_hww_WJet_FakeRate_m_shape'
+            wJetEffmDown = self.nominals.pop('WJetFakeRate-mDn')
+            wJetShapeDown = wJetEffmDown.Clone('histo_WJet_'+wJetSystName+'Down')
+            wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
+            wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
+            self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
+
+        if 'WJetSS' in self.nominals:
+            wJetSystName = 'CMS_hww_WJet_ctrlSS_shape'
+            wJetSSUp = self.nominals.pop('WJetSS')
+            wJetShapeUp = wJetSSUp.Clone('histo_WJet_'+wJetSystName+'Up')
+            wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
+            wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
+            self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
+            
+            #copy the nominal
+            wJetShapeDown = wJet.Clone('histo_WJet_'+wJetSystName+'Down')
+            wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
+            wJetShapeDown.Scale(2.)
+            wJetShapeDown.Add(wJetSSUp, -1)
+            wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
+            self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
+            
         # -----------------------------------------------------------------
         # WJets shape syst
         #
@@ -484,6 +516,54 @@ class ShapeMixer:
                     self.templates[dyLLShapeDown.GetTitle()] = dyLLShapeDown
 
 
+        # -----------------------------------------------------------------
+        # VgS shape template
+        #
+        #   take the shape from the loose leptons selection
+        #   systematics is taken care of by eff_l
+        if 'VgS-template' in self.nominals:
+            vgsmc        = self.nominals.pop('VgS')
+            vgsShape     = self.nominals.pop('VgS-template')
+            
+            vgsnom = vgsShape.Clone('histo_VgS')
+            vgsnom.SetTitle('VgS')
+            if vgsnom.Integral() == 0.:
+                # no entries in the reference shape
+                #
+                if vgsmc.Integral() != 0.:
+                    self._logger.warn('VgS shape template has no entries, but the standard mc is not (%f,%d)', vgsmc.Integral(), vgsmc.GetEntries())
+                    self.nominals['VgS'] = vgsmc
+                else:
+                    self.nominals['VgS'] = vgsnom
+            else:
+                vgsnom.Scale( (vgsmc.Integral() if vgsmc.Integral() != 0. else 0.001)/vgsnom.Integral() )
+                self.nominals['VgS'] = vgsnom
+
+                
+        # -----------------------------------------------------------------
+        # Vg shape template
+        #
+        #   take the shape from the loose leptons selection
+        #   systematics is taken care of by eff_l
+        if 'Vg-template' in self.nominals:
+            vgmc        = self.nominals.pop('Vg')
+            vgShape     = self.nominals.pop('Vg-template')
+            
+            vgnom = vgShape.Clone('histo_Vg')
+            vgnom.SetTitle('Vg')
+            if vgnom.Integral() == 0.:
+                # no entries in the reference shape
+                #
+                if vgmc.Integral() != 0.:
+                    self._logger.warn('Vg shape template has no entries, but the standard mc is not (%f,%d)', vgmc.Integral(), vgmc.GetEntries())
+                    self.nominals['Vg'] = vgmc
+                else:
+                    self.nominals['Vg'] = vgnom
+            else:
+                vgnom.Scale( (vgmc.Integral() if vgmc.Integral() != 0. else 0.001)/vgnom.Integral() )
+                self.nominals['Vg'] = vgnom
+                
+                
         # -----------------------------------------------------------------
         # WW generator shapes
         #
@@ -570,6 +650,27 @@ class ShapeMixer:
             topCtrlDown.Add(topCtrlUp, -1)
             topCtrlDown.Scale(pytTop.Integral()/topCtrlDown.Integral())
             self.generators[topCtrlDown.GetTitle()] = topCtrlDown
+
+        ctrlTDD = {}
+        ctrlTDDs = ['Top-template',]
+        
+        if set(ctrlTDDs).issubset(self.nominals):
+            for t in ctrlTDDs:
+                ctrlTDD[t] = self.nominals[t]
+                del self.nominals[t]
+                
+            topDDUp = ctrlTDD['Top-template'].Clone('histo_Top_CMS_hww_Top_ddTTUp')
+            topDDUp.SetTitle('Top CMS_hww_Top_ddTT Up')
+            topDDUp.Scale(pytTop.Integral()/topDDUp.Integral())
+            self.generators[topDDUp.GetTitle()] = topDDUp
+            
+            #copy the nominal
+            topDDDown = pytTop.Clone('histo_Top_CMS_hww_Top_ddTTDown')
+            topDDDown.SetTitle('Top CMS_hww_Top_ddTT Down')
+            topDDDown.Scale(2.)
+            topDDDown.Add(topCtrlUp, -1)
+            topDDDown.Scale(pytTop.Integral()/topCtrlDown.Integral())
+            self.generators[topDDDown.GetTitle()] = topDDDown
 
         # -----------------------------------------------------------------
         # JHU Normaliartion
@@ -725,7 +826,7 @@ class ShapeMixer:
 
 #         sys.exit(0)
 
-    def scale2Nominals(self, list ):
+    def scale2Nominals(self, list):
         if not list:
             return
 
@@ -836,6 +937,8 @@ if __name__ == '__main__':
 # discontined
 #     parser.add_option('--scale2nominal', dest='scale2nom', help='Systematics to normalize to nominal ', default='')
 #     parser.add_option('--ninja', dest='ninja', help='Ninja', action='store_true', default=False )
+  
+    scale2nom = [ ('Vg', '*'), ('VgS','*') ]
 
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
@@ -921,6 +1024,8 @@ if __name__ == '__main__':
                 print '     - mixing histograms'
                 ss.mix(chan)
 
+                ss.scale2Nominals( scale2nom )
+                
                 ss.applyScaleFactors()
                 
                 m.add(ss)

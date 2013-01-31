@@ -52,10 +52,12 @@ ggH_jets = dict([(m, dict(zip(['f0','f1','f2','k1','k2'], vals))) for m,vals in 
 
 ggH_UEPS = dict([(m, dict(zip(['u0','u1','u2'], vals))) for m,vals in file2map(SYST_PATH+"ggH_UEPS.txt").items()])
 
-def getCommonSysts(mass,channel,jets,qqWWfromData,options):
+ggH_intf = dict([(m, dict(zip(['intf'], vals))) for m,vals in file2map(SYST_PATH+"ggH_interference.txt").items()])
+
+def getCommonSysts(mass,channel,jets,qqWWfromData,shape,options):
     nuisances = {} 
     #MCPROC = ['ggH', 'vbfH', 'DTT', 'ggWW', 'VV', 'Vg' ]; 
-    MCPROC = ['ggH', 'vbfH', 'wzttH', 'wH', 'zH', 'ttH', 'DYTT', 'VV', 'Vg' ]; 
+    MCPROC = ['ggH', 'vbfH', 'wzttH', 'wH', 'zH', 'ttH', 'DYTT', 'VV', 'VgS', 'Vg' ]; 
     if channel == 'elmu' or channel == 'muel': MCPROC+=['DYMM','DYEE']
     if channel == 'of': MCPROC += ['DYLL']
     if not qqWWfromData: MCPROC+=['WW','ggWW']
@@ -97,7 +99,7 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,options):
     nuisances['QCDscale_qqH']    = [ ['lnN'], { 'vbfH':vbfH_scaErrYR[mass] }]
     if mass in wzttH_scaErrYR: nuisances['QCDscale_VH']  = [ ['lnN'], { 'wzttH':wzttH_scaErrYR[mass] }]
     nuisances['QCDscale_VV']     = [ ['lnN'], { 'VV':1.03 }]
-    nuisances['QCDscale_Vg'] = [ ['lnN'], {'Vg':1.30}]
+    nuisances['QCDscale_VgS']    = [ ['lnN'], {'VgS':1.30 }]
 
     # -- Experimental ---------------------
     nuisances['QCDscale_ggH_ACCEPT'] = [ ['lnN'], {'ggH':1.02}]
@@ -109,10 +111,20 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,options):
     # --- new ---
     # not needed with line-shape reweighting
     #nuisances['theoryUncXS_HighMH'] = [ ['lnN'], { 'ggH':1+1.5*pow(float(mass)/1000,3), 'vbfH':1+1.5*pow(float(mass)/1000,3), 'wzttH':1+1.5*pow(float(mass)/1000,3) } ]
-    if options.WJsub:
-        nuisances['FakeRate'] = [ ['lnN'], { 'WJet': 1.0+options.WJsub } ] 
-    elif options.WJadd:
-        nuisances['FakeRate'] = [ ['lnN'], { 'WJet': 1.0+options.WJadd } ] 
+    # -- Interference term ----------------
+    if mass>=400:
+        nuisances['interf_ggH'] = [ ['lnN'], {'ggH':ggH_intf[mass]['intf']}]
+    else :
+        nuisances['interf_ggH'] = [ ['lnN'], {'ggH':1.00}]
+              
+    #if options.WJsub:
+    #    nuisances['CMS_FakeRate_e'] = [ ['lnN'], { 'WJet': 1.0+options.WJsub } ]
+    #    nuisances['CMS_FakeRate_m'] = [ ['lnN'], { 'WJet': 1.0+options.WJsub } ]
+    #elif options.WJadd:
+    #    nuisances['CMS_FakeRate_e'] = [ ['lnN'], { 'WJet': 1.0+options.WJadd } ]
+    #    nuisances['CMS_FakeRate_m'] = [ ['lnN'], { 'WJet': 1.0+options.WJadd } ]
+    addFakeRateSyst(nuisances, mass, channel, jets, shape)
+    
     if 'e' in channel:     nuisances['CMS_eff_l'] = [ ['lnN'], dict([(p,pow(1.02,channel.count('e'))) for p in MCPROC])]
     #elif channel == 'all': nuisances['CMS_eff_l'] = [ ['lnN'], dict([(p,1.02) for p in MCPROC])]
     #elif channel == 'sf':  nuisances['CMS_eff_l'] = [ ['lnN'], dict([(p,1.02) for p in MCPROC])]
@@ -133,6 +145,7 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,options):
     if channel == 'of':
        nuisances['CMS_norm_DYof'] = [ ['lnN'], { 'DYLL':2.0 } ]
     nuisances['CMS_norm_DYTT'] = [ ['lnN'], { 'DYTT':1.3 } ]
+    nuisances['CMS_norm_Vg']   = [ ['lnN'], { 'Vg':1.3 } ]
 
     return nuisances
 
@@ -144,5 +157,61 @@ def addFakeBackgroundSysts(nuisances, mass,channel,jets,errWW=0.2,errggWW=0.2,er
     if errWJ: nuisances['CMS_fake_%s'%channel[2]] = [ ['lnN'], { 'WJet':(1+errWJ) } ] 
     if errDY and channel in ['mumu', 'elel']:
         proc = "DY{0}{0}".format(channel[0].upper())
-        nuisances['CMS_norm_DY_%s' % channel[0]]  = [ ['lnN'], { proc:(1+errDY) } ] 
+        nuisances['CMS_norm_DY_%s' % channel[0]]  = [ ['lnN'], { proc:(1+errDY) } ]
 
+def addFakeRateSyst(nuisances, mass, channel, jets, shape):
+    # some hard-coded numbers for now
+    # define later in separate text + make it mH dependent for cut-based
+    # do an asymmetric error, if possible...
+    fake_m_up = 1.0
+    fake_m_dn = 1.0
+    fake_e_up = 1.0
+    fake_e_dn = 1.0
+    
+    if (shape):
+        if mass <= 300: 
+            if jets == 0:
+                fake_m_up = 0.75
+                fake_m_dn = 1.18
+                fake_e_up = 0.86
+                fake_e_dn = 1.07
+            elif jets == 1:
+                fake_m_up = 0.78
+                fake_m_dn = 1.13
+                fake_e_up = 0.84
+                fake_e_dn = 1.04
+        else:
+            if jets == 0:
+                fake_m_up = 0.81
+                fake_m_dn = 1.12
+                fake_e_up = 0.73
+                fake_e_dn = 1.02
+            elif jets == 1:
+                fake_m_up = 0.83
+                fake_m_dn = 1.10
+                fake_e_up = 0.76
+                fake_e_dn = 1.03
+    else:
+        if jets == 0:
+            fake_m_up = 0.69
+            fake_m_dn = 1.23
+            fake_e_up = 0.93
+            fake_e_dn = 1.10
+        elif jets == 1:
+            fake_m_up = 0.71
+            fake_m_dn = 1.18
+            fake_e_up = 0.91
+            fake_e_dn = 1.06
+        
+    nuisances['CMS_hww_FakeRate']   = [ ['lnN'], { 'WJet': 1.20 } ] # from closure test
+    nuisances['CMS_hww_FakeRate_m'] = [ ['lnN'], { 'WJet': fake_m_up } ] # from jet ET variation
+    nuisances['CMS_hww_FakeRate_e'] = [ ['lnN'], { 'WJet': fake_e_up } ] # from jet ET variation
+
+
+def floatNorm(process):
+    nuisances = {}
+    if process in 'WW':
+        nuisances['CMS_norm_'+process] = [ ['lnU'], { 'WW':2.00, 'ggWW':2.00 } ]
+    else :
+        nuisances['CMS_norm_'+process] = [ ['lnU'], { process:2.00 } ]
+    return nuisances

@@ -62,6 +62,9 @@ class wwcutsB:
 
 class wwcuts:
     wwcommon = [
+        'pt1>20',
+        'pt2>10',
+        '(ch1*ch2)<0.5', # don't use 0
         'trigger==1.',
         'pfmet>20.',
         'mll>12',                       # ema7
@@ -69,15 +72,32 @@ class wwcuts:
         'mpmet>20.',                    # ema9
         'bveto_mu==1',
         'nextra==0',
-        '(bveto_ip==1 && (nbjettche==0 || njet>3)  )',
+        '(bveto_ip==1 && nbjettche==0)',
         'ptll>%f'%ptllCut,                     # ema 14
+    ]
+
+    wwcommon2011 = [
+        'pt1>20',
+        'pt2>10',
+        '(ch1*ch2)<0.5', # don't use 0
+        'trigger==1.',
+        'pfmet>20.',
+        'mll>(12+8*sameflav)',
+        '(zveto==1||!sameflav)',
+        'mpmet>(20+(17+nvtx/2.)*sameflav)',
+        '(dphiveto || ! sameflav)',
+        'bveto_mu==1',
+        'nextra==0',
+        '(bveto_ip && nbjettche==0)',
+        '(pt2 > 15||!sameflav)',
+        'ptll>%f'%ptllCut,
     ]
 
     # minimum for skimming
     wwmin = [
         'pt1>20',
         'pt2>10',
-        '(ch1*ch2)<0',
+#        '(ch1*ch2)<0.5',
         'trigger==1',
         'pfmet>20',
         'mll>12',
@@ -170,6 +190,7 @@ class vhcuts:
 
 
 masses = [110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 170, 180, 190, 200, 250, 300, 350, 400, 450, 500, 550, 600]
+#masses = [110, 115, 120, 125, 130, 135, 140, 150, 155, 160, 170, 180, 190, 200, 250, 300, 350, 400, 450, 500, 550, 600]  
 
 categoryCuts = {}
 categoryCuts['0j'] = wwcuts.zerojet
@@ -274,20 +295,26 @@ def massSelections(mass):
     masscuts = dict([(cut,massDependantCutsbyVar[cut][mass]) for cut in massDependantCutsbyVar])
 
     sel = {}
-    sel['ww-min']       = ' && '.join(wwcuts.wwmin)
-    sel['ww-common']    = ' && '.join(wwcuts.wwcommon)
+    sel['ww-min']        = ' && '.join(wwcuts.wwmin)
+    sel['ww-common']     = ' && '.join(wwcuts.wwcommon)
+    sel['wwbtag-common'] = sel['ww-common'].replace('bveto_mu==1','bveto_mu>-1').replace('(bveto_ip==1 && nbjettche==0)','(bveto_ip>-1 && nbjettche>-1)')
+    sel['ww2011-common'] = ' && '.join(wwcuts.wwcommon2011)
+    sel['ww2011btag-common'] = sel['ww2011-common'].replace('bveto_mu==1','bveto_mu>-1').replace('(bveto_ip==1 && nbjettche==0)','(bveto_ip>-1 && nbjettche>-1)')
 
     sel['vbf-shape-2d-himass']    = ' && '.join(vbfcuts.vbfhishape)
     sel['vbf-shape-2d-lomass']    = ' && '.join(vbfcuts.vbfloshape)
     sel['vbf-shape-2d']           = sel['vbf-shape-2d-lomass'] if mass <= 250 else sel['vbf-shape-2d-himass'] 
     
     sel['shape-lomass'] = 'mth>%f && mth<%f && mll<%f '%(mthmin_2dlomass,mthmax_2dlomass,mllmax_2dlomass)
-    sel['shape-himass'] = 'mth>80 && mth<600 && mll<600 && pt1>50'
+    sel['shape-himass'] = 'mth>80 && mth<380 && mll<450 && pt1>50'
     
     sel['vbf-shape']    = ' && '.join(vbfcuts.vbfshape)
     sel['vbf-level']    = ' && '.join(vbfcuts.vbfcut)
 
     sel['ww-level']     = sel['ww-common']+'&& ptll>45'
+    sel['wwbtag-level'] = sel['wwbtag-common']+'&& ptll>45'
+    sel['ww2011-level'] = sel['ww2011-common']+'&& ptll>45'
+    sel['ww2011btag-level'] = sel['ww2011btag-common']+'&& ptll>45'
     sel['bdt-specific'] = 'mll < {0} && (mth > {1:.0f} && mth < {2:.0f})'.format(masscuts['mllmax_bdt'], mthmin_bdt, int(mass))
 
     hwwlvl = {}
@@ -298,10 +325,19 @@ def massSelections(mass):
     hwwlvl['mth']    = '(mth > {0:.1f} && mth < {1:.1f})'.format(masscuts['mtmin'], masscuts['mtmax'])
 
     sel['ww-selection']           = sel['ww-level']
+    sel['wwbtag-selection']       = sel['wwbtag-level']
+    sel['ww2011-selection']       = sel['ww2011-level']
+    sel['ww2011btag-selection']   = sel['ww2011btag-level']
     sel['wwr-selection']          = sel['ww-common']
+    sel['wwrbtag-selection']      = sel['wwbtag-common']
+    sel['wwr2011-selection']      = sel['ww2011-common']
+    sel['wwr2011btag-selection']  = sel['ww2011btag-common']
     sel['wwtight-selection']      = sel['ww-level']+' && mth > %f'%mthmin_2dlomass
     sel['wwloose-selection']      = sel['ww-level'].replace('ptll>%f'%ptllCut,'ptll>20')+' && mth > %f'%mthmin_2dlomass
     sel['hww-selection']          = ' && '.join([sel['ww-level']]+[cut for cut     in hwwlvl.itervalues()])
+    sel['hwwbtag-selection']      = ' && '.join([sel['wwbtag-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
+    sel['hww2011-selection']      = ' && '.join([sel['ww2011-level']]+[cut for cut     in hwwlvl.itervalues()])
+    sel['hww2011btag-selection']  = ' && '.join([sel['ww2011btag-level']]+[cut for var,cut in hwwlvl.iteritems() if (var != 'mth' and var != 'mll' and var != 'pt1' and var != 'pt2')])
     sel['mll-selection']          = ' && '.join([sel['ww-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mll'])
     sel['mth-selection']          = ' && '.join([sel['ww-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
     sel['dphi-selection']         = ' && '.join([sel['ww-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'dphill'])
@@ -318,9 +354,14 @@ def massSelections(mass):
     #sel['vbf-selection']          = sel['vbf-selection-temp'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, int(mass))
 
 
-
-    sel['shape-selection']        = sel['ww-common']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common']+' && '+sel['shape-himass']
-
+    sel['shape-selection']        = sel['ww-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
+    sel['shapebtag-selection']    = sel['wwbtag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['wwbtag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
+    sel['shape2011-selection']     = sel['ww2011-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww2011-common'].replace("zveto==1","zveto>-1")+' && '+sel['shape-himass']
+    sel['shape2011btag-selection'] = sel['ww2011btag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww2011btag-common'].replace("zveto==1","zveto>-1")+' && '+sel['shape-himass']
+        
+    #sel['shape-selection']        = sel['ww-common']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common']+' && '+sel['shape-himass']
+    #sel['shape2011-selection']     = sel['ww2011-common']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww2011-common']+' && '+sel['shape-himass']
+   
     sel['vbf-shape-selection']    = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
 
     # vh #
