@@ -190,14 +190,18 @@ void PlotLimit(string  limitFiles   = "inputs/ana_ICHEP_limits_nj_shape7teV_cut8
   if (ratio == 1) ExpBand95->GetYaxis()->SetTitle("ratio to expected");
   if (ratio == 2) ExpBand95->GetYaxis()->SetTitle("(observed - expected) / 1#sigma");
 
+  ExpBand95->GetXaxis()->SetLabelOffset(500.0);
+  //  if (canvas->GetLogy()) ExpBand95->GetXaxis()->SetLabelOffset(50.0);
   ExpBand95->GetXaxis()->SetTitleOffset(1.2);
   ExpBand95->GetYaxis()->SetTitleOffset(1.0);
   ExpBand95->GetYaxis()->SetNdivisions(505);
 
   ExpBand68->SetFillColor(211); 
+  ExpBand68->SetFillStyle(3001);
   ExpBand68->SetLineColor( 10);
 
   ExpBand95->SetFillColor(90); 
+  ExpBand95->SetFillStyle(3001);
   ExpBand95->SetLineColor(10);
 
   ExpLim->SetLineStyle(2);
