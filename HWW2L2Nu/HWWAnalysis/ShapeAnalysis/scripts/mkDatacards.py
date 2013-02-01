@@ -34,11 +34,11 @@ class ShapeDatacardWriter:
 
     '''Dump a crappy datacard to file'''
     
-    def __init__(self, mass, bin, shape=True):
+    def __init__(self, mass, bin, shape=True, dataTag='2012A'):
         self._mass = mass
         self._bin = bin
         self._shape = shape
-        self._dataTag         = '2012A'
+        self._dataTag = dataTag
 
     def __del__(self):
         pass
@@ -518,6 +518,7 @@ if __name__ == '__main__':
     parser.add_option('-p', '--prefix'  , dest='prefix'      , help='Datacard directory prefix'           , default=None)
     parser.add_option('--cutbased'      , dest='shape'       , help='Make cutbased datacards (no shapes)' , default=True , action='store_false' )
     parser.add_option('--no_wwdd_above' , dest='noWWddAbove' , help='No WW dd above this mass'            , default=None   , type='int'     )
+    parser.add_option('--dataset'       , dest='dataset'     , help='Dataset to process'                  , default=None)
     parser.set_defaults(shapeFlags=[])
     parser.set_defaults(nuisFlags=[])
     parser.add_option('--Xsh','--excludeShape', dest='shapeFlags'        , help='exclude shapes nuisances matching the expression', action='callback', type='string', callback=incexc)
@@ -534,8 +535,7 @@ if __name__ == '__main__':
     print 'ShapeFlags: ',opt.shapeFlags
     print 'NuisFlags:  ',opt.nuisFlags
     print 'noWWddAbove:',opt.noWWddAbove
-
-    #self._dataTag   = opt.dataset
+    print 'dataset:    ',opt.dataset
 
     # checks
     if not opt.variable or not opt.lumi:
@@ -591,7 +591,7 @@ if __name__ == '__main__':
             loader = ShapeLoader(shapeTmpl.format(mass = mass, channel=ch) ) 
             loader.load()
 
-            writer = ShapeDatacardWriter( mass, ch, opt.shape )
+            writer = ShapeDatacardWriter( mass, ch, opt.shape, opt.dataset )
             print '   + loading yields'
             yields = loader.yields()
 
