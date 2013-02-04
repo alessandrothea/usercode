@@ -291,6 +291,7 @@ class ShapeFactory:
                     for path in activeInputPaths:
                         dirmap[path]=(self._paths[path]+'/'+inputDir).format( **pars )
 
+                    #print 'Input dir:',dirmap.values()
                     inputs = self._connectInputs(var,samples, dirmap, mask)
                     # ---
 
@@ -839,7 +840,7 @@ if __name__ == '__main__':
 
             processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT']
             systMasks = dict([(s,processMask[:]) for s in systematics])
-            systDirs  = dict([(s,systInputDir if s not in systByWeight else 'nominals/' ) for s in systematics])
+            systDirs  = dict([(s,systInputDir if s not in systByWeight else 'templates/' ) for s in systematics])
 
             print systDirs
 

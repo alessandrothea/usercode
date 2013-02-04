@@ -202,10 +202,10 @@ def addFakeRateSyst(nuisances, mass, channel, jets, shape):
             fake_m_dn = 1.18
             fake_e_up = 0.91
             fake_e_dn = 1.06
-        
+
     nuisances['CMS_hww_FakeRate']   = [ ['lnN'], { 'WJet': 1.20 } ] # from closure test
-    nuisances['CMS_hww_FakeRate_m'] = [ ['lnN'], { 'WJet': fake_m_up } ] # from jet ET variation
-    nuisances['CMS_hww_FakeRate_e'] = [ ['lnN'], { 'WJet': fake_e_up } ] # from jet ET variation
+    nuisances['CMS_hww_FakeRate_m'] = [ ['lnN'], { 'WJet': (fake_m_up,fake_m_dn) } ] # from jet ET variation
+    nuisances['CMS_hww_FakeRate_e'] = [ ['lnN'], { 'WJet': (fake_e_up,fake_e_dn) } ] # from jet ET variation
 
 
 def floatNorm(process):

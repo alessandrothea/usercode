@@ -92,13 +92,14 @@ class ShapeDatacardWriter:
         for name in nuisances:
             (pdf,effect) = nuisances[name]
             if len(pdf) == 1: card.write('{0:<31} {1:<7}         '.format(name,pdf[0]))
-            else:             card.write('{0:<31} {1:<7} {2:<7} '.format(name,pdf[0],pdf[1]))
+            else:             card.write('{0:<31} {1:<7} {2:<7}  '.format(name,pdf[0],pdf[1]))
             for i,p,y in keyline:
                 if p in effect:
                     #if 'FakeRate' in name:
-                    if pdf[0]=='gmN':   card.write('%-10.5f' % effect[p])
-                    elif (pdf[0]=='shape' or pdf[0]=='shapeN2'): card.write('%-10d' % effect[p])
-                    else:               card.write('%-10.3f' % effect[p] )
+                    if   (pdf[0]=='gmN'):                        card.write('%-10.5f'      % effect[p])
+                    elif (pdf[0]=='shape' or pdf[0]=='shapeN2'): card.write('%-10d'        % effect[p])
+                    elif (isinstance(effect[p], tuple)):         card.write('%.2f/%-5.2f' % (effect[p][0],effect[p][1]))
+                    else:                                        card.write('%-10.3f'      % effect[p])
                 else: card.write('-'.ljust(coldef))
             card.write('\n')
 

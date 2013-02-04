@@ -17,7 +17,7 @@ backgrounds = {
                                  'nominals/latino_086_ZgammaToLLuG.root',
                                 ],
     'Vg-template'             : ['vgTemplate/latino_085_WgammaToLNuG.root',
-                                 'nominals/latino_086_ZgammaToLLuG.root',
+                                 'vgTemplate/latino_086_ZgammaToLLuG.root',
                                 ],
     'WJet'                    : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
                                  'wjets/latino_RunB_4404pbinv_LooseLoose.root',
@@ -487,11 +487,11 @@ mcsets = {
         #signals
         'jhu','jhu_ALT','jhu_NORM','jhu_NLO',
         # bkgs
-        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl',
+        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl','WJetSS',
         # systematics
         'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
         # templates
-        'VgS-template', 'Vg-template',
+        'VgS-template', 'Vg-template','Top-template',
         # 0j1j specific
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
@@ -500,11 +500,11 @@ mcsets = {
         #signals
         'jhu','jhu_ALT','jhu_NORM','jhu_NLO','vbfH','vbfH_ALT','wzttH','wzttH_ALT',
         # bkgs
-        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl',
+        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl','WJetSS',
         # systematics
         'WJetFakeRate-eUp', 'WJetFakeRate-eDn', 'WJetFakeRate-mUp', 'WJetFakeRate-mDn',
         # templates
-        'VgS-template','Vg-template',
+        'VgS-template','Vg-template','Top-template',
         # 0j1j specific
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
