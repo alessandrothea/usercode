@@ -17,6 +17,7 @@ from tree.susyVar2B2LMET    import SusyVar2B2LMETFiller
 from tree.dymvaVar          import DymvaVarFiller
 from tree.xyShift           import XYShiftVarFiller
 from tree.higgsLineShape    import HiggsLineshapeWeightAdder
+from tree.jetHiggsVar       import JetHiggsVarFiller
 
 
 
@@ -43,5 +44,6 @@ if __name__ == '__main__':
     modules['dymvaVar']        = DymvaVarFiller()
     modules['xyShift']         = XYShiftVarFiller()
     modules['higgsLS']         = HiggsLineshapeWeightAdder()
+    modules['jetHiggsVar']     = JetHiggsVarFiller()
 
     gardener_cli( modules )
