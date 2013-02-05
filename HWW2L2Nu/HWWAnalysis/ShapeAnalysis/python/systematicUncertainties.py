@@ -210,8 +210,8 @@ def addFakeRateSyst(nuisances, mass, channel, jets, shape):
 
 def floatNorm(process):
     nuisances = {}
-    if process in 'WW':
+    if process in 'WW' and process != '':
         nuisances['CMS_norm_'+process] = [ ['lnU'], { 'WW':2.00, 'ggWW':2.00 } ]
-    else :
+    elif process != '':
         nuisances['CMS_norm_'+process] = [ ['lnU'], { process:2.00 } ]
     return nuisances
