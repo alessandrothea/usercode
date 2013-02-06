@@ -64,7 +64,7 @@ class wwcuts:
     wwcommon = [
         'pt1>20',
         'pt2>10',
-        '(ch1*ch2)<0.5', # don't use 0
+        '(ch1*ch2)<0', # use 0.5 to get charge symmetric template  
         'trigger==1.',
         'pfmet>20.',
         'mll>12',                       # ema7
@@ -79,7 +79,7 @@ class wwcuts:
     wwcommon2011 = [
         'pt1>20',
         'pt2>10',
-        '(ch1*ch2)<0.5', # don't use 0
+        '(ch1*ch2)<0', # use 0.5 to get charge symmetric template  
         'trigger==1.',
         'pfmet>20.',
         'mll>(12+8*sameflav)',
