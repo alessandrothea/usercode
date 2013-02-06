@@ -85,6 +85,8 @@ backgrounds = {
     'WWnloDown'               : ['nominals/latino_003_WWto2L2NuMCatNLODown.root'],
     'Top-template'            : ['topTemplate/latino_000_WWJets2LMad.root',
                                  'topTemplate/latino_001_GluGluToWWTo4L.root',
+                                 'topTemplate/latino_036_DY10toLLMad.root',
+                                 'topTemplate/latino_037_DY50toLLMad.root',
                                  'topTemplate/latino_074_WZJetsMad.root',
                                  'topTemplate/latino_075_ZZJetsMad.root',
                                  'topTemplate/latino_078_WZTo2L2QMad.root',
@@ -491,7 +493,7 @@ mcsets = {
         # systematics
         'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
         # templates
-        'VgS-template', 'Vg-template','Top-template',
+        'VgS-template', 'Vg-template',
         # 0j1j specific
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
@@ -504,7 +506,7 @@ mcsets = {
         # systematics
         'WJetFakeRate-eUp', 'WJetFakeRate-eDn', 'WJetFakeRate-mUp', 'WJetFakeRate-mDn',
         # templates
-        'VgS-template','Vg-template','Top-template',
+        'VgS-template','Vg-template',
         # 0j1j specific
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
@@ -517,7 +519,7 @@ mcsets = {
         # systematics
         'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
         # templates
-        'VgS-template','Vg-template','Top-template',
+        'VgS-template','Vg-template',
         # 0j1j specific
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
@@ -620,7 +622,8 @@ def samples(mass, datatag='Data2012', sigtag='SM', mctag='all'):
         selectedData['Data'] = data[datatag]
     elif 'SI' in datatag:
         # add the signal samples of the given mass
-        m = re.match('SI(\d+)',datatag)
+        m = re.match('SI(\d+)-',datatag)
+        print 'SI with mH =', int(m.group(1))
         if not m:
             raise ValueError('Signal injection must have the format SImmm where mmm is the mass')
         simass = int(m.group(1))
