@@ -568,109 +568,111 @@ class ShapeMixer:
         # WW generator shapes
         #
         mcAtNLO = {} 
-        madWW = self.nominals['WW']
-        wwNLOs = ['WWnlo','WWnloUp','WWnloDown',]
+        if 'WW' in self.nominals:
+            madWW = self.nominals['WW']
+            wwNLOs = ['WWnlo','WWnloUp','WWnloDown',]
 
-        if set(wwNLOs).issubset(self.nominals):
-            for t in wwNLOs:
-                mcAtNLO[t] = self.nominals[t]
-                del self.nominals[t]
+            if set(wwNLOs).issubset(self.nominals):
+                for t in wwNLOs:
+                    mcAtNLO[t] = self.nominals[t]
+                    del self.nominals[t]
 
-            wwGenUp = mcAtNLO['WWnlo'].Clone('histo_WW_Gen_nlo_WWUp')
-            wwGenUp.SetTitle('WW Gen_nlo_WW Up')
-            wwGenUp.Scale(madWW.Integral()/wwGenUp.Integral())
-            self.generators[wwGenUp.GetTitle()] = wwGenUp
+                wwGenUp = mcAtNLO['WWnlo'].Clone('histo_WW_Gen_nlo_WWUp')
+                wwGenUp.SetTitle('WW Gen_nlo_WW Up')
+                wwGenUp.Scale(madWW.Integral()/wwGenUp.Integral())
+                self.generators[wwGenUp.GetTitle()] = wwGenUp
 
-            #copy the nominal
-            wwGenDown = madWW.Clone('histo_WW_Gen_nlo_WWDown')
-            wwGenDown.SetTitle('WW Gen_nlo_WW Down')
-            wwGenDown.Scale(2.)
-            wwGenDown.Add(wwGenUp, -1)
-            wwGenDown.Scale(madWW.Integral()/wwGenDown.Integral())
-            self.generators[wwGenDown.GetTitle()] = wwGenDown
+                #copy the nominal
+                wwGenDown = madWW.Clone('histo_WW_Gen_nlo_WWDown')
+                wwGenDown.SetTitle('WW Gen_nlo_WW Down')
+                wwGenDown.Scale(2.)
+                wwGenDown.Add(wwGenUp, -1)
+                wwGenDown.Scale(madWW.Integral()/wwGenDown.Integral())
+                self.generators[wwGenDown.GetTitle()] = wwGenDown
 
 
-            # MC@NLO scale
-            wwScaleUp = mcAtNLO['WWnloUp'].Clone('histo_WW_Gen_scale_WWUp')
-            wwScaleUp.SetTitle('WW Gen_scale_WW Up')
-            wwScaleUp.Divide(mcAtNLO['WWnlo'])
-            wwScaleUp.Multiply(madWW)
-            wwScaleUp.Scale(madWW.Integral()/wwScaleUp.Integral())
-            self.generators[wwScaleUp.GetTitle()] = wwScaleUp
+                # MC@NLO scale
+                wwScaleUp = mcAtNLO['WWnloUp'].Clone('histo_WW_Gen_scale_WWUp')
+                wwScaleUp.SetTitle('WW Gen_scale_WW Up')
+                wwScaleUp.Divide(mcAtNLO['WWnlo'])
+                wwScaleUp.Multiply(madWW)
+                wwScaleUp.Scale(madWW.Integral()/wwScaleUp.Integral())
+                self.generators[wwScaleUp.GetTitle()] = wwScaleUp
 
-            wwScaleDown = mcAtNLO['WWnloDown'].Clone('histo_WW_Gen_scale_WWDown')
-            wwScaleDown.SetTitle('WW Gen_scale_WW Down')
-            wwScaleDown.Divide(mcAtNLO['WWnlo'])
-            wwScaleDown.Multiply(madWW)
-            wwScaleDown.Scale(madWW.Integral()/wwScaleDown.Integral())
-            self.generators[wwScaleDown.GetTitle()] = wwScaleDown
+                wwScaleDown = mcAtNLO['WWnloDown'].Clone('histo_WW_Gen_scale_WWDown')
+                wwScaleDown.SetTitle('WW Gen_scale_WW Down')
+                wwScaleDown.Divide(mcAtNLO['WWnlo'])
+                wwScaleDown.Multiply(madWW)
+                wwScaleDown.Scale(madWW.Integral()/wwScaleDown.Integral())
+                self.generators[wwScaleDown.GetTitle()] = wwScaleDown
 
         # -----------------------------------------------------------------
         # Top shapes
         #
         fracTW = {} 
-        pytTop = self.nominals['Top']
-        fracTWs = ['TopTW',]
+        if 'Top' in self.nominals:
+            pytTop = self.nominals['Top']
+            fracTWs = ['TopTW',]
 
-        if set(fracTWs).issubset(self.nominals):
-            for t in fracTWs:
-                fracTW[t] = self.nominals[t]
-                del self.nominals[t]
+            if set(fracTWs).issubset(self.nominals):
+                for t in fracTWs:
+                    fracTW[t] = self.nominals[t]
+                    del self.nominals[t]
 
-            topGenUp = fracTW['TopTW'].Clone('histo_Top_CMS_hww_Top_fTWUp')
-            topGenUp.SetTitle('Top CMS_hww_Top_fTW Up')
-            topGenUp.Scale(pytTop.Integral()/topGenUp.Integral())
-            self.generators[topGenUp.GetTitle()] = topGenUp
+                topGenUp = fracTW['TopTW'].Clone('histo_Top_CMS_hww_Top_fTWUp')
+                topGenUp.SetTitle('Top CMS_hww_Top_fTW Up')
+                topGenUp.Scale(pytTop.Integral()/topGenUp.Integral())
+                self.generators[topGenUp.GetTitle()] = topGenUp
 
-            #copy the nominal
-            topGenDown = pytTop.Clone('histo_Top_CMS_hww_Top_fTWDown')
-            topGenDown.SetTitle('Top CMS_hww_Top_fTW Down')
-            topGenDown.Scale(2.)
-            topGenDown.Add(topGenUp, -1)
-            topGenDown.Scale(pytTop.Integral()/topGenDown.Integral())
-            self.generators[topGenDown.GetTitle()] = topGenDown
+                #copy the nominal
+                topGenDown = pytTop.Clone('histo_Top_CMS_hww_Top_fTWDown')
+                topGenDown.SetTitle('Top CMS_hww_Top_fTW Down')
+                topGenDown.Scale(2.)
+                topGenDown.Add(topGenUp, -1)
+                topGenDown.Scale(pytTop.Integral()/topGenDown.Integral())
+                self.generators[topGenDown.GetTitle()] = topGenDown
 
-        ctrlTT = {} 
-        ctrlTTs = ['TopCtrl',]
+            ctrlTT = {} 
+            ctrlTTs = ['TopCtrl',]
 
-        if set(ctrlTTs).issubset(self.nominals):
-            for t in ctrlTTs:
-                ctrlTT[t] = self.nominals[t]
-                del self.nominals[t]
+            if set(ctrlTTs).issubset(self.nominals):
+                for t in ctrlTTs:
+                    ctrlTT[t] = self.nominals[t]
+                    del self.nominals[t]
 
-            topCtrlUp = ctrlTT['TopCtrl'].Clone('histo_Top_CMS_hww_Top_ctrlTTUp')
-            topCtrlUp.SetTitle('Top CMS_hww_Top_ctrlTT Up')
-            topCtrlUp.Scale(pytTop.Integral()/topCtrlUp.Integral())
-            self.generators[topCtrlUp.GetTitle()] = topCtrlUp
+                topCtrlUp = ctrlTT['TopCtrl'].Clone('histo_Top_CMS_hww_Top_ctrlTTUp')
+                topCtrlUp.SetTitle('Top CMS_hww_Top_ctrlTT Up')
+                topCtrlUp.Scale(pytTop.Integral()/topCtrlUp.Integral())
+                self.generators[topCtrlUp.GetTitle()] = topCtrlUp
 
-            #copy the nominal
-            topCtrlDown = pytTop.Clone('histo_Top_CMS_hww_Top_ctrlTTDown')
-            topCtrlDown.SetTitle('Top CMS_hww_Top_ctrlTT Down')
-            topCtrlDown.Scale(2.)
-            topCtrlDown.Add(topCtrlUp, -1)
-            topCtrlDown.Scale(pytTop.Integral()/topCtrlDown.Integral())
-            self.generators[topCtrlDown.GetTitle()] = topCtrlDown
+                #copy the nominal
+                topCtrlDown = pytTop.Clone('histo_Top_CMS_hww_Top_ctrlTTDown')
+                topCtrlDown.SetTitle('Top CMS_hww_Top_ctrlTT Down')
+                topCtrlDown.Scale(2.)
+                topCtrlDown.Add(topCtrlUp, -1)
+                topCtrlDown.Scale(pytTop.Integral()/topCtrlDown.Integral())
+                self.generators[topCtrlDown.GetTitle()] = topCtrlDown
 
-        ctrlTDD = {}
-        ctrlTDDs = ['Top-template',]
+            ctrlTDD = {}
+            ctrlTDDs = ['Top-template',]
         
-        if set(ctrlTDDs).issubset(self.nominals):
-            for t in ctrlTDDs:
-                ctrlTDD[t] = self.nominals[t]
-                del self.nominals[t]
+            if set(ctrlTDDs).issubset(self.nominals):
+                for t in ctrlTDDs:
+                    ctrlTDD[t] = self.nominals[t]
+                    del self.nominals[t]
+                    
+                topDDUp = ctrlTDD['Top-template'].Clone('histo_Top_CMS_hww_Top_ddTTUp')
+                topDDUp.SetTitle('Top CMS_hww_Top_ddTT Up')
+                topDDUp.Scale(pytTop.Integral()/topDDUp.Integral())
+                self.generators[topDDUp.GetTitle()] = topDDUp
                 
-            topDDUp = ctrlTDD['Top-template'].Clone('histo_Top_CMS_hww_Top_ddTTUp')
-            topDDUp.SetTitle('Top CMS_hww_Top_ddTT Up')
-            topDDUp.Scale(pytTop.Integral()/topDDUp.Integral())
-            self.generators[topDDUp.GetTitle()] = topDDUp
-            
-            #copy the nominal
-            topDDDown = pytTop.Clone('histo_Top_CMS_hww_Top_ddTTDown')
-            topDDDown.SetTitle('Top CMS_hww_Top_ddTT Down')
-            topDDDown.Scale(2.)
-            topDDDown.Add(topCtrlUp, -1)
-            topDDDown.Scale(pytTop.Integral()/topCtrlDown.Integral())
-            self.generators[topDDDown.GetTitle()] = topDDDown
+                #copy the nominal
+                topDDDown = pytTop.Clone('histo_Top_CMS_hww_Top_ddTTDown')
+                topDDDown.SetTitle('Top CMS_hww_Top_ddTT Down')
+                topDDDown.Scale(2.)
+                topDDDown.Add(topCtrlUp, -1)
+                topDDDown.Scale(pytTop.Integral()/topCtrlDown.Integral())
+                self.generators[topDDDown.GetTitle()] = topDDDown
 
         # -----------------------------------------------------------------
         # JHU Normaliartion

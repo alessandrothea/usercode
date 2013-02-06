@@ -201,12 +201,13 @@ class ShapeLoader:
 class NuisanceMapBuilder:
     _logger = logging.getLogger('NuisanceMapBuilder')
 
-    def __init__(self, ddPath, noWWddAbove, shape=True):
+    def __init__(self, ddPath, noWWddAbove, shape=True, isssactive=False):
         self._common       = OrderedDict()
         self._0jetOnly     = OrderedDict()
         self._1jetOnly     = OrderedDict()
         self._ddEstimates  = OrderedDict()
         self._shape        = shape
+        self._isssactive   = isssactive
         # to options
         self.statShapeVeto = []
 
@@ -218,7 +219,7 @@ class NuisanceMapBuilder:
  
     def _build(self):
         # common 0/1 jet systematics
-        pureMC = [ 'VgS', 'Vg', 'VV', 'ggH', 'vbfH', 'wzttH'] 
+        pureMC = [ 'VgS', 'Vg', 'VV', 'ggH', 'vbfH', 'wzttH', 'Other'] 
         dummy = {}
         dummy['CMS_fake_e']    = (1.50, ['WJet']) # take the average of ee/me 
 #         dummy['CMS_fake_m']    = (1.42, ['WJet']) # take the average of mm/em
@@ -252,6 +253,7 @@ class NuisanceMapBuilder:
         for k,v in dummy.iteritems():
             self._0jetOnly[k] = (['lnN'], dict([( process, v[0][0]) for process in v[1] ]) )
             self._1jetOnly[k] = (['lnN'], dict([( process, v[0][1]) for process in v[1] ]) )
+
 
         # 0 jets only
         dummy = {}
@@ -446,7 +448,7 @@ class NuisanceMapBuilder:
            optMatt.VH = 0
 
         if jetcat not in ['0j','1j','2j']: raise ValueError('Unsupported jet category found: %s')
-        CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, self._shape, optMatt)
+        CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, self._shape, optMatt, self._isssactive)
         if self._shape:
             # float WW+ggWW background normalisation float together
             for p in opts['floatN'].split(' '):
@@ -458,6 +460,7 @@ class NuisanceMapBuilder:
         for k in sorted(CutBased):
             common[k] = CutBased[k]
         allNus.update( common )
+
 
         self._addStatisticalNuisances(allNus, yields, channel)
         self._addDataDrivenNuisances(allNus, yields, mass, channel, jetcat)
@@ -529,6 +532,7 @@ if __name__ == '__main__':
     parser.add_option('--path_dd'           ,   dest='path_dd'           , help='Data driven path'                 , default=None)
     parser.add_option('--path_shape_merged' ,   dest='path_shape_merged' , help='Destination directory for merged' , default=None)
     parser.add_option('--floatN',               dest='floatN'            , help='float normalisation of particular processes, separate by space ', default=' ')
+    parser.add_option('--isssactive'          , dest='isssactive'        , help='Is samesign datacard available'                           , default=False)
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
 
@@ -537,6 +541,7 @@ if __name__ == '__main__':
     print 'NuisFlags:  ',opt.nuisFlags
     print 'noWWddAbove:',opt.noWWddAbove
     print 'dataset:    ',opt.dataset
+    print 'isssactive: ',opt.isssactive
 
     # checks
     if not opt.variable or not opt.lumi:
@@ -581,7 +586,7 @@ if __name__ == '__main__':
     #mask = ['Vg','DYLL','DYTT']
     mask = ['DYLL']
 
-    builder = NuisanceMapBuilder( opt.path_dd, opt.noWWddAbove, opt.shape )
+    builder = NuisanceMapBuilder( opt.path_dd, opt.noWWddAbove, opt.shape, opt.isssactive )
     builder.statShapeVeto = mask
     for mass in masses:
         for ch,(jcat,fl) in channels.iteritems():
@@ -598,7 +603,7 @@ if __name__ == '__main__':
 
             # reshuffle the order
             #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
-            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Data']
+            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Other', 'Data']
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             

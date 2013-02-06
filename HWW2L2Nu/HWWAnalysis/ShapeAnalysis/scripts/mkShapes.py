@@ -546,6 +546,7 @@ class ShapeFactory:
         weights['zH']                = self._stdWgt+'*(mctruth == 24)'
         weights['ttH']               = self._stdWgt+'*(mctruth == 121)'
 
+        weights['Other']             = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 )*(channel>1.5))'
 
         if cat in ['2j']:
             weights['WW']                = self._stdWgt+'*(1+(mjj>500)*(detajj>3.5))'
@@ -838,7 +839,7 @@ if __name__ == '__main__':
 
             factory._systByWeight = systByWeight
 
-            processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT']
+            processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT', 'Other']
             systMasks = dict([(s,processMask[:]) for s in systematics])
             systDirs  = dict([(s,systInputDir if s not in systByWeight else 'templates/' ) for s in systematics])
 
