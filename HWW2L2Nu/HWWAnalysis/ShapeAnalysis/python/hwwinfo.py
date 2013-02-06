@@ -124,6 +124,7 @@ class wwcuts:
     zerojet = 'njet == 0'
     onejet  = 'njet == 1'
     vbf     = '(njet >= 2 && njet <= 3 && (jetpt3 <= 30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0))))) '
+    vh      = '(njet >= 2)'
 
 # da rifare
 class vbfcuts:
@@ -159,33 +160,35 @@ class vbfcuts:
 
 
 class vhcuts:
-    _massindepincommonwithvbf = [
+    _massindep = [
+        'trigger==1.',
+	'(ch1*ch2<0 && pt1>20 && pt2>10)',
         'pfmet>20.',
+        'mpmet>20.',
         'mll>12 ',
         'zveto==1',
-        'mpmet>20.',
-        '(njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  )',
+        '(dphilljetjet<pi/180.*165. || !sameflav )',
         'bveto_mu==1 ',
+	'bveto_ip==1',
+	'nbjettche==0',
         'nextra==0' ,
-        'ptll>45.',
-        '( !sameflav ||  (pfmet > 45.0))'
+        'ptll>30.',
+        '( !sameflav ||  (pfmet > 45.0))',
+	'njet>=2',
+	'abs(jeteta1)<2.5 && abs(jeteta2)<2.5',
+	'(mjj<105 && mjj>65)',
+	'detajj<1.5',
+	'sqrt((jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))*(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))+(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))*(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2)))/sqrt((pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))*(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))+(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))*(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))) > 0.7',
+	'sqrt((jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))*(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))+(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))*(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2)))/sqrt((pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))*(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))+(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))*(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))) < 1.4',
+	'(abs(atan2(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2),jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))-atan2(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi),pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi)))>3.14159266)*(2*3.14159265-abs(atan2(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2),jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))-atan2(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi),pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))))+(abs(atan2(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2),jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))-atan2(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi),pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi)))<3.14159266)*(abs(atan2(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2),jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))-atan2(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi),pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi)))) > 150./180*pi',
+	'mth>60'
+	
     ]
+# achtung: njet<4 is applied here!!!! in wwcommon!!!
+    #vhcut     = wwcuts.wwcommon + _massindep
+    vhcut      = _massindep + ['mll<50']
 
-    _massindep = [
-        'abs(jeteta1)<2.5    && abs(jeteta2)<2.5',
-        'drll < 1.3',
-        'njet==2',
-        '(mjj<105 && mjj>65)',
-        'detajj<2.1',
-        '(bveto_ip==1 &&   jettche1<1.6 && jettche2<1.6 )',
-        'pt2>15',
-        'sqrt((jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))*(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))+(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))*(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2)))/sqrt((pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))*(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))+(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))*(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi)))>0.75',
-        'sqrt((jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))*(jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))+(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2))*(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2)))/sqrt((pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))*(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))+(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))*(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi)))<1.5',
-        '(abs(atan2(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2),jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))-atan2(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi),pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi)))>3.14159266)*(2*3.14159265-abs(atan2(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2),jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))-atan2(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi),pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))))+(abs(atan2(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2),jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))-atan2(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi),pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi)))<3.14159266)*(abs(atan2(jetpt1*sin(jetphi1)+jetpt2*sin(jetphi2),jetpt1*cos(jetphi1)+jetpt2*cos(jetphi2))-atan2(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi),pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi)))) > 150*pi/180.'
-    ]
-
-    vhcut     = wwcuts.wwcommon+_massindepincommonwithvbf+_massindep
-
+    vhcutShape = _massindep + ['((sameflav && mll<50) || (!sameflav && mll<200))']
 
 
 
@@ -196,7 +199,7 @@ categoryCuts = {}
 categoryCuts['0j'] = wwcuts.zerojet
 categoryCuts['1j'] = wwcuts.onejet
 categoryCuts['2j']   = wwcuts.vbf        # 2 or 3 jets, but the third not between the first two in \eta
-categoryCuts['vh2j'] = wwcuts.vbf        # 2 or 3 jets, but the third not between the first two in \eta
+categoryCuts['vh2j'] = wwcuts.vh         # >=2 jets
 
 
 flavorCuts = {}
@@ -242,8 +245,9 @@ channels['sf_vh2j'] = ('vh2j','sf')
 #  normal index             1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23
 
 cutmap = {}
-cutmap['mtmin_vh']    = [ 50  , 50  , 50  , 50  , 50  , 50  , 50  ,  50 ,  50 ,  50 ,  50 ,  50 ,  60 ,  60 ,  60 ,  60 ,  60 , 100 , 100 , 100 , 100 , 100 , 100 ]
-cutmap['mllmax_vh']   = [ 70  , 70  , 70  , 80  , 80  , 90  , 90  , 100 , 100 , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600 ]
+cutmap['mtmin_vh']    = [ 60  , 60  , 60  , 60  , 60  , 60  , 60  ,  60 ,  60 ,  60 ,  60 ,  60 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ]
+cutmap['mllmax_vh']   = [ 50  , 50  , 50  , 50  , 50  , 50  , 60  ,  60 ,  60 ,  60 ,  60 ,  60 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ]
+cutmap['mllmin_vh']   = [ 12  , 12  , 12  , 12  , 12  , 12  , 20  ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ]
 
 cutmap['mllmax_bdt']  = [ 70  , 70  , 70  , 80  , 80  , 90  , 90  , 100 , 100 , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600 ]
 cutmap['pt1min']      = [ 20  , 20  , 20  , 23  , 25  , 25  , 25  , 25  , 27  , 27  , 30  , 34  , 36  , 38  , 40  , 55  , 70  , 80  , 90  , 110 , 120 , 130 , 140 ]
@@ -353,6 +357,9 @@ def massSelections(mass):
     sel['vbf-selection']          = sel['vbf-selection-temp'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, masscuts['mtmax'])
     #sel['vbf-selection']          = sel['vbf-selection-temp'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, int(mass))
 
+#    sel['ww-common-ss']           = sel['ww-common'].replace["(ch1*ch2)<0.5", "(ch1*ch2)>0.5"]+' && 1'
+    sel['ww-common-ss']           = sel['ww-common'].replace("(ch1*ch2)<0.5", "(ch1*ch2)>0.5")
+    sel['shape-ss-selection']     = sel['ww-common-ss'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common-ss'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
 
     sel['shape-selection']        = sel['ww-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
     sel['shapebtag-selection']    = sel['wwbtag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['wwbtag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
@@ -366,9 +373,14 @@ def massSelections(mass):
 
     # vh #
     sel['vh-level']    = ' && '.join(vhcuts.vhcut)
-    sel['vh-selection'] = sel['vh-level']     + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(masscuts['mtmin_vh'], int(mass))
-    sel['vh-selection'] = sel['vh-selection'] + ' && (mll < {0:.1f})'.format(masscuts['mllmax_vh'])
+    sel['vh-selection'] = sel['vh-level']     + ' && (mth > {0:.1f} && mth < {1:.1f}) && drll<1.5 '.format(masscuts['mtmin_vh'], int(mass))
+    sel['vh-selection'] = sel['vh-selection'] + ' && (mll > {0:.1f} && mll < {1:.1f}) && drll<1.5 '.format(masscuts['mllmin_vh'], masscuts['mllmax_vh'])
 
+    sel['vh-shape-level']     = ' && '.join(vhcuts.vhcutShape)
+    sel['vh-shape-selection'] = sel['vh-shape-level']     + ' && (mth > {0:.1f} && mth < {1:.1f}) && ((sameflav && drll<1.5) || (!sameflav && drll<2.5))'.format(masscuts['mtmin_vh'], int(mass))
+    sel['vh-shape-selection'] = sel['vh-shape-selection'] + ' && ((sameflav && mll>{0:.1f} && mll<{1:.1f}) || (!sameflav && mll<200)) && ((sameflav && drll<1.5) || (!sameflav && drll<2.5)) '.format(masscuts['mllmin_vh'], masscuts['mllmax_vh'])
+
+    
 
     return sel
 

@@ -117,6 +117,9 @@ backgrounds = {
                                 ],
 }
 
+backgrounds['Other'] = backgrounds['WW']+backgrounds['ggWW']+backgrounds['Top']+backgrounds['VV']+backgrounds['DYTT']+backgrounds['DYLL']
+
+
 backgrounds_7TeV = {
     'WW'                      : ['nominals/latino_000_WWJets2LMad.root'],
     'ggWW'                    : ['nominals/latino_001_GluGluToWWTo4L.root'],
@@ -524,6 +527,25 @@ mcsets = {
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
     ],
+     '0j1j-ss' : [
+        #signals
+        'ggH','vbfH','wzttH',
+        # bkgs
+        'Other','VgS','Vg','WJet',
+        #'WW',
+        #'ggWW','VgS','Vg','WJet',
+        #'Top',
+        #'VV','DYTT','DYLL',
+        #'WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl',
+        #,'WJetSS',
+        # systematics
+        #'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn'
+        # templates
+        #'VgS-template','Vg-template','Top-template',
+        # 0j1j specific
+        #('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
+        #('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
+    ],
     'cutbased' : [
         #signals
         'ggH','vbfH','wzttH',
@@ -540,7 +562,7 @@ mcsets = {
         'ggH','vbfH','wzttH',
         # bkgs
         #'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL',
-        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYee','DYmm'
+        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYee','DYmm',
         # templates
         'VgS-template','Vg-template',
     ],
@@ -560,7 +582,7 @@ mcsets = {
         'ggH','vbfH','wH','zH','ttH',
         # bkgs
         #'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL',
-        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYee','DYmm'
+        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYee','DYmm',
         # templates
         'VgS-template','Vg-template',
     ],

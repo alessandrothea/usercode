@@ -54,10 +54,10 @@ ggH_UEPS = dict([(m, dict(zip(['u0','u1','u2'], vals))) for m,vals in file2map(S
 
 ggH_intf = dict([(m, dict(zip(['intf'], vals))) for m,vals in file2map(SYST_PATH+"ggH_interference.txt").items()])
 
-def getCommonSysts(mass,channel,jets,qqWWfromData,shape,options):
+def getCommonSysts(mass,channel,jets,qqWWfromData,shape,options,isssactive):
     nuisances = {} 
     #MCPROC = ['ggH', 'vbfH', 'DTT', 'ggWW', 'VV', 'Vg' ]; 
-    MCPROC = ['ggH', 'vbfH', 'wzttH', 'wH', 'zH', 'ttH', 'DYTT', 'VV', 'VgS', 'Vg' ]; 
+    MCPROC = ['ggH', 'vbfH', 'wzttH', 'wH', 'zH', 'ttH', 'DYTT', 'VV', 'VgS', 'Vg', 'Other']; 
     if channel == 'elmu' or channel == 'muel': MCPROC+=['DYMM','DYEE']
     if channel == 'of': MCPROC += ['DYLL']
     if not qqWWfromData: MCPROC+=['WW','ggWW']
@@ -100,6 +100,18 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,shape,options):
     if mass in wzttH_scaErrYR: nuisances['QCDscale_VH']  = [ ['lnN'], { 'wzttH':wzttH_scaErrYR[mass] }]
     nuisances['QCDscale_VV']     = [ ['lnN'], { 'VV':1.03 }]
     nuisances['QCDscale_VgS']    = [ ['lnN'], {'VgS':1.30 }]
+
+    if isssactive == True :
+        # -- extrapolation from same sign (ss) to opposite sign (os) region ---- 10% ? -> to be checked on data: how much is the charge misidentification difference data/MC by CMS?
+        # that it may be bin dependent, ... right? One nuisance for each jet bin
+        if jets == 0 :
+            nuisances['ssos_extrap_VgS_0jet']    = [ ['lnN'], {'VgS':1.10 }]
+            nuisances['ssos_extrap_Vg_0jet']     = [ ['lnN'], {'Vg':1.10 }]
+
+        if jets == 1 :
+            nuisances['ssos_extrap_VgS_1jet']    = [ ['lnN'], {'VgS':1.10 }]
+            nuisances['ssos_extrap_Vg_1jet']     = [ ['lnN'], {'Vg':1.10 }]
+
 
     # -- Experimental ---------------------
     nuisances['QCDscale_ggH_ACCEPT'] = [ ['lnN'], {'ggH':1.02}]

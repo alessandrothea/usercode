@@ -192,19 +192,23 @@ class DDWWFilter:
         #    print i,self.haswwdd(i)
 
     def haswwdd(self, mass, channel):
-        procs = self._reader.processes(mass,channel)
+        if not self._reader.iszombie:
+           procs = self._reader.processes(mass,channel)
 
-        # check the channel has WW dds
-        x = [ (p in procs) for p in ['WW','ggWW'] ].count(True)
+           # check the channel has WW dds
+           x = [ (p in procs) for p in ['WW','ggWW'] ].count(True)
 
-        # no ww data driven here
-        if not x:  return False
+           # no ww data driven here
+           if not x:  return False
         
-        # something's wrong
-        if x == 1: raise ValueError('Only WW or ggWW found in data drivens! Why???')
+           # something's wrong
+           if x == 1: raise ValueError('Only WW or ggWW found in data drivens! Why???')
         
-        # check if there's a filter and if it passes
-        return (not self._nowwabove or mass < self._nowwabove)
+           # check if there's a filter and if it passes
+           return (not self._nowwabove or mass < self._nowwabove)
+        else :
+           return False
+
 
     def get(self, mass,channel):
         import copy
