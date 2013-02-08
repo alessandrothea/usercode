@@ -295,7 +295,7 @@ void PlotLimit(string  limitFiles   = "inputs/ana_ICHEP_limits_nj_shape7teV_cut8
 
     // TLatex
     //--------------------------------------------------------------------------
-    Float_t ylatex = (canvas->GetLogy()) ? pow(10,uymin) - 0.02 : uymin - 0.75;
+    Float_t ylatex = (canvas->GetLogy()) ? pow(10,uymin-0.05*(uymax-uymin)) : uymin - 0.75;
 
     Float_t xbins[6] = {100, 200, 300, 400, 500, 600};
 
