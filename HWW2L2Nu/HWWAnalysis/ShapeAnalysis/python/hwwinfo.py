@@ -12,7 +12,7 @@ import HWWAnalysis.Misc.odict as odict
 # jets 				 = [0,1]
 
 # HCP
-#ptllCut = 45. 
+# ptllCut = 45. 
 # Spin/Moriond
 ptllCut = 30. 
 
@@ -282,13 +282,10 @@ del phi
 
 def massSelections(mass):
 
-    # HCP
-    #mthmin_2dlomass = 80. 
-    #mthmax_2dlomass = 280.
-    #mllmax_2dlomass = 200
-
     # Spin
-    mthmin_2dlomass = 60.
+    #mthmin_2dlomass = 80.
+    mthmin_2dlomass = 60. 
+
     mthmax_2dlomass = 280.
     mllmax_2dlomass = 200
 
@@ -365,6 +362,9 @@ def massSelections(mass):
     sel['shapebtag-selection']    = sel['wwbtag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['wwbtag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
     sel['shape2011-selection']     = sel['ww2011-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww2011-common'].replace("zveto==1","zveto>-1")+' && '+sel['shape-himass']
     sel['shape2011btag-selection'] = sel['ww2011btag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww2011btag-common'].replace("zveto==1","zveto>-1")+' && '+sel['shape-himass']
+
+    sel['shapehcp-selection']      =  sel['shape-selection'].replace('ptll>%f'%ptllCut,'ptll>45').replace('mth>%f'%mthmin_2dlomass,'mth>80')
+    sel['shapehcp2011-selection']  =  sel['shape2011-selection'].replace('ptll>%f'%ptllCut,'ptll>45').replace('mth>%f'%mthmin_2dlomass,'mth>80')
         
     #sel['shape-selection']        = sel['ww-common']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common']+' && '+sel['shape-himass']
     #sel['shape2011-selection']     = sel['ww2011-common']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww2011-common']+' && '+sel['shape-himass']
