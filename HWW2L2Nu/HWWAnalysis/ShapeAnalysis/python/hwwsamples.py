@@ -267,7 +267,7 @@ data['Data2012'] = data['Data2012A']+data['Data2012B']+data['Data2012C']+data['D
 
 signals = ['ggH','vbfH','vbfH_ALT','wzttH','wzttH_ALT','jhu','jhu_ALT','wH','zH','ttH']
 
-def signalSamples(sigtag,mass=125):
+def signalSamples(sigtag,mass=125,suffix=''):
 
     signals = {}
 
@@ -284,15 +284,15 @@ def signalSamples(sigtag,mass=125):
 
 
         if mass <= 300:
-            signals['ggH']   = [f.format(mass = mass) for f in ggH]
-            signals['vbfH']  = [f.format(mass = mass) for f in vbfH]
-            signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
-            signals['wH']    = [f.format(mass = mass) for f in wH]
-            signals['zH']    = [f.format(mass = mass) for f in zH]
-            signals['ttH']   = [f.format(mass = mass) for f in ttH]
+            signals['ggH'+suffix]   = [f.format(mass = mass) for f in ggH]
+            signals['vbfH'+suffix]  = [f.format(mass = mass) for f in vbfH]
+            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
+            signals['wH'+suffix]    = [f.format(mass = mass) for f in wH]
+            signals['zH'+suffix]    = [f.format(mass = mass) for f in zH]
+            signals['ttH'+suffix]   = [f.format(mass = mass) for f in ttH]
         else:
-            signals['ggH']   = [f.format(mass = mass) for f in ggH]
-            signals['vbfH']  = [f.format(mass = mass) for f in vbfH]
+            signals['ggH'+suffix]   = [f.format(mass = mass) for f in ggH]
+            signals['vbfH'+suffix]  = [f.format(mass = mass) for f in vbfH]
 
 # Test from Alessandro:
     elif sigtag == 'JHU' and mass==125:
@@ -368,7 +368,7 @@ def signalSamples(sigtag,mass=125):
         raise ValueError('Signal tag %s not found for mass %d' % (sigtag,mass) )
     return signals
 
-def signalSamples_7TeV(sigtag,mass=125):
+def signalSamples_7TeV(sigtag,mass=125,suffix=''):
 
     signals = {}
 
@@ -386,19 +386,19 @@ def signalSamples_7TeV(sigtag,mass=125):
         wzttH   = ['nominals/latino_7{mass}_wzttH{mass}ToWW.root']
         
         if int(mass)==122:
-            signals['ggH']  = [f.format(mass = mass) for f in ggHnew]
-            signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
+            signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggHnew]
+            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
         elif int(mass)==118 or (int(mass)>120 and int(mass)<130) or int(mass)==135:
-            signals['ggH']  = [f.format(mass = mass) for f in ggHnew]
-            signals['vbfH'] = [f.format(mass = mass) for f in vbfHnew]
-            signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
+            signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggHnew]
+            signals['vbfH'+suffix] = [f.format(mass = mass) for f in vbfHnew]
+            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
         elif int(mass) > 115:
-            signals['ggH']  = [f.format(mass = mass) for f in ggH]
-            signals['vbfH'] = [f.format(mass = mass) for f in vbfH]
-            signals['wzttH'] = [f.format(mass = mass) for f in wzttH]
+            signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggH]
+            signals['vbfH'+suffix] = [f.format(mass = mass) for f in vbfH]
+            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
         else:
-            signals['ggH']  = ['nominals/latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
-            signals['vbfH'] = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
+            signals['ggH'+suffix]  = ['nominals/latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
+            signals['vbfH'+suffix] = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
             
 # and the JHU case:
     elif sigtag == 'JHUSMONLY' and mass==125:
@@ -527,6 +527,21 @@ mcsets = {
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j')           #    mkmerged vuole "-template"
     ],
+    '0j1j-mH125' : [
+        #signals
+        'ggH','vbfH','wzttH',
+        # bkgs
+        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl','WJetSS',
+        # systematics
+        'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
+        # templates
+        'VgS-template','Vg-template',
+        # 0j1j specific
+        ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
+        ('DYLL-templatesyst','DYLL-templatesyst-0j1j') ,         #    mkmerged vuole "-template"
+        # mH125 as background
+        'ggH125', 'vbfH125', 'wzttH125', 
+    ],
      '0j1j-ss' : [
         #signals
         'ggH','vbfH','wzttH',
@@ -621,9 +636,19 @@ def samples(mass, datatag='Data2012', sigtag='SM', mctag='all'):
     if '2012' in datatag:
         print 'loading backgrounds for 2012'
         mcsamples.update(backgrounds)
+        if 'mH' in mctag:
+            print mctag
+            mHbkg = int(re.match('0j1j-mH(\d+)', mctag).group(1))
+            print 'signal as background', mHbkg
+            signalbkg = signalSamples(sigtag, mHbkg, str(mHbkg))
+            mcsamples.update(signalbkg)
     elif '2011' in datatag:
         print 'loading backgrounds for 2011'
         mcsamples.update(backgrounds_7TeV)
+        if 'mH' in mctag:
+            mHbkg = int(re.match('0j1j-mH(\d+)', mctag).group(1))
+            signalbkg = signalSamples_7TeV(sigtag, mHbkg, str(mHbkg))
+            mcsamples.update(signalbkg)
     else:
         print 'no background samples defined'
 
@@ -649,7 +674,8 @@ def samples(mass, datatag='Data2012', sigtag='SM', mctag='all'):
         if not m:
             raise ValueError('Signal injection must have the format SImmm where mmm is the mass')
         simass = int(m.group(1))
-        siSamples = signalSamples(sigtag, simass)
+        if '2012' in datatag: siSamples = signalSamples(sigtag, simass)
+        else:                 siSamples = signalSamples_7TeV(sigtag, simass)
         # add the signal samples to the list with a _SI tag
         for s,f in siSamples.iteritems():
             selectedData[s+'-SI']=f
