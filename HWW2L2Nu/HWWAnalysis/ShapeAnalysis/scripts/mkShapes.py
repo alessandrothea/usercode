@@ -37,6 +37,9 @@ class ShapeFactory:
         ranges['vbf2D']            = self._getVBF2Drange
         ranges['mth-mll-hilomass'] = self._getMllMth2Drange
         ranges['mth-mll-hilospin'] = self._getMllMth2DSpinrange
+        ranges['mth-mll-hilospin-withControlRegion'] = self._getMllMth2DSpinrangeWithControlRegion
+        
+        
         self._ranges = ranges
         
         self._dataTag         = '2012A'
@@ -51,13 +54,62 @@ class ShapeFactory:
         self._splitmode       = None
         self._lumi            = 1
 
+
+        variables = {}
+        variables['2dWithCR'] = self._getMllMth2DSpinWithControlRegion
+        self._variables = variables
+
+
     # _____________________________________________________________________________
     def __del__(self):
         pass
+
+# _____________________________________________________________________________
+    def getvariable(self,tag,mass,cat):
+
+        if tag in self._variables :
+            try:
+                theVariable = (self._variables[tag])(mass,cat)
+            except KeyError as ke:
+                self._logger.error('Variable '+tag+' not available. Possible values: '+', '.join(self._variables.iterkeys()) )
+                raise ke
+        else :
+            theVariable = tag
+
+        return theVariable
+
+        #if isinstance(tag,tuple):
+            #theVariable = tag
+        #else:
+            #try:
+                #theVariable = self._variables[tag]
+            #except KeyError as ke:
+                #self._logger.error('Variable '+tag+' not available. Possible values: '+', '.join(self._variables.iterkeys()) )
+                #raise ke
+
+        #if isinstance(theVariable,tuple):
+            #return theVariable
+        #elif isinstance(theVariable,dict):
+            #return theVariable[mass][cat]
+        #elif callable(theVariable):
+            #return theVariable(mass,cat)
+
+
+    # _____________________________________________________________________________
+    def _getMllMth2DSpinWithControlRegion(self,mass,cat):
+
+        if cat not in ['0j','1j']:
+            raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
+        
+        if mass < 300.:
+            return 'mll*((ch1*ch2)<0)+13*((ch1*ch2)>0):mth*((ch1*ch2)<0)+290*((ch1*ch2)>0)'
+        else:
+            return 'mll*((ch1*ch2)<0)+13*((ch1*ch2)>0):mth*((ch1*ch2)<0)+290*((ch1*ch2)>0)'
+
     
     # _____________________________________________________________________________
     def getrange(self,tag,mass,cat):
-        
+
         if isinstance(tag,tuple):
             theRange = tag
         else:
@@ -92,7 +144,19 @@ class ShapeFactory:
             raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
         
         if mass < 300.:
-            return ([60,70,80,90,100,110,120,140,160,180,200,220,240,260,280],[12,30,45,60,75,100,125,150,175,200])
+            return ([60,70,80,90,100,110,120,140,160,180,200,220,240,260,280 ],[12,30,45,60,75,100,125,150,175,200])
+        else:
+            return (10,80,410,8,0,450)
+
+
+    # _____________________________________________________________________________
+    def _getMllMth2DSpinrangeWithControlRegion(self,mass,cat):
+
+        if cat not in ['0j','1j']:
+            raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
+        
+        if mass < 300.:
+            return ([60,70,80,90,100,110,120,140,160,180,200,220,240,260,280,300],[12,30,45,60,75,100,125,150,175,200])
         else:
             return (10,80,380,8,0,450)
 
@@ -231,10 +295,13 @@ class ShapeFactory:
 
                     print '.'*80
                     # - extract the histogram range
-                    rng = self.getrange(opt.range,mass,category) 
+                    rng = self.getrange(opt.range,mass,category)
+
+                    # - extract the histogram variable
+                    doalias = self.getvariable(alias,mass,category)
 
                     # - to finally fill it
-                    self._draw(alias, rng, selections, output, inputs)
+                    self._draw(doalias, rng, selections, output, inputs)
                     # - then disconnect the files
                     self._disconnectInputs(inputs)
 
@@ -311,9 +378,13 @@ class ShapeFactory:
 
                     print '.'*80
                     # - extract the histogram range
-                    rng = self.getrange(opt.range,mass,category) 
+                    rng = self.getrange(opt.range,mass,category)
+
+                    # - extract the histogram variable
+                    doalias = self.getvariable(alias,mass,category) 
+
                     # - to finally fill it
-                    self._draw(alias, rng, selections ,output,inputs)
+                    self._draw(doalias, rng, selections ,output,inputs)
                     # - then disconnect the files
                     self._disconnectInputs(inputs)
                 shapeFiles.append(output)
@@ -839,7 +910,10 @@ if __name__ == '__main__':
 
             factory._systByWeight = systByWeight
 
-            processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT', 'Other']
+            processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT', 'Other', 'ggH125', 'vbfH125']
+            if '2011' in opt.dataset:
+                processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'jhu', 'jhu_ALT', 'ggH125', 'vbfH125']
+
             systMasks = dict([(s,processMask[:]) for s in systematics])
             systDirs  = dict([(s,systInputDir if s not in systByWeight else 'templates/' ) for s in systematics])
 
