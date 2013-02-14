@@ -30,6 +30,11 @@ muonUncertainty = 0.01
 electronUncertaintyEB = 0.02
 electronUncertaintyEE = 0.04
 
+## charge mismeasurement
+sigmaChargeElectron = 0.10
+sigmaChargeMuon     = 0.10
+
+
 ## pu uncertainty
 puUp   = "puDATAup.root"
 puDown = "puDATAdown.root"
@@ -90,6 +95,12 @@ def smearPt(pt, sigma):
     pt = ROOT.gRandom.Gaus(pt, sigma*pt)
     return pt
 
+def smearCharge(sigma):
+    change = ROOT.gRandom.Uniform(0, 1)
+    if change < sigma :
+       return -1
+    else :
+       return 1
 
 def calculateGammaMRStar(ja, jb):
 ##def gammaMRstar(ja, jb):
@@ -429,6 +440,9 @@ class scaleAndSmear:
         if self.systArgument == 'puscale':
             oldTree.SetBranchStatus('puW'       ,0)
 
+        if self.systArgument == 'chargeResolution':
+            oldTree.SetBranchStatus('ch1'       ,0)
+            oldTree.SetBranchStatus('ch2'       ,0)
 
         newTree = oldTree.CloneTree(0)
         nentries = oldTree.GetEntriesFast()
@@ -1732,10 +1746,59 @@ class scaleAndSmear:
 
 
 
+###############################################################################################
+##
+##   \  | _)         ___|  |                                                           |         |   _)
+##  |\/ |  |   __|  |      __ \    _` |   __|  _` |   _ \       __|  _ \   __|   _ \   |  |   |  __|  |   _ \   __ \
+##  |   |  | \__ \  |      | | |  (   |  |    (   |   __/      |     __/ \__ \  (   |  |  |   |  |    |  (   |  |   |
+## _|  _| _| ____/ \____| _| |_| \__,_| _|   \__, | \___|     _|   \___| ____/ \___/  _| \__,_| \__| _| \___/  _|  _|
+##                                           |___/
+##
+###############################################################################################
 
+    def chargeResolution(self):
 
+        ## define a new branch
+        ch1 = numpy.zeros(1, dtype=numpy.float32)
+        ch2 = numpy.zeros(1, dtype=numpy.float32)
+        self.ttree.Branch('ch1',ch1,'ch1/F')
+        self.ttree.Branch('ch2',ch2,'ch2/F')
 
-        
+        nentries = self.nentries
+        print 'total number of entries: '+str(nentries)
+        i=0
+        for ientry in xrange(0,nentries):
+            i+=1
+            self.oldttree.GetEntry(ientry)
+
+            ## print event count
+            step = 10000
+            if i > 0 and i%step == 0:
+                print str(i)+' events processed.'
+
+            ## muon-muon channel
+            if self.oldttree.channel == 0:
+               ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeMuon)
+               ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeMuon)
+
+            ## electron-muon electron
+            if self.oldttree.channel == 1:
+               ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron)
+               ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron)
+
+            ## electron-muon channel
+            if self.oldttree.channel == 2:
+               ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron)
+               ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeMuon)
+
+            ## muon-electron channel
+            if self.oldttree.channel == 3:
+               ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeMuon)
+               ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron)
+
+            # fill old and new values
+            self.ttree.Fill()
+
 
 
 
