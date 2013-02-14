@@ -367,6 +367,8 @@ class ShapeMixer:
 
         self._connect()
 
+        suffix = '_8TeV'
+        if '2011' in opt.dataset: suffix = '_7TeV'
 
         # -----------------------------------------------------------------
         # Nominal shapes
@@ -386,7 +388,7 @@ class ShapeMixer:
         #   e and mu fake separated
         wJet = self.nominals['WJet']
         if 'WJetFakeRate-eUp' in self.nominals:
-            wJetSystName = 'CMS_hww_WJet_FakeRate_e_shape'
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape'.format(suffix)
             wJetEffeUp = self.nominals.pop('WJetFakeRate-eUp')
             wJetShapeUp = wJetEffeUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
@@ -394,7 +396,7 @@ class ShapeMixer:
             self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
         if 'WJetFakeRate-eDn' in self.nominals:
-            wJetSystName = 'CMS_hww_WJet_FakeRate_e_shape'
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape'.format(suffix)
             wJetEffeDown = self.nominals.pop('WJetFakeRate-eDn')
             wJetShapeDown = wJetEffeDown.Clone('histo_WJet_'+wJetSystName+'Down')
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
@@ -402,7 +404,7 @@ class ShapeMixer:
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
         if 'WJetFakeRate-mUp' in self.nominals:
-            wJetSystName = 'CMS_hww_WJet_FakeRate_m_shape'
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape'.format(suffix)
             wJetEffmUp = self.nominals.pop('WJetFakeRate-mUp')
             wJetShapeUp = wJetEffmUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
@@ -410,7 +412,7 @@ class ShapeMixer:
             self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
         if 'WJetFakeRate-mDn' in self.nominals:
-            wJetSystName = 'CMS_hww_WJet_FakeRate_m_shape'
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape'.format(suffix)
             wJetEffmDown = self.nominals.pop('WJetFakeRate-mDn')
             wJetShapeDown = wJetEffmDown.Clone('histo_WJet_'+wJetSystName+'Down')
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
@@ -418,7 +420,7 @@ class ShapeMixer:
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
         if 'WJetSS' in self.nominals:
-            wJetSystName = 'CMS_hww_WJet_ctrlSS_shape'
+            wJetSystName = 'CMS{0}_hww_WJet_ctrlSS_shape'.format(suffix)
             wJetSSUp = self.nominals.pop('WJetSS')
             wJetShapeUp = wJetSSUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
@@ -443,7 +445,7 @@ class ShapeMixer:
         if 'WJet-template' in self.nominals:
             WJetmc        = self.nominals.pop('WJet')
             WJetShape     = self.nominals.pop('WJet-template')
-            WJetSystName = 'CMS_hww_WJet_template_shape'
+            WJetSystName = 'CMS{0}_hww_WJet_template_shape'.format(suffix)
             WJetShapeSyst = self.nominals.pop('WJet-templatesyst') if 'WJet-templatesyst' in self.nominals else None
 
             WJetnom = WJetShape.Clone('histo_WJet')
@@ -469,7 +471,7 @@ class ShapeMixer:
 
         if 'WJetFakeRate-template' in self.nominals: 
             wJetEff = self.nominals.pop('WJetFakeRate-template')
-            wJetSystName = 'CMS_hww_WJet_FakeRate_jet_shape'
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_jet_shape'.format(suffix)
             wJetShapeUp = wJetEff.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
             wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
@@ -491,7 +493,7 @@ class ShapeMixer:
         if 'DYLL-template' in self.nominals:
             dyLLmc        = self.nominals.pop('DYLL')
             dyLLShape     = self.nominals.pop('DYLL-template')
-            dyLLSystName = 'CMS_hww_DYLL_template_shape'
+            dyLLSystName = 'CMS{0}_hww_DYLL_template_shape'.format(suffix)
             dyLLShapeSyst = self.nominals.pop('DYLL-templatesyst') if 'DYLL-templatesyst' in self.nominals else None
 
             dyLLnom = dyLLShape.Clone('histo_DYLL')
@@ -619,13 +621,13 @@ class ShapeMixer:
                     fracTW[t] = self.nominals[t]
                     del self.nominals[t]
 
-                topGenUp = fracTW['TopTW'].Clone('histo_Top_CMS_hww_Top_fTWUp')
+                topGenUp = fracTW['TopTW'].Clone('histo_Top_CMS{0}_hww_Top_fTWUp'.format(suffix))
                 topGenUp.SetTitle('Top CMS_hww_Top_fTW Up')
                 topGenUp.Scale(pytTop.Integral()/topGenUp.Integral())
                 self.generators[topGenUp.GetTitle()] = topGenUp
 
                 #copy the nominal
-                topGenDown = pytTop.Clone('histo_Top_CMS_hww_Top_fTWDown')
+                topGenDown = pytTop.Clone('histo_Top_CMS{0}_hww_Top_fTWDown'.format(suffix))
                 topGenDown.SetTitle('Top CMS_hww_Top_fTW Down')
                 topGenDown.Scale(2.)
                 topGenDown.Add(topGenUp, -1)
@@ -640,13 +642,13 @@ class ShapeMixer:
                     ctrlTT[t] = self.nominals[t]
                     del self.nominals[t]
 
-                topCtrlUp = ctrlTT['TopCtrl'].Clone('histo_Top_CMS_hww_Top_ctrlTTUp')
+                topCtrlUp = ctrlTT['TopCtrl'].Clone('histo_Top_CMS{0}_hww_Top_ctrlTTUp'.format(suffix))
                 topCtrlUp.SetTitle('Top CMS_hww_Top_ctrlTT Up')
                 topCtrlUp.Scale(pytTop.Integral()/topCtrlUp.Integral())
                 self.generators[topCtrlUp.GetTitle()] = topCtrlUp
 
                 #copy the nominal
-                topCtrlDown = pytTop.Clone('histo_Top_CMS_hww_Top_ctrlTTDown')
+                topCtrlDown = pytTop.Clone('histo_Top_CMS{0}_hww_Top_ctrlTTDown'.format(suffix))
                 topCtrlDown.SetTitle('Top CMS_hww_Top_ctrlTT Down')
                 topCtrlDown.Scale(2.)
                 topCtrlDown.Add(topCtrlUp, -1)
@@ -660,14 +662,13 @@ class ShapeMixer:
                 for t in ctrlTDDs:
                     ctrlTDD[t] = self.nominals[t]
                     del self.nominals[t]
-                    
-                topDDUp = ctrlTDD['Top-template'].Clone('histo_Top_CMS_hww_Top_ddTTUp')
+                topDDUp = ctrlTDD['Top-template'].Clone('histo_Top_CMS{0}_hww_Top_ddTTUp'.format(suffix))
                 topDDUp.SetTitle('Top CMS_hww_Top_ddTT Up')
                 topDDUp.Scale(pytTop.Integral()/topDDUp.Integral())
                 self.generators[topDDUp.GetTitle()] = topDDUp
                 
                 #copy the nominal
-                topDDDown = pytTop.Clone('histo_Top_CMS_hww_Top_ddTTDown')
+                topDDDown = pytTop.Clone('histo_Top_CMS{0}_hww_Top_ddTTDown'.format(suffix))
                 topDDDown.SetTitle('Top CMS_hww_Top_ddTT Down')
                 topDDDown.Scale(2.)
                 topDDDown.Add(topCtrlUp, -1)
@@ -753,7 +754,7 @@ class ShapeMixer:
             # skip data or injected sample
             if n in ['Data'] or '-SI' in n:
                 continue
-            effName = 'CMS_hww_{0}_{1}_stat_shape'.format(n,chan)
+            effName = 'CMS{0}_hww_{1}_{2}_stat_shape'.format(suffix,n,chan)
 
             if statmodes[n] == 'unified' :
                 self._logger.debug('Generating unified morphs for %s', n)
@@ -783,7 +784,7 @@ class ShapeMixer:
 
             m = udRegex.match(n)
             if m is not None:
-                systName = 'CMS_'+m.group(1)
+                systName = 'CMS{0}_'.format(suffix)+m.group(1)
                 systShift = m.group(2)
                 # x-check on the regex match
                 if not( n.endswith('Up') or n.endswith('Down') ):
@@ -797,7 +798,7 @@ class ShapeMixer:
                     h.SetTitle(h.GetTitle()+' '+systName+' '+systShift)
                     self.experimental[h.GetTitle()] = h
             else:
-                systName = 'CMS_'+n
+                systName = 'CMS{0}_'.format(suffix)+n
 
                 for h in histograms:
                     if not h.GetTitle() in self.nominals:
@@ -928,6 +929,7 @@ if __name__ == '__main__':
     parser.add_option('-r', '--rebin', dest='rebin', help='Rebin by', type='int', default=1)
 
     parser.add_option('--no_wwdd_above'     , dest='noWWddAbove'       , help='No WW dd above this mass'         , default=None  , type='int' )
+    parser.add_option('--dataset'           , dest='dataset'           , help='Dataset to process'               , default=None)
     parser.add_option('--tag'               , dest='tag'               , help='Tag used for the shape file name' , default=None)
     parser.add_option('--statmode'          , dest='statmode'          , help='Production mode for stat-shapes (default = %default)', default='unified')
     parser.add_option('--path_dd'           , dest='path_dd'           , help='Data driven path'                 , default=None)
@@ -950,6 +952,10 @@ if __name__ == '__main__':
     (opt, args) = parser.parse_args()
 
     print opt.simask
+    print 'dataset:    ',opt.dataset
+
+    scale2nom = []
+    if '2012' in opt.dataset: scale2nom = [ ('Vg', '*'), ('VgS','*') ]
 
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
@@ -1001,6 +1007,7 @@ if __name__ == '__main__':
     channels =  dict([ (k,v) for k,v in hwwinfo.channels.iteritems() if k in opt.chans])
 
     for mass in masses:
+        if '2011' in opt.dataset and (mass==145 or mass==155): continue
         for chan,(cat,fl) in channels.iteritems():
             flavors = hwwinfo.flavors[fl]
             # print chan,cat,fl,flavors
