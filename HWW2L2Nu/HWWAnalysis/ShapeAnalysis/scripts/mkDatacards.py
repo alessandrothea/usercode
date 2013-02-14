@@ -333,7 +333,7 @@ class NuisanceMapBuilder:
 #                          flagdoextracorr = 1
                 extr_entries[process] = extrUnc
                 stat_entries[process] = e.alpha
-                eff_bin1 = eff_bin1_tmpl.format(process,channel)
+                eff_bin1 = eff_bin1_tmpl.format(suffix,process,channel)
                 if eff_bin1 in nuisances:
                     del nuisances[eff_bin1]
 
