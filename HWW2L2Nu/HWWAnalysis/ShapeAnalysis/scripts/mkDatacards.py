@@ -81,18 +81,18 @@ class ShapeDatacardWriter:
 
         coldef = 10
 
-        card.write('bin'.ljust(48)+''.join([self._bin.ljust(coldef)*len(keyline)])+'\n')
-        card.write('process'.ljust(48)+''.join([n.ljust(coldef) for (i,n,N) in keyline])+'\n' )
-        card.write('process'.ljust(48)+''.join([('%d' % i).ljust(coldef) for (i,n,N) in keyline])+'\n' )
-        card.write('rate'.ljust(48)+''.join([('%-.3f' % N).ljust(coldef) for (i,n,N) in keyline])+'\n' )
+        card.write('bin'.ljust(58)+''.join([self._bin.ljust(coldef)*len(keyline)])+'\n')
+        card.write('process'.ljust(58)+''.join([n.ljust(coldef) for (i,n,N) in keyline])+'\n' )
+        card.write('process'.ljust(58)+''.join([('%d' % i).ljust(coldef) for (i,n,N) in keyline])+'\n' )
+        card.write('rate'.ljust(58)+''.join([('%-.3f' % N).ljust(coldef) for (i,n,N) in keyline])+'\n' )
         card.write('-'*100+'\n')
 
 #         nmax = max([len(n) for n in nuisances]
 
         for name in nuisances:
             (pdf,effect) = nuisances[name]
-            if len(pdf) == 1: card.write('{0:<31} {1:<7}         '.format(name,pdf[0]))
-            else:             card.write('{0:<31} {1:<7} {2:<7}  '.format(name,pdf[0],pdf[1]))
+            if len(pdf) == 1: card.write('{0:<41} {1:<7}         '.format(name,pdf[0]))
+            else:             card.write('{0:<41} {1:<7} {2:<7}  '.format(name,pdf[0],pdf[1]))
             for i,p,y in keyline:
                 if p in effect:
                     #if 'FakeRate' in name:
@@ -271,8 +271,8 @@ class NuisanceMapBuilder:
             self._1jetOnly[k] = (['lnN'], dict([( process, v[0]) for process in v[1] ]) )
 
     
-    def _addDataDrivenNuisances(self, nuisances, yields, mass, channel, jetcat):
-        
+    def _addDataDrivenNuisances(self, nuisances, yields, mass, channel, jetcat, suffix=''):
+
         if self._ddreader.iszombie: return
         (estimates,dummy) = self._wwddfilter.get(mass, channel)
 
@@ -292,7 +292,7 @@ class NuisanceMapBuilder:
             'DYmm' : ( channel+cb, ['DYmm']      ),
         }
 
-        eff_bin1_tmpl = 'CMS_hww_{0}_{1}_stat_bin1'
+        eff_bin1_tmpl = 'CMS{0}_hww_{1}_{2}_stat_bin1'
         for tag,(context, processes) in mapping.iteritems(): 
             extr_uncorr_entries = {}
             extr_corr_entries = {}
@@ -300,12 +300,12 @@ class NuisanceMapBuilder:
             stat_entries = {}
 
             if (tag=="WW" and (jetcat=="0j" or jetcat=="1j")) :
-                eff_extr    = 'CMS_hww_{0}_extr'.format(tag)
+                eff_extr    = 'CMS{0}_hww_{1}_extr'.format(suffix,tag)
             else :
-                eff_extr    = 'CMS_hww_{0}_{1}_extr'.format(tag,context)
-            eff_stat        = 'CMS_hww_{0}_{1}_stat'.format(tag,context)
-            eff_extr_corr   = 'CMS_hww_{0}_{1}_extr_corr'.format(tag,context)
-            eff_extr_uncorr = 'CMS_hww_{0}_{1}_extr_uncorr'.format(tag,channel)
+                eff_extr    = 'CMS{0}_hww_{1}_{2}_extr'.format(suffix,tag,context)
+            eff_stat        = 'CMS{0}_hww_{1}_{2}_stat'.format(suffix,tag,context)
+            eff_extr_corr   = 'CMS{0}_hww_{1}_{2}_extr_corr'.format(suffix,tag,context)
+            eff_extr_uncorr = 'CMS{0}_hww_{1}_{2}_extr_uncorr'.format(suffix,tag,channel)
 
             available = [ p for p in processes if p in estimates ]
             if not available: continue
@@ -354,12 +354,11 @@ class NuisanceMapBuilder:
 
 
 
-
-    def _addStatisticalNuisances(self,nuisances, yields,channel):
+    def _addStatisticalNuisances(self,nuisances, yields,channel,suffix=''):
         for p,y in yields.iteritems():
             if p == 'Data':
                 continue
-            name  = 'CMS_hww_{0}_{1}_stat_bin1'.format(p,channel)
+            name  = 'CMS{0}_hww_{1}_{2}_stat_bin1'.format(suffix,p,channel)
             if y._entries == 0.:
                 continue
             value = 1+(1./ROOT.TMath.Sqrt(y._entries) if y._entries > 0 else 0.)
@@ -377,7 +376,7 @@ class NuisanceMapBuilder:
             nuisances[tag] = (['shapeN2'],dict([ (p,1) for p in processes]) )
 
 
-    def _addExperimentalShapeNuisances(self, nuisances, effects):
+    def _addExperimentalShapeNuisances(self, nuisances, effects, suffix=''):
         '''Experimental Shape-based nuisances'''
         # expr for CMS nuisances
         expRegex  = re.compile('CMS_(.+)')
@@ -400,12 +399,12 @@ class NuisanceMapBuilder:
             if tag in nuisances: del nuisances[tag]
             nuisances[tag] = (['shapeN2'],dict([ (p,1) for p in effects[eff] ]) )
 
-    def _addShapeNuisances(self, nuisances, effects, opts):
+    def _addShapeNuisances(self, nuisances, effects, opts, suffix=''):
         # local copy
         shapeNu = OrderedDict()
 
         self._addWWShapeNuisances(shapeNu, effects)
-        self._addExperimentalShapeNuisances(shapeNu, effects)
+        self._addExperimentalShapeNuisances(shapeNu, effects, suffix)
 
         if 'shapeFlags' not in opts:
             sys.exit(-1)
@@ -448,7 +447,11 @@ class NuisanceMapBuilder:
            optMatt.VH = 0
 
         if jetcat not in ['0j','1j','2j']: raise ValueError('Unsupported jet category found: %s')
-        CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, self._shape, optMatt, self._isssactive)
+
+        suffix = '_8TeV'
+        if '2011' in opt.dataset: suffix = '_7TeV'
+
+        CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, self._shape, optMatt, suffix, self._isssactive)
         if self._shape:
             # float WW+ggWW background normalisation float together
             for p in opts['floatN'].split(' '):
@@ -462,11 +465,11 @@ class NuisanceMapBuilder:
         allNus.update( common )
 
 
-        self._addStatisticalNuisances(allNus, yields, channel)
-        self._addDataDrivenNuisances(allNus, yields, mass, channel, jetcat)
+        self._addStatisticalNuisances(allNus, yields, channel, suffix)
+        self._addDataDrivenNuisances(allNus, yields, mass, channel, jetcat, suffix)
 
         if self._shape:
-            self._addShapeNuisances(allNus,effects, opts)
+            self._addShapeNuisances(allNus,effects, opts, suffix)
 
         if 'nuisFlags' not in opts:
             raise RuntimeError('nuisFlags not found among the allNus options')
@@ -589,6 +592,7 @@ if __name__ == '__main__':
     builder = NuisanceMapBuilder( opt.path_dd, opt.noWWddAbove, opt.shape, opt.isssactive )
     builder.statShapeVeto = mask
     for mass in masses:
+        if '2011' in opt.dataset and (mass==145 or mass==155): continue
         for ch,(jcat,fl) in channels.iteritems():
 
 #         for jets in jetBins:
@@ -603,7 +607,7 @@ if __name__ == '__main__':
 
             # reshuffle the order
             #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
-            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Other', 'Data']
+            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Other', 'ggH125', 'vbfH125', 'wzttH125', 'Data']
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             
