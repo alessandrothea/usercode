@@ -105,7 +105,7 @@ class wwcuts:
         'bveto_mu==1',
         'nextra==0',
         '(bveto_ip==1 && nbjettche==0)',
-        'njet<4',
+#        'njet<4',
     ]
     
     #dy cuts
