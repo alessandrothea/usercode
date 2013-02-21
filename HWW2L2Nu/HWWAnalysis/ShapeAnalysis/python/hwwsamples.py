@@ -29,6 +29,11 @@ backgrounds = {
                                  'wjets/latino_RunC_7032pbinv_LooseLoose.root',
                                  'wjets/latino_RunD_7274pbinv_LooseLoose.root',
                                 ],
+    'WJetFakeRate-nominal'    : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
+                                 'wjets/latino_RunB_4404pbinv_LooseLoose.root',
+                                 'wjets/latino_RunC_7032pbinv_LooseLoose.root',
+                                 'wjets/latino_RunD_7274pbinv_LooseLoose.root',
+                                ],
     'WJetFakeRate-eUp'        : ['wjets/latino_RunA_892pbinv_LooseLoose.root',
                                  'wjets/latino_RunB_4404pbinv_LooseLoose.root',
                                  'wjets/latino_RunC_7032pbinv_LooseLoose.root',
@@ -136,6 +141,11 @@ backgrounds_7TeV = {
                                 ],
     'Vg-template'             : ['vgTemplate/latino_085_WgammaToLNuG.root'],
     'WJet'                    : ['wjets/WJetsEstimated_Full2011_added.root'],
+    'WJetFakeRate-nominal'    : ['vgTemplate/latino_RunA_892pbinv_LooseLoose.root',
+                                 'vgTemplate/latino_RunB_4404pbinv_LooseLoose.root',
+                                 'vgTemplate/latino_RunC_7032pbinv_LooseLoose.root',
+                                 'vgTemplate/latino_RunD_7274pbinv_LooseLoose.root',
+                                ],
     'WJetFakeRate-eUp'        : ['vgTemplate/latino_RunA_892pbinv_LooseLoose.root',
                                  'vgTemplate/latino_RunB_4404pbinv_LooseLoose.root',
                                  'vgTemplate/latino_RunC_7032pbinv_LooseLoose.root',
@@ -494,7 +504,7 @@ mcsets = {
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl','WJetSS',
         # systematics
-        'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
+        'WJetFakeRate-nominal', 'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
         # templates
         'VgS-template', 'Vg-template',
         # 0j1j specific
@@ -507,7 +517,7 @@ mcsets = {
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl','WJetSS',
         # systematics
-        'WJetFakeRate-eUp', 'WJetFakeRate-eDn', 'WJetFakeRate-mUp', 'WJetFakeRate-mDn',
+        'WJetFakeRate-nominal', 'WJetFakeRate-eUp', 'WJetFakeRate-eDn', 'WJetFakeRate-mUp', 'WJetFakeRate-mDn',
         # templates
         'VgS-template','Vg-template',
         # 0j1j specific
@@ -520,7 +530,7 @@ mcsets = {
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl','WJetSS',
         # systematics
-        'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
+        'WJetFakeRate-nominal', 'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
         # templates
         'VgS-template','Vg-template',
         # 0j1j specific
@@ -533,7 +543,7 @@ mcsets = {
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl','WJetSS',
         # systematics
-        'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
+        'WJetFakeRate-nominal', 'WJetFakeRate-eUp', 'WJetFakeRate-eDn','WJetFakeRate-mUp', 'WJetFakeRate-mDn',
         # templates
         'VgS-template','Vg-template',
         # 0j1j specific

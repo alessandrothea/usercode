@@ -586,6 +586,7 @@ class ShapeFactory:
         weights = {}
         # tocheck
         weights['WJet']              = 'baseW*fakeW*(run!=201191)'
+        weights['WJetFakeRate-nominal']  = 'baseW*fakeW*(run!=201191)'
         weights['WJetFakeRate-eUp']  = 'baseW*fakeWElUp*(run!=201191)'
         weights['WJetFakeRate-eDn']  = 'baseW*fakeWElDown*(run!=201191)'
         weights['WJetFakeRate-mUp']  = 'baseW*fakeWMuUp*(run!=201191)'
