@@ -201,13 +201,12 @@ class ShapeLoader:
 class NuisanceMapBuilder:
     _logger = logging.getLogger('NuisanceMapBuilder')
 
-    def __init__(self, ddPath, noWWddAbove, shape=True, isssactive=False):
+    def __init__(self, ddPath, noWWddAbove, shape=True):
         self._common       = OrderedDict()
         self._0jetOnly     = OrderedDict()
         self._1jetOnly     = OrderedDict()
         self._ddEstimates  = OrderedDict()
         self._shape        = shape
-        self._isssactive   = isssactive
         # to options
         self.statShapeVeto = []
 
@@ -219,7 +218,7 @@ class NuisanceMapBuilder:
  
     def _build(self):
         # common 0/1 jet systematics
-        pureMC = [ 'VgS', 'Vg', 'VV', 'ggH', 'vbfH', 'wzttH', 'Other'] 
+        pureMC = [ 'VgS', 'Vg', 'VV', 'ggH', 'vbfH', 'wzttH'] 
         dummy = {}
         dummy['CMS_fake_e']    = (1.50, ['WJet']) # take the average of ee/me 
 #         dummy['CMS_fake_m']    = (1.42, ['WJet']) # take the average of mm/em
@@ -253,7 +252,6 @@ class NuisanceMapBuilder:
         for k,v in dummy.iteritems():
             self._0jetOnly[k] = (['lnN'], dict([( process, v[0][0]) for process in v[1] ]) )
             self._1jetOnly[k] = (['lnN'], dict([( process, v[0][1]) for process in v[1] ]) )
-
 
         # 0 jets only
         dummy = {}
@@ -354,7 +352,9 @@ class NuisanceMapBuilder:
 
 
 
+
     def _addStatisticalNuisances(self,nuisances, yields,channel,suffix=''):
+
         for p,y in yields.iteritems():
             if p == 'Data':
                 continue
@@ -396,6 +396,7 @@ class NuisanceMapBuilder:
                 self._logger.info( 'Skipping %s (vetoed, data driven)', eff )
                 continue
             tag = eff
+            #tag = tag.replace('CMS','CMS'+suffix)
             if tag in nuisances: del nuisances[tag]
             nuisances[tag] = (['shapeN2'],dict([ (p,1) for p in effects[eff] ]) )
 
@@ -445,13 +446,14 @@ class NuisanceMapBuilder:
            optMatt.VH = 1
         else :
            optMatt.VH = 0
-
+           
         if jetcat not in ['0j','1j','2j']: raise ValueError('Unsupported jet category found: %s')
 
         suffix = '_8TeV'
         if '2011' in opt.dataset: suffix = '_7TeV'
 
         CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, self._shape, optMatt, suffix, self._isssactive)
+
         if self._shape:
             # float WW+ggWW background normalisation float together
             for p in opts['floatN'].split(' '):
@@ -535,7 +537,6 @@ if __name__ == '__main__':
     parser.add_option('--path_dd'           ,   dest='path_dd'           , help='Data driven path'                 , default=None)
     parser.add_option('--path_shape_merged' ,   dest='path_shape_merged' , help='Destination directory for merged' , default=None)
     parser.add_option('--floatN',               dest='floatN'            , help='float normalisation of particular processes, separate by space ', default=' ')
-    parser.add_option('--isssactive'          , dest='isssactive'        , help='Is samesign datacard available'                           , default=False)
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
 
@@ -544,7 +545,6 @@ if __name__ == '__main__':
     print 'NuisFlags:  ',opt.nuisFlags
     print 'noWWddAbove:',opt.noWWddAbove
     print 'dataset:    ',opt.dataset
-    print 'isssactive: ',opt.isssactive
 
     # checks
     if not opt.variable or not opt.lumi:
@@ -589,7 +589,7 @@ if __name__ == '__main__':
     #mask = ['Vg','DYLL','DYTT']
     mask = ['DYLL']
 
-    builder = NuisanceMapBuilder( opt.path_dd, opt.noWWddAbove, opt.shape, opt.isssactive )
+    builder = NuisanceMapBuilder( opt.path_dd, opt.noWWddAbove, opt.shape )
     builder.statShapeVeto = mask
     for mass in masses:
         if '2011' in opt.dataset and (mass==145 or mass==155): continue
@@ -608,6 +608,7 @@ if __name__ == '__main__':
             # reshuffle the order
             #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
             order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Other', 'ggH125', 'vbfH125', 'wzttH125', 'Data']
+
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             

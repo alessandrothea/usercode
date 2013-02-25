@@ -690,13 +690,13 @@ class ShapeMixer:
         # -----------------------------------------------------------------
         # JHU Normaliartion
 
-        if 'jhu' in self.nominals:
-           print "Normalising JHU"
-           jhuNORM  = self.nominals['jhu_NORM']
-           jhuShape = self.nominals['jhu']
-           jhuShape.Scale( (jhuNORM.Integral() if jhuNORM.Integral() !=0. else jhuShape.Integral()) / jhuShape.Integral() )
+        #if 'jhu' in self.nominals:
+        #   print "Normalising JHU"
+        #   jhuNORM  = self.nominals['jhu_NORM']
+        #   jhuShape = self.nominals['jhu']
+        #   jhuShape.Scale( (jhuNORM.Integral() if jhuNORM.Integral() !=0. else jhuShape.Integral()) / jhuShape.Integral() )
 
-        if 'jhu_ALT' in self.nominals:
+        if ('jhu_ALT' in self.nominals) and ('jhu_NORM' in self.nominals):
            jhuNORM  = self.nominals['jhu_NORM']
            jhuShape = self.nominals['jhu_ALT']
            jhuShape.Scale( (jhuNORM.Integral() if jhuNORM.Integral() !=0. else jhuShape.Integral()) / jhuShape.Integral() )
@@ -967,7 +967,8 @@ if __name__ == '__main__':
     print 'dataset:    ',opt.dataset
 
     scale2nom = []
-    if '2012' in opt.dataset: scale2nom = [ ('Vg', '*'), ('VgS','*') ]
+    scale2nom = [ ('jhu_ALT','*') ]
+    if '2012' in opt.dataset: scale2nom = [ ('Vg', '*'), ('VgS','*'),('jhu_ALT','*') ]
 
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()

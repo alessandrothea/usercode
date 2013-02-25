@@ -424,7 +424,7 @@ class ShapeFactory:
             raise ValueError('The variable\'s and range number of dimensions are mismatching')
 
         print 'var: '+var
-        print 'selection: '+selections['Data']
+        print 'selection: '+selections['WW']
 
         for process,tree  in inputs.iteritems():
 #             print ' '*3,process.ljust(20),':',tree.GetEntries(),
@@ -633,7 +633,12 @@ class ShapeFactory:
         weights['zH']                = self._stdWgt+'*(mctruth == 24)'
         weights['ttH']               = self._stdWgt+'*(mctruth == 121)'
 
-        weights['Other']             = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 )*(channel>1.5))'
+        weights['jhu']               = self._stdWgt+'*kfW'
+        weights['jhu_ALT']           = self._stdWgt+'*kfW'
+        weights['jhu_NORM']          = self._stdWgt+'*kfW'
+        weights['jhu_NLO']           = self._stdWgt+'*kfW'
+
+
 
         if cat in ['2j']:
             weights['WW']                = self._stdWgt+'*(1+(mjj>500)*(detajj>3.5))'
