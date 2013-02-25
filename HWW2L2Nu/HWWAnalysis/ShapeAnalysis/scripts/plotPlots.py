@@ -99,6 +99,19 @@ def runTheShape():
                        110, 600, 1, 1, 
                        "H #rightarrow WW #rightarrow 2l2#nu",
                        True, 0, 'png')
+        ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
+                       "plots/{tag}_{name}_{option}".format(**pars),
+                       "{lumi} fb^{{-1}}".format(**pars),
+                       110, 250, 0, 1,
+                       "H #rightarrow WW #rightarrow 2l2#nu",
+                       True, 0, 'pdf')
+        ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
+                       "plots/{tag}_{name}_{option}".format(**pars),
+                       "{lumi} fb^{{-1}}".format(**pars),
+                       110, 250, 0, 1,
+                       "H #rightarrow WW #rightarrow 2l2#nu",
+                       True, 0, 'png')
+
 #     p.communicate()
 #     os.system('; '.join(commands))
     
