@@ -749,6 +749,7 @@ def main():
                 ## h_b.GetYaxis().SetBinLabel(j,proc)
 
 
+        ROOT.gROOT.SetBatch(True)
         ROOT.gStyle.SetPalette(1)
         ROOT.gStyle.SetOptStat(0)
         ROOT.gStyle.SetOptTitle(1)
