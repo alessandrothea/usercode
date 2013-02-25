@@ -234,7 +234,7 @@ class ShapeFactory:
 
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
-            samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
+            #samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
             # mass and variable selection
             allCuts = hwwinfo.massSelections( mass )
 
@@ -260,6 +260,15 @@ class ShapeFactory:
                     print '-'*80
                     print ' Processing channel '+chan+': mass',mass,'category',category,'flavor',flavor
                     print '-'*80
+
+                    # define samples here and remove DYLL from DF and DYTT from SF
+                    samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
+                    if (flavor=='em' or flavor=='me'):
+                        if 'DYLL'              in samples: samples.pop('DYLL')
+                        if 'DYLL-template'     in samples: samples.pop('DYLL-template')
+                        if 'DYLL-templatesyst' in samples: samples.pop('DYLL-templatesyst')
+                    if (flavor=='ee' or flavor=='mm'):
+                        if 'DYTT'              in samples: samples.pop('DYTT')
                     
                     # - define the source paths 
                     activeInputPaths = ['base']
@@ -317,12 +326,8 @@ class ShapeFactory:
         nicks = kwargs['nicks'] if 'nicks' in kwargs else None
         # mass dependent sample list, can be in the mass loop
         for mass in self._masses:
-            samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
+            #samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
             
-            # remove the dirname
-            for tag,files in samples.iteritems():
-                samples[tag] = map(os.path.basename,files)
-
             # mass and variable selection
             allCuts = hwwinfo.massSelections( mass )
             varSelection = allCuts[sel+'-selection']
@@ -347,6 +352,16 @@ class ShapeFactory:
                     ])
                     pars['nick'] = nicks[syst] if nicks else syst
 
+                    # define samples here and remove DYLL from DF and DYTT from SF
+                    samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
+                    # remove the dirname
+                    for tag,files in samples.iteritems():
+                        samples[tag] = map(os.path.basename,files)
+                    if (flavor=='em' or flavor=='me'):
+                        if 'DYLL'              in samples: samples.pop('DYLL')
+                    if (flavor=='ee' or flavor=='mm'):
+                        if 'DYTT'              in samples: samples.pop('DYTT')
+                            
                     # - define the source paths 
                     activeInputPaths = ['base']
                     # - if the current var is listes among the known paths,
