@@ -235,7 +235,7 @@ class ShapeGluer:
         nunorms  = [ arg.GetName() for arg in roofiter(pars) if not arg.GetName() in shapes ]
 
         # groups the nuis to float: all norms together, shapes 1 by 1
-        grouping = [nunorms] + [ [arg] for arg in nushapes ]
+        grouping = dict([('norms',nunorms)] + [ (arg,[arg]) for arg in nushapes] )
 
         # nominal valuse from the best fit values
         nmarray = self._roo2array(model, data, pars)
@@ -272,8 +272,12 @@ class ShapeGluer:
         # and the errors to be filled
         uperrs = np.zeros(nbins, np.float32)
         dwerrs = np.zeros(nbins, np.float32)
-        for g in grouping:
+
+        allfloats = {}
+
+        for n,g in grouping.iteritems():
             upfloat,dwfloat = self._variate(model,pars,g)
+            allfloats[n] = (upfloat,dwfloat)
             uperrs += np.square(upfloat)
             dwerrs += np.square(dwfloat)
 
@@ -284,8 +288,22 @@ class ShapeGluer:
         uperrs  *= A
         dwerrs  *= A
 
-        errs = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerrs,uperrs)
-        errs.SetNameTitle('model_errs','model_errs')
+#         errs = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerrs,uperrs)
+#         errs.SetNameTitle('model_errs','model_errs')
+        allfloats['allnuisances'] = (uperrs,dwerrs)
+#         alldw['allnorms'] = dwerrs
+
+        errs = {}
+
+        for n in allfloats.iterkeys():
+            uperrs,dwerrs = allfloats[n]
+            errgraph = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerrs,uperrs)
+            nametitle = 'model_errs_%s' % n if n != 'allnorms' else 'model_errs'
+            errgraph.SetNameTitle(nametitle, nametitle)
+            errs[n] = errgraph
+
+        print errs.keys()
+
         return errs
 
     #---
@@ -585,7 +603,7 @@ def export( bin, DC, MB, w, mode, fit, opts):
     plot.setVVHist(shapes2plot['VVsum'])
     plot.setWJetsHist(shapes2plot['WJet'])
     if errs:
-        plot.setNuisances(errs)
+        plot.setNuisances(errs['allnuisances'])
 
     cName = 'c_fitshapes_'+mode
     ratio = opts.ratio
@@ -626,7 +644,8 @@ def export( bin, DC, MB, w, mode, fit, opts):
     all = {}
     all.update(shapes)
     if errs:
-        all[errs] = errs
+#         all[errs] = errs
+        all.update(errs)
     return all
 
 
