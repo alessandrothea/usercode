@@ -304,112 +304,7 @@ def signalSamples(sigtag,mass=125,suffix=''):
             signals['ggH'+suffix]   = [f.format(mass = mass) for f in ggH]
             signals['vbfH'+suffix]  = [f.format(mass = mass) for f in vbfH]
 
-# Test from Alessandro:
-    elif sigtag == 'JHU' and mass==125:
-       signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
-       signals['jhu_ALT'] = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
 
-    elif sigtag == 'JHUSMONLY' and mass==125:
-        signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
-                              'nominals/latino_8004_SMH125ToWW2Tau2Nu.root',
-                              'nominals/latino_8007_SMH125ToWWLTau2Nu.root' 
-                             ]
-
-    elif sigtag == 'JHU0MONLY' and mass==125:
-        signals['jhu']     = ['nominals/latino_8002_Higgs0M125ToWW2L2Nu.root',
-                              'nominals/latino_8005_Higgs0M125ToWW2Tau2Nu.root',
-                              'nominals/latino_8008_Higgs0M125ToWWLTau2Nu.root'
-                             ]
-    elif sigtag == 'JHU2MONLY' and mass==125:
-        signals['jhu']     = ['nominals/latino_8003_Graviton2PM.root',
-                              'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
-                              'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
-                             ]
-
-    elif sigtag == 'JHUSMvs0M' and mass==125:
-        signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
-                              'nominals/latino_8004_SMH125ToWW2Tau2Nu.root',
-                              'nominals/latino_8007_SMH125ToWWLTau2Nu.root' 
-                             ]
-        signals['jhu_ALT'] = ['nominals/latino_8002_Higgs0M125ToWW2L2Nu.root',
-                              'nominals/latino_8005_Higgs0M125ToWW2Tau2Nu.root', 
-                              'nominals/latino_8008_Higgs0M125ToWWLTau2Nu.root' 
-                             ]
-
-    elif sigtag == 'JHUSMvs2M' and mass==125:
-        signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
-                              'nominals/latino_8004_SMH125ToWW2Tau2Nu.root',
-                              'nominals/latino_8007_SMH125ToWWLTau2Nu.root' 
-                             ]
-        signals['jhu_ALT'] = ['nominals/latino_8003_Graviton2PM.root',
-                              'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
-                              'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
-                             ]
-
-    elif sigtag == 'JHUSMvs2MplOthers' and mass==125:
-        signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
-                              'nominals/latino_8004_SMH125ToWW2Tau2Nu.root',
-                              'nominals/latino_8007_SMH125ToWWLTau2Nu.root'
-                             ]
-        signals['vbfH']    = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
-        signals['wzttH']   = ['nominals/latino_3125_wzttH125ToWW.root']
-
-        signals['jhu_ALT'] = ['nominals/latino_8003_Graviton2PM.root',
-                              'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
-                              'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
-                             ]
-        signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
-        signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
-
-    elif sigtag == 'PWGSMvs2MplOthers' and mass==125:
-        signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
-        signals['vbfH']    = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
-        signals['wzttH']   = ['nominals/latino_3125_wzttH125ToWW.root']
-               
-        signals['jhu_ALT'] = ['nominals/latino_8003_Graviton2PM.root',
-                              'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
-                              'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
-                             ]
-        signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
-        signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
-
-
-    else:
-        raise ValueError('Signal tag %s not found for mass %d' % (sigtag,mass) )
-    return signals
-
-def signalSamples_7TeV(sigtag,mass=125,suffix=''):
-
-    signals = {}
-
-    if sigtag == 'SM':
-        ggH = ['nominals/latino_1{mass}_ggToH{mass}toWWto2L2Nu.root',
-               'nominals/latino_2{mass}_ggToH{mass}toWWtoLNuTauNu.root',
-               'nominals/latino_3{mass}_ggToH{mass}toWWto2Tau2Nu.root',
-              ]
-        ggHnew = ['nominals/latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root']
-        vbfH   = ['nominals/latino_4{mass}_vbfToH{mass}toWWto2L2Nu.root',
-                  'nominals/latino_5{mass}_vbfToH{mass}toWWtoLNuTauNu.root',
-                  'nominals/latino_6{mass}_vbfToH{mass}toWWto2Tau2Nu.root',
-                 ]
-        vbfHnew = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root']
-        wzttH   = ['nominals/latino_7{mass}_wzttH{mass}ToWW.root']
-        
-        if int(mass)==122:
-            signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggHnew]
-            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
-        elif int(mass)==118 or (int(mass)>120 and int(mass)<130) or int(mass)==135:
-            signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggHnew]
-            signals['vbfH'+suffix] = [f.format(mass = mass) for f in vbfHnew]
-            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
-        elif int(mass) > 115:
-            signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggH]
-            signals['vbfH'+suffix] = [f.format(mass = mass) for f in vbfH]
-            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
-        else:
-            signals['ggH'+suffix]  = ['nominals/latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
-            signals['vbfH'+suffix] = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
-            
 # and the JHU case:
     elif sigtag == 'JHUSMONLY' and mass==125:
         signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
@@ -455,6 +350,34 @@ def signalSamples_7TeV(sigtag,mass=125,suffix=''):
         signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
         signals['jhu_NLO']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
 
+    elif sigtag == 'JHUSMvs2MnoNLO' and mass==125:
+        signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
+                              'nominals/latino_8004_SMH125ToWW2Tau2Nu.root',
+                              'nominals/latino_8007_SMH125ToWWLTau2Nu.root'
+                             ]
+        signals['jhu_ALT'] = ['nominals/latino_8003_Graviton2PM.root',
+                              'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
+                              'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'PWGSMvs2M' and mass==125:
+        signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_ALT'] = ['nominals/latino_8003_Graviton2PM.root',
+                              'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
+                              'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_NLO']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root'] 
+
+    elif sigtag == 'PWGSMvs2MnoNLO' and mass==125:
+        signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_ALT'] = ['nominals/latino_8003_Graviton2PM.root',
+                              'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
+                              'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+
     elif sigtag == 'JHUSMvs2MplOthers' and mass==125:
         signals['jhu']     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
                               'nominals/latino_8004_SMH125ToWW2Tau2Nu.root',
@@ -471,7 +394,8 @@ def signalSamples_7TeV(sigtag,mass=125,suffix=''):
         signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
         signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
 
-    elif sigtag == 'PWGSMvs2MplOthers' and mass==125:
+
+    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLO' and mass==125:
         signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
         signals['vbfH']    = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
         signals['wzttH']   = ['nominals/latino_3125_wzttH125ToWW.root']
@@ -480,9 +404,207 @@ def signalSamples_7TeV(sigtag,mass=125,suffix=''):
                               'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
                               'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
                              ]
+        #signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+        #signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLOnormALL' and mass==125:
+        signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['vbfH']    = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+        signals['wzttH']   = ['nominals/latino_3125_wzttH125ToWW.root']
+
+        signals['jhu_ALT'] = ['nominals/latino_8003_Graviton2PM.root',
+                              'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
+                              'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
+                             ]
+        #signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+        #signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root',
+                              'nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root',
+                              'nominals/latino_3125_wzttH125ToWW.root'
+                             ]
+
+    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLOnoNorm' and mass==125:
+
+        signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['vbfH']    = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+        signals['wzttH']   = ['nominals/latino_3125_wzttH125ToWW.root']
+
+        signals['jhu_ALT'] = ['nominals/latino_8003_Graviton2PM.root',
+                              'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
+                              'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
+                             ]
+        #signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+        #signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
+        #signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root',
+        #                      'nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root',
+        #                      'nominals/latino_3125_wzttH125ToWW.root'
+        #                     ]
+
+    elif sigtag == 'PWGSMqqHwzttHvs0MnoNLO' and mass==125:
+        signals['jhu']     = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['vbfH']    = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+        signals['wzttH']   = ['nominals/latino_3125_wzttH125ToWW.root']
+
+        signals['jhu_ALT'] = ['nominals/latino_8002_Higgs0M125ToWW2L2Nu.root',
+                              'nominals/latino_8005_Higgs0M125ToWW2Tau2Nu.root',
+                              'nominals/latino_8008_Higgs0M125ToWWLTau2Nu.root'
+                             ]
+
+        #signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+        #signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
+        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    else:
+        raise ValueError('Signal tag %s not found for mass %d' % (sigtag,mass) )
+    return signals
+
+def signalSamples_7TeV(sigtag,mass=125,suffix=''):
+
+    signals = {}
+
+    if sigtag == 'SM':
+        ggH = ['nominals/latino_1{mass}_ggToH{mass}toWWto2L2Nu.root',
+               'nominals/latino_2{mass}_ggToH{mass}toWWtoLNuTauNu.root',
+               'nominals/latino_3{mass}_ggToH{mass}toWWto2Tau2Nu.root',
+              ]
+        ggHnew = ['nominals/latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root']
+        vbfH   = ['nominals/latino_4{mass}_vbfToH{mass}toWWto2L2Nu.root',
+                  'nominals/latino_5{mass}_vbfToH{mass}toWWtoLNuTauNu.root',
+                  'nominals/latino_6{mass}_vbfToH{mass}toWWto2Tau2Nu.root',
+                 ]
+        vbfHnew = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root']
+        wzttH   = ['nominals/latino_7{mass}_wzttH{mass}ToWW.root']
+        
+        if int(mass)==122:
+            signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggHnew]
+            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
+        elif int(mass)==118 or (int(mass)>120 and int(mass)<130) or int(mass)==135:
+            signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggHnew]
+            signals['vbfH'+suffix] = [f.format(mass = mass) for f in vbfHnew]
+            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
+        elif int(mass) > 115:
+            signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggH]
+            signals['vbfH'+suffix] = [f.format(mass = mass) for f in vbfH]
+            signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
+        else:
+            signals['ggH'+suffix]  = ['nominals/latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
+            signals['vbfH'+suffix] = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
+            
+# and the JHU case:
+    elif sigtag == 'JHUSMONLY' and mass==125:
+        signals['jhu']     = ['nominals/latino_13001_SMH125ToWW2L2Nu.root',
+                              'nominals/latino_13004_SMH125ToWW2Tau2Nu.root',
+                              'nominals/latino_13007_SMH125ToWWLTau2Nu.root' 
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'JHU0MONLY' and mass==125:
+        signals['jhu']     = ['nominals/latino_13002_Higgs0M125ToWW2L2Nu.root',
+                              'nominals/latino_13005_Higgs0M125ToWW2Tau2Nu.root',
+                              'nominals/latino_13008_Higgs0M125ToWWLTau2Nu.root'
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'JHU2MONLY' and mass==125:
+        signals['jhu']     = ['nominals/latino_13003_Graviton2PM2L2Nu.root',
+                              'nominals/latino_13006_Graviton2PMToWW2Tau2Nu.root',
+                              'nominals/latino_13009_Graviton2PMToWWLTau2Nu.root'
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'JHUSMvs0M' and mass==125:
+        signals['jhu']     = ['nominals/latino_13001_SMH125ToWW2L2Nu.root',
+                              'nominals/latino_13004_SMH125ToWW2Tau2Nu.root',
+                              'nominals/latino_13007_SMH125ToWWLTau2Nu.root' 
+                             ]
+        signals['jhu_ALT'] = ['nominals/latino_13002_Higgs0M125ToWW2L2Nu.root',
+                              'nominals/latino_13005_Higgs0M125ToWW2Tau2Nu.root', 
+                              'nominals/latino_13008_Higgs0M125ToWWLTau2Nu.root' 
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'JHUSMvs2M' and mass==125:
+        signals['jhu']     = ['nominals/latino_13001_SMH125ToWW2L2Nu.root',
+                              'nominals/latino_13004_SMH125ToWW2Tau2Nu.root',
+                              'nominals/latino_13007_SMH125ToWWLTau2Nu.root' 
+                             ]
+        signals['jhu_ALT'] = ['nominals/latino_13003_Graviton2PM2L2Nu.root',
+                              'nominals/latino_13006_Graviton2PMToWW2Tau2Nu.root',
+                              'nominals/latino_13009_Graviton2PMToWWLTau2Nu.root'
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_NLO']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'JHUSMvs2MnoNLO' and mass==125:
+        signals['jhu']     = ['nominals/latino_13001_SMH125ToWW2L2Nu.root',
+                              'nominals/latino_13004_SMH125ToWW2Tau2Nu.root',
+                              'nominals/latino_13007_SMH125ToWWLTau2Nu.root'
+                             ]
+        signals['jhu_ALT'] = ['nominals/latino_13003_Graviton2PM2L2Nu.root',
+                              'nominals/latino_13006_Graviton2PMToWW2Tau2Nu.root',
+                              'nominals/latino_13009_Graviton2PMToWWLTau2Nu.root'
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'PWGSMvs2M' and mass==125:
+        signals['jhu']     = ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_ALT'] = ['nominals/latino_13003_Graviton2PM2L2Nu.root',
+                              'nominals/latino_13006_Graviton2PMToWW2Tau2Nu.root',
+                              'nominals/latino_13009_Graviton2PMToWWLTau2Nu.root'
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_NLO']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root'] 
+
+    elif sigtag == 'PWGSMvs2MnoNLO' and mass==125:
+        signals['jhu']     = ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_ALT'] = ['nominals/latino_13003_Graviton2PM2L2Nu.root',
+                              'nominals/latino_13006_Graviton2PMToWW2Tau2Nu.root',
+                              'nominals/latino_13009_Graviton2PMToWWLTau2Nu.root'
+                             ]
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'JHUSMvs2MplOthers' and mass==125:
+        signals['jhu']     = ['nominals/latino_13001_SMH125ToWW2L2Nu.root',
+                              'nominals/latino_13004_SMH125ToWW2Tau2Nu.root',
+                              'nominals/latino_13007_SMH125ToWWLTau2Nu.root'
+                             ]
+        signals['vbfH']    = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+        signals['wzttH']   = ['nominals/latino_3125_wzttH125ToWW.root']
+
+        signals['jhu_ALT'] = ['nominals/latino_13003_Graviton2PM2L2Nu.root',
+                              'nominals/latino_13006_Graviton2PMToWW2Tau2Nu.root',
+                              'nominals/latino_13009_Graviton2PMToWWLTau2Nu.root'
+                             ]
         signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
         signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
-        signals['jhu_NORM']= ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+
+
+    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLO' and mass==125:
+        signals['jhu']     = ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['vbfH']    = ['nominals/latino_8125_vbfToH125toWWTo2LAndTau2Nu.root']
+        signals['wzttH']   = ['nominals/latino_7125_wzttH125ToWW.root']
+               
+        signals['jhu_ALT'] = ['nominals/latino_13003_Graviton2PM2L2Nu.root',
+                              'nominals/latino_13006_Graviton2PMToWW2Tau2Nu.root',
+                              'nominals/latino_13009_Graviton2PMToWWLTau2Nu.root'
+                             ]
+        #signals['vbfH_ALT'] = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+        #signals['wzttH_ALT']= ['nominals/latino_3125_wzttH125ToWW.root']
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+
+    elif sigtag == 'PWGSMqqHwzttHvs0MnoNLO' and mass==125:
+        signals['jhu']     = ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
+        signals['vbfH']    = ['nominals/latino_8125_vbfToH125toWWTo2LAndTau2Nu.root']
+        signals['wzttH']   = ['nominals/latino_7125_wzttH125ToWW.root']
+
+        signals['jhu_ALT'] = ['nominals/latino_13002_Higgs0M125ToWW2L2Nu.root',
+                              'nominals/latino_13005_Higgs0M125ToWW2Tau2Nu.root',
+                              'nominals/latino_13008_Higgs0M125ToWWLTau2Nu.root'
+                             ]
+
+        signals['jhu_NORM']= ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
 
     else:
         raise ValueError('Signal tag %s not found for mass %d' % (sigtag,mass) )
@@ -513,7 +635,7 @@ mcsets = {
     ],
     '0j1j-JHUOthers' : [
         #signals
-        'jhu','jhu_ALT','jhu_NORM','jhu_NLO','vbfH','vbfH_ALT','wzttH','wzttH_ALT',
+        'jhu','jhu_ALT','jhu_NORM','jhu_NLO','vbfH','wzttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown','TopTW','TopCtrl','WJetSS',
         # systematics
