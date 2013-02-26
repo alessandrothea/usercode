@@ -167,11 +167,11 @@ class ShapeGluer:
                 norm = norms.find('n_exp_final_bin{0}_proc_{1}'.format(self._bin, process))
 
 #             self._rooPdf2TH1(h,shape,data, norm, pars.floatParsFinal())
-            self._rooPdf2TH1(h,shape,data, norm, pars)
+            self._rooPdf2TH1(h, shape, data, pars, norm)
 
         else:
             self._logger.debug('Using expected shapes')
-            self._rooPdf2TH1(h,shape,data, self._DC.exp[self._bin][process],pars)
+            self._rooPdf2TH1(h, shape, data, pars, self._DC.exp[self._bin][process])
 
         
         syst = self._syst(process)
@@ -235,7 +235,8 @@ class ShapeGluer:
         nunorms  = [ arg.GetName() for arg in roofiter(pars) if not arg.GetName() in shapes ]
 
         # groups the nuis to float: all norms together, shapes 1 by 1
-        grouping = dict([('norms',nunorms)] + [ (arg,[arg]) for arg in nushapes] )
+        # grouping = dict([('norms',nunorms)] + [ (arg,[arg]) for arg in nushapes] )
+        grouping = dict([ (arg,[arg]) for arg in (nushapes+nunorms)] )
 
         # nominal valuse from the best fit values
         nmarray = self._roo2array(model, data, pars)
@@ -245,6 +246,8 @@ class ShapeGluer:
         print ns
         I = J = 0
 
+        print '-'*80
+        print '%-10s %-10s %-10s %-10s' % ('Process','frompdf','fromfit','datacard')
         print '-'*80
         fn = {}
         if norms:
@@ -277,6 +280,10 @@ class ShapeGluer:
 
         for n,g in grouping.iteritems():
             upfloat,dwfloat = self._variate(model,pars,g)
+
+            upfloat *= A
+            dwfloat *= A
+
             allfloats[n] = (upfloat,dwfloat)
             uperrs += np.square(upfloat)
             dwerrs += np.square(dwfloat)
@@ -285,24 +292,21 @@ class ShapeGluer:
         dwerrs = np.sqrt(dwerrs)
 
         nmarray *= A
-        uperrs  *= A
-        dwerrs  *= A
+#         uperrs  *= A
+#         dwerrs  *= A
 
-#         errs = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerrs,uperrs)
-#         errs.SetNameTitle('model_errs','model_errs')
         allfloats['allnuisances'] = (uperrs,dwerrs)
-#         alldw['allnorms'] = dwerrs
 
         errs = {}
 
         for n in allfloats.iterkeys():
             uperrs,dwerrs = allfloats[n]
             errgraph = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerrs,uperrs)
-            nametitle = 'model_errs_%s' % n if n != 'allnorms' else 'model_errs'
+            nametitle = 'model_errs_%s' % n if n != 'allnuisances' else 'model_errs'
             errgraph.SetNameTitle(nametitle, nametitle)
             errs[n] = errgraph
 
-        print errs.keys()
+#         print errs.keys()
 
         return errs
 
@@ -355,7 +359,7 @@ class ShapeGluer:
         return math.sqrt(sum2)
 
     #---
-    def _roo2array(self, pdf, data, pars=None):
+    def _roo2array(self, pdf, data, pars=None, norm=None):
 
         pdf_obs  = pdf.getObservables(data)
         pdf_pars = pdf.getParameters(data)
@@ -370,6 +374,8 @@ class ShapeGluer:
             pdf_obs.__assign__(data.get(i))
             bins[i] = pdf.getVal(pdf_obs)
 
+        if norm: bins *= norm
+
         return bins
 
 
@@ -377,7 +383,7 @@ class ShapeGluer:
 
 
 #     @staticmethod
-    def _rooPdf2TH1(self,h, pdf, data, norm=None, pars=None):
+    def _rooPdf2TH1(self,h, pdf, data, pars=None, norm=None):
         # consider the othe option
         # 
         # Check upstream the dependencies:
@@ -575,17 +581,10 @@ def fitAndPlot( dcpath, opts ):
         here.cd()
 
 #---
-def export( bin, DC, MB, w, mode, fit, opts):
+def printshapes( shapes, errs, mode, opts, bin ):
+    shapes2plot = shapes.copy()
 
     import hwwsamples
-
-    logging.debug('Plotting %s', fit)
-
-    gluer = ShapeGluer(bin, DC, MB, w, fit)
-
-    shapes,errs,dummy = gluer.glue()
-
-    shapes2plot = shapes.copy()
     shapes2plot['Hsum']  = THSum(shapes2plot,hwwsamples.signals,'histo_higgs','higgs')
     shapes2plot['WWsum'] = THSum(shapes2plot,['WW','ggWW'],'histo_WWsum','WWsum')
     shapes2plot['VVsum'] = THSum(shapes2plot,['VV','Vg'],'histo_VVsum','VVsum')
@@ -602,45 +601,71 @@ def export( bin, DC, MB, w, mode, fit, opts):
     plot.setTopHist(shapes2plot['Top'])
     plot.setVVHist(shapes2plot['VVsum'])
     plot.setWJetsHist(shapes2plot['WJet'])
-    if errs:
-        plot.setNuisances(errs['allnuisances'])
 
     cName = 'c_fitshapes_'+mode
     ratio = opts.ratio
-#     c = ROOT.TCanvas(cName,cName) #if ratio else ROOT.TCanvas(cName,cName,1000,1000)
-    
-#     if opt.csize:
-#         (w,h) = opt.csize
-#     elif ratio: w = 1000; h = 1400
+
     if ratio: w = 1000; h = 1400
     else:     w = 1000; h = 1000
 
     if opts.stretch:
         plot.stretch(opts.stretch)
         w = int(w*opts.stretch)
-        print w
 
     c = ROOT.TCanvas(cName,cName, w+4, h+28) #if ratio else ROOT.TCanvas(cName,cName,1000,1000)
-    print w,h, c.GetWw(), c.GetWh()
+#     print w,h, c.GetWw(), c.GetWh()
 
     plot.setMass(opts.mass)
     plot.setLumi(opts.lumi if opt.lumi else 0)
     plot.setLabel(opts.xlabel)
     plot.setRatioRange(0.,2.)
-    plot.Draw(c,1,ratio)
 
-    ROOT.gPad.Modified()
-    ROOT.gPad.Update()
+    def _print(c, p, e, l):
 
-    if opts.output:
+        if not e:
+            e = 0x0
+
+        plot.setNuisances(e)
+
+        c.Clear()
+    
+        p.Draw(c,1,ratio)
+
+        c.Modified()
+        c.Update()
+    
         hwwtools.ensuredir(opts.output)
 
         outbasename = os.path.join(opts.output,'fitshapes_mH%d_%s_%s' % (opt.mass,bin,mode))
+        if l: 
+            outbasename += '_' + l
+
+        print 'outbasename:',outbasename
         c.Print(outbasename+'.pdf')
         c.Print(outbasename+'.png')
-#         c.Print(outbasename+'.root')
+
+
+    if errs:
+        for ename,eg in errs.iteritems():
+            _print(c,plot,eg,ename) 
 
     del c
+
+
+
+#---
+def export( bin, DC, MB, w, mode, fit, opts):
+
+
+    logging.debug('Plotting %s', fit)
+
+    gluer = ShapeGluer(bin, DC, MB, w, fit)
+
+    shapes,errs,dummy = gluer.glue()
+
+    if opts.output:
+        printshapes(shapes, errs, mode, opts, bin)
+
     all = {}
     all.update(shapes)
     if errs:
