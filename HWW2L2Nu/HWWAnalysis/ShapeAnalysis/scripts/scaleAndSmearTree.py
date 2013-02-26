@@ -2374,7 +2374,7 @@ def main():
         parser.error('No output file defined')
     if opt.systArgument is None:
         parser.error('No systematic argument given')
-    possibleSystArguments = ['muonScale','electronScale','leptonEfficiency','jetEnergyScale','metResolution','electronResolution','dyTemplate','puVariation']
+    possibleSystArguments = ['muonScale','electronScale','leptonEfficiency','jetEnergyScale','metResolution','electronResolution','dyTemplate','puVariation','chargeResolution']
     if opt.systArgument not in possibleSystArguments:
         parser.error('Wrong systematic argument')        
     possibleDirections = ['up','down','temp','syst']
@@ -2422,11 +2422,11 @@ def main():
         s.dyTemplate()
     if s.systArgument == 'puVariation':
         s.puVariation()
-    
+    if s.systArgument == 'chargeResolution':
+        s.chargeResolution()
     
     print 'Job finished...'
 
 
 if __name__ == '__main__':
     main()
-
