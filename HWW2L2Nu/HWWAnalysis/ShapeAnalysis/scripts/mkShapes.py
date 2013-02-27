@@ -621,6 +621,7 @@ class ShapeFactory:
         weights['DYLL-template']     = self._stdWgt+'* dyW *(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         weights['DYLL-templatesyst'] = self._stdWgt+'*dyWUp*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         #systematics
+        weights['TopTW']             = self._stdWgt+'*(1+0.5*(dataset>=11 && dataset<=16))' 
         weights['TopCtrl']           = self._stdWgt+'*bvetoW'
         weights['Top-template']      = self._stdWgt+'*bvetoW'
         #filter and k-factor on Vg* done by kfW
