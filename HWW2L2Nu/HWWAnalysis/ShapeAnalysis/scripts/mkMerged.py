@@ -73,6 +73,7 @@ class ShapeMerger:
 
             # remove the negative bins before storing it
             self._removeNegativeBins(h)
+            self._fillEmptyBins(h)
             self.histograms[n] = h
 
 
@@ -139,6 +140,17 @@ class ShapeMerger:
         if 'WJet' in h.GetName():
             self._logger.debug('Neg Bins removal %-50s : %.3f %.3f',h.GetName(),integral,h.Integral())
 
+        if h.Integral() > 0:
+            h.Scale(integral/h.Integral())
+
+    def _fillEmptyBins(self,h):
+        
+        integral = h.Integral() if h.Integral() >=0 else 0.001
+        for i in xrange(1,h.GetNbinsX()+1):
+            c = h.GetBinContent(i)
+            if c < 0.00001:
+                h.SetAt(0.001,i)
+            
         if h.Integral() > 0:
             h.Scale(integral/h.Integral())
 
