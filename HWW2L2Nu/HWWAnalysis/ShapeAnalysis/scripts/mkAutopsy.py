@@ -23,12 +23,14 @@ def getnorms(pdf, obs, norms = None ):
 
     out = norms if norms!=None else {}
 
-    #if isinstance(pdf,ROOT.RooSimultaneous):
-        #cat = sim.indexCat()
-        #for i in xrange(cat.numBins(0)):
-            #cat.setBin(i)
-            #pdfi = sim.getPdf(cat.getLabel());
-            #if pdfi.__nonzero__(): getnorms(pdfi, obs, out);
+    logging.debug('searching norms in class: %s' % pdf.__class__.__name__ )
+
+    if isinstance(pdf,ROOT.RooSimultaneous):
+        cat = pdf.indexCat()
+        for i in xrange(cat.numBins('')):
+            cat.setBin(i)
+            pdfi = pdf.getPdf(cat.getLabel());
+            if pdfi.__nonzero__(): getnorms(pdfi, obs, out);
         #pass
 
     if isinstance(pdf,ROOT.RooProdPdf):
@@ -124,31 +126,49 @@ class ShapeGluer:
             self._logger.debug('List of PDF extracted from the ws')
             for p,pdf in pdfs.iteritems():
                 self._logger.debug('%-10s %s',p,pdf)
+
+
             
         return pdfs
 
     #---
     def _getnormalisations( self, pdf ):
+        '''Retrieve the normalisations from a pdf'''
         pdf_obs  = pdf.getObservables(self._data)
         roonorms = getnorms(pdf, pdf_obs)
 
-        exp = self._DC.exp[self._bin]
+        # debuginfo
+        if self._logger.isEnabledFor(logging.DEBUG):
+            self._logger.debug('List of normalisation coefficients from the model')
+            for t,v in roonorms.iteritems():
+                self._logger.debug('%-30s %f',t,v)
+
+#         exp = self._DC.exp[self._bin]
 
 #         print exp
 #         print roonorms
 #         print self._DC.processes
         
         norms = {}
+        notfound = []
         for process in self._DC.processes:
 
             n = roonorms.get( 'n_exp_bin%s_proc_%s' % (self._bin, process) )
             if not n: n = roonorms.get( 'n_exp_final_bin%s_proc_%s' % (self._bin, process) )
 
             # fill it up only if the process exists in the model
-            if not n: continue
+            if not n: 
+                notfound.append(process)
+                continue
 
             norms[process] = n
-            
+
+        if len(notfound):
+            self._logger.debug('The normalisation of the following processes was not found: %s', ', '.join(notfound))
+#             if True:
+            if not len(norms):
+                self._logger.error('There is something wrong here. No normalisations were matched: %s',', '.join(roonorms))    
+                raise RuntimeError('There is something wrong here. No normalisations were matched: %s' % ( ', '.join(roonorms) ) )
         return norms
 
     #---
@@ -448,16 +468,12 @@ class ShapeGluer:
         # now produce the arrays for everything
         nmarrays =  self._model2arrays( pars )
 
-        # convert the shapes into histograms
-        hists = dict( [
-            (p,self._array2TH1('hist_'+p, a, title=p)) for p,a in nmarrays.iteritems()
-        ] )
 
 
         mega = {}
         
         # now the variations
-        print 'Generating the variations'
+        print 'Scanning the nuisance space'
         for nu,group in grouping.iteritems():
             self._logger.debug(' - %s',nu)
             nuvars = self._variatemodel(pars,group)
@@ -467,7 +483,7 @@ class ShapeGluer:
                 mega[p][nu] = v
 
         # loop over processes to calculate the square sum of the nuisamces
-        print 'Calculating the nuisances square sum'
+        print 'Calculating the nuisances envelope'
         for p,nus in mega.iteritems():
             self._logger.debug(' - %s',p)
             
@@ -486,7 +502,13 @@ class ShapeGluer:
 
 
         # turn them into TGraphs
-        print 'Converting the arrays into TGraphs'
+        print 'Creating the ROOT objects'
+
+        # convert the shapes into histograms
+        hists = dict( [
+            (p,self._array2TH1('hist_'+p, a, title=p)) for p,a in nmarrays.iteritems()
+        ] )
+
         errs = {}
 
         for p,nus in mega.iteritems():
@@ -789,12 +811,6 @@ def fitAndPlot( dcpath, opts ):
     options.nuisancesToExclude = []
     options.nuisancesToRescale = []
 
-    # get some default arguments
-#     dummy = optparse.OptionParser()
-#     addDatacardParserOptions(dummy)
-#     options = dummy.parse_args([])
-#     del dummy
-
     options.fileName = dcpath
     options.out = None
     options.cexpr = False
@@ -866,7 +882,7 @@ def fitAndPlot( dcpath, opts ):
     sig_fit = ( model_s, res_s.floatParsFinal(), mlffile.Get('norm_fit_s'), )
     bkg_fit = ( model_b, res_b.floatParsFinal(), mlffile.Get('norm_fit_b'), )
 
-    print DC.bins
+    print 'List of bins found',', '.join(DC.bins)
     bin = DC.bins[0]
 
     modes = {
@@ -880,7 +896,7 @@ def fitAndPlot( dcpath, opts ):
 
     allshapes = {}
     for mode,fit in modes.iteritems():
-        print 'mode',mode
+        print 'Analysing model:',mode
 #         allshapes[mode] = export(bin, DC, MB, w, mode, fit, opts)
         logging.debug('Plotting %s', fit)
 
@@ -1074,6 +1090,9 @@ if __name__ == '__main__':
 #         print "*** print_exception:"
 #         traceback.print_exception(exc_type, exc_value, exc_traceback,
 #                                   limit=2, file=sys.stdout)
+        print
+        print '--> Exception'
+        print
         print "*** print_exc:"
         traceback.print_exc()
         print "*** format_exc, first and last line:"
