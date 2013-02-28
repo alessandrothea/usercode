@@ -897,7 +897,7 @@ def fitAndPlot( dcpath, opts ):
             for s in shapes.itervalues(): s.Write()
 
             for p,nugs in errs.iteritems():
-                dp = d.mkdir(p+'_errs')
+                dp = d.mkdir(p)
                 dp.cd()
                 for g in nugs.itervalues(): g.Write()
                 d.cd()
