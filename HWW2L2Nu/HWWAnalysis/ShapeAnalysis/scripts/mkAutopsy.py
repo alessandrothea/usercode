@@ -120,6 +120,11 @@ class ShapeGluer:
                 raise ValueError('Can\'t find the nether the morph nor the shape!!! '+process)
 
             pdfs[process] = shape
+        if self._logger.isEnabledFor(logging.DEBUG):
+            self._logger.debug('List of PDF extracted from the ws')
+            for p,pdf in pdfs.iteritems():
+                self._logger.debug('%-10s %s',p,pdf)
+            
         return pdfs
 
     #---
@@ -192,7 +197,8 @@ class ShapeGluer:
         if norm or norm == 0:
             bins *= norm
         elif norm==None:
-            self._logger.debug('No normalisation')
+#             self._logger.debug('No normalisation')
+            pass
 
         return bins
 
@@ -1030,7 +1036,7 @@ def parseOptions(parser):
 
     if not opt.debug:
         pass
-    elif opt.debug == 2:
+    elif opt.debug >= 2:
         print 'Logging level set to DEBUG (%d)' % opt.debug
         logging.basicConfig(level=logging.DEBUG)
     elif opt.debug == 1:
@@ -1048,6 +1054,7 @@ if __name__ == '__main__':
 
     addOptions(parser)
     (opt, args) = parseOptions(parser)
+
 
     try:
         dcpath = args[0]

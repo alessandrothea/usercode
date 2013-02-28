@@ -12,6 +12,8 @@ parser.add_option('-s','--scan',dest='scan',default=None)
 parser.add_option('-o','--opts',dest='opts',default='')
 parser.add_option('--bdt',dest='bdtnjet',default=None)
 parser.add_option('-l','--log',dest='log',default=None)
+parser.add_option('--treepath',dest='treepath',default='.')
+parser.add_option('--bdtpath',dest='bdtpath',default='.')
 
 (opt, args) = parser.parse_args()
 
@@ -41,10 +43,10 @@ for process in sorted(processes):
     latchain = ROOT.TChain('latino')
     for f in processes[process]:
         print 'latino::adding',f
-        latchain.Add(treepath+f)
+        latchain.Add(os.path.join(opt.treepath+f))
     if opt.bdt:
         bdtchain = ROOT.TChain('latinobdt')
-        bdtpath = bdtpathtmpl.format(mass=mass,njet=opt.bdtnjet)
+        bdtpath = opt.bdtpath.format(mass=mass,njet=opt.bdtnjet)
         for f in processes[process]:
             print 'bdt::adding',os.path.join(bdtpath,f)
             bdtchain.Add( bdtpath+f)
