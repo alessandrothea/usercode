@@ -3,6 +3,8 @@ from ROOTtree import TreeWorker
 import os.path
 import ROOT
 import logging
+import copy
+import pdb
 
 #______________________________________________________________________________
 class Labelled(object):
@@ -117,6 +119,8 @@ class CutFlow(odict.OrderedDict):
         elif isinstance(l,odict.OrderedDict):
             for key,val in l.iteritems():
                 self[key] = val
+        elif isinstance(l,tuple):
+            pass
         else:
             raise ValueError('CutFlow: init value not supported: '+l.__class__.__name__)
 
@@ -156,6 +160,11 @@ class CutFlow(odict.OrderedDict):
             ['(%r, %r)' % (key, self[key].cut) for key in self._sequence]))
     
     __str__ = __repr__
+
+
+    #---
+    def at(self,index):
+        return self.__getitem__(self._sequence[index])
 
     #---
     def collapse(self,name):
@@ -247,7 +256,21 @@ class Latino:
 
 import types
 #______________________________________________________________________________
-class TreeAnalyser:
+class TreeAnalyser(object):
+    '''
+    TODO: Add the capability of adding analysis steps:
+        It can happen to have multiple selections chains with a partial selection overlap
+        
+        the goal would be to be capable of:
+
+        mother = TreeAnalyser(sample, cuts)
+        mother.bufferentries()
+
+        child1 = mother.clone()
+        child1['stepA'] = 'pt > 100'
+        child2 = mother.clone()
+        child2['stepB'] = 'pt < 100'
+    '''
     _logger = logging.getLogger('TreeAnalyser')
 
     #---
@@ -283,7 +306,7 @@ class TreeAnalyser:
 
     class BufferedPlotter(Plotter):
         def __init__(self,*args,**kwargs):
-            super(BufferedPlotter,self).__init__(*args,**kwargs)
+            super(TreeAnalyser.BufferedPlotter,self).__init__(*args,**kwargs)
 
         def __getitem__(self,val):
             elists = self._analyser._ensureentries()
@@ -297,24 +320,39 @@ class TreeAnalyser:
 
 
     #---
-    def __init__(self, sample, cuts ):
-        self._worker = self._makeworker(sample)
+    def __init__(self, sample=None, cuts=None ):
         self._cuts = cuts
         self._entries = None
+        self._modified = True
+        self._worker = self._makeworker(sample) if sample else None
 
     #---
     def __del__(self):
-        if self._entries:
-            for l in self._entries.itervalues():
-                self._logger.debug( 'obj before %s',l.__repr__())
-                l.IsA().Destructor(l)
-                self._logger.debug( 'obj after  %s', l.__repr__())
+        self._deleteentries()
 
 
     #---
     def __repr__(self):
-        return self.__class__.__name__
+        return '%s( %s )' % (self.__class__.__name__,self._cuts)
 
+    
+    #---
+    def __copy__(self):
+        self._logger.debug('-GremlinS-')
+
+        other = TreeAnalyser()
+        other._cuts    = copy.deepcopy(self._cuts)
+        other._entries = odict.OrderedDict( [ ( n, l.Clone() ) for n,l in self._entries.iteritems() ] ) if self._entries else None
+        other._worker  = self._worker
+        other._modified = self._modified
+
+        return other
+
+    def __deepcopy__(self,memo):
+        return self.__copy__()
+        
+    def clone(self):
+        return self.__copy__()
 
     #---
     def __setattr__(self,key,value):
@@ -322,6 +360,26 @@ class TreeAnalyser:
             self._worker.setscale(value)
         else:
             self.__dict__[key] = value
+
+    #---
+    @property
+    def cuts(self):
+        return self._cuts
+
+    @property
+    def worker(self):
+        return self._worker
+
+    #---
+    def cutstring(self,name, extra=None):
+        i = self._cuts.index(name)
+
+        cuts = self._cuts[0:i+1].rawlist()
+
+        if extra: cuts.append(extra)
+
+        return self._worker._cutexpr(cuts)
+
 
     #---
     @staticmethod
@@ -333,42 +391,94 @@ class TreeAnalyser:
         t.setweight( sample.weight )
         return t
 
+    #---
+    def _deleteentries(self):
+        if self._entries:
+            for l in self._entries.itervalues():
+                self._logger.debug( 'obj before %s',l.__repr__())
+                l.IsA().Destructor(l)
+                self._logger.debug( 'obj after  %s', l.__repr__())
+            self._entries = None
 
     #---
-    def _ensureentries(self):
+    def _ensureentries(self, force=False):
+        if force:
+            self._deleteentries()
+
+#         pdb.set_trace()
+
         if not self._entries:
-            self._logger.info('Buffering the entries passing each cut')
+            self._logger.info('--Buffering the entries passing each cut--')
             self._entries = self._worker._makeentrylists(self._cuts)
+            self._logger.debug('---------------------------------------')
+        elif self._modified:
+            self._logger.info('--Updating the entries passing each cut--')
+            self._worker._updateentrylists(self._cuts,self._entries)
+            self._logger.debug('---------------------------------------')
+
+        self._modified = False
+
         return self._entries
 
     #---
+    def bufferentries(self, force=False):
+        '''buffer the entries'''
+        self._ensureentries( force )
+
+    #---
+    def append(self,name,cut):
+        '''append a new cut, and if the entrylist has been already made, update it'''
+        self._cuts[name] = cut
+        self._modified = True
+
+#         if self._entries:
+#             self._worker._updateentrylists(self._cuts,self._entries)
+
     def entries(self):
-        return self._worker.entries(self._cuts.string())
+        return self._worker.entries()
+        
+    #---
+    def selectedentries(self):
+        self._ensureentries()
+        return self._entries[self._entries.keys()[-1]].GetN()
+#         return self._worker.entries(self._cuts.string())
 
     #---
     def entriesflow(self):
-        return [ (n,self._worker.entries(self._cuts[:i+1].string()))  for i,n in enumerate(self._cuts) ]
+        '''TODO: use the entrylist'''
+
+        self._ensureentries()
+        return odict.OrderedDict([ (n, l.GetN()) for n,l in self._entries.iteritems()])
 
     #---
-    def yields(self):
-        return self._worker.yields(self._cuts.string())
+    def yields(self, extra=None):
+        # make the entries
+        elists = self._ensureentries()
+        
+        # using elist[:] doesn't clone the TEntryList, but inserts the reference only.
+        yields = self._worker._yieldsfromentries(elists[-1:],extra=extra)
+        return yields.values()[0]
+
+
+#         base = self._cuts.string()
+#         cut = ' && '.join(['(%s)' % c for c in (base,extra) if c])
+
+#         return self._worker.yields(cut)
 
     #---
-    def yieldsflow(self):
+    def yieldsflow(self, extra=None):
         # make the entries
         elists = self._ensureentries()
 
         # add the weight and get the yields
-        yields = self._worker._yieldsfromentries(elists)
+        yields = self._worker._yieldsfromentries(elists,extra=extra)
         return yields
         
-#         return self._worker.yieldsflow(odict.OrderedDict(self._cuts.list()))
-
     #---
     def plot(self, name, varexp, options='', bins=None, extra=None):
-        cut = self._cuts.string()
-        if extra:
-            cut = '(%s) && (%s)' % (cut,extra)
+
+        base = self._cuts.string()
+        cut = ' && '.join(['(%s)' % c for c in (base,extra) if c])
 
         return self._worker.plot(name,varexp,cut,options,bins)
 
@@ -380,16 +490,18 @@ class TreeAnalyser:
         # add the weight and get the yields
         plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
         return plots
-#         return self._worker.plotsflow(name,varexp,odict.OrderedDict(self._cuts.list()), options, bins)
 
     #---
-    def plotter(self,buffered=False,*args,**kwargs):
+    def plotter(self,*args,**kwargs):
+
+        buffered = kwargs.pop('buffered',False)
         
         if buffered:
             cls = self.BufferedPlotter
         else:
             cls = self.Plotter
 
+        print args
         return cls(self,*args,**kwargs)
 
 
@@ -423,7 +535,7 @@ if __name__ == '__main__':
 
     a = TreeAnalyser(s,None)
     
-    print a.entries()
+    print a.selectedentries()
     
     print a._worker._friends
 
