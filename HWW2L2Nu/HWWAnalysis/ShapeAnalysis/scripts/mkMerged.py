@@ -955,6 +955,7 @@ if __name__ == '__main__':
 
     parser.add_option('--no_wwdd_above'     , dest='noWWddAbove'       , help='No WW dd above this mass'         , default=None  , type='int' )
     parser.add_option('--dataset'           , dest='dataset'           , help='Dataset to process'               , default=None)
+    parser.add_option('--mcset'             , dest='mcset'             , help='Mcset to process'                 , default=None)
     parser.add_option('--tag'               , dest='tag'               , help='Tag used for the shape file name' , default=None)
     parser.add_option('--statmode'          , dest='statmode'          , help='Production mode for stat-shapes (default = %default)', default='unified')
     parser.add_option('--path_dd'           , dest='path_dd'           , help='Data driven path'                 , default=None)
@@ -968,8 +969,6 @@ if __name__ == '__main__':
 #     parser.add_option('--scale2nominal', dest='scale2nom', help='Systematics to normalize to nominal ', default='')
 #     parser.add_option('--ninja', dest='ninja', help='Ninja', action='store_true', default=False )
   
-    scale2nom = [ ('Vg', '*'), ('VgS','*') ]
-
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
 
@@ -980,8 +979,12 @@ if __name__ == '__main__':
     print 'dataset:    ',opt.dataset
 
     scale2nom = []
-    scale2nom = [ ('jhu_ALT','*') ]
-    if '2012' in opt.dataset: scale2nom = [ ('Vg', '*'), ('VgS','*'),('jhu_ALT','*') ]
+    if '2012' in opt.dataset: scale2nom = scale2nom+[('Vg','*'), ('VgS','*')]
+    if 'JHU' in opt.mcset: scale2nom = scale2nom+[('jhu_ALT','*')]
+    # in the future good to have a way of removing processes which are not in mcset
+    #scale2nom = [(p,s) for p,s in scale2nom if p in hwwsamples.mcsets(opt.mcset)]
+    for p,s in scale2nom:
+        print 'scaling to nominal: '+p+' syst '+s
 
     sys.argv.append( '-b' )
     ROOT.gROOT.SetBatch()
