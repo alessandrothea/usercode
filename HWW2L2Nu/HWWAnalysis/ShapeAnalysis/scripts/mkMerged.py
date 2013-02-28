@@ -150,6 +150,7 @@ class ShapeMerger:
             c = h.GetBinContent(i)
             if c < 0.00001:
                 h.SetAt(0.001,i)
+                h.SetBinError(i,0.001)
             
         if h.Integral() > 0:
             h.Scale(integral/h.Integral())
