@@ -9,7 +9,10 @@ import logging
 import array
 import re
 import math
+import copy
 import numpy as np
+import HWWAnalysis.Misc.odict as odict
+
 
 from HiggsAnalysis.CombinedLimit.DatacardParser import *
 from HiggsAnalysis.CombinedLimit.ShapeTools import *
@@ -143,12 +146,6 @@ class ShapeGluer:
             for t,v in roonorms.iteritems():
                 self._log.debug('%-30s %f',t,v)
 
-#         exp = self._DC.exp[self._bin]
-
-#         print exp
-#         print roonorms
-#         print self._DC.processes
-        
         norms = {}
         notfound = []
         for process in self._DC.processes:
@@ -165,7 +162,6 @@ class ShapeGluer:
 
         if len(notfound):
             self._log.debug('The normalisation of the following processes was not found: %s', ', '.join(notfound))
-#             if True:
             if not len(norms):
                 self._log.error('There is something wrong here. No normalisations were matched: %s',', '.join(roonorms))    
                 raise RuntimeError('There is something wrong here. No normalisations were matched: %s' % ( ', '.join(roonorms) ) )
@@ -243,9 +239,6 @@ class ShapeGluer:
         
         return h
 
-#         for i,c in enumerate(contents):
-#             h.SetBinContent(i+1,c)
-
     #---
     def _model2arrays(self,pars):
         '''Turns the array into '''
@@ -302,7 +295,6 @@ class ShapeGluer:
         from math import sqrt
         h = self._makeHisto('histo_Data','Data')
 
-#         data = self._ws.data('data_obs')
         data = self._data
         for i in xrange(data.numEntries()):
             data.get(i)
@@ -344,7 +336,6 @@ class ShapeGluer:
 
     #---
     def _gluemc(self):
-#         print 'gluenew'
         # clean the parameters
         self._ws.loadSnapshot('clean')
         model, pars, norms = self._fit
@@ -403,14 +394,13 @@ class ShapeGluer:
         # groups the nuis to float: all norms together, shapes 1 by 1
         # grouping = dict([('norms',nunorms)] + [ (arg,[arg]) for arg in nushapes] )
         grouping = dict([ (arg,[arg]) for arg in (nushapes+nunorms)] )
+#         grouping = {'CMS_norm_WW':['CMS_norm_WW']}
 
         # print some stats
         self._chknorms(A, norms)
 
         # now produce the arrays for everything
         nmarrays =  self._model2arrays( pars )
-
-
 
         mega = {}
         
@@ -432,10 +422,15 @@ class ShapeGluer:
             uperrs = np.zeros(nbins, np.float32)
             dwerrs = np.zeros(nbins, np.float32)
 
-            for n,(ups,dws) in nus.iteritems():
-                 
+            for n,(ups,dws) in nus.iteritems(): 
                 uperrs += np.square(ups)
                 dwerrs += np.square(dws)
+
+#             if p == 'model':
+#                 for n in sorted(nus): 
+#                     (ups,dws) = nus[n]
+#                     print 'g %40s: sumup %15.6f | sumdw %15.6f'  % (n,sum(ups),sum(dws))
+
 
             uperrs = np.sqrt(uperrs)
             dwerrs = np.sqrt(dwerrs)
@@ -448,7 +443,7 @@ class ShapeGluer:
 
         # convert the shapes into histograms
         hists = dict( [
-            (p,self._array2TH1('hist_'+p, a, title=p)) for p,a in nmarrays.iteritems()
+            (p,self._array2TH1('histo_'+p, a, title=p)) for p,a in nmarrays.iteritems()
         ] )
 
         errs = {}
@@ -505,9 +500,6 @@ class ShapeGluer:
         uparrays =  self._model2arrays( ups )
         dwarrays =  self._model2arrays( dws )
 
-#         variations = dict( [
-#             (p,self._dovariations(nmarrays[p],uparrays[p],dwarrays[p])) for p in nmarrays.iterkeys()
-#         ])
 
         # transform the fluctuations in differences
         # filter those which do not differ from the nominal
@@ -515,15 +507,11 @@ class ShapeGluer:
         for p in nmarrays.iterkeys():
             if (nmarrays[p] == uparrays[p]).all() and (nmarrays[p] == dwarrays[p]).all(): 
                 self._log.debug('   - skipping %s',p)
-                #                 pdb.set_trace()
                 continue
             vararrays.append( ( p, self._dovariations(nmarrays[p],uparrays[p],dwarrays[p])) )
 
         variations = dict(vararrays)
-
             
-
-
 
         return variations
 
@@ -652,27 +640,36 @@ def fitAndPlot( dcpath, opts ):
     w = wsfile.Get('w')
     w.saveSnapshot('clean',w.allVars())
 
-    # 3. prepare the temp direcotry
-    import tempfile
-    mlfdir = opt.tmpdir if opt.tmpdir else tempfile.mkdtemp(prefix='mlfit_')
-    hwwtools.ensuredir(mlfdir)
-    # 3.1 go to the tmp dir 
-    here = os.getcwd()
-    os.chdir(mlfdir)
-    # 3.2 
-    mlcmd = 'combine -M MaxLikelihoodFit --saveNormalizations '+os.path.join(here,wspath)
-    logging.debug(mlcmd)
-    print 'Fitting the workspace...',
-    sys.stdout.flush()
-    if opts.fit: os.system(mlcmd)
-    os.chdir(here)
-    print 'done.'
+    # run combine if requested
+    if opt.usefit:
+        mlfpath = opt.usefit
+        print '-'*80
+        print 'Using results in',mlfpath
+        print '-'*80
+    else:
+        # 3.0 prepare the temp direcotry
+        import tempfile
+        mlfdir = opt.tmpdir if opt.tmpdir else tempfile.mkdtemp(prefix='mlfit_')
+        hwwtools.ensuredir(mlfdir)
+        # 3.1 go to the tmp dir 
+        here = os.getcwd()
+        os.chdir(mlfdir)
+        # 3.2 
+        mlcmd = 'combine -M MaxLikelihoodFit --saveNormalizations '+os.path.join(here,wspath)
+        logging.debug(mlcmd)
+        print 'Fitting the workspace...',
+        sys.stdout.flush()
+        if opts.fit: os.system(mlcmd)
+        os.chdir(here)
+        print 'done.'
 
-    # open the output and get the normalizations
-    mlfpath = os.path.join(mlfdir,'mlfit.root')
+        # 3.3 set the max-like fit results path
+        mlfpath = os.path.join(mlfdir,'mlfit.root')
+
+    # 4. open the output and get the normalizations
     mlffile = ROOT.TFile.Open(mlfpath)
     if not mlffile.__nonzero__():
-        raise IOError('Could not open '+wspath)
+        raise IOError('Could not open '+mlfpath)
 
     model_s = w.pdf('model_s')
     model_b = w.pdf('model_b')
@@ -684,11 +681,11 @@ def fitAndPlot( dcpath, opts ):
     print 'List of bins found',', '.join(DC.bins)
     bin = DC.bins[0]
 
-    modes = {
-        'sig' :sig_fit,
-        'bkg' :bkg_fit,
-        'init':(model_s,res_s.floatParsInit(),None), #(None, None, model_s)
-    }
+    modes = odict.OrderedDict([
+        ('sig' ,sig_fit),
+        ('bkg' ,bkg_fit),
+        ('init',(model_s,res_s.floatParsInit(),None)), #(None, None, model_s)
+    ])
 
     # experimental
     MB = ShapeBuilder(DC, options)
@@ -696,7 +693,6 @@ def fitAndPlot( dcpath, opts ):
     allshapes = {}
     for mode,fit in modes.iteritems():
         print 'Analysing model:',mode
-#         allshapes[mode] = export(bin, DC, MB, w, mode, fit, opts)
         logging.debug('Plotting %s', fit)
 
         gluer = ShapeGluer(bin, DC, MB, w, fit)
@@ -735,26 +731,60 @@ def fitAndPlot( dcpath, opts ):
 
 #---
 def printshapes( shapes, errs, mode, opts, bin ):
+
     # deep copy?
     shapes2plot = copy.deepcopy(shapes)
 
-    import hwwsamples
-    shapes2plot['Hsum']  = THSum(shapes2plot,hwwsamples.signals,'histo_higgs','higgs')
-    shapes2plot['WWsum'] = THSum(shapes2plot,['WW','ggWW'],'histo_WWsum','WWsum')
-    shapes2plot['VVsum'] = THSum(shapes2plot,['VV','Vg'],'histo_VVsum','VVsum')
-    shapes2plot['DYsum'] = THSum(shapes2plot,['DYLL','DYTT'],'histo_DYsum','DYsum')
+    import hwwplot
+    plot = hwwplot.HWWPlot()
+#     # print shapes
 
-    plot = ROOT.MWLPlot()
-    plot.setDataHist(shapes2plot['Data'])
-    if mode != 'bkg':
-        plot.setStackSignal(True)
-        plot.setHWWHist(shapes2plot['Hsum'])
+#     hwwtools.hookDebugger()
+    plot.setdata(shapes2plot['Data'])
 
-    plot.setWWHist(shapes2plot['WWsum'])  
-    plot.setZJetsHist(shapes2plot['DYsum'])
-    plot.setTopHist(shapes2plot['Top'])
-    plot.setVVHist(shapes2plot['VVsum'])
-    plot.setWJetsHist(shapes2plot['WJet'])
+    if 'ggH' in shapes2plot: plot.addsig('ggH',  shapes2plot['ggH'])
+    if 'ggH' in shapes2plot: plot.addsig('vbfH', shapes2plot['vbfH'])
+    if 'ggH' in shapes2plot: plot.addsig('VH',   shapes2plot['wzttH'], label='stocazz')
+
+    plot.addbkg('VV',   shapes2plot['VV'])
+    plot.addbkg('WJet', shapes2plot['WJet'])
+    plot.addbkg('Vg',   shapes2plot['Vg'])
+    plot.addbkg('VgS',  shapes2plot['VgS'])
+    plot.addbkg('Top',  shapes2plot['Top'])
+    plot.addbkg('DYTT', shapes2plot['DYTT'])
+    # plot.addbkg('DYLL', shapes2plot['DYLL'])
+    plot.addbkg('WW',   shapes2plot['WW'])
+    plot.addbkg('ggWW', shapes2plot['ggWW'])
+
+    ## 1 = signal over background , 0 = signal on its own
+    plot.set_addSignalOnBackground(0);
+
+    ## 1 = merge signal in 1 bin, 0 = let different signals as it is
+    plot.set_mergeSignal(0);
+
+    plot.setMass(125); 
+    plot.setLabel("m_{T}^{ll-E_{T}^{miss}} [GeV]");
+    plot.addLabel("0 jet #sqrt{s} = 8TeV");
+
+    plot.prepare()
+
+#     import hwwsamples
+#     shapes2plot['Hsum']  = THSum(shapes2plot,hwwsamples.signals,'histo_higgs','higgs')
+#     shapes2plot['WWsum'] = THSum(shapes2plot,['WW','ggWW'],'histo_WWsum','WWsum')
+#     shapes2plot['VVsum'] = THSum(shapes2plot,['VV','Vg'],'histo_VVsum','VVsum')
+#     shapes2plot['DYsum'] = THSum(shapes2plot,['DYLL','DYTT'],'histo_DYsum','DYsum')
+
+#     plot = ROOT.MWLPlot()
+#     plot.setDataHist(shapes2plot['Data'])
+#     if mode != 'bkg':
+#         plot.setStackSignal(True)
+#         plot.setHWWHist(shapes2plot['Hsum'])
+
+#     plot.setWWHist(shapes2plot['WWsum'])  
+#     plot.setZJetsHist(shapes2plot['DYsum'])
+#     plot.setTopHist(shapes2plot['Top'])
+#     plot.setVVHist(shapes2plot['VVsum'])
+#     plot.setWJetsHist(shapes2plot['WJet'])
 
     cName = 'c_fitshapes_'+mode
     ratio = opts.ratio
@@ -762,24 +792,29 @@ def printshapes( shapes, errs, mode, opts, bin ):
     if ratio: w = 1000; h = 1400
     else:     w = 1000; h = 1000
 
-    if opts.stretch:
-        plot.stretch(opts.stretch)
-        w = int(w*opts.stretch)
+#     if ratio: w = 500; h = 700
+#     else:     w = 500; h = 500
+
+#     if opts.stretch:
+#         plot.stretch(opts.stretch)
+#         w = int(w*opts.stretch)
 
     c = ROOT.TCanvas(cName,cName, w+4, h+28) #if ratio else ROOT.TCanvas(cName,cName,1000,1000)
 #     print w,h, c.GetWw(), c.GetWh()
 
-    plot.setMass(opts.mass)
+#     plot.setMass(opts.mass)
     plot.setLumi(opts.lumi if opt.lumi else 0)
-    plot.setLabel(opts.xlabel)
-    plot.setRatioRange(0.,2.)
+#     plot.setLabel(opts.xlabel)
+#     plot.setRatioRange(0.,2.)
 
     def _print(c, p, e, l):
+        plot.seterror(e)
 
         if not e:
             e = 0x0
 
-        plot.setNuisances(e)
+#         plot.setNuisances(e)
+        plot.set_ErrorBand(e)
 
         c.Clear()
     
@@ -795,13 +830,16 @@ def printshapes( shapes, errs, mode, opts, bin ):
             outbasename += '_' + l
 
         print 'outbasename:',outbasename
+        c.Print(outbasename+'.root')
         c.Print(outbasename+'.pdf')
         c.Print(outbasename+'.png')
 
 
     if errs:
-        for ename,eg in errs.iteritems():
-            _print(c,plot,eg,ename) 
+#         for ename,eg in errs.iteritems():
+#             _print(c,plot,eg,ename) 
+        ename = 'all'
+        _print(c,plot,errs['model'][ename],ename) 
 
     del c
 
@@ -809,7 +847,6 @@ def printshapes( shapes, errs, mode, opts, bin ):
 
 #---
 def export( bin, DC, MB, w, mode, fit, opts):
-
 
     logging.debug('Plotting %s', fit)
 
@@ -832,14 +869,15 @@ def export( bin, DC, MB, w, mode, fit, opts):
 #---
 def addOptions( parser ):
     
-    parser.add_option('-o' , '--output' , dest='output' , help='Output directory (%default)' , default=None)
-    parser.add_option('-x' , '--xlabel' , dest='xlabel' , help='X-axis label'                , default='')
-    parser.add_option('-r' , '--ratio'  , dest='ratio'  , help='Plot the data/mc ration'     , default=True    , action='store_false')
-    parser.add_option('--nofit'         , dest='fit'    , help='Don\'t fit'                  , default=True    , action='store_false')
-    parser.add_option('--clean'         , dest='clean'  , help='Clean the ws (regenerate it' , default=False   , action='store_true')
-    parser.add_option('--dump'          , dest='dump'   , help='Dump the histograms to file' , default=None)
-    parser.add_option('--tmpdir'        , dest='tmpdir' , help='Temporary directory'         , default=None)
-    parser.add_option('--stretch'       , dest='stretch', help='Stretch'                     , default=None, type='float')
+    parser.add_option('-o' , '--output' , dest='output' , help='Output directory (%default)'     , default=None)
+    parser.add_option('-x' , '--xlabel' , dest='xlabel' , help='X-axis label'                    , default='')
+    parser.add_option('-r' , '--ratio'  , dest='ratio'  , help='Plot the data/mc ration'         , default=True    , action='store_false')
+    parser.add_option('--nofit'         , dest='fit'    , help='Don\'t fit'                      , default=True    , action='store_false')
+    parser.add_option('--clean'         , dest='clean'  , help='Clean the ws (regenerate it'     , default=False   , action='store_true')
+    parser.add_option('--dump'          , dest='dump'   , help='Dump the histograms to file'     , default=None)
+    parser.add_option('--tmpdir'        , dest='tmpdir' , help='Temporary directory'             , default=None)
+    parser.add_option('--usefit'        , dest='usefit' , help='Do not fit, use an external file', default=None)
+    parser.add_option('--stretch'       , dest='stretch', help='Stretch'                         , default=None, type='float')
 
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
