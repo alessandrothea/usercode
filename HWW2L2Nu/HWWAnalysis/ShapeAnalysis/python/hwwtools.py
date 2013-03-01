@@ -46,6 +46,23 @@ def confirm(prompt=None, resp=False):
             return False
 
 #---
+def hookDebugger(debugger='gdb'):
+    '''debugging helper, hooks debugger to running interpreter process'''
+
+    import os
+    pid = os.spawnvp(os.P_NOWAIT,
+                     debugger, [debugger, '-q', 'python', str(os.getpid())])
+
+    # give debugger some time to attach to the python process
+    import time
+    time.sleep( 1 )
+
+    # verify the process' existence (will raise OSError if failed)
+    os.waitpid( pid, os.WNOHANG )
+    os.kill( pid, 0 )
+    return
+
+#---
 def ensuredir(directory):
     if not os.path.exists(directory):
         try:
@@ -73,7 +90,6 @@ def filterSamples( samples, voc ):
     # convert the vocabulary, which is a mixture of strings and 2d tuples, into a dictionary
     fullvoc = dict([ e if isinstance(e,tuple) else (e,e) for e in voc])
     for proc,label in fullvoc.iteritems():
-#         print proc,label
 
         if label not in samples: continue
 
