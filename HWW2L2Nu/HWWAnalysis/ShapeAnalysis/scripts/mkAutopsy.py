@@ -63,7 +63,7 @@ mlfdir = '.'
 # ---
 class ShapeGluer:
     '''Class to recompose a histograms-base combined model into drawable objects'''
-    _logger = logging.getLogger('ShapeGluer')
+    _log = logging.getLogger('ShapeGluer')
     def __init__(self, bin, DC, MB, ws, fit): 
         self._DC = DC
         self._MB = MB
@@ -122,10 +122,10 @@ class ShapeGluer:
                 raise ValueError('Can\'t find the nether the morph nor the shape!!! '+process)
 
             pdfs[process] = shape
-        if self._logger.isEnabledFor(logging.DEBUG):
-            self._logger.debug('List of PDF extracted from the ws')
+        if self._log.isEnabledFor(logging.DEBUG):
+            self._log.debug('List of PDF extracted from the ws')
             for p,pdf in pdfs.iteritems():
-                self._logger.debug('%-10s %s',p,pdf)
+                self._log.debug('%-10s %s',p,pdf)
 
 
             
@@ -138,10 +138,10 @@ class ShapeGluer:
         roonorms = getnorms(pdf, pdf_obs)
 
         # debuginfo
-        if self._logger.isEnabledFor(logging.DEBUG):
-            self._logger.debug('List of normalisation coefficients from the model')
+        if self._log.isEnabledFor(logging.DEBUG):
+            self._log.debug('List of normalisation coefficients from the model')
             for t,v in roonorms.iteritems():
-                self._logger.debug('%-30s %f',t,v)
+                self._log.debug('%-30s %f',t,v)
 
 #         exp = self._DC.exp[self._bin]
 
@@ -164,10 +164,10 @@ class ShapeGluer:
             norms[process] = n
 
         if len(notfound):
-            self._logger.debug('The normalisation of the following processes was not found: %s', ', '.join(notfound))
+            self._log.debug('The normalisation of the following processes was not found: %s', ', '.join(notfound))
 #             if True:
             if not len(norms):
-                self._logger.error('There is something wrong here. No normalisations were matched: %s',', '.join(roonorms))    
+                self._log.error('There is something wrong here. No normalisations were matched: %s',', '.join(roonorms))    
                 raise RuntimeError('There is something wrong here. No normalisations were matched: %s' % ( ', '.join(roonorms) ) )
         return norms
 
@@ -217,7 +217,7 @@ class ShapeGluer:
         if norm or norm == 0:
             bins *= norm
         elif norm==None:
-#             self._logger.debug('No normalisation')
+#             self._log.debug('No normalisation')
             pass
 
         return bins
@@ -233,7 +233,7 @@ class ShapeGluer:
         if norm:
             if isinstance(norm,ROOT.RooAbsReal):
                 norm = norm.getVal()
-            self._logger.debug('pdf %s, h %s, Normalization %f -> %f',pdf.GetName(), h.GetName(),h.Integral(), norm)
+            self._log.debug('pdf %s, h %s, Normalization %f -> %f',pdf.GetName(), h.GetName(),h.Integral(), norm)
             h.Scale(norm/h.Integral())
         elif norm==0:
             # just in case we are normalizing a 0 integral to 0 (0/0 is bad)
@@ -292,17 +292,9 @@ class ShapeGluer:
 
     #---
     def glue(self):
-        hists,errs = self._gluenew()
+        hists,errs = self._gluemc()
         hists['Data'] = self._gluedata()
-        return hists,errs,self._dummy
-#         sys.exit(0)
-
-#         exp = self._DC.exp[self._bin]
-#         errs = self._glueerrors()
-#         shapes = dict([ (p,self._glueprocess(p)) for p in self._DC.processes if exp[p] != 0])
-#         shapes['Data'] = self._gluedata()
-
-#         return shapes,errs,self._dummy
+        return hists,errs
 
         
     #---
@@ -317,56 +309,6 @@ class ShapeGluer:
             h.SetBinContent(i+1,data.weight())
             h.SetBinError(i+1,sqrt(data.weight()))
         
-        return h
-
-    #---
-    def _glueprocess(self, process):
-
-        self._logger.debug('Glueing %s', process)
-        tag = 'Sig' if process in self._DC.signals else 'Bkg'
-
-        mname  = 'shape{0}_{1}_{2}_morph'.format(tag,self._bin,process)
-        sname  = 'shape{0}_{2}_{1}Pdf'.format(tag,self._bin,process)
-        morph  = self._ws.pdf('shape{0}_{1}_{2}_morph'.format(tag,self._bin,process))
-        static = self._ws.pdf('shape{0}_{2}_{1}Pdf'.format(tag,self._bin,process))
-        # errs   = self._ws.pdf('shape{0}_{2}_{1}_CMS_hww_{2}_{1}_stat_shapeUpPdf'.format(tag,self._bin,process))
-        # 'shape{0}_{2}_{1}.format(tag,self.bin,process)
-        # 'shape{0}_{2}_{1}_CMS_hww_{2}_{1}_stat_shapeUpPdf'.format(tag,self.bin,process)
-
-        if morph.__nonzero__():
-            shape = morph
-        elif static.__nonzero__():
-            shape = static
-        else:
-            self._ws.allPdfs().Print('V')
-            print morph.__nonzero__(),morph, mname
-            print static.__nonzero__(),static, sname
-            raise ValueError('Can\'t find the nether the morph nor the shape!!! '+process)
-
-#         h = self._makeHisto('histo_'+process, process)
-        
-        model, pars, norms = self._fit
-        if norms:
-            self._logger.debug('Using fitted shapes %s', self._fit)
-#             norms, pars, model = self._fit
-            norm = norms.find('n_exp_bin{0}_proc_{1}'.format(self._bin, process))
-            if not norm:
-                norm = norms.find('n_exp_final_bin{0}_proc_{1}'.format(self._bin, process))
-
-#             self._rooPdf2TH1(h, shape, pars, norm)
-#             h = self._rooPdf2TH1(name, shape, pars, norm, title=title)
-
-        else:
-            self._logger.debug('Using expected shapes')
-#             self._rooPdf2TH1(h, shape, data, pars, self._DC.exp[self._bin][process])
-#             self._rooPdf2TH1(h, shape, pars, self._DC.exp[self._bin][process])
-#             h = self._rooPdf2TH1(name, shape, pars, self._DC.exp[self._bin][process], title=title)
-            norm = self._DC.exp[self._bin][process]
-
-        h = self._rooPdf2TH1('hist_'+process, shape, pars, norm, title=process)
-
-        
-#         syst = self._syst(process)
         return h
 
     #---
@@ -401,7 +343,7 @@ class ShapeGluer:
         print '-'*80
 
     #---
-    def _gluenew(self):
+    def _gluemc(self):
 #         print 'gluenew'
         # clean the parameters
         self._ws.loadSnapshot('clean')
@@ -475,7 +417,7 @@ class ShapeGluer:
         # now the variations
         print 'Scanning the nuisance space'
         for nu,group in grouping.iteritems():
-            self._logger.debug(' - %s',nu)
+            self._log.debug(' - %s',nu)
             nuvars = self._variatemodel(pars,group)
             # store the variation by process
             for p,v in nuvars.iteritems():
@@ -485,7 +427,7 @@ class ShapeGluer:
         # loop over processes to calculate the square sum of the nuisamces
         print 'Calculating the nuisances envelope'
         for p,nus in mega.iteritems():
-            self._logger.debug(' - %s',p)
+            self._log.debug(' - %s',p)
             
             uperrs = np.zeros(nbins, np.float32)
             dwerrs = np.zeros(nbins, np.float32)
@@ -512,7 +454,7 @@ class ShapeGluer:
         errs = {}
 
         for p,nus in mega.iteritems():
-            self._logger.debug(' - %s',p)
+            self._log.debug(' - %s',p)
             # ensure the sub-dictionary
             if not p in errs: errs[p] = {}
 
@@ -527,149 +469,6 @@ class ShapeGluer:
                 errs[p][n] = errgraph
 
         return hists,errs
-
-    #---
-    def _glueerrors(self):
-
-        # clean the parameters
-        self._ws.loadSnapshot('clean')
-        model, pars, norms = self._fit
-
-#         data = self._ws.data('data_obs')
-#         data = self._data
-        
-        # deal with the 2 cases. Fit 
-        if norms: 
-            # now the real thing
-            pars = pars.snapshot()
-
-            # normalize to data
-            A = self._data.sum(False)
-        else:
-            # here we can use w.set('nuisances') :D
-            pars = pars.snapshot()
-            
-            # set the errors to 1. sigma for the priors
-            for arg in roofiter(pars):
-                name = arg.GetName()
-                # don't add errors to the signal strength
-                if name == 'r': continue
-                # find the functional form
-                ptype = None
-                for (n,nf,p,a,e) in self._DC.systs:
-                    if n==name:
-                        ptype = p
-                        break
-                
-                # add errors
-                if   ptype == 'lnN' or ptype == 'lnU' or 'shape' in ptype:
-                    # +/- 1 for lnN (and shapes)
-                    arg.setError(1.)
-                elif ptype == 'gmN':
-                    # +/- sqrt(N) for gmN
-                    arg.setError(math.sqrt(arg.getVal()))
-                else:
-                    raise ValueError('Pdf type %s not known',ptype)
-
-            # normalize to the expected from the DC
-            A = sum(self._DC.exp[self._bin].itervalues())
-
-
-        # take ebin centers
-        ax      = self._template.GetXaxis()
-        nbins   = ax.GetNbins()
-        xs      = np.array( [ ax.GetBinCenter(i) for i in xrange(1,nbins+1) ], np.float32)
-        wu      = np.array( [ ax.GetBinUpEdge(i)-ax.GetBinCenter(i)  for i in xrange(1,nbins+1) ], np.float32)
-        wd      = np.array( [ ax.GetBinCenter(i)-ax.GetBinLowEdge(i) for i in xrange(1,nbins+1) ], np.float32)
-        
-        # sort the nuisances
-        shapes = [n for (n,nf,p,a,e) in self._DC.systs if 'shape' in p]
-
-        nushapes = [ arg.GetName() for arg in roofiter(pars) if arg.GetName() in shapes]
-        nunorms  = [ arg.GetName() for arg in roofiter(pars) if not arg.GetName() in shapes ]
-
-        # groups the nuis to float: all norms together, shapes 1 by 1
-        # grouping = dict([('norms',nunorms)] + [ (arg,[arg]) for arg in nushapes] )
-        grouping = dict([ (arg,[arg]) for arg in (nushapes+nunorms)] )
-
-        # nominal valuse from the best fit values
-#         nmarray = self._roo2array(model, data, pars)
-        nmarray = self._roo2array(model, pars)
-
-        pdf_obs  = model.getObservables(self._data)
-        ns = getnorms(model,pdf_obs)
-#         print ns
-        I = J = 0
-
-        print '-'*80
-        print '%-10s %-10s %-10s %-10s' % ('Process','frompdf','fromfit','datacard')
-        print '-'*80
-        fn = {}
-        if norms:
-            for n in roofiter(norms):
-                fn[n.GetName()] = n.getVal()
-                J+=n.getVal()
-
-        for p,v in sorted(self._DC.exp[self._bin].iteritems()):
-            # associate the normalization to the process
-            endswith = re.compile('_%s$' % p)
-            matches = [ n for n in ns if endswith.search(n)]
-            if not matches: continue
-            if len(matches) > 1:
-                raise RuntimeError('Can\'t match normalisation to process: %s,%s' % (p,matches))
-            n = matches[0]
-
-            print '%-10s %10.3f %10.3f %10.3f' % (p,ns[n],fn[n] if fn else 0,v)
-            I += ns[n]
-
-
-        print 'Integrals I,J,A,sum',I, J, A,sum(self._DC.exp[self._bin].itervalues())
-        print '-'*80
-
-        m_a,p_a =  self._model2arrays( pars )
-
-        print 'sum A',sum(m_a)
-
-        # and the errors to be filled
-        uperrs = np.zeros(nbins, np.float32)
-        dwerrs = np.zeros(nbins, np.float32)
-
-        allfloats = {}
-
-        # how to normalise? curently I normlise to the data
-        # Otherwise I could extract the normalisation from the coefficient,
-        # both for the total and the single process.
-
-        for n,g in grouping.iteritems():
-            upfloat,dwfloat = self._variate(model,pars,g)
-
-            upfloat *= A
-            dwfloat *= A
-
-            allfloats[n] = (upfloat,dwfloat)
-            uperrs += np.square(upfloat)
-            dwerrs += np.square(dwfloat)
-
-        uperrs = np.sqrt(uperrs)
-        dwerrs = np.sqrt(dwerrs)
-
-        nmarray *= A
-
-        allfloats['allnuisances'] = (uperrs,dwerrs)
-
-        errs = {}
-
-        for n in allfloats.iterkeys():
-            uperrs,dwerrs = allfloats[n]
-            errgraph = ROOT.TGraphAsymmErrors(len(xs),xs,nmarray,wd,wu,dwerrs,uperrs)
-            nametitle = 'model_errs_%s' % n if n != 'allnuisances' else 'model_errs'
-            errgraph.SetNameTitle(nametitle, nametitle)
-            errs[n] = errgraph
-
-#         print errs.keys()
-
-        return errs
-
 
     #---
     def _dovariations(self,nmarray,uparray,dwarray):
@@ -715,7 +514,7 @@ class ShapeGluer:
         vararrays = []
         for p in nmarrays.iterkeys():
             if (nmarrays[p] == uparrays[p]).all() and (nmarrays[p] == dwarrays[p]).all(): 
-                self._logger.debug('   - skipping %s',p)
+                self._log.debug('   - skipping %s',p)
                 #                 pdb.set_trace()
                 continue
             vararrays.append( ( p, self._dovariations(nmarrays[p],uparrays[p],dwarrays[p])) )
@@ -901,7 +700,7 @@ def fitAndPlot( dcpath, opts ):
         logging.debug('Plotting %s', fit)
 
         gluer = ShapeGluer(bin, DC, MB, w, fit)
-        shapes,errs,dummy = gluer.glue()
+        shapes,errs = gluer.glue()
 
         if opts.output:
             printshapes(shapes, errs, mode, opts, bin)
@@ -1109,63 +908,3 @@ if __name__ == '__main__':
 #         print "*** tb_lineno:", exc_traceback.tb_lineno
 
 
-
-
-#---
-#     def _syst(self,process):
-#         '''sum all the uncertainties in quadrature for a given process'''
-#         import math
-#         sum2 = 0
-#         for (name, nofloat, pdf, args, errline) in self._DC.systs:
-#             if 'shape' in pdf: continue
-#             if pdf == 'gmN': continue
-#             
-#             try:
-#                 x = errline[self._bin][process]
-#                 if not x: continue 
-#                 sum2 += (x-1)*(x-1)
-#             except:
-#                 pass
-#         return math.sqrt(sum2)
-
-
-#     def _rooPdf2TH1(self,h, pdf, pars=None, norm=None):
-#         # consider the othe option
-#         # 
-#         # Check upstream the dependencies:
-#         # data = w.data('data_obs')
-#         # model_s = w.pdf('model_s')
-#         # obs = model_s.getObservables(data)
-#         # if ( obs.getSize() != 1 ) raise ValueError('Only 1D shapes are supported')
-#         # x = obs.first()
-#         # h = model_s.createHistogram(name,x)
-
-#         
-#         '''Converts a pdf into a numpy array
-#         The pdf is plotted against the data stored in the builder.
-#         A custom set of parameters and normalisation can be applied'''
-#         data = self._data
-
-#         pdf_obs  = pdf.getObservables(data)
-#         pdf_pars = pdf.getParameters(data)
-
-#         if h.GetNbinsX() != data.numEntries():
-#             raise ValueError('bins mismatch!')
-#         
-#         if pars:
-#             pdf_pars.__assign__(ROOT.RooArgSet(pars))
-
-#         for i in xrange(data.numEntries()):
-#             pdf_obs.__assign__(data.get(i))
-#             h.SetBinContent(i+1,pdf.getVal(pdf_obs))
-
-#         if norm:
-#             if isinstance(norm,ROOT.RooAbsReal):
-#                 norm = norm.getVal()
-#             self._logger.debug('pdf %s, h %s, Normalization %f -> %f',pdf.GetName(), h.GetName(),h.Integral(), norm)
-#             h.Scale(norm/h.Integral())
-#         elif norm==0:
-#             # just in case we are normalizing a 0 integral to 0 (0/0 is bad)
-#             h.Scale(0)
-#         elif norm==None:
-#             print 'No norm'
