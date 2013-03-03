@@ -98,15 +98,27 @@ class ShapeGluer:
         # keep a pointer to the data object
         self._data  = self._ws.data('data_obs')
 
+        # list the processes with non 0 yield
+        expected = self._DC.exp[self._bin]
+        self._processes = []
+        for p in self._DC.processes:
+            if expected[p] == 0.:
+                _log.info('Process %s has 0 yield in bin %s', (p,self._bin) )
+                continue
+            self._processes.append(p)
+
         # store the list of pdfs
         self._pdfs = self._getpdfs()
+
+
+
 
     #---
     def _getpdfs( self ):
         '''Extract the process pdfs from the ws.'''
 
         pdfs = {}
-        for process in self._DC.processes:
+        for process in self._processes:
             tag = 'Sig' if process in self._DC.signals else 'Bkg'
 
             mname  = 'shape{0}_{1}_{2}_morph'.format(tag,self._bin,process)
@@ -148,7 +160,7 @@ class ShapeGluer:
 
         norms = {}
         notfound = []
-        for process in self._DC.processes:
+        for process in self._processes:
 
             n = roonorms.get( 'n_exp_bin%s_proc_%s' % (self._bin, process) )
             if not n: n = roonorms.get( 'n_exp_final_bin%s_proc_%s' % (self._bin, process) )
@@ -585,7 +597,6 @@ def fitAndPlot( dcpath, opts ):
     shapepath = os.path.abspath(os.path.dirname(os.path.normpath(__file__))+'/..')
     print 'Shape directory is',shapepath
     ROOT.gInterpreter.ExecuteMacro(shapepath+'/macros/LatinoStyle2.C')
-    hwwtools.loadAndCompile(shapepath+'/macros/MWLPlot.C')
 
     # 1. load the datacard
     dcfile = open(dcpath,'r')
