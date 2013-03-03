@@ -73,7 +73,7 @@ class ShapeMerger:
 
             # remove the negative bins before storing it
             self._removeNegativeBins(h)
-            self._fillEmptyBins(h)
+            #self._fillEmptyBins(h)
             self.histograms[n] = h
 
 
