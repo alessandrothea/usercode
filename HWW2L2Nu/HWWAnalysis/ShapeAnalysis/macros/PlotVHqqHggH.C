@@ -174,6 +174,12 @@ class PlotVHqqHggH {
         }
 
         ///---- background
+        void set_vectTHBkg (std::vector<TH1F*>& vh) {
+            std::vector<TH1*> dummy(h.size());
+            std::copy(h.begin(), h.end(), dummy.begin())
+            this -> set_vectTHBkg(dummy);
+            
+        }
 
         void set_vectTHBkg (std::vector<TH1*>& vh) {
             std::cout << " BkgSize = " << vh.size() << std::endl;
@@ -224,7 +230,12 @@ class PlotVHqqHggH {
 
 
         ///---- signal
-
+        void set_vectTHSig (std::vector<TH1F*>& vh) {
+            std::vector<TH1*> dummy(h.size());
+            std::copy(h.begin(), h.end(), dummy.begin())
+            this -> set_vectTHSig(dummy);
+            
+        }
         void set_vectTHSig (std::vector<TH1*>& vh) { 
             for (unsigned int iSig = 0; iSig<vh.size(); iSig++) {
                 _vectTHSig.push_back(vh.at(iSig));
