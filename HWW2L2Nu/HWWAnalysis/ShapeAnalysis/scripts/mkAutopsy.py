@@ -82,6 +82,7 @@ class ShapeGluer:
         
         self._build()
 
+
     #---
     def _build(self):
         '''Fill up the objects'''
@@ -291,7 +292,7 @@ class ShapeGluer:
         arrays = self._model2arrays(pars)
         
         #convert the model array into the histogram
-        hists = dict( [ ( p,self._array2TH1('histo_'+p, a, title=p) ) for p,a in arrays.iteritems() ] )
+        hists = dict( [ ( p,self._array2TH1('hist_'+p, a, title=p) ) for p,a in arrays.iteritems() ] )
 
         return hists
 
@@ -752,9 +753,7 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
 
     import hwwplot
     plot = hwwplot.HWWPlot()
-#     # print shapes
 
-#     hwwtools.hookDebugger()
     plot.setdata(shapes2plot['Data'])
 
 
@@ -764,20 +763,6 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
             plot.addsig(p,shapes2plot[p])
         else:
             plot.addbkg(p,shapes2plot[p])
-
-#     if 'ggH'   in shapes2plot: plot.addsig('ggH',  shapes2plot['ggH'])
-#     if 'vbfH'  in shapes2plot: plot.addsig('vbfH', shapes2plot['vbfH'])
-#     if 'wzttH' in shapes2plot: plot.addsig('VH',   shapes2plot['wzttH'])
-
-#     plot.addbkg('VV',   shapes2plot['VV'])
-#     plot.addbkg('WJet', shapes2plot['WJet'])
-#     plot.addbkg('Vg',   shapes2plot['Vg'])
-#     plot.addbkg('VgS',  shapes2plot['VgS'])
-#     plot.addbkg('Top',  shapes2plot['Top'])
-#     plot.addbkg('DYTT', shapes2plot['DYTT'])
-#     # plot.addbkg('DYLL', shapes2plot['DYLL'])
-#     plot.addbkg('WW',   shapes2plot['WW'])
-#     plot.addbkg('ggWW', shapes2plot['ggWW'])
 
     ## 1 = signal over background , 0 = signal on its own
     plot.set_addSignalOnBackground(0);
@@ -791,24 +776,6 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
     plot.addLabel('m_{H} = %s GeV' % opt.mass) 
 
     plot.prepare()
-
-#     import hwwsamples
-#     shapes2plot['Hsum']  = THSum(shapes2plot,hwwsamples.signals,'histo_higgs','higgs')
-#     shapes2plot['WWsum'] = THSum(shapes2plot,['WW','ggWW'],'histo_WWsum','WWsum')
-#     shapes2plot['VVsum'] = THSum(shapes2plot,['VV','Vg'],'histo_VVsum','VVsum')
-#     shapes2plot['DYsum'] = THSum(shapes2plot,['DYLL','DYTT'],'histo_DYsum','DYsum')
-
-#     plot = ROOT.MWLPlot()
-#     plot.setDataHist(shapes2plot['Data'])
-#     if mode != 'bkg':
-#         plot.setStackSignal(True)
-#         plot.setHWWHist(shapes2plot['Hsum'])
-
-#     plot.setWWHist(shapes2plot['WWsum'])  
-#     plot.setZJetsHist(shapes2plot['DYsum'])
-#     plot.setTopHist(shapes2plot['Top'])
-#     plot.setVVHist(shapes2plot['VVsum'])
-#     plot.setWJetsHist(shapes2plot['WJet'])
 
     cName = 'c_fitshapes_'+mode
     ratio = opts.ratio
