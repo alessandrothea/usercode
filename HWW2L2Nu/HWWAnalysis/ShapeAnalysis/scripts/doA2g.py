@@ -383,10 +383,10 @@ class Coroner:
         itdata = data.sliceIterator(self._x,ROOT.RooArgSet(self._cat))
         i = 0
         while itdata.Next():
-            x = data.get()
-            j = data.getIndex(x)
-            if i < 10:
-                print i,j,x.getCatIndex('CMS_channel'),x.getRealValue('CMS_th1x')
+#             x = data.get()
+#             j = data.getIndex(x)
+#             if i < 10:
+#                 print i,j,x.getCatIndex('CMS_channel'),x.getRealValue('CMS_th1x')
             h.SetBinContent(i+1,data.weight())
             h.SetBinError(i+1,sqrt(data.weight()))
             i += 1
@@ -769,9 +769,9 @@ def fitAndPlot( dcpath, opts ):
     bin = DC.bins[0]
 
     modes = odict.OrderedDict([
-        ('sig' ,sig_fit),
-        ('bkg' ,bkg_fit),
         ('init',(model_s,res_s.floatParsInit(),None)), #(None, None, model_s)
+        ('bkg' ,bkg_fit),
+        ('sig' ,sig_fit),
     ])
 
     # experimental
@@ -843,6 +843,7 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
 
     import hwwplot
     plot = hwwplot.HWWPlot()
+    plot.setautosort()
 
     plot.setdata(shapes2plot['Data'])
 
@@ -850,28 +851,27 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
     for p in processes:
         if p not in shapes: continue
         if p in signals:
-            plot.addsig(p,shapes2plot[p])
+            plot.addsig(p,shapes2plot[p], label=plot.properties[p]['label']+'^{ %.0f}'%opt.mass)
         else:
             plot.addbkg(p,shapes2plot[p])
 
     ## 1 = signal over background , 0 = signal on its own
-    plot.set_addSignalOnBackground(0);
+    plot.set_addSignalOnBackground(1);
 
     ## 1 = merge signal in 1 bin, 0 = let different signals as it is
-    plot.set_mergeSignal(0);
+#     plot.set_mergeSignal(1);
 
     plot.setMass(opt.mass); 
-    plot.setLabel('m_{T}^{ll-E_{T}^{miss}} [GeV]')
+#     plot.setLabel('m_{T}^{ll-E_{T}^{miss}} [GeV]')
     plot.addLabel('%s #sqrt{s} = 8TeV' % bin)
-    plot.addLabel('m_{H} = %s GeV' % opt.mass) 
 
     plot.prepare()
 
+    plot.mergeSamples() #---- merge trees with the same name! ---- to be called after "prepare"
+
     cName = 'c_fitshapes_'+mode
     ratio = opts.ratio
-
-#     if ratio: w = 1000; h = 1400
-#     else:     w = 1000; h = 1000
+    errband = False
 
     if ratio: w = 500; h = 700
     else:     w = 500; h = 500
@@ -880,11 +880,11 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
 #         plot.stretch(opts.stretch)
 #         w = int(w*opts.stretch)
 
-    c = ROOT.TCanvas(cName,cName, w+4, h+28) #if ratio else ROOT.TCanvas(cName,cName,1000,1000)
+    c = ROOT.TCanvas(cName,cName, w+4, h+28) 
 
 #     plot.setMass(opts.mass)
     plot.setLumi(opts.lumi if opt.lumi else 0)
-#     plot.setLabel(opts.xlabel)
+    if opt.xlabel: plot.setLabel(opts.xlabel)
 #     plot.setRatioRange(0.,2.)
 
     def _print(c, p, e, l):
@@ -897,7 +897,7 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
 
         c.Clear()
     
-        p.Draw(c,1,ratio)
+        p.Draw(c,1,ratio,errband)
 
         c.Modified()
         c.Update()
@@ -908,9 +908,10 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
         if l: 
             outbasename += '_' + l
 
-        print 'outbasename:',outbasename
-        c.Print(outbasename+'.root')
+#         print 'outbasename:',outbasename
+#         c.Print(outbasename+'.root')
         c.Print(outbasename+'.pdf')
+        c.Print(outbasename+'.png')
 
 
     if errs:
