@@ -863,7 +863,7 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
 
     plot.setMass(opt.mass); 
 #     plot.setLabel('m_{T}^{ll-E_{T}^{miss}} [GeV]')
-    plot.addLabel('%s #sqrt{s} = 8TeV' % bin)
+#     plot.addLabel('#sqrt{s} = 8TeV')
 
     plot.prepare()
 
