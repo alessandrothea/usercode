@@ -26,22 +26,17 @@
 
 #ifdef __MAKECINT__
 #pragma link C++ class std::vector<TH1*>;
+#pragma link C++ class std::vector<TH1F*>;
 #endif
 
-float xPos[] = {0.0,0.0,0.0,0.0,1.3,1.3,1.3,1.3,2.3,3.0,3.3,0.0,1.3,2.3,3.3,0.0,1.3,2.3,3.3}; 
-float yOff[] = {  0,  1,  2,  3,  0,  1,  2,  3,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,  5};
+float xPos6[]  = { 0.0 , 0.0 , 0.0 , 1.0 , 1.0 , 1.0 };
+float yOff6[]  = { 0   , 1   , 2   , 0   , 1   , 2   };
 
-//              1 2 3 4 5 6 7 8 9 101112131415161718
-//                                    12    15
-float xPosA[] = {0,0,0,1,1,1,0,1,2,0,1,2,0,1,2}; 
-float yOffA[] = {0,1,2,0,1,2,3,3,3,4,4,4,5,5,5};
+float xPos10[] = { 0.0 , 0.0 , 0.0 , 0.0 , 1.0 , 1.0 , 1.0 , 1.0 , 2.0 , 3.0 };
+float yOff10[] = { 0   , 1   , 2   , 3   , 0   , 1   , 2   , 3   , 3   , 3   };
 
-//              1 2 3 4 5 6 7 8 9 101112131415161718
-//                                  11   
-float xPosB[] = {0,0,0,1,1,1,0,1,0,1,2}; 
-float yOffB[] = {0,1,2,0,1,2,3,3,4,4,4};
-
-
+float xPosN[]  = { 0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 2.0 , 2.0 , 3.0 , 3.0 };
+float yOffN[]  = { 0   , 1   , 2   , 3   , 4   , 0   , 1   , 2   , 3   , 4   , 3   , 4   , 3   , 4   };
 
 //------------------------------------------------------------------------------
 // GetMaximumIncludingErrors
@@ -1230,12 +1225,16 @@ class PlotVHqqHggH {
   }
 
 
-        //---- draw only background -> normalized to 1! ----
-
+  //-------------------------------------------------------------------------------- 
+  // draw only background -> normalized to 1! ----
+  //-------------------------------------------------------------------------------- 
   void DrawNormalized(const int &rebin=1) {
    DrawNormalized(new TCanvas(),rebin);
   }
 
+  //-------------------------------------------------------------------------------- 
+  // draw only background -> normalized to 1! ----
+  //-------------------------------------------------------------------------------- 
   void DrawNormalized(TCanvas *c1, const int &rebin=1) {
    int rebin2 = rebin; //---> just not to have warning :)
    rebin2+=0; 
@@ -1316,13 +1315,16 @@ class PlotVHqqHggH {
 
 
 
-
-        //---- draw ----
-
+  //-------------------------------------------------------------------------------- 
+  // Draw
+  //-------------------------------------------------------------------------------- 
   void Draw(const int &rebin=1,const bool &div=false,  const bool &shadow=true) {
    Draw(new TCanvas(),rebin,div, shadow);
   }
 
+  //-------------------------------------------------------------------------------- 
+  // Draw
+  //-------------------------------------------------------------------------------- 
   void Draw(TCanvas *c1, const int &rebin=1, const bool &div=false, const bool &shadow=true, TCanvas *cAdditional=0) {
             //      std::cout << " rebin = " << rebin << std::endl; 
    int rebin2 = rebin; //---> just not to have warning :)
@@ -2057,7 +2059,7 @@ class PlotVHqqHggH {
        legendSigMinusBkg->AddEntry(temp_vectTHstackSig.at(iSig), "Higgs", "PL");
       }
       else {
-       TString name4Legend = Form ("Higgs %d GeV", _mass);
+       TString name4Legend = Form ("H^{ %d}", _mass);
        legendSigMinusBkg->AddEntry(temp_vectTHstackSig.at(iSig), name4Legend.Data(), "PL");
       }
      }
@@ -2118,6 +2120,9 @@ class PlotVHqqHggH {
    return hMC;   
   }
 
+  //---
+  // Get the stack histogram
+  //---
   THStack* GetStack(bool isLog) {
    THStack* hstack = new THStack();
             //             float binWidth = 0;
@@ -2146,19 +2151,13 @@ class PlotVHqqHggH {
     }             
 
     if (_mergeSignal == 1) {
-     for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) {
-      if (iSig == (_vectTHstackSig.size() -1 ) ){
-                            //                 _vectTHstackSig.at (iSig) -> SetLineColor( _vectColourSig.at (iSig) );
-                            //                 _vectTHstackSig.at (iSig) -> SetFillColor( _vectColourSig.at (iSig) );
-                            //                 _vectTHstackSig.at (iSig) -> SetFillStyle(3003);
-       TH1* tempHist = (TH1*) _vectTHstackSig.at (iSig)->Clone("allSignal");
-       tempHist -> SetFillStyle(1001);
-       tempHist -> SetLineColor(kRed);
-       tempHist -> SetLineStyle(1);
-       tempHist -> SetLineWidth(3);
-       hstack->Add(tempHist);
-      }
-     }             
+      unsigned int iSig = _vectTHstackSig.size() -1;
+      TH1* tempHist = (TH1*) _vectTHstackSig.at (iSig)->Clone("allSignal");
+      tempHist -> SetFillStyle(1001);
+      tempHist -> SetLineColor(kRed);
+      tempHist -> SetLineStyle(1);
+      tempHist -> SetLineWidth(3);
+      hstack->Add(tempHist);
     }
    }
 
@@ -2223,79 +2222,76 @@ class PlotVHqqHggH {
 
  private: 
   int GetSampCount() {     
-   int sampCount = _vectTHBkg.size();
-   sampCount += _vectTHstackSig.size();
-   if  (_data) sampCount++;
+    int sampCount = _vectTHBkg.size();
+    sampCount += !(this->_mergeSignal) ? _vectTHstackSig.size() : 1;
+    if  (_data) sampCount++;
 
-   return sampCount;
+    return sampCount;
   }
 
   void DrawLabels(bool plotData=true) {
 
-            // total mess to get it nice, should be redone
-   size_t j=0;
+    // total mess to get it nice, should be redone
+    size_t j=0;
 
-   float *pos,*off;
-   int sampCount = GetSampCount();
-   if(sampCount == 12 || sampCount == 15) { pos = xPosA; off = yOffA; }
-   else if(sampCount == 11 )              { pos = xPosB; off = yOffB; }
-   else                                   { pos = xPos;  off = yOff;  }
-   float x0=0.22; float wx=0.19;
-   if(_data   && plotData     ) { 
-    DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _data,                  " data",                "lp");
-    j++; 
-   }
-   else {
-                //              if (plotData == false) j++;
-   }
-   for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) {
-    if (_mergeSignal == 0 ||  iSig == (_vectTHstackSig.size()-1)) {
-     if (_mergeSignal == 1) {
-      TString name4Legend;
-      if (_mass == -1) {
-       name4Legend = Form ("Higgs");
-      }
-      else {
-       name4Legend = Form ("Higgs %d GeV", _mass);
-      }
-      DrawLegend(x0+pos[1]*wx, _globalYoffset - off[1]*_yoffset, _vectTHstackSig.at(iSig)         , name4Legend.Data() ,           "l" );
-     }
-     else {
-      DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHstackSig.at(iSig)         , _vectNameSig.at(iSig) ,           "l" );
-     }
-    }
-    j++;
-   }
+    float *pos,*off;
+    int sampCount = GetSampCount();
 
-   if (plotData == false) j++;
+    std::cout << "sampCount" << sampCount  << std::endl;
 
-   for (unsigned int iBkg = 0; iBkg<_vectTHBkg.size(); iBkg++) {
-    DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHBkg.at(iBkg)         , _vectNameBkg.at(iBkg) ,           "f" );
-    j++; 
-   }
-
-
-   if (plotData) {
-    TLatex* luminosity;
-    if(_extraLabel) {
-     luminosity = new TLatex(0.670, 0.781, TString::Format("#splitline{CMS preliminary}{#splitline{     L = %.1f fb^{-1}}{%s}}",_lumi,_extraLabel->Data()));
+    if (sampCount < 7 )         { pos = xPos6 ; off = yOff6 ; }
+    else if ( sampCount < 11 )  { pos = xPos10; off = yOff10; }
+    else                        { pos = xPosN ; off = yOffN ; }
+    float x0=0.22; float wx=0.19;
+    if(_data   && plotData     ) { 
+      DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _data,                  " data",                "lp");
+      j++; 
     }
     else {
-     luminosity = new TLatex(0.670, 0.781, TString::Format("#splitline{CMS preliminary}{     L = %.1f fb^{-1}}",_lumi));
+      //              if (plotData == false) j++;
     }
-    luminosity->SetNDC();
-    luminosity->SetTextAlign(12);
-    luminosity->SetTextFont(_labelFont);
-    luminosity->SetTextSize(_legendTextSize*0.95);
-    luminosity->Draw("same");
-   }
-            //      if(_extraLabel) _extraLabel->Draw("same");
+
+    // plot signals
+    if ( _mergeSignal == 1 ) { 
+      TString name4Legend = (_mass == -1) ? Form("Higgs") : Form ("H^{ %d}", _mass);
+      unsigned int iSig = _vectTHstackSig.size()-1;
+      DrawLegend(x0+pos[1]*wx, _globalYoffset - off[1]*_yoffset, _vectTHstackSig.at(iSig) , name4Legend.Data() , "l" );
+      ++j;
+    } else {
+      for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); ++iSig, ++j) {
+        DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHstackSig.at(iSig) , _vectNameSig.at(iSig) ,"l" );
+      }
+    }
+
+    if (plotData == false) j++;
+
+    for (unsigned int iBkg = 0; iBkg<_vectTHBkg.size(); iBkg++) {
+      DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHBkg.at(iBkg)         , _vectNameBkg.at(iBkg) ,           "f" );
+      j++; 
+    }
+
+
+    if (plotData) {
+      TLatex* luminosity;
+      if(_extraLabel) {
+        luminosity = new TLatex(0.670, 0.781, TString::Format("#splitline{CMS preliminary}{#splitline{     L = %.1f fb^{-1}}{%s}}",_lumi,_extraLabel->Data()));
+      }
+      else {
+        luminosity = new TLatex(0.670, 0.781, TString::Format("#splitline{CMS preliminary}{     L = %.1f fb^{-1}}",_lumi));
+      }
+      luminosity->SetNDC();
+      luminosity->SetTextAlign(12);
+      luminosity->SetTextFont(_labelFont);
+      luminosity->SetTextSize(_legendTextSize*0.95);
+      luminosity->Draw("same");
+    }
+    //      if(_extraLabel) _extraLabel->Draw("same");
   }
 
-        //------------------------------------------------------------------------------
-        // AxisFonts
-        //------------------------------------------------------------------------------
-  void AxisFonts(TAxis*  axis,
+//------------------------------------------------------------------------------
+// AxisFonts
+//------------------------------------------------------------------------------
+void AxisFonts(TAxis*  axis,
                  TString coordinate,
                  TString title)
   {
@@ -2313,9 +2309,9 @@ class PlotVHqqHggH {
    axis->SetTitle(title);
   }
 
-        //------------------------------------------------------------------------------
-        // DrawLegend
-        //------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------
+  // DrawLegend
+  //------------------------------------------------------------------------------
   void DrawLegend(Float_t x1,
                   Float_t y1,
                   TH1*   hist,
@@ -2329,6 +2325,7 @@ class PlotVHqqHggH {
 
    legend->SetBorderSize(     0);
    legend->SetFillColor (     0);
+   legend->SetFillStyle (     0);
    legend->SetTextAlign (    12);
    legend->SetTextFont  (_labelFont);
    legend->SetTextSize  (_legendTextSize);
@@ -2339,9 +2336,9 @@ class PlotVHqqHggH {
   }
 
 
-        //------------------------------------------------------------------------------
-        // THStackAxisFonts
-        //------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------
+  // THStackAxisFonts
+  //------------------------------------------------------------------------------
   void THStackAxisFonts(THStack* h,
                         TString  coordinate,
                         TString  title)
