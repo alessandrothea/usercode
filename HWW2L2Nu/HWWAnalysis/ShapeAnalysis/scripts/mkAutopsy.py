@@ -103,7 +103,7 @@ class ShapeGluer:
         self._processes = []
         for p in self._DC.processes:
             if expected[p] == 0.:
-                _log.info('Process %s has 0 yield in bin %s', (p,self._bin) )
+                self._log.info('Process %s has 0 yield in bin %s', (p,self._bin) )
                 continue
             self._processes.append(p)
 
