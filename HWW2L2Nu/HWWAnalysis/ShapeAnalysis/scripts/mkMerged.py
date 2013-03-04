@@ -29,6 +29,7 @@ class ShapeMerger:
         self.histograms = {}
         self.processes = []
         self._simask = simask
+        self._fillEmptyBins = fillEmptyBins
 
     def add(self,s):
         # add a collection to be summed
@@ -73,7 +74,7 @@ class ShapeMerger:
 
             # remove the negative bins before storing it
             self._removeNegativeBins(h)
-            #self._fillEmptyBins(h)
+            if fillEmptyBins: self._fillEmptyBins(h)
             self.histograms[n] = h
 
 
@@ -403,15 +404,19 @@ class ShapeMixer:
         #   - WJetFakeRate-nominal is needed for 7 TeV where the variation
         #   is taken from 8 TeV sample and has to be transformed relative
         #   to the 7 TeV nominal template
+
         wJet = self.nominals['WJet']
-        wJetSystNom = self.nominals.pop('WJetFakeRate-nominal')
+        if 'WJetFakeRate-nominal' in self.nominals :
+            wJetSystNom = self.nominals.pop('WJetFakeRate-nominal')
+        else : wJetSystNom = 0.
+
         if 'WJetFakeRate-eUp' in self.nominals:
             wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape'.format(suffix)
             wJetEffeUp = self.nominals.pop('WJetFakeRate-eUp')
             wJetShapeUp = wJetEffeUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
-            wJetShapeUp.Divide(wJetSystNom)
-            wJetShapeUp.Multiply(wJet)
+            if wJetSystNom : wJetShapeUp.Divide(wJetSystNom)
+            if wJetSystNom : wJetShapeUp.Multiply(wJet)
             wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
             self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
@@ -420,8 +425,8 @@ class ShapeMixer:
             wJetEffeDown = self.nominals.pop('WJetFakeRate-eDn')
             wJetShapeDown = wJetEffeDown.Clone('histo_WJet_'+wJetSystName+'Down')
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
-            wJetShapeDown.Divide(wJetSystNom)
-            wJetShapeDown.Multiply(wJet)
+            if wJetSystNom : wJetShapeDown.Divide(wJetSystNom)
+            if wJetSystNom : wJetShapeDown.Multiply(wJet)
             wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
@@ -430,8 +435,8 @@ class ShapeMixer:
             wJetEffmUp = self.nominals.pop('WJetFakeRate-mUp')
             wJetShapeUp = wJetEffmUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
-            wJetShapeUp.Divide(wJetSystNom)
-            wJetShapeUp.Multiply(wJet)
+            if wJetSystNom : wJetShapeUp.Divide(wJetSystNom)
+            if wJetSystNom : wJetShapeUp.Multiply(wJet)
             wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
             self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
@@ -440,8 +445,8 @@ class ShapeMixer:
             wJetEffmDown = self.nominals.pop('WJetFakeRate-mDn')
             wJetShapeDown = wJetEffmDown.Clone('histo_WJet_'+wJetSystName+'Down')
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
-            wJetShapeDown.Divide(wJetSystNom)
-            wJetShapeDown.Multiply(wJet)
+            if wJetSystNom : wJetShapeDown.Divide(wJetSystNom)
+            if wJetSystNom : wJetShapeDown.Multiply(wJet)
             wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
@@ -965,6 +970,8 @@ if __name__ == '__main__':
 
     parser.add_option('--simask'            , dest='simask'            , help='Signal injection mask' , default=None, type='string' , action='callback' , callback=hwwtools.list_maker('simask'))
 
+    parser.add_option('--fillEmptyBins'     , dest='fillEmptyBins'     , help='fillEmptyBins used to fill empty bins' , default=False)
+
 # discontined
 #     parser.add_option('--scale2nominal', dest='scale2nom', help='Systematics to normalize to nominal ', default='')
 #     parser.add_option('--ninja', dest='ninja', help='Ninja', action='store_true', default=False )
@@ -1041,7 +1048,7 @@ if __name__ == '__main__':
             flavors = hwwinfo.flavors[fl]
             # print chan,cat,fl,flavors
             # open output file
-            m = ShapeMerger( simask = opt.simask)
+            m = ShapeMerger( simask = opt.simask, fillEmptyBins = opt.fillEmptyBins)
             print '-'*100
             print 'ooo Processing',mass, chan
             print '-'*100
