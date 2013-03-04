@@ -288,7 +288,6 @@ class Coroner:
         if norm or norm == 0:
             bins *= norm
         elif norm==None:
-#             self._log.debug('No normalisation')
             pass
 
         return bins
@@ -797,6 +796,8 @@ def fitAndPlot( dcpath, opts ):
     
     if opts.dump:
         logging.debug('Dumping histograms to %s',opts.dump)
+        dumpdir = os.path.dirname(opt.dump)
+        hwwtools.ensuredir(dumpdir)
         dump = ROOT.TFile.Open(opts.dump,'recreate')
         here = ROOT.gDirectory.func()
         dump.cd()
