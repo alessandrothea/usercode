@@ -24,7 +24,7 @@ import logging
 
 class ShapeMerger:
     _logger = logging.getLogger('ShapeMerger')
-    def __init__(self, simask = None):
+    def __init__(self, simask = None, fillEmptyBins = False):
         self.sets = []
         self.histograms = {}
         self.processes = []
@@ -74,7 +74,7 @@ class ShapeMerger:
 
             # remove the negative bins before storing it
             self._removeNegativeBins(h)
-            if fillEmptyBins: self._fillEmptyBins(h)
+            if self._fillEmptyBins: self._fillEmptyBins(h)
             self.histograms[n] = h
 
 
