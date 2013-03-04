@@ -81,7 +81,6 @@ class ShapeGluer:
         
         self._build()
 
-
     #---
     def _build(self):
         '''Fill up the objects'''
@@ -131,10 +130,12 @@ class ShapeGluer:
             elif static.__nonzero__():
                 shape = static
             else:
+                shape = static
                 self._ws.allPdfs().Print('V')
                 print morph.__nonzero__(),morph, mname
                 print static.__nonzero__(),static, sname
-                raise ValueError('Can\'t find the nether the morph nor the shape!!! '+process)
+                print ">>> REMOVED <<<"
+                #raise ValueError('Can\'t find the nether the morph nor the shape!!! '+process)
 
             pdfs[process] = shape
         if self._log.isEnabledFor(logging.DEBUG):
@@ -291,7 +292,7 @@ class ShapeGluer:
         arrays = self._model2arrays(pars)
         
         #convert the model array into the histogram
-        hists = dict( [ ( p,self._array2TH1('hist_'+p, a, title=p) ) for p,a in arrays.iteritems() ] )
+        hists = dict( [ ( p,self._array2TH1('histo_'+p, a, title=p) ) for p,a in arrays.iteritems() ] )
 
         return hists
 
