@@ -7,9 +7,11 @@ import hwwtools
 import pdb
 
 _defaults  = {
-    'ggH':  { 'color':633, 'label':'ggH m_{H}=125', },
-    'vbfH': { 'color':634, 'label':'qqH m_{H}=125', },
-    'VH':   { 'color':635, 'label':'VH m_{H}=125' , },
+    'ggH':  { 'color':ROOT.kRed+1, 'label':'ggH', },
+    'vbfH': { 'color':ROOT.kRed+2, 'label':'qqH', },
+    'VH':   { 'color':ROOT.kRed+3, 'label':'VH' , },
+    'zH':   { 'color':ROOT.kRed-3, 'label':'zH' , },
+    'wH':   { 'color':ROOT.kRed-4, 'label':'wH' , },
 
     'VV':   { 'color':858, 'label':'WZ/ZZ' , },  
     'WJet': { 'color':921, 'label':'W+jets' , },
@@ -17,7 +19,7 @@ _defaults  = {
     'VgS':  { 'color':618, 'label':'V+#gamma*' , },
     'Top':  { 'color':400, 'label':'top' , },
     'DYTT': { 'color':418, 'label':'DY+jets' , },
-#     'DYLL': { 'color':419, 'label':'DY+jets' , },
+    'DYLL': { 'color':419, 'label':'DY+jets' , },
     'WW':   { 'color':851, 'label':'WW' , },
     'ggWW': { 'color':853, 'label':'ggWW' , },
 
