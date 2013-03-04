@@ -20,6 +20,7 @@ from HWWAnalysis.Misc.ROOTAndUtils import TH1AddDirSentry
 
 import ROOT
 
+
 #---
 def getnorms(pdf, obs, norms = None ):
     '''helper function to exctact the normalisation factors'''
@@ -162,10 +163,10 @@ class ShapeGluer:
         for process in self._processes:
 
             n = roonorms.get( 'n_exp_bin%s_proc_%s' % (self._bin, process) )
-            if not n: n = roonorms.get( 'n_exp_final_bin%s_proc_%s' % (self._bin, process) )
+            if n is None: n = roonorms.get( 'n_exp_final_bin%s_proc_%s' % (self._bin, process) )
 
             # fill it up only if the process exists in the model
-            if not n: 
+            if n is None: 
                 notfound.append(process)
                 continue
 
@@ -519,6 +520,8 @@ class ShapeGluer:
             if (nmarrays[p] == uparrays[p]).all() and (nmarrays[p] == dwarrays[p]).all(): 
                 self._log.debug('   - skipping %s',p)
                 continue
+            if not ( p in nmarrays and p in uparrays and p in dwarrays):
+                pdb.set_trace()
             vararrays.append( ( p, self._dovariations(nmarrays[p],uparrays[p],dwarrays[p])) )
 
         variations = dict(vararrays)
@@ -709,12 +712,14 @@ def fitAndPlot( dcpath, opts ):
         shapes,errs = gluer.glue()
 
         if opts.output:
-            printshapes(shapes, errs, mode, opts, bin)
+            printshapes(shapes, errs, mode, opts, bin, DC.signals, DC.processes)
 
         allshapes[mode] = (shapes,errs)
     
     if opts.dump:
         logging.debug('Dumping histograms to %s',opts.dump)
+        dumpdir = os.path.dirname(opt.dump)
+        hwwtools.ensuredir(dumpdir)
         dump = ROOT.TFile.Open(opts.dump,'recreate')
         here = ROOT.gDirectory.func()
         dump.cd()
@@ -740,7 +745,7 @@ def fitAndPlot( dcpath, opts ):
         here.cd()
 
 #---
-def printshapes( shapes, errs, mode, opts, bin ):
+def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
 
     # deep copy?
     shapes2plot = copy.deepcopy(shapes)
@@ -752,19 +757,27 @@ def printshapes( shapes, errs, mode, opts, bin ):
 #     hwwtools.hookDebugger()
     plot.setdata(shapes2plot['Data'])
 
-    if 'ggH' in shapes2plot: plot.addsig('ggH',  shapes2plot['ggH'])
-    if 'ggH' in shapes2plot: plot.addsig('vbfH', shapes2plot['vbfH'])
-    if 'ggH' in shapes2plot: plot.addsig('VH',   shapes2plot['wzttH'], label='stocazz')
 
-    plot.addbkg('VV',   shapes2plot['VV'])
-    plot.addbkg('WJet', shapes2plot['WJet'])
-    plot.addbkg('Vg',   shapes2plot['Vg'])
-    plot.addbkg('VgS',  shapes2plot['VgS'])
-    plot.addbkg('Top',  shapes2plot['Top'])
-    plot.addbkg('DYTT', shapes2plot['DYTT'])
-    # plot.addbkg('DYLL', shapes2plot['DYLL'])
-    plot.addbkg('WW',   shapes2plot['WW'])
-    plot.addbkg('ggWW', shapes2plot['ggWW'])
+    for p in processes:
+        if p not in shapes: continue
+        if p in signals:
+            plot.addsig(p,shapes2plot[p])
+        else:
+            plot.addbkg(p,shapes2plot[p])
+
+#     if 'ggH'   in shapes2plot: plot.addsig('ggH',  shapes2plot['ggH'])
+#     if 'vbfH'  in shapes2plot: plot.addsig('vbfH', shapes2plot['vbfH'])
+#     if 'wzttH' in shapes2plot: plot.addsig('VH',   shapes2plot['wzttH'])
+
+#     plot.addbkg('VV',   shapes2plot['VV'])
+#     plot.addbkg('WJet', shapes2plot['WJet'])
+#     plot.addbkg('Vg',   shapes2plot['Vg'])
+#     plot.addbkg('VgS',  shapes2plot['VgS'])
+#     plot.addbkg('Top',  shapes2plot['Top'])
+#     plot.addbkg('DYTT', shapes2plot['DYTT'])
+#     # plot.addbkg('DYLL', shapes2plot['DYLL'])
+#     plot.addbkg('WW',   shapes2plot['WW'])
+#     plot.addbkg('ggWW', shapes2plot['ggWW'])
 
     ## 1 = signal over background , 0 = signal on its own
     plot.set_addSignalOnBackground(0);
@@ -772,9 +785,10 @@ def printshapes( shapes, errs, mode, opts, bin ):
     ## 1 = merge signal in 1 bin, 0 = let different signals as it is
     plot.set_mergeSignal(0);
 
-    plot.setMass(125); 
-    plot.setLabel("m_{T}^{ll-E_{T}^{miss}} [GeV]");
-    plot.addLabel("0 jet #sqrt{s} = 8TeV");
+    plot.setMass(opt.mass); 
+    plot.setLabel('m_{T}^{ll-E_{T}^{miss}} [GeV]')
+    plot.addLabel('%s #sqrt{s} = 8TeV' % bin)
+    plot.addLabel('m_{H} = %s GeV' % opt.mass) 
 
     plot.prepare()
 
@@ -799,18 +813,17 @@ def printshapes( shapes, errs, mode, opts, bin ):
     cName = 'c_fitshapes_'+mode
     ratio = opts.ratio
 
-    if ratio: w = 1000; h = 1400
-    else:     w = 1000; h = 1000
+#     if ratio: w = 1000; h = 1400
+#     else:     w = 1000; h = 1000
 
-#     if ratio: w = 500; h = 700
-#     else:     w = 500; h = 500
+    if ratio: w = 500; h = 700
+    else:     w = 500; h = 500
 
 #     if opts.stretch:
 #         plot.stretch(opts.stretch)
 #         w = int(w*opts.stretch)
 
     c = ROOT.TCanvas(cName,cName, w+4, h+28) #if ratio else ROOT.TCanvas(cName,cName,1000,1000)
-#     print w,h, c.GetWw(), c.GetWh()
 
 #     plot.setMass(opts.mass)
     plot.setLumi(opts.lumi if opt.lumi else 0)
@@ -823,7 +836,6 @@ def printshapes( shapes, errs, mode, opts, bin ):
         if not e:
             e = 0x0
 
-#         plot.setNuisances(e)
         plot.set_ErrorBand(e)
 
         c.Clear()
@@ -842,7 +854,6 @@ def printshapes( shapes, errs, mode, opts, bin ):
         print 'outbasename:',outbasename
         c.Print(outbasename+'.root')
         c.Print(outbasename+'.pdf')
-        c.Print(outbasename+'.png')
 
 
     if errs:
@@ -917,7 +928,6 @@ if __name__ == '__main__':
 
     addOptions(parser)
     (opt, args) = parseOptions(parser)
-
 
     try:
         dcpath = args[0]
