@@ -130,12 +130,10 @@ class ShapeGluer:
             elif static.__nonzero__():
                 shape = static
             else:
-                shape = static
                 self._ws.allPdfs().Print('V')
                 print morph.__nonzero__(),morph, mname
                 print static.__nonzero__(),static, sname
-                print ">>> REMOVED <<<"
-                #raise ValueError('Can\'t find the nether the morph nor the shape!!! '+process)
+                raise ValueError('Can\'t find the nether the morph nor the shape!!! '+process)
 
             pdfs[process] = shape
         if self._log.isEnabledFor(logging.DEBUG):
