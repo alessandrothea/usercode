@@ -797,14 +797,46 @@ def fitAndPlot( dcpath, opts ):
     if opts.dump:
         logging.debug('Dumping histograms to %s',opts.dump)
         dumpdir = os.path.dirname(opt.dump)
-        hwwtools.ensuredir(dumpdir)
+        # open rootfile
+        if dumpdir: hwwtools.ensuredir(dumpdir)
         dump = ROOT.TFile.Open(opts.dump,'recreate')
         here = ROOT.gDirectory.func()
         dump.cd()
+
+        idir = dump.mkdir('info')
+        idir.cd()
+        # save the list of nuisances
+        nuisances = ROOT.TObjArray() #ROOT.std.vector('string')()
+        for (n,nf,pf,a,e) in DC.systs: nuisances.Add( ROOT.TObjString(n) )
+        nuisances.Write('nuisances', ROOT.TObject.kSingleKey)
+        # save the list of processes
+        processes = ROOT.TObjArray() #ROOT.std.vector('string')()
+        for p in DC.processes: processes.Add( ROOT.TObjString(p) )
+        processes.Write('processes', ROOT.TObject.kSingleKey)
+        # save the list of signals
+        signals = ROOT.TObjArray() #ROOT.std.vector('string')()
+        for s in DC.signals: signals.Add( ROOT.TObjString(s) )
+        signals.Write('signals', ROOT.TObject.kSingleKey)
+
         for mode,allbins in allshapes.iteritems():
+            # make the main directory
             mdir = dump.mkdir(mode)
             mdir.cd()
+            
+            # info directory
+            idir = mdir.mkdir('info')
+            idir.cd()
+
+            # save the fit parameters
+            model,pars,norms = modes[mode] 
+            pars.Write('parameters')
+
+
+            # save the list of signals
+
+            # save the bin plots
             for bin,(shapes,errs) in allbins.iteritems():
+                # bin directory
                 bdir = mdir.mkdir(bin) 
                 bdir.cd()
                 for s in shapes.itervalues():
@@ -962,7 +994,6 @@ if __name__ == '__main__':
 
     addOptions(parser)
     (opt, args) = parseOptions(parser)
-
 
     import bdb
     try:
