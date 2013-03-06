@@ -622,7 +622,7 @@ class ShapeMixer:
                 wwGenDown.SetTitle('WW Gen_nlo_WW Down')
                 wwGenDown.Scale(2.)
                 wwGenDown.Add(wwGenUp, -1)
-                wwGenDown.Scale(madWW.Integral()/wwGenDown.Integral())
+                if (wwGenDown.Integral() != 0) : wwGenDown.Scale(madWW.Integral()/wwGenDown.Integral())
                 self.generators[wwGenDown.GetTitle()] = wwGenDown
 
 
@@ -631,14 +631,14 @@ class ShapeMixer:
                 wwScaleUp.SetTitle('WW Gen_scale_WW Up')
                 wwScaleUp.Divide(mcAtNLO['WWnlo'])
                 wwScaleUp.Multiply(madWW)
-                wwScaleUp.Scale(madWW.Integral()/wwScaleUp.Integral())
+                if  (wwScaleUp.Integral() != 0) : wwScaleUp.Scale(madWW.Integral()/wwScaleUp.Integral())
                 self.generators[wwScaleUp.GetTitle()] = wwScaleUp
 
                 wwScaleDown = mcAtNLO['WWnloDown'].Clone('histo_WW_Gen_scale_WWDown')
                 wwScaleDown.SetTitle('WW Gen_scale_WW Down')
                 wwScaleDown.Divide(mcAtNLO['WWnlo'])
                 wwScaleDown.Multiply(madWW)
-                wwScaleDown.Scale(madWW.Integral()/wwScaleDown.Integral())
+                if (wwScaleDown.Integral() != 0) : wwScaleDown.Scale(madWW.Integral()/wwScaleDown.Integral())
                 self.generators[wwScaleDown.GetTitle()] = wwScaleDown
 
         # -----------------------------------------------------------------
@@ -835,8 +835,8 @@ class ShapeMixer:
                     if (tempintegral <= 0) :
                         h = self.nominals[h.GetTitle()].Clone((h.GetName()+'_'+systName+systShift))
                         self._logger.debug('>> Attention: systematic '+systName+' has 0 integral -> using nominal (systematic suppressed)')
-
-                    h.SetName(h.GetName()+'_'+systName+systShift)
+                    else :
+                        h.SetName(h.GetName()+'_'+systName+systShift)
                     h.SetTitle(h.GetTitle()+' '+systName+' '+systShift)
 
                     self.experimental[h.GetTitle()] = h
