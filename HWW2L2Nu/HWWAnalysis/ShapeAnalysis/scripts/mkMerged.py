@@ -395,6 +395,9 @@ class ShapeMixer:
             self._remodel(h)
             self.nominals[h.GetTitle()] = h
 
+            #print h.GetTitle()
+            #print h.Integral()
+
         # -----------------------------------------------------------------
         # WJet shape syst
         #
@@ -811,6 +814,9 @@ class ShapeMixer:
                     continue
                 self._remodel(h)
                 histograms.append(h)
+                #print "------------------------"
+                #print h.GetName()
+                #print h.Integral()
 
             m = udRegex.match(n)
             if m is not None:
@@ -821,11 +827,18 @@ class ShapeMixer:
                     raise RuntimeError(n+' doesn\'t end with Up or Down!')
 
                 for h in histograms:
-                    
+
                     if not h.GetTitle() in self.nominals:
                         raise RuntimeError('Systematic '+h.GetTitle()+' found, but no nominal shape')
+
+                    tempintegral = h.Integral()
+                    if (tempintegral <= 0) :
+                        h = self.nominals[h.GetTitle()].Clone((h.GetName()+'_'+systName+systShift))
+                        self._logger.debug('>> Attention: systematic '+systName+' has 0 integral -> using nominal (systematic suppressed)')
+
                     h.SetName(h.GetName()+'_'+systName+systShift)
                     h.SetTitle(h.GetTitle()+' '+systName+' '+systShift)
+
                     self.experimental[h.GetTitle()] = h
             else:
                 systName = 'CMS{0}_'.format(suffix)+n
@@ -836,6 +849,13 @@ class ShapeMixer:
                     # we call up the shape taken from the experimental file
                     systUp = h.Clone(h.GetName()+'_'+systName+'Up')
                     systUp.SetTitle(h.GetTitle()+' '+systName+' Up')
+
+                    tempintegral = systUp.Integral()
+                    if (tempintegral <= 0) :
+                        systUp = self.nominals[h.GetTitle()].Clone(h.GetName()+'_'+systName+'Up')
+                        systUp.SetTitle(h.GetTitle()+' '+systName+' Up')
+                        self._logger.debug('>> Attention: systematic '+systName+' #UP# has 0 integral -> using nominal (systematic suppressed for down variation)')
+
                     self.experimental[systUp.GetTitle()] = systUp
 
                     # copy the nominal histogram
@@ -843,6 +863,13 @@ class ShapeMixer:
                     systDown.SetTitle(h.GetTitle()+' '+systName+' Down')
                     systDown.Scale(2)
                     systDown.Add(systUp,-1)
+
+                    tempintegral = systDown.Integral()
+                    if (tempintegral <= 0) :
+                        systDown = self.nominals[h.GetTitle()].Clone(h.GetName()+'_'+systName+'Down')
+                        systDown.SetTitle(h.GetTitle()+' '+systName+' Down')
+                        self._logger.debug('>> Attention: systematic '+systName+' #DOWN# has 0 integral -> using nominal (systematic suppressed for down variation)')
+
                     self.experimental[systDown.GetTitle()] = systDown
 
 #             print 'systName:',systName,n
