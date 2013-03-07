@@ -831,12 +831,7 @@ class ShapeMixer:
                     if not h.GetTitle() in self.nominals:
                         raise RuntimeError('Systematic '+h.GetTitle()+' found, but no nominal shape')
 
-                    tempintegral = h.Integral()
-                    if (tempintegral <= 0) :
-                        h = self.nominals[h.GetTitle()].Clone((h.GetName()+'_'+systName+systShift))
-                        self._logger.debug('>> Attention: systematic '+systName+' has 0 integral -> using nominal (systematic suppressed)')
-                    else :
-                        h.SetName(h.GetName()+'_'+systName+systShift)
+                    h.SetName(h.GetName()+'_'+systName+systShift)
                     h.SetTitle(h.GetTitle()+' '+systName+' '+systShift)
 
                     self.experimental[h.GetTitle()] = h
@@ -850,12 +845,6 @@ class ShapeMixer:
                     systUp = h.Clone(h.GetName()+'_'+systName+'Up')
                     systUp.SetTitle(h.GetTitle()+' '+systName+' Up')
 
-                    tempintegral = systUp.Integral()
-                    if (tempintegral <= 0) :
-                        systUp = self.nominals[h.GetTitle()].Clone(h.GetName()+'_'+systName+'Up')
-                        systUp.SetTitle(h.GetTitle()+' '+systName+' Up')
-                        self._logger.debug('>> Attention: systematic '+systName+' #UP# has 0 integral -> using nominal (systematic suppressed for down variation)')
-
                     self.experimental[systUp.GetTitle()] = systUp
 
                     # copy the nominal histogram
@@ -864,13 +853,25 @@ class ShapeMixer:
                     systDown.Scale(2)
                     systDown.Add(systUp,-1)
 
-                    tempintegral = systDown.Integral()
-                    if (tempintegral <= 0) :
-                        systDown = self.nominals[h.GetTitle()].Clone(h.GetName()+'_'+systName+'Down')
-                        systDown.SetTitle(h.GetTitle()+' '+systName+' Down')
-                        self._logger.debug('>> Attention: systematic '+systName+' #DOWN# has 0 integral -> using nominal (systematic suppressed for down variation)')
-
                     self.experimental[systDown.GetTitle()] = systDown
+
+        # check none of the experimental systematics to be 0
+        for n in self.experimental.keys():
+            # the process name is the first token of the systematic name
+            process = n.split()[0] 
+            syst = self.experimental[n]
+            if syst.Integral() > 0: continue
+
+            # fish the nominal
+            h = self.nominals[process]
+
+            newsyst = h.Clone(syst.GetName())
+            newsyst.SetTitle(syst.GetTitle())
+            self._logger.debug('>> Attention: systematic '+newsyst.GetName()+' has 0 integral -> using nominal (variation suppressed)')
+            self.experimental[n] = newsyst
+
+
+
 
 #             print 'systName:',systName,n
 #         print 'Systematics',',\n'.join([ n+';'+h.GetName() for n,h in self.experimental.iteritems()])
