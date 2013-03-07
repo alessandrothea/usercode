@@ -26,7 +26,7 @@ def getnorms(pdf, obs, norms = None ):
 
     out = norms if norms!=None else {}
 
-    logging.debug('searching norms in class: %s' % pdf.__class__.__name__ )
+#     logging.debug('searching norms in class: %s' % pdf.__class__.__name__ )
 
     if isinstance(pdf,ROOT.RooSimultaneous):
         cat = pdf.indexCat()
@@ -145,29 +145,36 @@ class Coroner:
         # this is list comprehension madness
         # slimmed to nuisance->processes map
         # the forula is v != 0 ( and not v > 0) to include cases where v is a list (asym errors)
-        systs = odict.OrderedDict([ (n,[ p for p,v in e[self._bin].iteritems() if v != 0. ]) for (n,nf,pf,a,e) in self._DC.systs])
+        nu2procs = odict.OrderedDict([ (n,[ p for p,v in e[self._bin].iteritems() if v != 0. ]) for (n,nf,pf,a,e) in self._DC.systs])
 
         # init the new array
-        nusbyproc = odict.OrderedDict([ (p,[]) for p in self._processes])
+        proc2nus = odict.OrderedDict([ (p,[]) for p in self._processes])
         for (n,nf,pf,a,e) in self._DC.systs:
             try:
                 for p,val in e[self._bin].iteritems():
                     # if the variation is not 0, append the nuisance to the process
                     # could be a  non-zer0 float or a list. What if it is none?
-                    if val != 0: nusbyproc[p].append(n)
+                    if val != 0: proc2nus[p].append(n)
             except KeyError:
                 self._log.debug('No processes in bin %s for nuisance %s' % (self._bin, n) )
                 continue
 
-        self._vars2proc = systs
+        
+        # filter out the 
+        self._nu2procs = {}
+        for n,ps in nu2procs.iteritems():
+            if len(ps) != 0:
+                self._nu2procs[n] = ps
+            else:
+                self._log.debug('Nuisance %s does not affect bin %s',n,self._bin)
         # add the signal strength
-        self._vars2proc['r'] = self._DC.signals
-        self._proc2vars = nusbyproc
+        self._nu2procs['r'] = self._DC.signals
+        self._proc2nus = proc2nus
 
         # add the signal strength to the parameters
         for s in self._DC.signals:
-            if s in self._proc2vars:
-                self._proc2vars[s].append('r')
+            if s in self._proc2nus:
+                self._proc2nus[s].append('r')
 
 
     #---
@@ -210,10 +217,10 @@ class Coroner:
         roonorms = getnorms(pdf, pdf_obs)
 
         # debuginfo
-        if self._log.isEnabledFor(logging.DEBUG):
-            self._log.debug('List of normalisation coefficients from %s', pdf.GetName())
-            for t,v in roonorms.iteritems():
-                self._log.debug('%-30s %f',t,v)
+#         if self._log.isEnabledFor(logging.DEBUG):
+#             self._log.debug('List of normalisation coefficients from %s', pdf.GetName())
+#             for t,v in roonorms.iteritems():
+#                 self._log.debug('%-30s %f',t,v)
 
         norms = {}
         notfound = []
@@ -244,6 +251,7 @@ class Coroner:
 
         return h
 
+    #---
     def _array2TH1(self, name, array, title=None ):
         if len(array) != self._template.GetNbinsX():
             raise ValueError('Mismatching bin array length and histogram bins: %d %d' % (len(array), self._template.GetNbinsX()) )
@@ -255,7 +263,6 @@ class Coroner:
             h.SetBinContent(i+1,c)
 
         return h
-            
 
     #---
     def _roo2array(self, pdf, pars=None, norm=None):
@@ -362,6 +369,10 @@ class Coroner:
         hists = dict( [ ( p,self._array2TH1('histo_'+p, a, title=p) ) for p,a in arrays.iteritems() ] )
 
         return hists
+
+    # bin
+    def nuisances(self):
+        return self._nu2procs.keys()
 
     #---
     def perform(self):
@@ -489,9 +500,10 @@ class Coroner:
         nushapes = [ arg.GetName() for arg in roofiter(pars) if arg.GetName() in shapes]
         nunorms  = [ arg.GetName() for arg in roofiter(pars) if not arg.GetName() in shapes ]
 
-        # groups the nuis to float: all norms together, shapes 1 by 1
+        # groups the nuis to float: all norms together, shapes 1 by
+        # and filter on the nuisances which are actually affecting this datacard
         # grouping = dict([('norms',nunorms)] + [ (arg,[arg]) for arg in nushapes] )
-        grouping = dict([ (arg,[arg]) for arg in (nushapes+nunorms)] )
+        grouping = dict([ (arg,[arg]) for arg in (nushapes+nunorms) if arg in self._nu2procs])
 #         grouping = {'CMS_norm_WW':['CMS_norm_WW']}
 
         # print some stats
@@ -517,7 +529,7 @@ class Coroner:
                 if not p in mega: mega[p] = {}
                 mega[p][nu] = v
 
-        # loop over processes to calculate the square sum of the nuisamces
+        # loop over processes to calculate the square sum of the nuisances
         print 'Calculating the nuisances envelope'
         for p,nus in mega.iteritems():
             self._log.debug(' - %s',p)
@@ -605,7 +617,10 @@ class Coroner:
             dw.setVal(dw.getVal()-dw.getError())
         
             # add the processes affected by this nuisance
-            procs2save.update( self._vars2proc[nu] )
+            try:
+                procs2save.update( self._nu2procs[nu] )
+            except KeyError:
+                self._log.debug('XXXXXXXXXXXX  No processes for %s',nu)
 
         self._log.debug('Preparing variations for nuisance %s on processes %s' % (','.join(nuistofloat), ','.join(procs2save) ) )
 
@@ -778,6 +793,7 @@ def fitAndPlot( dcpath, opts ):
     MB = ShapeBuilder(DC, options)
 
     allshapes = {}
+    nuisancemap = {}
     for mode,fit in modes.iteritems():
         print 'Analysing model:',mode
         logging.debug('Plotting %s', fit)
@@ -788,6 +804,7 @@ def fitAndPlot( dcpath, opts ):
             print ' - Bin:',bin
             coroner = Coroner(bin, DC, MB, w, fit)
             shapes,errs = coroner.perform()
+            nuisancemap[bin] = coroner.nuisances()
 
             if opts.output:
                 printshapes(shapes, errs, mode, opts, bin, DC.signals, DC.processes)
@@ -818,6 +835,14 @@ def fitAndPlot( dcpath, opts ):
         for s in DC.signals: signals.Add( ROOT.TObjString(s) )
         signals.Write('signals', ROOT.TObject.kSingleKey)
 
+        # save the list of nuisances per bin
+        nuisbybin = ROOT.TMap()
+        for bin,nuis in nuisancemap.iteritems():
+            tnuis = ROOT.TObjArray()
+            for n in nuis: tnuis.Add( ROOT.TObjString(n) )
+            nuisbybin.Add(ROOT.TObjString(bin),tnuis)
+        nuisbybin.Write('map_binnuisances', ROOT.TObject.kSingleKey)
+
         for mode,allbins in allshapes.iteritems():
             # make the main directory
             mdir = dump.mkdir(mode)
@@ -830,7 +855,6 @@ def fitAndPlot( dcpath, opts ):
             # save the fit parameters
             model,pars,norms = modes[mode] 
             pars.Write('parameters')
-
 
             # save the list of signals
 
