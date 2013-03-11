@@ -31,11 +31,13 @@ backgrounds = {
                                 ],
     'WJet-template-2j'        : ['wjetsTemplate/latino_RunA_892pbinv_LooseLoose.root',
                                  'wjetsTemplate/latino_RunB_4404pbinv_LooseLoose.root',
-                                 'wjetsTemplate/latino_RunC_6807pbinv_LooseLoose.root',
+                                 'wjetsTemplate/latino_RunC_7032pbinv_LooseLoose.root',
+                                 'wjetsTemplate/latino_RunD_7274pbinv_LooseLoose.root',
                                 ],
     'WJetFakeRate-template-2j': ['wjetsTemplate/latino_RunA_892pbinv_LooseLoose.root',
                                  'wjetsTemplate/latino_RunB_4404pbinv_LooseLoose.root',
-                                 'wjetsTemplate/latino_RunC_6807pbinv_LooseLoose.root',
+                                 'wjetsTemplate/latino_RunC_7032pbinv_LooseLoose.root',
+                                 'wjetsTemplate/latino_RunD_7274pbinv_LooseLoose.root',
                                 ],
     'Top'                     : ['nominals/latino_019_TTTo2L2Nu2B.root',
                                  'nominals/latino_011_TtWFullDR.root',
@@ -665,6 +667,12 @@ mcsets = {
         # bkgs
         #'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL',
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYee','DYmm',
+        # systematics
+        'WJetFakeRate-nominal',
+        ('WJetFakeRate-eUp', 'WJetFakeRate-nominal'),
+        ('WJetFakeRate-eDn', 'WJetFakeRate-nominal'),
+        ('WJetFakeRate-mUp', 'WJetFakeRate-nominal'),
+        ('WJetFakeRate-mDn', 'WJetFakeRate-nominal'),
         # templates
         'VgS-template','Vg-template',
     ],
@@ -673,6 +681,12 @@ mcsets = {
         'ggH','vbfH','wzttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT',
+        # systematics
+        'WJetFakeRate-nominal',
+        ('WJetFakeRate-eUp', 'WJetFakeRate-nominal'),
+        ('WJetFakeRate-eDn', 'WJetFakeRate-nominal'),
+        ('WJetFakeRate-mUp', 'WJetFakeRate-nominal'),
+        ('WJetFakeRate-mDn', 'WJetFakeRate-nominal'),
         # templates
         'VgS-template','Vg-template',
         # 2j specific

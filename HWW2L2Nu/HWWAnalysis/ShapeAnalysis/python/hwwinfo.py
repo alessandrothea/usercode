@@ -27,7 +27,7 @@ class wwcutsB:
         ('Extra Lepton',           'nextra==0'),
         ('B veto',                 '(bveto_ip==1 && (nbjettche==0 || njet>3)  )'),
         ('p_{T}^{ll}',             'ptll>%f'%ptllCut),                     # ema 14
-        ('Extra Jet',              'njet<4'),
+        #('Extra Jet',              'njet<4'),
     ])
 
     wwmin = odict.OrderedDict([
@@ -37,7 +37,7 @@ class wwcutsB:
         ('min proj #slash{E}_{T}', 'mpmet>20.'),                    # ema9
         ('Soft #mu veto',          'bveto_mu==1'),
         ('Extra Lepton',           'nextra==0'),
-        ('Extra Jet',              'njet<4'),
+        #('Extra Jet',              'njet<4'),
     ])
 
     #dy cuts
@@ -355,6 +355,12 @@ def massSelections(mass):
     #sel['vbf-selection']          = sel['vbf-selection-temp'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, int(mass))
 
 #    sel['ww-common-ss']           = sel['ww-common'].replace["(ch1*ch2)<0.5", "(ch1*ch2)>0.5"]+' && 1'
+    sel['shape-withCR-selection']  = (sel['ww-common'].replace("zveto==1", "zveto>-1")).replace("(ch1*ch2)<0", "1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
+
+    #### to look only at the same sign control region ####
+    sel['shape-onlySSCR-selection']  = (sel['ww-common'].replace("zveto==1", "zveto>-1")).replace("(ch1*ch2)<0", "(ch1*ch2)>0")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
+
+
     sel['ww-common-ss']           = sel['ww-common'].replace("(ch1*ch2)<0.5", "(ch1*ch2)>0.5")
     sel['shape-ss-selection']     = sel['ww-common-ss'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common-ss'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
 
@@ -377,7 +383,8 @@ def massSelections(mass):
     sel['vh-selection'] = sel['vh-selection'] + ' && (mll > {0:.1f} && mll < {1:.1f}) && drll<1.5 '.format(masscuts['mllmin_vh'], masscuts['mllmax_vh'])
 
     sel['vh-shape-level']     = ' && '.join(vhcuts.vhcutShape)
-    sel['vh-shape-selection'] = sel['vh-shape-level']     + ' && (mth > {0:.1f} && mth < {1:.1f}) && ((sameflav && drll<1.5) || (!sameflav && drll<2.5))'.format(masscuts['mtmin_vh'], int(mass))
+    sel['vh-shape-selection'] = sel['vh-shape-level'].replace('ch1*ch2<0', '(ch1*ch2<0 || !sameflav)')
+    sel['vh-shape-selection'] = sel['vh-shape-selection'] + ' && (mth > {0:.1f} && mth < {1:.1f}) && ((sameflav && drll<1.5) || (!sameflav && drll<2.5))'.format(masscuts['mtmin_vh'], int(mass))
     sel['vh-shape-selection'] = sel['vh-shape-selection'] + ' && ((sameflav && mll>{0:.1f} && mll<{1:.1f}) || (!sameflav && mll<200)) && ((sameflav && drll<1.5) || (!sameflav && drll<2.5)) '.format(masscuts['mllmin_vh'], masscuts['mllmax_vh'])
 
     
