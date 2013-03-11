@@ -872,6 +872,22 @@ class ShapeMixer:
 
 
 
+        for n in self.experimental.keys():
+            # the process name is the first token of the systematic name
+            process = n.split()[0] 
+            syst = self.experimental[n]
+            if syst.Integral() > 0: continue
+
+            # fish the nominal
+            h = self.nominals[process]
+
+            newsyst = h.Clone(syst.GetName())
+            newsyst.SetTitle(syst.GetTitle())
+            self._logger.debug('>> Attention: systematic '+newsyst.GetName()+' has 0 integral -> using nominal (variation suppressed)')
+            self.experimental[n] = newsyst
+
+
+
 
 #             print 'systName:',systName,n
 #         print 'Systematics',',\n'.join([ n+';'+h.GetName() for n,h in self.experimental.iteritems()])
