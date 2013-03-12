@@ -28,9 +28,9 @@ _defaults  = odict.OrderedDict([
 
 if not ROOT.gROOT.GetListOfClasses().FindObject('PlotVHqqHggH'):
     shape_path = os.path.join(os.getenv('CMSSW_BASE'),'src/HWWAnalysis/ShapeAnalysis')
-    print 'Shape directory is',shape_path
+#     print 'Shape directory is',shape_path
 
-    print 'Loading PlotVHqqHggH.C'
+#     print 'Loading PlotVHqqHggH.C'
     hwwtools.loadAndCompile(shape_path+'/macros/PlotVHqqHggH.C')
 
 class HWWPlot(ROOT.PlotVHqqHggH):

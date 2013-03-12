@@ -2,6 +2,23 @@
 
 import HWWAnalysis.Misc.ROOTAndUtils as utils
 
+class PadDesigner(object):
+    ''' this class is meant to provide an interface to design the layout of a
+    canvas/pad in terms of pixels or equivalent units, overcaming the intrinsic
+    ROOT issue of describing the pads in relative units
+    
+    
+    Possible approach: 
+    define pads first (w,h) and then ask the designer to produce a canvas where
+    to accomodate them.  maybe define the a grid where to accomodate the pads,
+    and then the pads inside?  where to define the pad size? in the grid
+    definition?
+
+    Then designer then will be in charge to produce the canvas with the pads
+    inside. Each one already set to fulfill the constraints.  '''
+    def __init__(self):
+        pass
+
 class H1DiffPlotter:
     def __init__(self, **kwargs):
         import ROOT
@@ -29,6 +46,7 @@ class H1DiffPlotter:
             if not hasattr(self,'_'+k): continue
             setattr(self,'_'+k,v)
 
+    #---
     def __del__(self):
         del self._h0
 #         del self._h1
@@ -38,6 +56,7 @@ class H1DiffPlotter:
         x.SetLabelSize(x.GetLabelSize()*ratio/(1-ratio))
         x.SetTitleSize(x.GetTitleSize()*ratio/(1-ratio))
 
+    #---
     def set(self, h0, *hs ):
         if not hs:
             raise RuntimeError('cannot compare only 1 histogram')
@@ -50,6 +69,7 @@ class H1DiffPlotter:
         self._hists = [ h.Clone() for h in hs ]
 
 
+    #---
     def draw(self, options='hist'):
         import ROOT
         if not ROOT.gPad.func():
@@ -191,6 +211,8 @@ if __name__ == '__main__':
     diff._rtitle = "e la fava"
 
     diff.draw()
+
+    c.Print('H1DiffTester.pdf')
 
     import sys
     sys.exit(0)
