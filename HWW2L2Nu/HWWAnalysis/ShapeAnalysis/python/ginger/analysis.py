@@ -1,5 +1,5 @@
 import HWWAnalysis.Misc.odict as odict
-from ginger,tree import TreeWorker
+from tree import TreeWorker
 import os.path
 import ROOT
 import logging

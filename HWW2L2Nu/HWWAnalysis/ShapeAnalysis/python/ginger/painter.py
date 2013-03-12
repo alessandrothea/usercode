@@ -54,7 +54,6 @@ class Pad(object):
                 pass
             else:
                 raise ValueError('margins must be a 1,2,4 length tuple')
-#         print 'XXX',m 
         self._margins = m
 
     #---
@@ -113,9 +112,6 @@ class Pad(object):
         style['label-offset'] /= float(self._w-left-right)
         style['tick-length']  *= self._h/float(lay*self._w)
         style['title-offset'] *= self._obj.GetWh()/(1.6*self._w*style['title-size'])
-#         for i,j in style.iteritems():
-#             print self._name,'y',i,j
-#         print '-'*80
         self._applyaxis(yax,**style)
 
 
@@ -202,7 +198,6 @@ class Canvas(object):
         if not title: title = name
 
         w,h = self._computesize()
-        print 'width:height',w,h
         fw,fh = float(w),float(h)
         c = ROOT.TCanvas(name,title, w+4, h+28)
         c.Draw()
@@ -249,8 +244,8 @@ class Canvas(object):
 
                 pname = 'pad_%d_%d' % (i,j)
 
-                print pname,' [%d,%d][%d,%d] - [%d,%d][%d,%d]'% (x0,x1,y0,y1,x0,x1,(h-y1),(h-y0)), k
-                print pname,x0/fw,(h-y0)/fh,x1/fw,(h-y1)/fh, k
+#                 print pname,' [%d,%d][%d,%d] - [%d,%d][%d,%d]'% (x0,x1,y0,y1,x0,x1,(h-y1),(h-y0)), k
+#                 print pname,x0/fw,(h-y0)/fh,x1/fw,(h-y1)/fh, k
                 tpad = ROOT.TPad(pname,pname,x0/fw,(h-y1)/fh,x1/fw,(h-y0)/fh)#, k)
                 tpad.Draw()
                 pad._obj = tpad
@@ -263,9 +258,6 @@ class Canvas(object):
     #---
     def applystyle(self):
         
-#         for p in self._pads:
-#             print p._name
-#             p._applyframestyle()
         map(Pad._applyframestyle,self._pads)
 
 
@@ -359,15 +351,8 @@ class Legend(object):
     def draw(self):
         
         pad = ROOT.gPad.func()
-#         pad.cd()
-#         fw = float(pad._w)
-#         fh = float(pad._h)
         fw = pad.GetWw()*pad.GetWNDC()
         fh = pad.GetWh()*pad.GetHNDC()
-#         print w,h
-#         sys.exit(0)
-
-#         print pad.GetName(),pad._w,pad.GetWw(),pad.GetWNDC(),pad.GetWw()*pad.GetWNDC(),';',pad._h,pad.GetWh(),pad.GetHNDC(),pad.GetWh()*pad.GetHNDC()
 
         for i,col in enumerate(self._grid):
             for j,entry in enumerate(col):
@@ -383,8 +368,6 @@ class Legend(object):
                 self._applystyle(l)
                 l.Draw()
                 self._legends.append(l)
-
-#         current.cd()
 
 
 if __name__ == '__main__':

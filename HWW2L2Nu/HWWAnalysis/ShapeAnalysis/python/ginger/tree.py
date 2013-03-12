@@ -198,8 +198,10 @@ import ROOT
 def _buildchain(treeName,files):
     tree = ROOT.TChain(treeName)
     for path in files:
-        if not os.path.exists(path):
-            raise RuntimeError('File '+path+' doesn\'t exists')
+        # if # is in the path, it's a zipfile!
+        filepath = path if '#' not in path else path[:path.index('#')]
+        if not os.path.exists(filepath):
+            raise RuntimeError('File '+filepath+' doesn\'t exists')
         tree.Add(path) 
 
     return tree
@@ -297,7 +299,10 @@ class TreeWorker:
             # store it
             elists[name] = l
             # activate it
-            self._chain.SetEntryList(l)
+            import pdb
+            pdb.set_trace()
+            opt = '' if '#' not in l.GetFileName() else 'ne'
+            self._chain.SetEntryList(l,opt)
 
             self._logger.debug('%s -> %d',l.GetName(),l.GetN())
 
