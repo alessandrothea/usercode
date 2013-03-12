@@ -35,8 +35,9 @@ electronUncertaintyEE = 0.04
 # in DATA mischarge = 5.55 / 10^4
 # absolute difference is 1.1 / 10^4
 #
-sigmaChargeElectron = (0.000226119, 0.000258783, 0.00074023)
-sigmaChargeMuon     = 0.00003
+
+sigmaChargeElectron = (0.000240123, 7.55615e-05, 0.000144796, 2.52092e-05, 0.00120842, 0.00236264)
+sigmaChargeMuon     = 0.0002
 
 
 
@@ -1789,38 +1790,86 @@ class scaleAndSmear:
             ## electron-muon electron
             if self.oldttree.channel == 1:
                if ( self.oldttree.pt1 < 30) :
-                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[0])
+                  if ( math.fabs(self.oldttree.eta1) < 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[0])
                if ( self.oldttree.pt1 >= 30 and self.oldttree.pt1 < 50) :
-                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[1])
+                  if ( math.fabs(self.oldttree.eta1) < 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[1])
                if ( self.oldttree.pt1 >= 50) :
-                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[2])
+                  if ( math.fabs(self.oldttree.eta1) < 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[2])
+               if ( self.oldttree.pt1 < 30) :
+                  if ( math.fabs(self.oldttree.eta1) >= 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[3])
+               if ( self.oldttree.pt1 >= 30 and self.oldttree.pt1 < 50) :
+                  if ( math.fabs(self.oldttree.eta1) >= 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[4])
+               if ( self.oldttree.pt1 >= 50) :
+                  if ( math.fabs(self.oldttree.eta1) >= 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[5])
 
                if ( self.oldttree.pt2 < 30) :
-                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[0])
+                  if ( math.fabs(self.oldttree.eta2) < 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[0])
                if ( self.oldttree.pt2 >= 30 and self.oldttree.pt2 < 50) :
-                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[1])
+                  if ( math.fabs(self.oldttree.eta2) < 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[1])
                if ( self.oldttree.pt2 >= 50) :
-                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[2])
+                  if ( math.fabs(self.oldttree.eta2) < 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[2])
+               if ( self.oldttree.pt2 < 30) :
+                  if ( math.fabs(self.oldttree.eta2) >= 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[3])
+               if ( self.oldttree.pt2 >= 30 and self.oldttree.pt2 < 50) :
+                  if ( math.fabs(self.oldttree.eta2) >= 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[4])
+               if ( self.oldttree.pt2 >= 50) :
+                  if ( math.fabs(self.oldttree.eta2) >= 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[5])
 
             ## electron-muon channel
             if self.oldttree.channel == 2:
                if ( self.oldttree.pt1 < 30) :
-                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[0])
+                  if ( math.fabs(self.oldttree.eta1) < 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[0])
                if ( self.oldttree.pt1 >= 30 and self.oldttree.pt1 < 50) :
-                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[1])
+                  if ( math.fabs(self.oldttree.eta1) < 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[1])
                if ( self.oldttree.pt1 >= 50) :
-                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[2])
+                  if ( math.fabs(self.oldttree.eta1) < 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[2])
+               if ( self.oldttree.pt1 < 30) :
+                  if ( math.fabs(self.oldttree.eta1) >= 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[3])
+               if ( self.oldttree.pt1 >= 30 and self.oldttree.pt1 < 50) :
+                  if ( math.fabs(self.oldttree.eta1) >= 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[4])
+               if ( self.oldttree.pt1 >= 50) :
+                  if ( math.fabs(self.oldttree.eta1) >= 1.5) :
+                      ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[5])
                ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeMuon)
 
             ## muon-electron channel
             if self.oldttree.channel == 3:
                ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeMuon)
                if ( self.oldttree.pt2 < 30) :
-                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[0])
+                  if ( math.fabs(self.oldttree.eta2) < 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[0])
                if ( self.oldttree.pt2 >= 30 and self.oldttree.pt2 < 50) :
-                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[1])
+                  if ( math.fabs(self.oldttree.eta2) < 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[1])
                if ( self.oldttree.pt2 >= 50) :
-                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[2])
+                  if ( math.fabs(self.oldttree.eta2) < 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[2])
+               if ( self.oldttree.pt2 < 30) :
+                  if ( math.fabs(self.oldttree.eta2) >= 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[3])
+               if ( self.oldttree.pt2 >= 30 and self.oldttree.pt2 < 50) :
+                  if ( math.fabs(self.oldttree.eta2) >= 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[4])
+               if ( self.oldttree.pt2 >= 50) :
+                  if ( math.fabs(self.oldttree.eta2) >= 1.5) :
+                      ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[5])
 
 
             # fill old and new values
