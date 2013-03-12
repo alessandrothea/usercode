@@ -31,8 +31,13 @@ electronUncertaintyEB = 0.02
 electronUncertaintyEE = 0.04
 
 ## charge mismeasurement
-sigmaChargeElectron = 0.10
-sigmaChargeMuon     = 0.10
+# in MC mischarge   = 4.45 / 10^4
+# in DATA mischarge = 5.55 / 10^4
+# absolute difference is 1.1 / 10^4
+#
+sigmaChargeElectron = (0.000226119, 0.000258783, 0.00074023)
+sigmaChargeMuon     = 0.00003
+
 
 
 ## pu uncertainty
@@ -1783,18 +1788,40 @@ class scaleAndSmear:
 
             ## electron-muon electron
             if self.oldttree.channel == 1:
-               ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron)
-               ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron)
+               if ( self.oldttree.pt1 < 30) :
+                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[0])
+               if ( self.oldttree.pt1 >= 30 and self.oldttree.pt1 < 50) :
+                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[1])
+               if ( self.oldttree.pt1 >= 50) :
+                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[2])
+
+               if ( self.oldttree.pt2 < 30) :
+                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[0])
+               if ( self.oldttree.pt2 >= 30 and self.oldttree.pt2 < 50) :
+                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[1])
+               if ( self.oldttree.pt2 >= 50) :
+                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[2])
 
             ## electron-muon channel
             if self.oldttree.channel == 2:
-               ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron)
+               if ( self.oldttree.pt1 < 30) :
+                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[0])
+               if ( self.oldttree.pt1 >= 30 and self.oldttree.pt1 < 50) :
+                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[1])
+               if ( self.oldttree.pt1 >= 50) :
+                  ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeElectron[2])
                ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeMuon)
 
             ## muon-electron channel
             if self.oldttree.channel == 3:
                ch1[0] = self.oldttree.ch1 * smearCharge(sigmaChargeMuon)
-               ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron)
+               if ( self.oldttree.pt2 < 30) :
+                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[0])
+               if ( self.oldttree.pt2 >= 30 and self.oldttree.pt2 < 50) :
+                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[1])
+               if ( self.oldttree.pt2 >= 50) :
+                  ch2[0] = self.oldttree.ch2 * smearCharge(sigmaChargeElectron[2])
+
 
             # fill old and new values
             self.ttree.Fill()
@@ -2335,8 +2362,8 @@ class scaleAndSmear:
     def addOptions(self,parser):
         parser.add_option('-i', '--inputFileName',      dest='inputFileName',   help='Name of the input *.root file.',)
         parser.add_option('-o', '--outputFileName',     dest='outputFileName',  help='Name of the output *.root file.',)
-        parser.add_option('-a', '--systematicArgument', dest='systArgument',    help='Argument to specify systematic (possible arguments are: "muonScale","electronScale","leptonEfficiency","jetEnergyScale","metResolution","electronResolution","dyTemplate","puVariation",)',)
-        parser.add_option('-v', '--variation',          dest='variation',       help='Direction of the scale variation ("up"/"down") or type of DY template ("temp"/"syst"), works only in combination with "-a dyTemplate". In the case of "metResolution" and "electronResolution" this is ommitted.',)
+        parser.add_option('-a', '--systematicArgument', dest='systArgument',    help='Argument to specify systematic (possible arguments are: "muonScale","electronScale","leptonEfficiency","jetEnergyScale","metResolution","electronResolution","dyTemplate","puVariation","chargeResolution",)',)
+        parser.add_option('-v', '--variation',          dest='variation',       help='Direction of the scale variation ("up"/"down") or type of DY template ("temp"/"syst"), works only in combination with "-a dyTemplate". In the case of "metResolution" and "electronResolution" and "chargeResolution" this is ommitted.',)
         parser.add_option('-t', '--treeDir',            dest='treeDir',         help='TDirectry structure to the tree to scale and smear.',)
         #    parser.add_option('-n', '--nEvents',           dest='nEvents',         help='Number of events to run over',)
         parser.add_option('-d', '--debug',              dest='debug',           help='Switch to debug mode',default=False, action='store_true')
@@ -2359,9 +2386,9 @@ def main():
     
     parser.add_option('-i', '--inputFileName',      dest='inputFileName',   help='Name of the input *.root file.',)
     parser.add_option('-o', '--outputFileName',     dest='outputFileName',  help='Name of the output *.root file.',)
-    parser.add_option('-a', '--systematicArgument', dest='systArgument',    help='Argument to specify systematic (possible arguments are: "muonScale","electronScale","leptonEfficiency","jetEnergyScale","metResolution","electronResolution","dyTemplate","puVariation",)',)
-    parser.add_option('-v', '--variation',          dest='variation',       help='Direction of the scale variation ("up"/"down") or type of DY template ("temp"/"syst"), works only in combination with "-a dyTemplate". In the case of "metResolution" and "electronResolution" this is ommitted.',)
-    parser.add_option('-t', '--treeDir',            dest='treeDir',         help='TDirectry structure to the tree to scale and smear.',)
+    parser.add_option('-a', '--systematicArgument', dest='systArgument',    help='Argument to specify systematic (possible arguments are: "muonScale","electronScale","leptonEfficiency","jetEnergyScale","metResolution","electronResolution","dyTemplate","puVariation","chargeResolution",)',)
+    parser.add_option('-v', '--variation',          dest='variation',       help='Direction of the scale variation ("up"/"down") or type of DY template ("temp"/"syst"), works only in combination with "-a dyTemplate". In the case of "metResolution" and "electronResolution" and "chargeResolution" this is ommitted.',)
+    parser.add_option('-t', '--treeDir',            dest='treeDir',         help='TDirectry structure to the tree to scale and smear.',default="latino")
 #    parser.add_option('-n', '--nEvents',           dest='nEvents',         help='Number of events to run over',)
     parser.add_option('-d', '--debug',              dest='debug',           help='Switch to debug mode',default=False, action='store_true')
 
@@ -2378,7 +2405,8 @@ def main():
     if opt.systArgument not in possibleSystArguments:
         parser.error('Wrong systematic argument')        
     possibleDirections = ['up','down','temp','syst']
-    if opt.variation not in possibleDirections:
+    needdir = ["muonScale","electronScale","leptonEfficiency","jetEnergyScale","dyTemplate","puVariation"]
+    if opt.systArgument in needdir and opt.variation not in possibleDirections:
         parser.error('No direction of the systematic variation given')
     if opt.treeDir is None:
         parser.error('No path to the tree specyfied')
