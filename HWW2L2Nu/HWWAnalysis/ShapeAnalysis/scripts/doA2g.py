@@ -119,7 +119,7 @@ class Coroner:
         self._processes = []
         for p,y in self._DC.exp[self._bin].iteritems():
             if y > 0.: self._processes.append(p)
-            else: self._log.info('Process %s has 0 yield in bin %s', (p,self._bin) )
+            else: self._log.info('Process %s has 0 yield in bin %s', p,self._bin )
 
         # double check the pdfs of the model
 #         norms = self._getnormalisations(self._model)
@@ -637,6 +637,9 @@ class Coroner:
         # filter those which do not differ from the nominal
         vararrays = []
         for p in nmarrays.iterkeys():
+            if p not in uparrays: raise KeyError('Process %s not found among the up-variation', p)
+            if p not in dwarrays: raise KeyError('Process %s not found among the dw-variation', p)
+
             if (nmarrays[p] == uparrays[p]).all() and (nmarrays[p] == dwarrays[p]).all(): 
                 self._log.warn('Pdf %s: No changes in bin %s when %s were varied. Is it OK?',p, self._bin, ', '.join(nuistofloat))
                 continue
@@ -719,7 +722,7 @@ def fitAndPlot( dcpath, opts ):
         
 
     # 2. convert to ws
-    wspath = os.path.splitext(dcpath)[0]+'.root'
+    wspath = os.path.splitext(dcpath)[0]+'_workspace.root'
     logging.debug('Working with workspace %s',wspath)
 
     mkws = (not os.path.exists(wspath) or
@@ -729,7 +732,7 @@ def fitAndPlot( dcpath, opts ):
         # workspace + parameters = shapes
         print 'Making the workspace...',
         sys.stdout.flush()
-        os.system('text2workspace.py '+dcpath)
+        os.system( 'text2workspace.py %s -o %s' % (dcpath,wspath) )
         print 'done.'
 
     ROOT.gSystem.Load('libHiggsAnalysisCombinedLimit')
@@ -964,8 +967,6 @@ def printshapes( shapes, errs, mode, opts, bin, signals, processes ):
         if l: 
             outbasename += '_' + l
 
-#         print 'outbasename:',outbasename
-#         c.Print(outbasename+'.root')
         c.Print(outbasename+'.pdf')
         c.Print(outbasename+'.png')
 
