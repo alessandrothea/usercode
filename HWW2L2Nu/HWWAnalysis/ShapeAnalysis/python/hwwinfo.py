@@ -79,7 +79,7 @@ class wwcuts:
     wwcommon2011 = [
         'pt1>20',
         'pt2>10',
-        '(ch1*ch2)<0', # use 0.5 to get charge symmetric template  
+        '((ch1*ch2))<0', # use 0.5 to get charge symmetric template  
         'trigger==1.',
         'pfmet>20.',
         'mll>(12+8*sameflav)',
@@ -149,7 +149,7 @@ class vbfcuts:
     #vbfloshape = wwcuts.wwlo+_massindep+_shape
     #vbfhishape = wwcuts.wwhi+_massindep+_shape
 
-    vbfshape = ['trigger==1. && pfmet>20. && mll>12 && zveto==1 && mpmet>20. && (njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  ) && bveto_mu==1 && nextra==0 && (bveto_ip==1 &&  (nbjettche==0 || njet>3))  && ptll>45. &&   ( !sameflav || ( (njet!=0 || dymva1>0.88) && (njet!=1 || dymva1>0.84) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) ) && (njet>=2 && njet<=3 && (jetpt3<=30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0)))))   && abs(eta1 - (jeteta1+jeteta2)/2)/detajj < 0.5 && abs(eta2 - (jeteta1+jeteta2)/2)/detajj < 0.5      && detajj>3.5     && mjj>500']
+    vbfshape = ['(ch1*ch2)<0 && pt1>20 && pt2>10 &&   trigger==1. && pfmet>20. && mll>12 && zveto==1 && mpmet>20. && (njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  ) && bveto_mu==1 && nextra==0 && (bveto_ip==1 &&  (nbjettche==0 || njet>3))  && ptll>45. &&   ( !sameflav || ( (njet!=0 || dymva1>0.88) && (njet!=1 || dymva1>0.84) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) ) && (njet>=2 && njet<=3 && (jetpt3<=30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0)))))   && abs(eta1 - (jeteta1+jeteta2)/2)/detajj < 0.5 && abs(eta2 - (jeteta1+jeteta2)/2)/detajj < 0.5      && detajj>3.5     && mjj>500']
 
     specificvbfloshape = ['pt1>20   &&      pt2>0   &&      mth>30  &&  mth<280      &&    mll<200 ']
     specificvbfhishape = ['pt1>50   &&      pt2>0   &&      mth>30  &&  mth<680      &&    mll<600 ']
@@ -162,7 +162,7 @@ class vbfcuts:
 class vhcuts:
     _massindep = [
         'trigger==1.',
-	'(ch1*ch2<0 && pt1>20 && pt2>10)',
+	'((ch1*ch2)<0 && pt1>20 && pt2>10)',
         'pfmet>20.',
         'mpmet>20.',
         'mll>12 ',
@@ -186,9 +186,11 @@ class vhcuts:
     ]
 # achtung: njet<4 is applied here!!!! in wwcommon!!!
     #vhcut     = wwcuts.wwcommon + _massindep
-    vhcut      = _massindep + ['mll<50']
+    #vhcut      = _massindep + ['mll<50']
+    vhcut      = _massindep
 
-    vhcutShape = _massindep + ['((sameflav && mll<50) || (!sameflav && mll<200))']
+    #vhcutShape = _massindep + ['((sameflav && mll<50) || (!sameflav && mll<200))']
+    vhcutShape = _massindep
 
 
 
@@ -246,7 +248,7 @@ channels['sf_vh2j'] = ('vh2j','sf')
 
 cutmap = {}
 cutmap['mtmin_vh']    = [ 60  , 60  , 60  , 60  , 60  , 60  , 60  ,  60 ,  60 ,  60 ,  60 ,  60 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ,  70 ]
-cutmap['mllmax_vh']   = [ 50  , 50  , 50  , 50  , 50  , 50  , 60  ,  60 ,  60 ,  60 ,  60 ,  60 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ]
+cutmap['mllmax_vh']   = [ 60  , 60  , 60  , 60  , 60  , 60  , 60  ,  60 ,  60 ,  60 ,  60 ,  60 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ,  80 ]
 cutmap['mllmin_vh']   = [ 12  , 12  , 12  , 12  , 12  , 12  , 20  ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ,  20 ]
 
 cutmap['mllmax_bdt']  = [ 70  , 70  , 70  , 80  , 80  , 90  , 90  , 100 , 100 , 100 , 100 , 100 , 110 , 120 , 130 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600 ]
@@ -309,7 +311,6 @@ def massSelections(mass):
     sel['shape-lomass'] = 'mth>%f && mth<%f && mll<%f '%(mthmin_2dlomass,mthmax_2dlomass,mllmax_2dlomass)
     sel['shape-himass'] = 'mth>80 && mth<380 && mll<450 && pt1>50'
     
-    sel['vbf-shape']    = ' && '.join(vbfcuts.vbfshape)
     sel['vbf-level']    = ' && '.join(vbfcuts.vbfcut)
 
     sel['ww-level']     = sel['ww-common']+'&& ptll>45'
@@ -351,6 +352,7 @@ def massSelections(mass):
     #sel['vbf-selection']          = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f}) && mll > {0:.0f}    {0:.0f} {1:.0f} '.format(int(mass), float(12452))
 
     sel['vbf-selection-temp']     = ' && '.join([sel['vbf-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
+    sel['vbf-selection-temp']     = sel['vbf-selection-temp'].replace('ptll>30.', 'ptll>45.')
     sel['vbf-selection']          = sel['vbf-selection-temp'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, masscuts['mtmax'])
     #sel['vbf-selection']          = sel['vbf-selection-temp'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, int(mass))
 
@@ -375,7 +377,16 @@ def massSelections(mass):
     #sel['shape-selection']        = sel['ww-common']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common']+' && '+sel['shape-himass']
     #sel['shape2011-selection']     = sel['ww2011-common']+' && '+sel['shape-lomass'] if mass <=250 else sel['ww2011-common']+' && '+sel['shape-himass']
    
-    sel['vbf-shape-selection']    = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
+    
+    # vbf #
+    sel['vbf-shape']    = ' && '.join(vbfcuts.vbfshape)
+    sel['vbf-shape']    =  sel['vbf-shape'].replace("ptll>30.", "ptll>45.")
+    sel['vbf-shape-selection'] = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
+
+    # vbf banana #
+    sel['vbf-banana-shape']    = ' && '.join(vbfcuts.vbfshape)
+    sel['vbf-banana-shape']    = sel['vbf-banana-shape'].replace("(ch1*ch2)<0", "((ch1*ch2)<0 || !sameflav)").replace("ptll>30.", "ptll>45.")
+    sel['vbf-banana-shape-selection'] = sel['vbf-banana-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
 
     # vh #
     sel['vh-level']    = ' && '.join(vhcuts.vhcut)
@@ -383,11 +394,17 @@ def massSelections(mass):
     sel['vh-selection'] = sel['vh-selection'] + ' && (mll > {0:.1f} && mll < {1:.1f}) && drll<1.5 '.format(masscuts['mllmin_vh'], masscuts['mllmax_vh'])
 
     sel['vh-shape-level']     = ' && '.join(vhcuts.vhcutShape)
-    sel['vh-shape-selection'] = sel['vh-shape-level'].replace('ch1*ch2<0', '(ch1*ch2<0 || !sameflav)')
+    sel['vh-shape-selection'] = sel['vh-shape-level']
     sel['vh-shape-selection'] = sel['vh-shape-selection'] + ' && (mth > {0:.1f} && mth < {1:.1f}) && ((sameflav && drll<1.5) || (!sameflav && drll<2.5))'.format(masscuts['mtmin_vh'], int(mass))
     sel['vh-shape-selection'] = sel['vh-shape-selection'] + ' && ((sameflav && mll>{0:.1f} && mll<{1:.1f}) || (!sameflav && mll<200)) && ((sameflav && drll<1.5) || (!sameflav && drll<2.5)) '.format(masscuts['mllmin_vh'], masscuts['mllmax_vh'])
 
     
+    # vh banana #
+
+    sel['vh-banana-shape-level']     = ' && '.join(vhcuts.vhcutShape)
+    sel['vh-banana-shape-selection'] = sel['vh-banana-shape-level'].replace('(ch1*ch2)<0', '((ch1*ch2)<0 || !sameflav)')
+    sel['vh-banana-shape-selection'] = sel['vh-banana-shape-selection'] + ' && (mth > {0:.1f} && mth < {1:.1f}) && ((sameflav && drll<1.5) || (!sameflav && drll<2.5))'.format(masscuts['mtmin_vh'], int(mass))
+    sel['vh-banana-shape-selection'] = sel['vh-banana-shape-selection'] + ' && ((sameflav && mll>{0:.1f} && mll<{1:.1f}) || (!sameflav && mll<200)) && ((sameflav && drll<1.5) || (!sameflav && drll<2.5)) '.format(masscuts['mllmin_vh'], masscuts['mllmax_vh'])
 
     return sel
 

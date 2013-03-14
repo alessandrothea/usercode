@@ -39,7 +39,8 @@ class ShapeFactory:
         ranges['mth-mll-hilospin'] = self._getMllMth2DSpinrange
         ranges['mth-mll-hilospin-withControlRegion']  = self._getMllMth2DSpinrangeWithControlRegion
         ranges['mth-mll-hilospin-withSSmirrorRegion'] = self._getMllMth2DSpinrangeWithSSmirrorRegion
-        ranges['vhMllBanana-range'] = self._getMllVHrangeWithControlRegion
+        ranges['vhMllBanana-range']  = self._getMllVHrangeWithControlRegion
+        ranges['vbfMllBanana-range'] = self._getMllVBFrangeWithControlRegion
 
         self._ranges = ranges
         
@@ -60,6 +61,7 @@ class ShapeFactory:
         variables['2dWithCR']             = self._getMllMth2DSpinWithControlRegion
         variables['2dWithSSmirrorRegion'] = self._getMllMth2DSpinWithSSmirrorRegion
         variables['vhMllBanana']          = self._getMllVHWithControlRegion
+        variables['vbfMllBanana']         = self._getMllVBFWithControlRegion
 
         self._variables = variables
 
@@ -97,6 +99,19 @@ class ShapeFactory:
             #return theVariable[mass][cat]
         #elif callable(theVariable):
             #return theVariable(mass,cat)
+
+
+
+
+    # _____________________________________________________________________________
+    def _getMllVBFWithControlRegion(self,mass,cat):
+
+        if cat not in ['2j']:
+            print cat
+            raise RuntimeError('mll range in VBF for '+str(cat)+' not defined. Must be 2')
+
+        return 'mll*((ch1*ch2)<0)-5*((ch1*ch2)>0)'
+
 
 
     # _____________________________________________________________________________
@@ -202,14 +217,29 @@ class ShapeFactory:
 
 
     # _____________________________________________________________________________
+    def _getMllVBFrangeWithControlRegion(self,mass,cat):
+
+        if cat not in ['2j']:
+            print cat
+            raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
+
+        #return ([12,32,52,72,92,112,132,152,172,192,212,232],)
+        #return ([12,20,40,60,80,100,150,200,230],)
+
+        #return ([-10,0,12,30,50,70,90,120,150,200,250,300,350,400,500,600],)
+        return ([-10,0,12,35,60,90,120,160,200,250,300,350,400,500,600],)
+
+
+    # _____________________________________________________________________________
     def _getMllVHrangeWithControlRegion(self,mass,cat):
 
         if cat not in ['vh2j']:
             print cat
             raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
 
-       #return ([12,32,52,72,92,112,132,152,172,192,212,232],)
-        return ([12,20,40,60,80,100,150,200,230],)
+        #return ([12,32,52,72,92,112,132,152,172,192,212,232],)
+        #return ([12,20,40,60,80,100,150,200,230],)
+        return ([12,30,50,75,100,150,200,230],)
 
 
 
