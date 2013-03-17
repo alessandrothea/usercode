@@ -1,5 +1,6 @@
 import ROOT
 
+#---
 class TH1AddDirSentry:
     def __init__(self):
         self.status = ROOT.TH1.AddDirectoryStatus()
@@ -7,6 +8,14 @@ class TH1AddDirSentry:
         
     def __del__(self):
         ROOT.TH1.AddDirectory(self.status)
+#---
+class TH1Sumw2Sentry:
+    def __init__(self):
+        self.status = ROOT.TH1.GetDefaultSumw2()
+        ROOT.TH1.SetDefaultSumw2()
+
+    def __del__(self):
+        ROOT.TH1.SetDefaultSumw2(self.status)
 
 def openROOTFile(path, option=''):
     f =  ROOT.TFile.Open(path,option)
