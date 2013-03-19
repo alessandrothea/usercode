@@ -3,8 +3,9 @@
 #if !defined (__CINT__) || defined (__MAKECINT__)
 #include "THStack.h"
 #include "TGaxis.h"
-#include "TH1F.h"
-#include "TH2F.h"
+#include "TArrayD.h"
+#include "TH1.h"
+#include "TH2.h"
 #include "TLatex.h"
 #include "TPad.h"
 #include "TCanvas.h"
@@ -1466,45 +1467,40 @@ class PlotVHqqHggH {
    summed->SetFillColor(kBlack);
    summed->SetMarkerSize(0);
 
-   if (_doBandError) {
-    double allTG = 0;
-    for (int iBin = 0; iBin < summed->GetNbinsX(); iBin ++) {
-     /*                     std::cout << " iBin = " << iBin << " :: " << summed->GetNbinsX(); */
-     /*                     std::cout << " => " << (_BandError->GetY()) [iBin] << " / " << summed->GetBinContent(iBin+1) << " = "; */
-     /*                     std::cout << " ( X = " << (_BandError->GetX()) [iBin] << " ) "; */
-     /*                     if (summed->GetBinContent(iBin+1) != 0) std::cout << (_BandError->GetY()) [iBin] / summed->GetBinContent(iBin+1) << std::endl; */
-     /*                     else std::cout << std::endl; */
+   if (shadow) {
+     if (_doBandError) {
+       double allTG = 0;
+       for (int iBin = 0; iBin < summed->GetNbinsX(); iBin ++) {
+         /*                     std::cout << " iBin = " << iBin << " :: " << summed->GetNbinsX(); */
+         /*                     std::cout << " => " << (_BandError->GetY()) [iBin] << " / " << summed->GetBinContent(iBin+1) << " = "; */
+         /*                     std::cout << " ( X = " << (_BandError->GetX()) [iBin] << " ) "; */
+         /*                     if (summed->GetBinContent(iBin+1) != 0) std::cout << (_BandError->GetY()) [iBin] / summed->GetBinContent(iBin+1) << std::endl; */
+         /*                     else std::cout << std::endl; */
 
-     if ((_BandError->GetY()) [iBin]) {
-      allTG += (_BandError->GetY()) [iBin];
-      double alpha =  summed->GetBinContent(iBin+1) / (_BandError->GetY()) [iBin];
+         if ((_BandError->GetY()) [iBin]) {
+           allTG += (_BandError->GetY()) [iBin];
+           double alpha =  summed->GetBinContent(iBin+1) / (_BandError->GetY()) [iBin];
 
-      double Y = (_BandError->GetY()) [iBin];
-      double X = (_BandError->GetX()) [iBin];
-      double errXUp      = _BandError->GetErrorXhigh(iBin);
-      double errXDown    = _BandError->GetErrorXlow(iBin);
-      double errYUp      = _BandError->GetErrorYhigh(iBin);
-      double errYDown    = _BandError->GetErrorYlow(iBin);
+           double Y = (_BandError->GetY()) [iBin];
+           double X = (_BandError->GetX()) [iBin];
+           double errXUp      = _BandError->GetErrorXhigh(iBin);
+           double errXDown    = _BandError->GetErrorXlow(iBin);
+           double errYUp      = _BandError->GetErrorYhigh(iBin);
+           double errYDown    = _BandError->GetErrorYlow(iBin);
 
-      _BandError->SetPoint(iBin, X, alpha*Y);
-      _BandError->SetPointError(iBin, errXDown, errXUp, errYDown * alpha, errYUp * alpha);
+           _BandError->SetPoint(iBin, X, alpha*Y);
+           _BandError->SetPointError(iBin, errXDown, errXUp, errYDown * alpha, errYUp * alpha);
 
+         }
+       }
+       //              summed->Draw("same");
+       _BandError -> SetFillStyle (3345);
+       _BandError -> Draw("E2same");
+       std::cout << " allTG = " << allTG << std::endl;
      }
-    }
-                //              summed->Draw("same");
-    if (shadow) {
-     _BandError -> SetFillStyle (3345);
-     _BandError -> Draw("E2same");
-    }
-    std::cout << " allTG = " << allTG << std::endl;
-   }
-   else {
-    if (shadow) {
-     summed->Draw("sameE2");
-    }
-    else {
-     summed->Draw("same");
-    }
+     else {
+       summed->Draw("sameE2");
+     }
    }
 
    _max = hstack->GetMaximum() * 1.1;
@@ -1676,8 +1672,6 @@ class PlotVHqqHggH {
 
 
    if (div) {
-
-                //                 TH1 *summed = GetSummedMCHist();
 
     TH1 *rdat = (TH1*)data->Clone("rdat");   
     if(gROOT->FindObject("rref")) gROOT->FindObject("rref")->Delete();
@@ -1963,7 +1957,6 @@ class PlotVHqqHggH {
                     
     }
 
-
     for (int iSig = (temp_vectTHstackSig.size()-1); iSig>=0; iSig--) {
                     //               std::cout << " iSig = " << iSig << "  temp_vectTHstackSig.size() = " << temp_vectTHstackSig.size() << std::endl;
      if (_mergeSignal == 0 ||  iSig == (temp_vectTHstackSig.size()-1)) {
@@ -2074,6 +2067,9 @@ class PlotVHqqHggH {
   }
 
 
+  //
+  //
+  //
   TH1* GetDataHist() { 
 
    if(_data) _data->SetLineColor  (kBlack);
@@ -2081,43 +2077,49 @@ class PlotVHqqHggH {
    return _data; 
   }
 
+  //
+  // Get the 
+  //
   TH1 *GetSummedMCHist() {
 
-   if ( _nbins == -1 && _vectTHBkg.size() != 0) {
-    _nbins  = _vectTHBkg.at(0)->GetNbinsX();
-    _low    = _vectTHBkg.at(0)->GetXaxis()->GetBinLowEdge(1);
-    _high   = _vectTHBkg.at(0)->GetBinLowEdge(_nbins+1);
-   }
-
-   if(gROOT->FindObject("hMC")) {
-    gROOT->FindObject("hMC")->Delete();
-   }
-   TH1* hMC;
-   if (_vEdges.size() != 0) {
-    double Xedge[1000];
-    for (uint iEdg = 0; iEdg < _vEdges.size(); iEdg++) {
-     Xedge[iEdg] = _vEdges.at(iEdg);
+    if ( _nbins == -1 && _vectTHBkg.size() != 0) {
+      _nbins  = _vectTHBkg.at(0)->GetNbinsX();
+      _low    = _vectTHBkg.at(0)->GetXaxis()->GetBinLowEdge(1);
+      _high   = _vectTHBkg.at(0)->GetBinLowEdge(_nbins+1);
+      _vectTHBkg.at(0)->GetXaxis()->GetXbins()->Copy(this->_xbins);
     }
-    hMC= new TH1D("hMC","hMC",_nbins, Xedge);
-   }
-   else {
-    hMC = new TH1D("hMC","hMC",_nbins,_low,_high);
-   }
-   hMC->Sumw2();
-   for (unsigned int iBkg = 0; iBkg<_vectTHBkg.size(); iBkg++) {
-    hMC->Add(_vectTHBkg.at(iBkg));
-   }
-   if (_addSignalOnBackground) {
-                //---- prepare style for signal histograms -> dot-line if also superimposed
-    for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) {
-     _vectTHstackSig.at(iSig) -> SetLineStyle(2);
-    }
-    for (unsigned int iSig = 0; iSig<_vectTHSig.size(); iSig++) {
-     hMC->Add(_vectTHSig.at (iSig));
-    }             
-   }
 
-   return hMC;   
+    if(gROOT->FindObject("hMC")) {
+      gROOT->FindObject("hMC")->Delete();
+    }
+    TH1* hMC;
+    if (_vEdges.size() != 0) {
+      double Xedge[1000];
+      for (uint iEdg = 0; iEdg < _vEdges.size(); iEdg++) {
+        Xedge[iEdg] = _vEdges.at(iEdg);
+      }
+      hMC= new TH1D("hMC","hMC",_nbins, Xedge);
+    } else {
+	  if (_xbins.GetSize() == 0)
+		hMC = new TH1D("hMC","hMC",_nbins,_low,_high);
+	  else
+		hMC = new TH1D("hMC","hMC",_nbins,_xbins.fArray);
+    }
+    hMC->Sumw2();
+    for (unsigned int iBkg = 0; iBkg<_vectTHBkg.size(); iBkg++) {
+      hMC->Add(_vectTHBkg.at(iBkg));
+    }
+    if (_addSignalOnBackground) {
+      //---- prepare style for signal histograms -> dot-line if also superimposed
+      for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) {
+        _vectTHstackSig.at(iSig) -> SetLineStyle(2);
+      }
+      for (unsigned int iSig = 0; iSig<_vectTHSig.size(); iSig++) {
+        hMC->Add(_vectTHSig.at (iSig));
+      }             
+    }
+
+    return hMC;   
   }
 
   //---
@@ -2288,10 +2290,10 @@ class PlotVHqqHggH {
     //      if(_extraLabel) _extraLabel->Draw("same");
   }
 
-//------------------------------------------------------------------------------
-// AxisFonts
-//------------------------------------------------------------------------------
-void AxisFonts(TAxis*  axis,
+  //------------------------------------------------------------------------------
+  // AxisFonts
+  //------------------------------------------------------------------------------
+  void AxisFonts(TAxis*  axis,
                  TString coordinate,
                  TString title)
   {
@@ -2385,6 +2387,7 @@ void AxisFonts(TAxis*  axis,
   int      _nbins;
   float    _low;
   float    _high;
+  TArrayD  _xbins;
 
   float    _max;
   float    _min;
