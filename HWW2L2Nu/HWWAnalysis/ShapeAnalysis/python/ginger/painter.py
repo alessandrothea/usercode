@@ -5,29 +5,78 @@ import uuid
 import sys
 import copy
 
+class StyleSetter:
+    _setters = {
+        ROOT.TAttAxis:[ 
+            ('labelfamily' , ROOT.TAxis.SetLabelFont), 
+            ('labelsize'   , ROOT.TAxis.SetLabelSize), 
+            ('labeloffset' , ROOT.TAxis.SetLabelOffset), 
+            ('titlefamily' , ROOT.TAxis.SetTitleFont), 
+            ('titlesize'   , ROOT.TAxis.SetTitleSize), 
+            ('titleoffset' , ROOT.TAxis.SetTitleOffset), 
+            ('ticklength'  , ROOT.TAxis.SetTickLength), 
+            ('ndivisions'  , ROOT.TAxis.SetNdivisions), 
+        ],
 
+        ROOT.TAttText:[
+            ('textfamily',ROOT.TAttText.SetTextFont),
+            ('textsize'  ,ROOT.TAttText.SetTextSize),
+            ('textcolor' ,ROOT.TAttText.SetTextColor),
+            ('textangle' ,ROOT.TAttText.SetTextAngle),
+            ('textalign' ,ROOT.TAttText.SetTextAlign),
+        ],
+
+        ROOT.TAttLine:[
+            ('linecolor' ,ROOT.TAttLine.SetLineColor),
+            ('linestyle' ,ROOT.TAttLine.SetLineStyle),
+            ('linewidth' ,ROOT.TAttLine.SetLineWidth),
+        ],
+
+        ROOT.TAttFill:[
+            ('fillcolor' ,ROOT.TAttFill.SetFillColor),
+            ('fillstyle' ,ROOT.TAttFill.SetFillStyle),
+            ('fillstyle' ,ROOT.TAttFill.SetFillStyle),
+        ],
+    }
+
+    def __init__(self, **opts ):
+        self._opts = opts
+
+    def apply(self, tobj, **opts):
+
+        myopts = self._opts.copy()
+        myopts.update( opts )
+        
+        for cls,methods in self._setters.iteritems():
+            if not isinstance(tobj,cls): continue
+
+            for l,m in methods:
+                x = myopts.get(l,None)
+                if not x is None: m(tobj,x)
 
 class Pad(object):
 
     _axisstyle = {
-        'label-family' : 44,
-        'label-size'   : 5,
-        'label-offset' : 20,
-        'title-offset' : 1.,
-        'title-family' : 44,
-        'title-size'   : 30,
-        'tick-length'  : 10
+        'labelfamily' : 44,
+        'labelsize'   : 20,
+        'labeloffset' : 2,
+        'titlefamily' : 44,
+        'titlesize'   : 25,
+        'titleoffset' : 30.,
+        'ticklength'  : 10,
+        'ndivisions'  : 505,
     }
     #---
-    def __init__(self, name, width, height, **opts ):
+    def __init__(self, name, width=500, height=500, **opts ):
         self._name = name
         self._w = width
         self._h = height
         self._align = ('c','m') # lcr
         self._showtitle = False
+        self._showstats = False
         self._obj = None
 
-        self._margins = (None,None,None,None)
+        self._margins = (60,60,60,60)
         self._xaxis = self._axisstyle.copy()
         self._yaxis = self._axisstyle.copy()
     
@@ -56,6 +105,9 @@ class Pad(object):
                 raise ValueError('margins must be a 1,2,4 length tuple')
         self._margins = m
 
+    def __str__(self):
+        return '%s(\'%s\',w=%d,h=%d,obj=%s)' % (self.__class__.__name__,self._name,self._w,self._h,self._obj)
+
     #---
     def __getattr__(self,name):
         if not self._obj:
@@ -66,7 +118,7 @@ class Pad(object):
     #---
     def _applypadstyle(self):
 
-        top,bottom,left,right = self._margins
+        left,right,top,bottom = self._margins
         fh,fw = float(self._h),float(self._w)
 
         if not top    is None : self._obj.SetTopMargin    ( top/fh )
@@ -79,59 +131,48 @@ class Pad(object):
 
         h = None
         for o in self._obj.GetListOfPrimitives():
-            if not (isinstance(o,ROOT.TH1) or isinstance(o,ROOT.THStack)): continue
+            if not (isinstance(o,ROOT.TH1) or isinstance(o,ROOT.THStack) or isinstance(o,ROOT.TMultiGraph)): continue
             h = o
             break
 
         if not h: return
 
         if not self._showtitle:
-            frame = h.GetHistogram() if isinstance(h, ROOT.THStack) else h
+            frame = h.GetHistogram() if isinstance(h, ROOT.THStack) or isinstance(h,ROOT.TMultiGraph) else h
             frame.SetBit(ROOT.TH1.kNoTitle)
-            frame.SetBit(ROOT.TH1.kNoStats)
 
             for o in self._obj.GetListOfPrimitives():
                 if isinstance(o,ROOT.TPaveText) and o.GetName()=='title':
                     ROOT.SetOwnership(o,True)
                     del o
-                    break
+
+        if not self._showstats:
+            frame.SetBit(ROOT.TH1.kNoStats)
+            o = h.FindObject('stats')
+            if o.__nonzero__():
+                ROOT.SetOwnership(o,True)
+                del o
         
-        top,bottom,left,right = self._margins
+        left,right,top,bottom = self._margins
         lax = self._w-left-right
         lay = self._h-top-bottom
 
+        setter = StyleSetter()
+
         xax = h.GetXaxis()
         style = self._xaxis.copy()
-        style['label-offset'] /= float(self._h-top-bottom)
-        style['tick-length']  *= self._w/float(lax*self._h)
-        style['title-offset'] *= self._obj.GetWh()/(1.6*self._h*style['title-size'])
-        self._applyaxis(xax,**style)
+        style['ticklength']  *= self._w/float(lax*self._h)
+        style['labeloffset'] /= float(self._h-top-bottom)
+        style['titleoffset'] *= self._obj.GetWh()/(1.6*self._h*style['titlesize'])
+        setter.apply(xax,**style)
 
         yax = h.GetYaxis()
         style = self._yaxis.copy()
-        style['label-offset'] /= float(self._w-left-right)
-        style['tick-length']  *= self._h/float(lay*self._w)
-        style['title-offset'] *= self._obj.GetWh()/(1.6*self._w*style['title-size'])
-        self._applyaxis(yax,**style)
+        style['ticklength']  *= self._h/float(lay*self._w)
+        style['labeloffset'] /= float(self._w-left-right)
+        style['titleoffset'] *= self._obj.GetWh()/(1.6*self._w*style['titlesize'])
+        setter.apply(yax,**style)
 
-
-    
-    #---
-    def _applyaxis(self, axis, **opts):
-
-        methods = [
-            ('label-family' , axis.SetLabelFont), 
-            ('label-size'   , axis.SetLabelSize), 
-            ('label-offset' , axis.SetLabelOffset), 
-            ('title-family' , axis.SetTitleFont), 
-            ('title-size'   , axis.SetTitleSize), 
-            ('title-offset' , axis.SetTitleOffset), 
-            ('tick-length'  , axis.SetTickLength), 
-        ]
-
-        for l,m in methods:
-            x = opts.get(l,None)
-            if not x is None: m(x)#; print x,m.__name__
 
 class Canvas(object):
     _log = None
@@ -154,14 +195,37 @@ class Canvas(object):
         return getattr(self._obj,name)
 
     # the alignement should be decided here
-    def insert(self, pad, i, j ):
+    def attach(self, pad, i, j ):
         if ( i < 0 and i > self._nx ) or ( j < 0 and j > self._ny ):
             raise IndexError('Index out of bounds (%d,%d) not in [0,%d],[0,%d]' % (i,j,self._nx,self._ny))
 
         self._grid[i][j] = pad
         self._pads.append(pad)
-#         print 'insert',i,j
+#         print 'attach',i,j
 #         print self._grid
+
+    def __setitem__(self,key,value):
+        if not isinstance(key,tuple):
+            raise TypeError('XXXX')
+
+        if len(key) != 2:
+            raise RuntimeError('Wrong dimension')
+        
+        self.attach( value, *key )
+
+    #---
+    def get(self,i,j):
+        return self._grid[i][j]
+
+    #---
+    def __getitem__(self, key):
+        if not isinstance(key,tuple):
+            raise TypeError('XXXX')
+
+        if len(key) != 2:
+            raise RuntimeError('Wrong dimension')
+        
+        return self.get( *key )
 
     #---
     def _computesize(self):
@@ -186,10 +250,6 @@ class Canvas(object):
     #---
     def _getanchors(self,i,j):
         return sum(self._wcols[0:i]),sum(self._hrows[0:j])
-
-    #---
-    def get(self,i,j):
-        return self._grid[i][j]
 
     #---
     def makecanvas(self, name=None, title=None):
@@ -220,7 +280,7 @@ class Canvas(object):
 
                 ha,va = pad._align
                 
-                if va == 't':
+                if   va == 't':
                     pass
                 elif va == 'm':
                     y0 += (gh-pad._h)/2.
@@ -264,8 +324,9 @@ class Canvas(object):
 class Legend(object):
 
     _legendstyle = {
-        'text-family': 44,
-        'text-size':   20,
+        'textfamily' : 44,
+        'textsize'   : 20,
+        'textcolor'  : ROOT.kBlack,
     }
 
     #---
@@ -277,7 +338,6 @@ class Legend(object):
 
         self._anchor = (0,0)
         self._align = ('c','m')
-        self._grid = [[None]*ny for i in xrange(nx)]
         self._style = self._legendstyle.copy() 
 
         for n,o in opts.iteritems():
@@ -285,6 +345,7 @@ class Legend(object):
             if not hasattr(self,attr): continue
             setattr(self,attr,o)
 
+        self._grid = [[None]*ny for i in xrange(nx)]
         self._legends = []
         self._sequence = [ (i,j) for i in xrange(self._nx) for j in xrange(self._ny) ]
         self._index = 0
@@ -317,8 +378,8 @@ class Legend(object):
         leg.SetMargin( 1 )
 
         methods = [
-            ('text-family'      , leg.SetTextFont),
-            ('text-size'        , leg.SetTextSize),
+            ('textfamily'      , leg.SetTextFont),
+            ('textsize'        , leg.SetTextSize),
         ]
 
         for l,m in methods:
@@ -327,8 +388,8 @@ class Legend(object):
 
 
     #---
-    def insert(self, obj, opt='', pos=None ):
-        # override the insertion sequence
+    def addentry(self, obj, opt='', title=None, pos=None ):
+        # override the appendion sequence
         if pos:
             i,j = pos
             if ( i < 0 and i > self._nx ) or ( j < 0 and j > self._ny ):
@@ -344,7 +405,7 @@ class Legend(object):
         if not self._grid[i][j] is None:
             raise RuntimeError('Entry (%d,%d) is already assigned' % (i,j))
 
-        self._grid[i][j] = (obj,opt)
+        self._grid[i][j] = (obj,opt,title)
 
 
     #---
@@ -357,17 +418,74 @@ class Legend(object):
         for i,col in enumerate(self._grid):
             for j,entry in enumerate(col):
                 if not entry: continue
-                obj,opt = entry
+                obj,opt,title = entry
 
                 x0,y0 = self._getanchor(i,j)
                 x1,y1 = x0+self._boxsize,y0+self._boxsize
                 ratio = float(self._boxsize)/float(self._labelwidth)
 
                 l = ROOT.TLegend( x0/fw, (fh-y1)/fh, x1/fw, (fh-y0)/fh )
-                l.AddEntry(obj,obj.GetTitle(),opt)
+                l.AddEntry(obj,obj.GetTitle() if title is None else title,opt)
                 self._applystyle(l)
                 l.Draw()
                 self._legends.append(l)
+
+class Latex:
+    _latexstyle = {
+            'textfamily':44,
+            'textsize'  :20,
+            'textcolor' :ROOT.kBlack,
+        }
+    _hcodes = {
+        'l':10,
+        'c':20,
+        'r':30,
+    }
+    _vcodes = {
+        'b':1,
+        'm':2,
+        't':3,
+    }
+
+
+    # ---
+    def __init__(self,text,**opts):
+        self._text   = text
+
+        self._anchor = (0,0)
+        self._align = ('c','m')
+        self._style = self._latexstyle.copy()
+
+        for n,o in opts.iteritems():
+            attr = '_'+n
+            if not hasattr(self,attr): continue
+            if n == 'style':
+                getattr(self,attr).update(o)
+            else:
+                setattr(self,attr,o)
+
+        self._latex = ROOT.TLatex()
+        self._latex.SetNDC()
+
+
+    # ---
+    def draw(self):
+
+        pad = ROOT.gPad.func()
+        fw = float(pad.GetWw()*pad.GetWNDC())
+        fh = float(pad.GetWh()*pad.GetHNDC())
+
+        ha,va = self._align
+        self._latex.SetTextAlign(self._hcodes[ha]+self._vcodes[va])
+
+        setter = StyleSetter(**self._style)
+        setter.apply(self._latex)
+
+        x0,y0 = self._anchor
+        print x0,y0
+        self._latex.SetText( x0/fw, 1-(y0/fh), self._text )
+
+        self._latex.Draw()
 
 
 if __name__ == '__main__':
@@ -378,37 +496,40 @@ if __name__ == '__main__':
     c = Canvas(2,3)
 
     axst = {
-    'label-family'       : 44,
-    'label-size'         : 20,
-    'label-offset'       : 0,
-    'title-family'       : 44,
-    'title-size'         : 20,
-    'title-offset'       : 50,
-    'tick-length'        : 10
+    'labelfamily'       : 44,
+    'labelsize'         : 20,
+    'labeloffset'       : 0,
+    'titlefamily'       : 44,
+    'titlesize'         : 20,
+    'titleoffset'       : 50,
+    'ticklength'        : 10
     }
 #     axst = {'label-family':42, 'label-size':0.04, }
 
-    p0 = Pad('p0',200,500, margins=(80,20,20,80), xaxis = axst, yaxis = axst, align=('l','b')  )
-    p1 = Pad('p1',500,500, margins=(20,20,80,20), xaxis = axst, yaxis = axst )
-    p2 = Pad('p2',500,200, margins=(20,20,80,20), xaxis = axst, yaxis = axst )
-    p3 = Pad('p3',500,200, margins=(20,80,80,20), xaxis = axst, yaxis = axst )
+    p0 = Pad('p0',200,500, margins=(20,80,80,20), xaxis = axst, yaxis = axst, align=('l','b')  )
+    p1 = Pad('p1',500,500, margins=(80,20,20,20), xaxis = axst, yaxis = axst )
+    p2 = Pad('p2',500,200, margins=(80,20,20,20), xaxis = axst, yaxis = axst )
+    p3 = Pad('p3',500,200, margins=(80,20,20,80), xaxis = axst, yaxis = axst )
     p4 = Pad('p4',200,200, margins=(20,80,20,80), xaxis = axst, yaxis = axst )
-    p5 = Pad('p5',200,200, margins=(80,20,20,80), xaxis = axst, yaxis = axst, align=('l','b') )
+    p5 = Pad('p5',200,200, margins=(20,80,80,20), xaxis = axst, yaxis = axst, align=('l','b') )
     p1._xaxis['label-size'] = 0.0
     p2._xaxis['label-size'] = 0.0
 #     p3._xaxis['title-offset'] = 2.5
 #     p4._xaxis['title-offset'] = 2.5
 
-    c.insert(p0,1,0)
-    c.insert(p1,0,0)
-    c.insert(p2,0,1)
-    c.insert(p3,0,2)
-    c.insert(p4,1,2)
-    c.insert(p5,1,1)
+#     c.attach(p0,1,0)
+    c[1,0] = p0
+    c.attach(p1,0,0)
+    c.attach(p2,0,1)
+    c.attach(p3,0,2)
+    c.attach(p4,1,2)
+    c.attach(p5,1,1)
+
 
     tc = c.makecanvas()
     tc.SetName('aaa')
 
+    print c[1,0]
 
     bins = 10
     hdummy = ROOT.TH1F('dummy','',bins,0,bins)
@@ -439,16 +560,16 @@ if __name__ == '__main__':
     sequence.remove( (2,3) )
     sequence.remove( (2,2) )
     leg.sequence = sequence
-    leg.insert(hcols[0],'f')
-    leg.insert(hcols[1],'f')
-    leg.insert(hcols[2],'f')
-    leg.insert(hcols[3],'f')
-    leg.insert(hcols[4],'f')
-    leg.insert(hcols[5],'f')
-    leg.insert(hcols[6],'f')
-    leg.insert(hcols[7],'f')
-    leg.insert(hcols[8],'f')
-    leg.insert(hcols[9],'f')
+    leg.addentry(hcols[0],'f')
+    leg.addentry(hcols[1],'f')
+    leg.addentry(hcols[2],'f')
+    leg.addentry(hcols[3],'f')
+    leg.addentry(hcols[4],'f')
+    leg.addentry(hcols[5],'f')
+    leg.addentry(hcols[6],'f')
+    leg.addentry(hcols[7],'f')
+    leg.addentry(hcols[8],'f')
+    leg.addentry(hcols[9],'f')
     leg.draw()
 
     p2.cd()

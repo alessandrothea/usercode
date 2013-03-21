@@ -7,192 +7,68 @@ import HWWAnalysis.Misc.ROOTAndUtils as utils
 import HWWAnalysis.Misc.odict as odict
 import logging
 import math
+import uuid
 import re
-
-#      ________      __  ______                 __ 
-#     / ____/ /___ _/ /_/ ____/   _____  ____  / /_
-#    / /_  / / __ `/ __/ __/ | | / / _ \/ __ \/ __/
-#   / __/ / / /_/ / /_/ /___ | |/ /  __/ / / / /_  
-#  /_/   /_/\__,_/\__/_____/ |___/\___/_/ /_/\__/  
-#                                                  
-
-class Leaves:
-    types = [
-        ctypes.c_char_p,
-        ctypes.c_byte,
-        ctypes.c_ubyte,
-        ctypes.c_short,
-        ctypes.c_ushort,
-        ctypes.c_int,
-        ctypes.c_uint,
-        ctypes.c_float,
-        ctypes.c_double,
-        ctypes.c_long,
-        ctypes.c_ulong,
-        ctypes.c_bool,
-    ]
-
-    flags = [
-        'C',
-        'B',
-        'b',
-        'S',
-        's',
-        'I',
-        'i',
-        'F',
-        'D',
-        'L',
-        'l',
-        'O',
-    ]
-
-    flag2type = dict(zip(flags,types))
-    type2flag = dict(zip(types,flags))
-
-class Event(object):
-    '''this is an alternative way to access the TTree leaves for a flat tree'''
-
-
-    #---
-    def __getattr__(self,name):
-        try:
-            print name
-            return self._leaves[name].value
-        except KeyError:
-            raise AttributeError(name)
-    #---
-    def __setattr__(self,name, value):
-        
-        try:
-            self._leaves[name].value = value
-        except:
-            self.__dict__[name] = value
-
-    #---
-    def __init__(self, tree):
-        self.__dict__['_leaves'] = {}
-        self._tree = tree
-
-        self._linked = set()
-
-        self._attach()
-
-
-    def _attach(self):
-        # do cleaning?
-        import re
-        expr = re.compile('([a-zA-Z0-9_]*)/([CBbSsIiFDLlO])')
-        for b in self._tree.GetListOfBranches():
-            title = b.GetTitle()
-            # how do we check the branch is elemetary?
-            m = expr.match(title)
-            if not m:
-                print 'NOT Matched',title
-                continue
-            else:
-                name,t = m.groups()
-
-            # - C : a character string terminated by the 0 character
-            # - B : an 8 bit signed integer (Char_t)
-            # - b : an 8 bit unsigned integer (UChar_t)
-            # - S : a 16 bit signed integer (Short_t)
-            # - s : a 16 bit unsigned integer (UShort_t)
-            # - I : a 32 bit signed integer (Int_t)
-            # - i : a 32 bit unsigned integer (UInt_t)
-            # - F : a 32 bit floating point (Float_t)
-            # - D : a 64 bit floating point (Double_t)
-            # - L : a 64 bit signed integer (Long64_t)
-            # - l : a 64 bit unsigned integer (ULong64_t)
-            # - O : [the letter 'o', not a zero] a boolean (Bool_t)
-
-            if t not in Leaves.flag2type:
-                print 'Type',t,'not found'
-                continue
-
-            if name in self._leaves:
-                print 'What?? twice the same branch?!?',name
-                continue
-
-            leaf = Leaves.flag2type[t]()
-            self._leaves[name] = leaf
-            self._tree.SetBranchAddress(name, leaf)
-
-    #--- 
-    def link(self,t):
-        '''
-Link another tree to this event:
-
-Example: 
-    When cloning trees
-    t0 = TTree
-
-    t1 = t0.CloneTree(0)
-
-    e = Event(t1)  # the event is built on t1, but now t0 and t1 buffers are decoupled
-    e.link(t0)     # now both trees are filling the same buggers i.e. e.leaves
-
-'''
-        if t == self._tree:
-            raise ValueError('TTree '+str(t)+' is already attached to this event')
-
-        for n,b in self._leaves.iteritems():
-            t.SetBranchAddress(n,b)
-
-        self._linked.add(t)
-
-
-    #--- 
-    def unlink(self,):
-        self._linked.remove(t)
-
-    #--- 
-    def _addleaf(self,name,t):
-            if t not in Leaves.flag2type:
-                raise ValueError('Type '+t+' not found')
-
-            if name in self._leaves:
-                raise AttributeError( 'What?? twice the same branch name?!? '+name)
-
-            leaf = Leaves.flag2type[t]()
-            self._leaves[name] = leaf
-            self._tree.Branch(name, leaf,'%s/%s' % (name,t) )
-
-    #---
-    def leafflag(self,name):
-        ''' returns the type-flag of the variable '''
-        try:
-            return Leaves.type2flag(self._leaves[name].__class__)
-        except KeyError as e:
-            raise e
-
-    #--- 
-    def leaves(self):
-        return self._leaves.keys()
-
-    #--- 
-    def add(self, branches ):
-        if isinstance(branches,tuple):
-            branches = [branches]
-        elif isinstance(branches, list):
-            pass
-        else:
-            raise TypeError('the argument must be either a tuple or a list')
-
-        for n,t in branches: 
-            self._addleaf(n,t)
-
-
-
-
-
+import numpy
+import array
 import ROOT
-#    ______             _       __           __            
-#   /_  __/_______  ___| |     / /___  _____/ /_____  _____
-#    / / / ___/ _ \/ _ \ | /| / / __ \/ ___/ //_/ _ \/ ___/
-#   / / / /  /  __/  __/ |/ |/ / /_/ / /  / ,< /  __/ /    
-#  /_/ /_/   \___/\___/|__/|__/\____/_/  /_/|_|\___/_/     
-#                                                          
+from .base import Labelled
+
+# _____________________________________________________________________________
+#    __  ____  _ __    
+#   / / / / /_(_) /____
+#  / / / / __/ / / ___/
+# / /_/ / /_/ / (__  ) 
+# \____/\__/_/_/____/  
+#                      
+
+# ---
+def _bins2hclass( bins ):
+    '''
+    Fixed bin width
+    bins = (nx,xmin,xmax)
+    bins = (nx,xmin,xmax, ny,ymin,ymax)
+    Variable bin width
+    bins = ([x0,...,xn])
+    bins = ([x0,...,xn],[y0,...,ym])
+    
+    '''
+
+    from array import array
+    if not bins:
+        return name,0
+    elif not ( isinstance(bins, tuple) ):
+        raise RuntimeError('bin must be an ntuple or an arryas')
+
+    l = len(bins)
+    # 1D variable binning
+    if l == 1 and isinstance(bins[0],list):
+        ndim=1
+        hclass = ROOT.TH1D
+        xbins = bins[0]
+        hargs = (len(xbins)-1, array('d',xbins))
+    elif l == 2 and  isinstance(bins[0],list) and  isinstance(bins[1],list):
+        ndim=2
+        hclass = ROOT.TH2D
+        xbins = bins[0]
+        ybins = bins[1]
+        hargs = (len(xbins)-1, array('d',xbins),
+                len(ybins)-1, array('d',ybins))
+    elif l == 3:
+        # nx,xmin,xmax
+        ndim=1
+        hclass = ROOT.TH1D
+        hargs = bins
+    elif l == 6:
+        # nx,xmin,xmax,ny,ymin,ymax
+        ndim=2
+        hclass = ROOT.TH2D
+        hargs = bins
+    else:
+        # only 1d or 2 d hist
+        raise RuntimeError('What a mess!!! bin malformed!')
+    
+    return ndim,hclass,hargs
 
 # _____________________________________________________________________________
 def _buildchain(treeName,files):
@@ -206,12 +82,73 @@ def _buildchain(treeName,files):
 
     return tree
 
+
+# ______________________________________________________________________________
+#    _____                       __   
+#   / ___/____ _____ ___  ____  / /__ 
+#   \__ \/ __ `/ __ `__ \/ __ \/ / _ \
+#  ___/ / /_/ / / / / / / /_/ / /  __/
+# /____/\__,_/_/ /_/ /_/ .___/_/\___/ 
+#                     /_/             
+
+class Sample(Labelled):
+    '''
+    A container for the information to make a TreeWorker
+
+    name: the tree name/path in the rootfile
+    files: list of rootfiles
+    friends: list of tuples of friend name and files [(fnameA,['c.root','d.root']),('fnameB',[])]
+    '''
+
+    #---
+    def __init__(self, name, files, preselection='', weight='', scale=1., friends=[]):
+
+        super(Sample,self).__init__('')
+        self.name         = name
+        self.files        = files
+        self.preselection = preselection
+        self.weight       = weight
+        self.friends      = friends
+
+    #---
+    def __repr__(self):
+        repr = []
+        repr += [self.__class__.__name__+(' '+self.name if self.name else'') + (' also known as '+self._title if self._title else '')]
+        repr += ['weight: \'%s\', preselection: \'%s\'' % (self.weight, self.preselection) ]
+        repr += ['name: '+self.name+'  files: '+str(self.files) ]
+        for i,friend in enumerate(self.friends):
+            repr += [('friend: ' if i == 0 else ' '*8)+friend[0]+'  files: '+str(friend[1]) ]
+
+        return '\n'.join(repr)
+
+    __str__ = __repr__
+
+    def dump(self):
+        print self.__repr__()
+
+    #---
+    def addfriend(self, name, files):
+        self.friends.append( (name, files) )
+
+
 # _____________________________________________________________________________
+# __  ___      __    __
+# \ \/ (_)__  / /___/ /
+#  \  / / _ \/ / __  / 
+#  / / /  __/ / /_/ /  
+# /_/_/\___/_/\__,_/   
+#                      
+                     
 class Yield:
+    '''
+    Class to describe yields and errors
+    A value with its error
+    '''
     def __init__(self, y, ey):
         self.value = y 
         self.error  = ey
 
+    #---
     def __add__(self,other):
         
         value = self.value+other.value
@@ -219,6 +156,7 @@ class Yield:
 
         return Yield(value,error)
 
+    #---
     def __sub__(self,other):
         
         value = self.value-other.value
@@ -226,53 +164,88 @@ class Yield:
 
         return Yield(value,error)
 
+    #---
     def __rmul__(self,other):
         if isinstance(other,float) or isinstance(other,int):
             return Yield(other * self.value, other * self.error)
         else:
             raise ValueError('Right multiplication with type \'%s\' not supported' % other.__class__.__name__)
 
+    #---
     def __repr__(self):
-        return '(%.3f+/-%.3f)' % (self.value, self.error)
+        return '(%s+/-%s)' % (self.value, self.error)
 
+    #---
     def __str__(self):
-        return '%f +/- %f' % (self.value, self.error)
+        return '%s +/- %s' % (self.value, self.error)
+
+
 
 # _____________________________________________________________________________
+#    ______             _       __           __            
+#   /_  __/_______  ___| |     / /___  _____/ /_____  _____
+#    / / / ___/ _ \/ _ \ | /| / / __ \/ ___/ //_/ _ \/ ___/
+#   / / / /  /  __/  __/ |/ |/ / /_/ / /  / ,< /  __/ /    
+#  /_/ /_/   \___/\___/|__/|__/\____/_/  /_/|_|\___/_/     
+#                                                          
 class TreeWorker:
-    _logger = logging.getLogger('TreeWorker')
+    '''
+    t = TreeWorker( tree='latino',files=['a.root','b.root'], selection='x <1', weight='3*x', friends=[('bdt',['c.root','d.root']),...]
+
+    t = TreeWorker('latino', ['a.root','b.root'] )
+    t.addfriend('bdt',['c.root','d.root'])
+    t.setweight('3*x')
+    t.setselection('x < 1')
+
+    t = TreeWorker.fromSample( sample )
+    '''
+    _log = logging.getLogger('TreeWorker')
     #---
-    def __init__(self, samples ):
-    
-        if not isinstance( samples, list ):
-            raise TypeError('samples is not a list of tuples')
 
-        if len(samples) == 0:
-            raise ValueError('no entries found in the sample list')
+    # ---
+    def __init__(self, name, files, selection='', weight='', scale=1., friends=None):
 
-        name, filenames = samples[0]
-
-        self._chain = _buildchain(name, filenames)
+        self._chain = _buildchain(name, files)
         self._chain.GetEntries()
         self._elist     = None
         self._friends   = []
-        self._weight    = ''
-        self._scale     = 1.
-        self._selection = ''
-        self._link(samples[1:])
 
+        self._weight    = weight
+        self._selection = selection
+        self._scale     = scale
+        if friends: self._link(friends)
+
+        self.setselection(self._selection)
+
+    # ---
+    @staticmethod
+    def fromsample( sample ):
+        if not isinstance( sample, Sample):
+            raise ValueError('sample must inherit from %s (found %s)' % (Sample.__name__, sample.__class__.__name__) )
+        t = TreeWorker( sample.name, sample.files )
+        t.setselection( sample.preselection )
+        t.setweight( sample.weight )
+        return t
+
+    #---
+    def __str__(self):
+        return '%s(%s,s=%r,w=%r)' % (self.__class__.__name__,self._chain.GetName(),self._selection,self._weight)
 
 
     #---
     def _link(self,friends):
         for ftree,ffilenames in friends:
-            fchain = _buildchain(ftree,ffilenames)
-            if self._chain.GetEntriesFast() != fchain.GetEntries():
-                raise RuntimeError('Mismatching number of entries: '
-                                   +self._chain.GetName()+'('+str(self._chain.GetEntriesFast())+'), '
-                                   +fchain.GetName()+'('+str(fchain.GetEntriesFast())+')')
-            self._chain.AddFriend(fchain)
-            self._friends.append(fchain)
+            self.addfriend(free,ffilenames)
+
+    #---
+    def addfriend(name,files):
+        fchain = _buildchain(ftree,ffilenames)
+        if self._chain.GetEntriesFast() != fchain.GetEntries():
+            raise RuntimeError('Mismatching number of entries: '
+                               +self._chain.GetName()+'('+str(self._chain.GetEntriesFast())+'), '
+                               +fchain.GetName()+'('+str(fchain.GetEntriesFast())+')')
+        self._chain.AddFriend(fchain)
+        self._friends.append(fchain)
 
     #---
     def __del__(self):
@@ -281,6 +254,24 @@ class TreeWorker:
                 self._chain.RemoveFriend(fchain)
                 ROOT.SetOwnership(fchain,True)
                 del fchain
+
+    #---
+    def __getattr__(self,name):
+        return getattr(self._chain,name)
+
+    def _makeentrylist(self,label,cut):
+
+        cutexpr = self._cutexpr(acut)
+        self._plot('>>'+label,cutexpr,'entrylist')
+        
+        l = ROOT.gDirectory.Get(label)
+        # detach the list
+        l.SetDirectory(0x0)
+        # ensure the ownership
+        ROOT.SetOwnership(l,True)
+
+        return l
+
 
     #---
     def _makeentrylists(self, cuts):
@@ -299,12 +290,9 @@ class TreeWorker:
             # store it
             elists[name] = l
             # activate it
-            import pdb
-            pdb.set_trace()
-            opt = '' if '#' not in l.GetFileName() else 'ne'
-            self._chain.SetEntryList(l,opt)
+            self._chain.SetEntryList(l)
 
-            self._logger.debug('%s -> %d',l.GetName(),l.GetN())
+            self._log.debug('%s -> %d',l.GetName(),l.GetN())
 
         # restore the preselection
         self._chain.SetEntryList(self._elist if self._elist else 0x0)
@@ -326,18 +314,18 @@ class TreeWorker:
         # purge the rest of elists
         if numok < lentries:
             for n in elists.keys()[numok:lentries]:
-                self._logger.debug('Deleting %s',n)
+                self._log.debug('Deleting %s',n)
                 del elists[n]
 
         for i,(n,l) in enumerate(elists.iteritems()):
-            self._logger.debug('- %d %s,%d', i,n,l.GetN())
+            self._log.debug('- %d %s,%d', i,n,l.GetN())
 
         # setting the last common
         self._chain.SetEntryList(elast)
 
         newcuts = cuts[numok:]
         for i,(name,acut) in enumerate(newcuts.iteritems()):
-            self._logger.debug('Adding cut %d %s', i+numok,name)
+            self._log.debug('Adding cut %d %s', i+numok,name)
             cut = self._cutexpr(acut)
             elabel = 'elist%d' % (i+numok)
             self._plot('>>'+elabel,cut,'entrylist')
@@ -352,58 +340,18 @@ class TreeWorker:
             # activate it
             self._chain.SetEntryList(l)
 
-            self._logger.debug('%s -> %d',l.GetName(),l.GetN())
+            self._log.debug('%s -> %d',l.GetName(),l.GetN())
 
         # restore the preselection
         self._chain.SetEntryList(self._elist if self._elist else 0x0)
         return elists
 
-#         minl = min(len(cuts),len(elist))
-#         
-#         self._logger.debug('min len (cuts,entries): %d %s',minl, [len(cuts),len(elist)]) 
-
-#         broken = False
-#         # process the 2 lists in parallel
-#         for i, ( n,m ) in enumerate(zip(cuts.iterkeys(),elist.iterkeys())):
-#             print i,n,m, self._cutexpr(cuts[n]) == elist[m].GetTitle()
-
-#             broken = ( n == m ) and ( self._cutexpr(cuts[n]) == elist[m].GetTitle() )
-
-#         print i
-
-#         [ self._cutexpr(c) for c in cuts ]
-
-
-#         etrash = odict.OrderedDict()
-#         
-#         for i,(name,acut) in enumerate(cuts.iteritems()):
-#             cut = self._cutexpr(acut)
-#             elabel = 'elist%d' % i
-#             self._plot('>>'+elabel,cut,'entrylist')
-#             
-#             l = ROOT.gDirectory.Get(elabel)
-#             # detach the list
-#             l.SetDirectory(0x0)
-#             # ensure the ownership
-#             ROOT.SetOwnership(l,True)
-#             # store it
-#             elists[name] = l
-#             # activate it
-#             self._chain.SetEntryList(l)
-
-#             self._logger.debug('%s -> %d',l.GetName(),l.GetN())
-
-#         # restore the preselection
-#         self._chain.SetEntryList(self._elist if self._elist else 0x0)
-#         return elists
-
     #---
     def _delroots(self,roots):
         for l in roots.itervalues():
-            self._logger.debug( 'obj before %s',l.__repr__())
+            self._log.debug( 'obj before %s',l.__repr__())
             l.IsA().Destructor(l)
-            self._logger.debug( 'obj after  %s', l.__repr__())
-        
+            self._log.debug( 'obj after  %s', l.__repr__())
 
     #---
     def setweight(self,w):
@@ -426,7 +374,7 @@ class TreeWorker:
 
         #no selection, stop here
         if not self._selection: return
-        self._logger.debug( 'applying worker selection %s', self._selection )
+        self._log.debug( 'applying worker selection %s', self._selection )
 
         self._chain.Draw('>> '+name, self._selection, 'entrylist')
 
@@ -452,8 +400,13 @@ class TreeWorker:
         return xmin,xmax
 
     #---
-    def entries(self,cut=''):
-        return self._chain.GetEntries(cut)
+    def entries(self,cut=None):
+        if cut is None:
+            if self._elist: return self._elist.GetN()
+            else:           return self._chain.GetEntries()
+        else:
+            # super simple projection
+            return self._chain.Draw('1.', cut,'goff')
 
     #---
     def draw(self, *args, **kwargs):
@@ -462,73 +415,92 @@ class TreeWorker:
     
     #--
     def _cutexpr(self,cuts,addweight=True,addselection=False):
-        ''' makes a cut string or a list of cuts into the cutsrting to be used with the TTree, adding the weight '''
+        '''
+        makes a cut string or a list of cuts into the cutsrting to be used with
+        the TTree, adding the weight
+        '''
 
         # ignore unitary weights
         w = self._weight if addweight and self._weight != '1' else None
         # add selection only if requested
         s = self._selection if addselection else None
 
-        
         cutlist = [s]+cuts if isinstance(cuts,list) else [s,cuts]
-        cutstr = ' && '.join( ['(%s)' % s for s in cutlist if s])
+        cutstr = ' && '.join( ['(%s)' % s for s in cutlist if (s and str(s) != '')])
 
         expr ='*'.join(['(%s)' % s for s in [w,cutstr] if s])
+
         return expr
 
+    #---
+    @staticmethod
+    def _projexpr( name, bins = None ):
+        '''
+        Prepares the target for plotting if the binning is standard (n,min,max)
+        then return a string else, it's variable binning, make the htemp and
+        return it
+        '''
+        if not bins:
+            return name,0,None
+        elif not isinstance(bins, tuple):
+            raise TypeError('bin must be an ntuple or an array')
         
-#         if isinstance(cuts,list):
-#             clist = [self._weight,]
-#         else:
-#             clist = [self._weight,cuts]
-#         expr = '*'.join( ['(%s)' % s for s in clist if s and s != '1' ] )
-        return expr
+        l = len(bins)
+        # if the tuple is made of lists
+        if l in [1,2] and all(map(lambda o: isinstance(o,list),bins)):
+            dirsentry = utils.TH1AddDirSentry()
+            sumsentry = utils.TH1Sumw2Sentry()
+
+            # get the hshape
+            hdim,hclass,hargs = _bins2hclass( bins )
+
+            # make the histogram
+            htemp = hclass(name, name, *hargs)
+
+            return hdim,name,htemp
+
+        else:
+            # standard approach, the string goes into the expression
+            if l in [1,3]:
+                # nx,xmin,xmax
+                ndim=1
+            elif l in [4,6]:
+                # nx,xmin,xmax,ny,ymin,ymax
+                ndim=2
+            else:
+                # only 1d or 2 d hist
+                raise RuntimeError('What a mess!!! bin malformed!')
+
+            hdef = '('+','.join([ str(x) for x in bins])+')' if bins else ''
+            return ndim,name+hdef,None
+
 
 
     #---
-    def _plot(self,varexp, cut, options, *args, **kwargs):
-        '''primitive method to produce histograms and projections'''
-        sentry = utils.TH1AddDirSentry()
+    def _plot(self,varexp, cut, options='', *args, **kwargs):
+        '''
+        Primitive method to produce histograms and projections
+        '''
+        dirsentry = utils.TH1AddDirSentry()
+        sumsentry = utils.TH1Sumw2Sentry()
         options = 'goff '+options
-        self._logger.debug('varexp:  %s', varexp)
-        self._logger.debug('cut:     %s', cut)
-        self._logger.debug('options: %s', options)
+        self._log.debug('varexp:  \'%s\'', varexp)
+        self._log.debug('cut:     \'%s\'', cut)
+        self._log.debug('options: \'%s\'', options)
 
         n = self._chain.Draw(varexp , cut, options, *args, **kwargs)
         h = self._chain.GetHistogram()
         if h.__nonzero__():
-            self._logger.debug('entries  %d integral %f', h.GetEntries(), h.Integral())
+#             print h.GetDirectory()
+            self._log.debug('entries  %d integral %f', h.GetEntries(), h.Integral())
             h.Scale(self._scale)
-            self._logger.debug('scale:   %f integral %f', self._scale, h.Integral())
+            self._log.debug('scale:   %f integral %f', self._scale, h.Integral())
             return h
         else:
-            self._logger.debug('entries  %d', n)
+            self._log.debug('entries  %d', n)
             return None
     
-    #---
-    @staticmethod
-    def _projexpr( name, bins = None ):
-        if not bins:
-            return name,0
-        elif not ( isinstance(bins, tuple) or isinstance(bins,list)):
-            raise RuntimeError('bin must be an ntuple or an arrya')
-            
-        l = len(bins)
-        if l in [1,3]:
-            # nx,xmin,xmax
-            ndim=1
-        elif l in [4,6]:
-            # nx,xmin,xmax,ny,ymin,ymax
-            ndim=2
-        else:
-            # only 1d or 2 d hist
-            raise RuntimeError('What a mess!!! bin malformed!')
-
-        hdef = '('+','.join([ str(x) for x in bins])+')' if bins else ''
-        return name+hdef,ndim
-
-
-
+    
     #---
     def yields(self, cut='', options='', *args, **kwargs):
         cut = self._cutexpr(cut)
@@ -547,7 +519,7 @@ class TreeWorker:
 
         cut = extra if extra else ''
         for c,l in elists.iteritems():
-            self._logger.debug('yield for %s',c)
+            self._log.debug('yield for %s',c)
             self._chain.SetEntryList(l)
             yields[c] = self.yields( cut, options )
 
@@ -579,13 +551,31 @@ class TreeWorker:
         # check the name doesn't contain project infos
         m = re.match(r'.*(\([^\)]*\))',name)
         if m: raise ValueError('Use bins argument to specify the binning %s' % m.group(1))
-                
-        hstr,ndim = self._projexpr(name,bins)
-        
-        varexp = '%s >> %s' % (varexp,hstr)
+
+        ndim,hstr,htemp = self._projexpr(name,bins)
+
         cut = self._cutexpr(cut)
 
-        return self._plot( varexp, cut, options, *args, **kwargs)
+        if htemp:
+            # do a projection with a target
+            # make an unique name (juust in case)
+            tname = '%s_%s' % (htemp.GetName(),uuid.uuid1())
+            htemp.SetName( tname )
+            htemp.SetDirectory( ROOT.gDirectory.func()) 
+            hstr = hstr.replace(name,tname)
+
+            varexp = '%s >> %s' % (varexp,hstr)
+            h = self._plot( varexp, cut, options, *args, **kwargs)
+
+            # reset the directory 
+            h.SetDirectory(0x0)
+            h.SetName(name)
+        else:
+            # let TTree::Draw to create the temporary histogram
+            varexp = '%s >> %s' % (varexp,hstr)
+            h = self._plot( varexp, cut, options, *args, **kwargs)
+
+        return h
 
     #---
     def _plotsfromentries(self,name, varexp, elists, options='', bins=None, extra=None, *args, **kwargs):
@@ -651,17 +641,17 @@ class TreeWorker:
         return h
 
 # helper class 
-class sample:
-    def __init__(self, **kwargs):
-        self.tree      = ''
-        self.files     = []
-        self.selection = ''
-        self.weight    = ''
-        self.title     = ''
+# class sample:
+#     def __init__(self, **kwargs):
+#         self.tree      = ''
+#         self.files     = []
+#         self.selection = ''
+#         self.weight    = ''
+#         self.title     = ''
 
-        for k,v in kwargs.iteritems():
-            if not hasattr(self,k): continue
-            setattr(self,k,v)
+#         for k,v in kwargs.iteritems():
+#             if not hasattr(self,k): continue
+#             setattr(self,k,v)
 
    
 

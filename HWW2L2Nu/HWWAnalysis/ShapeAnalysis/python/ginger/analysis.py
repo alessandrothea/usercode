@@ -1,102 +1,13 @@
 import HWWAnalysis.Misc.odict as odict
-from tree import TreeWorker
+from .tree import TreeWorker, Sample
+from .base import Labelled
 import os.path
 import ROOT
 import logging
 import copy
 import pdb
 
-#______________________________________________________________________________
-class Labelled(object):
-    ''' Generic base classes for objects which have a latex/tlatex representation'''
-    def __init__(self,name,title=None,latex=None,tlatex=None):
-        self.name    = name
-        self._title  = title
-        self._latex  = latex
-        self._tlatex = tlatex
 
-    #---
-    def __str__(self):
-        s = [self.name]
-        if self._title: s.append(self._title)
-        return self.__class__.__name__+'('+', '.join(s)+')'
-    
-    #---
-    def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__,self.name)
-
-    #---
-    def _getbyorder(self,attrs):
-        for x in attrs:
-            if getattr(self,x): return getattr(self,x)
-
-    def __getattr__(self,key):
-        if key=='title': 
-            return self._getbyorder(['_title','name'])
-        elif key == 'latex':
-            return self._getbyorder(['_latex','_title','name'])
-        elif key == 'tlatex':
-            return self._getbyorder(['_tlatex','_title','name'])
-        else:
-            raise AttributeError('%s instance has no attribute \'%s\'' % (self.__class__.__name__,key) )
-
-    def __setattr__(self,key,val):
-        if key in ['title','latex','tlatex']:
-            self.__dict__['_'+key] = val
-        else:
-            self.__dict__[key] = val
-
-    #---
-    def getTLatex(self):
-        return ROOT.TLatex(0.,0.,self.tlatex)
-#______________________________________________________________________________
-class Sample(Labelled):
-    '''
-    How do we define files?
-
-    [('latino',['pippo/pluto.root','pippo/topolino.root']), ('latino_bdt',['bdt/pluto.root','bdt/topolino.root'])]
-
-    Latino(weight='baseW*effW',selection='',files=['pippo/'])
-'''
-
-    #---
-    def __init__(self, **kwargs):
-
-        super(Sample,self).__init__('')
-        self.master       = (None,None)
-        self.friends      = []
-        self.preselection = ''
-        self.weight       = ''
-
-        for k,v in kwargs.iteritems():
-            if not hasattr(self,k): continue
-            setattr(self,k,v)    
-
-    #---
-    def __repr__(self):
-        repr = []
-        repr += [self.__class__.__name__+(' '+self.name if self.name else'') + (' also known as '+self._title if self._title else '')]
-        repr += ['weight: \'%s\', preselection: \'%s\'' % (self.weight, self.preselection) ]
-        repr += ['master: '+self.master[0]+'  files: '+str(self.master[1]) ]
-        for i,friend in enumerate(self.friends):
-            repr += [('friend: ' if i == 0 else ' '*8)+friend[0]+'  files: '+str(friend[1]) ]
-
-        return '\n'.join(repr)
-
-    def dump(self):
-        print self.__repr__()
-
-    #---
-    def setmaster(self, name, files ):
-        self.master = (name,files)
-
-    #---
-    def addfriend(self, name, files):
-        self.friends.append( (name, files) )
-
-    #---
-    def trees(self):
-        return [self.master]+self.friends
 
 #______________________________________________________________________________
 class CutFlow(odict.OrderedDict):
@@ -148,7 +59,14 @@ class CutFlow(odict.OrderedDict):
         >>> type(b[2:4])
         <class '__main__.OrderedDict'>
         """
-        item = odict.OrderedDict.__getitem__(self,key)
+
+        if isinstance(key,slice) and (isinstance(key.start,str) or key.start == None) and (isinstance(key.stop,str) or key.stop == None):
+            istart = self.index(key.start) if key.start else None
+            istop  = self.index(key.stop ) if key.stop  else None
+            istep  = key.step if key.step else None
+            item = odict.OrderedDict.__getitem__(self,slice(istart,istop,istep))
+        else:
+            item = odict.OrderedDict.__getitem__(self,key)
         if isinstance(item, odict.OrderedDict):
             return CutFlow(item)
         else:
@@ -157,9 +75,11 @@ class CutFlow(odict.OrderedDict):
     #---
     def __repr__(self):
         return '%s([%s])' % (self.__class__.__name__, ', '.join( 
-            ['(%r, %r)' % (key, self[key].cut) for key in self._sequence]))
+            ['(%r, %r)' % (key, self[key].cut) for key in self.iterkeys()]))
     
-    __str__ = __repr__
+    def __str__(self):
+        return '%s(%s)' % (self.__class__.__name__, ', '.join( 
+            ['%d: %s = %r' % (i,key, self[key].cut) for i,key in enumerate(self.iterkeys())]))
 
 
     #---
@@ -214,7 +134,12 @@ class Cut(Labelled):
         return self.cut
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__,self.cut)
+        if self.name:
+            repr = '%s(\'%s\':\'%s\')' % (self.__class__.__name__,self.name,self.cut)
+        else:
+            repr = '%s(\'%s\')' % (self.__class__.__name__,self.cut)
+
+        return repr
     
   
 
@@ -240,16 +165,18 @@ class Latino:
 
         return Latino(weight = self.weight, preselection = self.preselection, files = self.files+other.files)
 
-    def makeSample( self, masterpath, **kwargs ):
+    def makeSample( self, masterpath ):
 
-        master = ('latino',[ os.path.join(masterpath,f) for f in self.files ])
+        files = [ os.path.join(masterpath,f) for f in self.files ]
 
-        friends = []
-        for key,path in kwargs.iteritems():
-            friends.append( (key, [os.path.join(path,f) for f in self.files ]) )
+#         friends = []
+#         for key,path in kwargs.iteritems():
+#             friends.append( (key, [os.path.join(path,f) for f in self.files ]) )
 
 
-        s = Sample( weight=self.weight, preselection=self.preselection, master=master, friends=friends )
+        s = Sample('latino', files)
+        s.weight       = self.weight
+        s.preselection = self.preselection
 
         return s
 
@@ -321,10 +248,10 @@ class TreeAnalyser(object):
 
     #---
     def __init__(self, sample=None, cuts=None ):
-        self._cuts = cuts
-        self._entries = None
-        self._modified = True
-        self._worker = self._makeworker(sample) if sample else None
+        self._cuts       = cuts
+        self._entrylists = None
+        self._modified   = True
+        self._worker     =  TreeWorker.fromsample(sample) if sample else None
 
     #---
     def __del__(self):
@@ -340,11 +267,11 @@ class TreeAnalyser(object):
     def __copy__(self):
         self._logger.debug('-GremlinS-')
 
-        other = TreeAnalyser()
-        other._cuts    = copy.deepcopy(self._cuts)
-        other._entries = odict.OrderedDict( [ ( n, l.Clone() ) for n,l in self._entries.iteritems() ] ) if self._entries else None
-        other._worker  = self._worker
-        other._modified = self._modified
+        other             = TreeAnalyser()
+        other._cuts       = copy.deepcopy(self._cuts)
+        other._entrylists = odict.OrderedDict( [ ( n, l.Clone() ) for n,l in self._entrylists.iteritems() ] ) if self._entrylists else None
+        other._worker     = self._worker
+        other._modified   = self._modified
 
         return other
 
@@ -382,23 +309,13 @@ class TreeAnalyser(object):
 
 
     #---
-    @staticmethod
-    def _makeworker(sample):
-        if not isinstance( sample, Sample):
-            raise ValueError('sample must inherit from %s (found %s)' % (Sample.__name__, sample.__class__.__name__) )
-        t = TreeWorker( sample.trees() )
-        t.setselection( sample.preselection )
-        t.setweight( sample.weight )
-        return t
-
-    #---
     def _deleteentries(self):
-        if self._entries:
-            for l in self._entries.itervalues():
+        if self._entrylists:
+            for l in self._entrylists.itervalues():
                 self._logger.debug( 'obj before %s',l.__repr__())
                 l.IsA().Destructor(l)
                 self._logger.debug( 'obj after  %s', l.__repr__())
-            self._entries = None
+            self._entrylists = None
 
     #---
     def _ensureentries(self, force=False):
@@ -407,18 +324,18 @@ class TreeAnalyser(object):
 
 #         pdb.set_trace()
 
-        if not self._entries:
+        if not self._entrylists:
             self._logger.info('--Buffering the entries passing each cut--')
-            self._entries = self._worker._makeentrylists(self._cuts)
+            self._entrylists = self._worker._makeentrylists(self._cuts)
             self._logger.debug('---------------------------------------')
         elif self._modified:
             self._logger.info('--Updating the entries passing each cut--')
-            self._worker._updateentrylists(self._cuts,self._entries)
+            self._worker._updateentrylists(self._cuts,self._entrylists)
             self._logger.debug('---------------------------------------')
 
         self._modified = False
 
-        return self._entries
+        return self._entrylists
 
     #---
     def bufferentries(self, force=False):
@@ -431,8 +348,8 @@ class TreeAnalyser(object):
         self._cuts[name] = cut
         self._modified = True
 
-#         if self._entries:
-#             self._worker._updateentrylists(self._cuts,self._entries)
+#         if self._entrylists:
+#             self._worker._updateentrylists(self._cuts,self._entrylists)
 
     def entries(self):
         return self._worker.entries()
@@ -440,7 +357,12 @@ class TreeAnalyser(object):
     #---
     def selectedentries(self):
         self._ensureentries()
-        return self._entries[self._entries.keys()[-1]].GetN()
+        
+        # check that the cutlist is not empty
+        if len(self._entrylists) == 0:
+            return self._worker.entries() 
+        else:
+            return self._entrylists[self._entrylists.keys()[-1]].GetN()
 #         return self._worker.entries(self._cuts.string())
 
     #---
@@ -448,7 +370,7 @@ class TreeAnalyser(object):
         '''TODO: use the entrylist'''
 
         self._ensureentries()
-        return odict.OrderedDict([ (n, l.GetN()) for n,l in self._entries.iteritems()])
+        return odict.OrderedDict([ (n, l.GetN()) for n,l in self._entrylists.iteritems()])
 
     #---
     def yields(self, extra=None):
@@ -458,12 +380,6 @@ class TreeAnalyser(object):
         # using elist[:] doesn't clone the TEntryList, but inserts the reference only.
         yields = self._worker._yieldsfromentries(elists[-1:],extra=extra)
         return yields.values()[0]
-
-
-#         base = self._cuts.string()
-#         cut = ' && '.join(['(%s)' % c for c in (base,extra) if c])
-
-#         return self._worker.yields(cut)
 
     #---
     def yieldsflow(self, extra=None):
