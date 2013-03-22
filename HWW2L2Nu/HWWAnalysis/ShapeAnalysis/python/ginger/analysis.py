@@ -1,10 +1,11 @@
 import HWWAnalysis.Misc.odict as odict
-from .tree import TreeWorker, Sample
+from .tree import TreeWorker, TreeView, Sample
 from .base import Labelled
 import os.path
 import ROOT
 import logging
 import copy
+import itertools
 import pdb
 
 
@@ -81,9 +82,12 @@ class CutFlow(odict.OrderedDict):
         return '%s(%s)' % (self.__class__.__name__, ', '.join( 
             ['%d: %s = %r' % (i,key, self[key].cut) for i,key in enumerate(self.iterkeys())]))
 
+    #---
+    def keyat(self,index):
+        return self._sequence[index]
 
     #---
-    def at(self,index):
+    def itemat(self,index):
         return self.__getitem__(self._sequence[index])
 
     #---
@@ -198,7 +202,7 @@ class TreeAnalyser(object):
         child2 = mother.clone()
         child2['stepB'] = 'pt < 100'
     '''
-    _logger = logging.getLogger('TreeAnalyser')
+    _log = logging.getLogger('TreeAnalyser')
 
     #---
     class Plotter(object):
@@ -209,40 +213,40 @@ class TreeAnalyser(object):
             self._bins     = bins
             self._extra    = extra
 
-        def __getitem__(self,val):
-            print val 
-            if isinstance(val,types.SliceType):
-                plots = []
-                flow = self._analyser._cuts
-                fkeys = flow.keys()
-                # get the ids of the elements in the slice
-                ids = [flow._sequence.index(i) for i in flow._sequence[val]]
+#V0         def __getitem__(self,val):
+#V0             print val 
+#V0             if isinstance(val,types.SliceType):
+#V0                 plots = []
+#V0                 flow = self._analyser._cuts
+#V0                 fkeys = flow.keys()
+#V0                 # get the ids of the elements in the slice
+#V0                 ids = [flow._sequence.index(i) for i in flow._sequence[val]]
 
-                for i in ids:
-                    cut = flow[:i+1].string()
-                    print 'cut',cut
-                    h = self._analyser._worker.plot( '%s_%s' % (self._name,fkeys[i]),self._var, cut, bins=self._bins)
-                    plots.append(h)
-                    print h
+#V0                 for i in ids:
+#V0                     cut = flow[:i+1].string()
+#V0                     print 'cut',cut
+#V0                     h = self._analyser._worker.plot( '%s_%s' % (self._name,fkeys[i]),self._var, cut, bins=self._bins)
+#V0                     plots.append(h)
+#V0                     print h
 
-                return plots
-            else:
-                print 'Making hists up to val'
-                cut = self._analyser._cuts[:val].string()
-                return self._analyser._worker.plot(self._name,self._var, cut)
+#V0                 return plots
+#V0             else:
+#V0                 print 'Making hists up to val'
+#V0                 cut = self._analyser._cuts[:val].string()
+#V0                 return self._analyser._worker.plot(self._name,self._var, cut)
 
-    class BufferedPlotter(Plotter):
-        def __init__(self,*args,**kwargs):
-            super(TreeAnalyser.BufferedPlotter,self).__init__(*args,**kwargs)
+#V0     class BufferedPlotter(Plotter):
+#V0         def __init__(self,*args,**kwargs):
+#V0             super(TreeAnalyser.BufferedPlotter,self).__init__(*args,**kwargs)
 
-        def __getitem__(self,val):
-            elists = self._analyser._ensureentries()
-            if isinstance(val,types.SliceType):
-                pass
-                plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
-            else:
-                pass
-                plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
+#V0         def __getitem__(self,val):
+#V0             elists = self._analyser._ensureentries()
+#V0             if isinstance(val,types.SliceType):
+#V0                 pass
+#V0                 plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
+#V0             else:
+#V0                 pass
+#V0                 plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
 
 
 
@@ -265,11 +269,12 @@ class TreeAnalyser(object):
     
     #---
     def __copy__(self):
-        self._logger.debug('-GremlinS-')
+        self._log.debug('-GremlinS-')
 
         other             = TreeAnalyser()
         other._cuts       = copy.deepcopy(self._cuts)
-        other._entrylists = odict.OrderedDict( [ ( n, l.Clone() ) for n,l in self._entrylists.iteritems() ] ) if self._entrylists else None
+#V0         other._entrylists = odict.OrderedDict( [ ( n, l.Clone() ) for n,l in self._entrylists.iteritems() ] ) if self._entrylists else None
+        other._entrylists = copy.deepcopy(self._entrylists)
         other._worker     = self._worker
         other._modified   = self._modified
 
@@ -307,35 +312,115 @@ class TreeAnalyser(object):
 
         return self._worker._cutexpr(cuts)
 
+#V0     #---
+#V0     def _deleteentries_v0(self):
+#V0         if self._entrylists:
+#V0             for l in self._entrylists.itervalues():
+#V0                 self._log.debug( 'obj before %s', l.__repr__())
+#V0                 l.IsA().Destructor(l)
+#V0                 self._log.debug( 'obj after  %s', l.__repr__())
+#V0             self._entrylists = None
+
+#V0     #---
+#V0     def _ensureentries_v0(self, force=False):
+#V0         if force:
+#V0             self._deleteentries()
+
+#V0         if not self._entrylists:
+#V0             self._log.info('--Buffering the entries passing each cut--')
+#V0             self._entrylists = self._worker._makeentrylists(self._cuts)
+#V0             self._log.debug('---------------------------------------')
+#V0         elif self._modified:
+#V0             self._log.info('--Updating the entries passing each cut--')
+#V0             self._worker._updateentrylists(self._cuts,self._entrylists)
+#V0             self._log.debug('---------------------------------------')
+
+#V0         self._modified = False
+
+#V0         return self._entrylists
 
     #---
     def _deleteentries(self):
-        if self._entrylists:
-            for l in self._entrylists.itervalues():
-                self._logger.debug( 'obj before %s',l.__repr__())
-                l.IsA().Destructor(l)
-                self._logger.debug( 'obj after  %s', l.__repr__())
-            self._entrylists = None
+        # does it delete the list?
+        self._entrylists = None
 
-    #---
+    # ---
     def _ensureentries(self, force=False):
-        if force:
-            self._deleteentries()
-
-#         pdb.set_trace()
+        if force: self._deleteentries()
 
         if not self._entrylists:
-            self._logger.info('--Buffering the entries passing each cut--')
-            self._entrylists = self._worker._makeentrylists(self._cuts)
-            self._logger.debug('---------------------------------------')
-        elif self._modified:
-            self._logger.info('--Updating the entries passing each cut--')
-            self._worker._updateentrylists(self._cuts,self._entrylists)
-            self._logger.debug('---------------------------------------')
+            self._entrylists = odict.OrderedDict()
+            self._modified = True
 
-        self._modified = False
+        if self._modified:
+            self._purgeviews(self._cuts, self._entrylists)
 
+        self._growviews(self._cuts, self._entrylists)
         return self._entrylists
+
+    # ---
+    def _growviews(self, cutflow, views ):
+        # does it need to depend on cutflow and views?
+        self._log.debug('growing viewlist')
+        # explect cutflow to be longer than 
+
+        nv = len(views)
+        nc = len(cutflow)
+        if nv == nc : return
+        elif nv > nc : raise ValueError('WTF!')
+
+        # last is the last valid view, used to grow the list
+        last = views.values()[-1] if nv > 0 else TreeView(self._worker)
+
+        newcuts = cutflow[nv:]
+        self._log.debug('appending %s', newcuts)
+        for i,(n,c) in enumerate(newcuts.iteritems()):
+            m = last.spawn(c,'elist%d' % (i+nv) )
+            last = m  
+            views[n] = m
+
+        return views
+
+    # ---
+    def _purgeviews(self, cutflow, views ):
+        # does it need to depend on cutflow and views?
+
+        self._log.debug('purging viewlist')
+        # check the keys
+        nv = len(views)
+
+
+        if len(cutflow) == 0:
+            # the new list is empty! what do we do?
+            numok = 0
+        else:
+            k = 0
+            matches = False
+            # find the first mismatching cut
+            for k, ( n,m ) in enumerate(itertools.izip(cutflow.iterkeys(),views.iterkeys())):
+                matches =  ( n == m ) and ( str(cutflow[n]) == str(views[m].cut) )
+                if not matches: break
+            if k==0 and not matches:
+                # disagreement at the first match
+                numok = 0
+            elif not matches:
+                numok = k
+            else:
+                numok = k+1
+
+        # purge the rest of elists
+        if numok < nv:
+            for n in views.keys()[numok:nv]:
+                self._log.debug('Deleting %s',n)
+                del views[n]
+
+        if self._log.isEnabledFor(logging.DEBUG):
+            self._log.debug('views left')
+            for i,(n,l) in enumerate(views.iteritems()):
+                self._log.debug('- %d %s,%d', i,n,l.entries())
+    
+        return views
+ 
 
     #---
     def bufferentries(self, force=False):
@@ -348,77 +433,95 @@ class TreeAnalyser(object):
         self._cuts[name] = cut
         self._modified = True
 
-#         if self._entrylists:
-#             self._worker._updateentrylists(self._cuts,self._entrylists)
+    #---
+    def remove(self,name):
+        '''remove a cut, and if the entrylist has been already made, update it'''
+        del self._cuts[name]
+        self._modified = True
 
     def entries(self):
         return self._worker.entries()
         
     #---
     def selectedentries(self):
-        self._ensureentries()
+        elist = self._ensureentries()
         
         # check that the cutlist is not empty
-        if len(self._entrylists) == 0:
+        if not elist:
             return self._worker.entries() 
         else:
-            return self._entrylists[self._entrylists.keys()[-1]].GetN()
-#         return self._worker.entries(self._cuts.string())
+#V0           return self._entrylists[self._entrylists.keys()[-1]].GetN()
+            return elist[elist.keys()[-1]].entries()
 
     #---
     def entriesflow(self):
         '''TODO: use the entrylist'''
 
         self._ensureentries()
-        return odict.OrderedDict([ (n, l.GetN()) for n,l in self._entrylists.iteritems()])
+#V0         return odict.OrderedDict([ (n, l.GetN()) for n,l in self._entrylists.iteritems()])
+        return odict.OrderedDict([ (n, l.entries()) for n,l in self._entrylists.iteritems()])
 
     #---
     def yields(self, extra=None):
         # make the entries
-        elists = self._ensureentries()
+        views = self._ensureentries()
         
         # using elist[:] doesn't clone the TEntryList, but inserts the reference only.
-        yields = self._worker._yieldsfromentries(elists[-1:],extra=extra)
-        return yields.values()[0]
+#V0       yields = self._worker._yieldsfromentries(elists[-1:],extra=extra)
+#V0       return yields.values()[0]
+        if not views:
+            return self._worker.yields(extra)
+        else:
+            return views[views.keys()[-1]].yields(extra)
 
     #---
     def yieldsflow(self, extra=None):
         # make the entries
-        elists = self._ensureentries()
+        views = self._ensureentries()
 
-        # add the weight and get the yields
-        yields = self._worker._yieldsfromentries(elists,extra=extra)
-        return yields
+#V0         # add the weight and get the yields
+#V0         yields = self._worker._yieldsfromentries(elists,extra=extra)
+#V0         return yields
+        if not views: return odict.OrderedDict()
+
+        return odict.OrderedDict([( n,v.yields(extra) ) for n,v in views.iteritems()])
         
     #---
-    def plot(self, name, varexp, options='', bins=None, extra=None):
+    def plot(self, name, varexp, extra=None, options='', bins=None):
 
-        base = self._cuts.string()
-        cut = ' && '.join(['(%s)' % c for c in (base,extra) if c])
+#VO         base = self._cuts.string()
+#VO         cut = ' && '.join(['(%s)' % c for c in (base,extra) if c])
 
-        return self._worker.plot(name,varexp,cut,options,bins)
+#VO         return self._worker.plot(name,varexp,cut,options,bins)
+        if not views:
+            return self._worker.plot(name,varexp,extra,options,bins)
+        else:
+            return views[views.keys()[-1]].plot(name,varexp,extra,options,bins)
 
     #---
     def plotsflow(self, name, varexp, options='', bins=None, extra=None):
         # make the entries
-        elists = self._ensureentries()
+        views = self._ensureentries()
         
         # add the weight and get the yields
-        plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
-        return plots
+#V0         plots = self._worker._plotsfromentries(name,varexp,elists,options,bins)
+#V0         return plots
+        if not views: return odict.OrderedDict()
+
+        return odict.OrderedDict([( n,v.plot('%s_%s' % (name,n),varexp,extra,options,bins) ) for n,v in views.iteritems()])
 
     #---
-    def plotter(self,*args,**kwargs):
+#V0     def plotter(self,*args,**kwargs):
 
-        buffered = kwargs.pop('buffered',False)
-        
-        if buffered:
-            cls = self.BufferedPlotter
-        else:
-            cls = self.Plotter
+#V0         buffered = kwargs.pop('buffered',False)
+#V0         
+#V0         if buffered:
+#V0             cls = self.BufferedPlotter
+#V0         else:
+#V0             cls = self.Plotter
 
-        print args
-        return cls(self,*args,**kwargs)
+#V0         print args
+#V0         return cls(self,*args,**kwargs)
 
 
 if __name__ == '__main__':
