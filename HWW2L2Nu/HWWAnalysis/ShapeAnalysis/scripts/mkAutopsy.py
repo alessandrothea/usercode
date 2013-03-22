@@ -686,7 +686,7 @@ def fitAndPlot( dcpath, opts ):
     print 'Mass',m.group(1)
     opt.mass = int(m.group(1))
 
-    shapepath = os.path.abspath(os.path.dirname(os.path.normpath(__file__))+'/..')
+    shapepath = os.path.join(os.getenv('CMSSW_BASE'),'src/HWWAnalysis/ShapeAnalysis')
     print 'Shape directory is',shapepath
     ROOT.gInterpreter.ExecuteMacro(shapepath+'/macros/LatinoStyle2.C')
 
