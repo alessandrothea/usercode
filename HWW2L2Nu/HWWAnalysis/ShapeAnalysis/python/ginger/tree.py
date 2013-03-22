@@ -288,61 +288,6 @@ class TreeWorker:
 
         return views
         
-
-    #---
-#V0     def _makeentrylists(self, cuts, cnt=0):
-#V0         '''make a list of entries from an ordered dict of strings'''
-#V0         elists = odict.OrderedDict()
-#V0         for i,(name,acut) in enumerate(cuts.iteritems()):
-#V0             cut = self._cutexpr(acut)
-#V0             elabel = 'elist%d' % (cnt+i)
-
-#V0             l = self._makeentrylist(elabel,cut)
-#V0             # store it
-#V0             elists[name] = l
-#V0             # activate it
-#V0             self._chain.SetEntryList(l)
-
-#V0             self._log.debug('%s -> %d',l.GetName(),l.GetN())
-
-#V0         # restore the preselection
-#V0         self._chain.SetEntryList(self._elist if self._elist else 0x0)
-#V0         return elists
-
-#V0     #---
-#V0     def _updateentrylists(self, cuts, elists):
-#V0         '''merge it with _makeentrylists?'''
-#V0         
-#V0         # check the keys
-#V0         lentries = len(elists)
-
-#V0         # find the first mismatching cut
-#V0         for i, ( n,m ) in enumerate(zip(cuts.iterkeys(),elists.iterkeys())):
-#V0             if not ( ( n == m ) and ( self._cutexpr(cuts[n]) == elists[m].GetTitle() ) ): break
-#V0         elast = elists[n] 
-#V0         numok = i+1
-
-#V0         # purge the rest of elists
-#V0         if numok < lentries:
-#V0             for n in elists.keys()[numok:lentries]:
-#V0                 self._log.debug('Deleting %s',n)
-#V0                 del elists[n]
-
-#V0         for i,(n,l) in enumerate(elists.iteritems()):
-#V0             self._log.debug('- %d %s,%d', i,n,l.GetN())
-
-#V0         # setting the last common
-#V0         self._chain.SetEntryList(elast)
-
-#V0         newcuts = cuts[numok:]
-#V0         # create the missing entrllists 
-#V0         newlist = self._makeentrylists(newcuts,numok)
-#V0         elists.update(newlist)
-
-#V0         # restore the preselection
-#V0         self._chain.SetEntryList(self._elist if self._elist else 0x0)
-#V0         return elists
-
     #---
     def _delroots(self,roots):
         for l in roots.itervalues():
@@ -472,8 +417,6 @@ class TreeWorker:
             hdef = '('+','.join([ str(x) for x in bins])+')' if bins else ''
             return ndim,name+hdef,None
 
-
-
     #---
     def _plot(self,varexp, cut, options='', *args, **kwargs):
         '''
@@ -497,7 +440,6 @@ class TreeWorker:
         else:
             self._log.debug('entries  %d', n)
             return None
-    
     
     #---
     def yields(self, cut='', options='', *args, **kwargs):
@@ -542,71 +484,20 @@ class TreeWorker:
 
         return h
 
-#V0     def _yieldsfromentries(self, elists, options='', extra=None):
-#V0         '''Calculates the yields using eventlists instead of cuts'''
-#V0         yields = odict.OrderedDict()
-
-#V0         cut = extra if extra else ''
-#V0         for c,l in elists.iteritems():
-#V0             self._log.debug('yield for %s',c)
-#V0             self._chain.SetEntryList(l)
-#V0             yields[c] = self.yields( cut, options )
-
-#V0         # restore the preselection
-#V0         self._chain.SetEntryList(self._elist if self._elist else 0x0)
-
-#V0         return yields
-
     #---
     def yieldsflow(self, cuts, options=''):
         '''Does it make sense to have a double step?
         In a way yes, because otherwise one would have to loop over all the events for each step
         '''
 
-#V0         # make the entries
-#V0         elists = self._makeentrylists(cuts)
-#V0         
-#V0         # add the weight and get the yields
-#V0         yields = self._yieldsfromentries(elists,options)
-
-#V0         # delete the lists
-#V0         self._delroots(elists)
-
-        elists = self.views(cuts)
-        return odict.OrderedDict([( n,v.yields(options=options) ) for n,v in elists.iteritems()])
-    
-
-
-#V0     #---
-#V0     def _plotsfromentries(self,name, varexp, elists, options='', bins=None, extra=None, *args, **kwargs):
-#V0         '''plot the plots using eventlists instead of cuts'''
-#V0         plots = odict.OrderedDict()
-
-#V0         cut = extra if extra else ''
-#V0         for c,l in elists.iteritems():
-#V0             self._chain.SetEntryList(l)
-#V0             plots[c] = self.plot('%s_%s' % (name,c),varexp,cut,options,bins,*args, **kwargs) 
-
-#V0         # restore the preselection
-#V0         self._chain.SetEntryList(self._elist if self._elist else 0x0)
-
-#V0         return plots
+        views = self.views(cuts)
+        return odict.OrderedDict([( n,v.yields(options=options) ) for n,v in views.iteritems()])
 
     #---
     def plotsflow(self, name, varexp, cuts, options='', bins=None, *args, **kwargs):
 
-#V0         # make the entries
-#V0         elists = self._makeentrylists(cuts)
-#V0         
-#V0         # add the weight and get the yields
-#V0         plots = self._plotsfromentries(name,varexp,elists,options,bins,*args, **kwargs)
-
-#V0         # delete the lists
-#V0         self._delroots(elists)
-
-#V0         return plots
-        elists = self.views(cuts)
-        return odict.OrderedDict([( n,v.plot('%s_%s' % (name,n),varexp,cuts,options,bins) ) for n,v in elists.iteritems()])
+        views = self.views(cuts)
+        return odict.OrderedDict([( n,v.plot('%s_%s' % (name,n),varexp,cuts,options,bins) ) for n,v in views.iteritems()])
 
     #--- 
     def fill(self, h, varexp, cut='', options='', *args, **kwargs):
@@ -700,7 +591,6 @@ class TreeView:
     def __repr__(self):
         return '%s(w=%r,c=%r,%d)' % (self.__class__.__name__,self._worker, self._expcut, self.entries())
 
-
     # ---
     @property
     def name():
@@ -744,24 +634,4 @@ class TreeView:
 
         v._expcut = '(%s) && (%s)' % (self._expcut,cut) if self._expcut else cut
         return v
-
-
-
-
-
-# helper class 
-# class sample:
-#     def __init__(self, **kwargs):
-#         self.tree      = ''
-#         self.files     = []
-#         self.selection = ''
-#         self.weight    = ''
-#         self.title     = ''
-
-#         for k,v in kwargs.iteritems():
-#             if not hasattr(self,k): continue
-#             setattr(self,k,v)
-
-   
-
 
