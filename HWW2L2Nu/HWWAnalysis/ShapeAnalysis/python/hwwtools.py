@@ -114,6 +114,15 @@ def getChain( sample, mass, path, tag='Data2011', tname='latino' ):
     
     return chain
 
+def setDebugLevel(opt):
+    if not opt.debug:
+        pass
+    elif opt.debug == 2:
+        print 'Logging level set to DEBUG (%d)' % opt.debug
+        logging.basicConfig(level=logging.DEBUG)
+    elif opt.debug == 1:
+        print 'Logging level set to INFO (%d)' % opt.debug
+        logging.basicConfig(level=logging.INFO)
     
 #---
 def loadOptDefaults(parser,pycfg=None,quiet=False):
