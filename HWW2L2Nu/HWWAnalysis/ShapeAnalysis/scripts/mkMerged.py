@@ -29,7 +29,7 @@ class ShapeMerger:
         self.histograms = {}
         self.processes = []
         self._simask = simask
-        self._fillEmptyBins = fillEmptyBins
+        self.fillEmptyBins = fillEmptyBins
 
     def add(self,s):
         # add a collection to be summed
@@ -74,7 +74,7 @@ class ShapeMerger:
 
             # remove the negative bins before storing it
             self._removeNegativeBins(h)
-            if self._fillEmptyBins: self._fillEmptyBins(h)
+            if self.fillEmptyBins and "Data" not in n: self._fillEmptyBins(h)
             self.histograms[n] = h
 
 
@@ -150,8 +150,8 @@ class ShapeMerger:
         for i in xrange(1,h.GetNbinsX()+1):
             c = h.GetBinContent(i)
             if c < 0.00001:
-                h.SetAt(0.001,i)
-                h.SetBinError(i,0.001)
+                h.SetAt(0.001*integral,i)
+                h.SetBinError(i,0.001*integral)
             
         if h.Integral() > 0:
             h.Scale(integral/h.Integral())
