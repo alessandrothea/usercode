@@ -14,10 +14,10 @@ plot_tmpl = '''
 #     mkdir -p plots
 #     root -b -l -q '{mypath}/PlotLimit.C+g("limits/{option}_shape.summary","plots/{tag}_{name}_{option}","{lumi} fb^{{-1}}", 110, 160, 0, 0, "H #rightarrow WW #rightarrow 2l2#nu" , 0)'
     mkdir -p tables
-    pdflatex --output-directory tables limits/{option}_shape.tex
-    rename {option} {tag}_{name}_{option} tables/{option}_shape*
-    pdfcrop tables/{tag}_{name}_{option}_shape.pdf
-    convert -density 200x200 tables/{tag}_{name}_{option}_shape-crop.pdf tables/{tag}_{name}_{option}_shape-crop.png
+#    pdflatex --output-directory tables limits/{option}_shape.tex
+#    rename {option} {tag}_{name}_{option} tables/{option}_shape*
+#    pdfcrop tables/{tag}_{name}_{option}_shape.pdf
+#    convert -density 200x200 tables/{tag}_{name}_{option}_shape-crop.pdf tables/{tag}_{name}_{option}_shape-crop.png
     rm -r `dir -1 tables/* | grep -v crop`
 '''
 
@@ -68,12 +68,15 @@ def runTheShape():
     hwwtools.loadAndCompile(macropath+'/tdrstyle.C')
     hwwtools.loadAndCompile(macropath+'/PlotLimit.C')
 
+    data = '8'
+    if int(opt.lumi)<10: data = '7'
     pars = {
         'tag' : tag,
         'option' : '',
         'mypath' : mypath,
         'name' : name,
-        'lumi' : opt.lumi
+        'lumi' : opt.lumi,
+        'data' : data
     }
     print pars
     os.system('mkdir -p plots')
@@ -87,31 +90,32 @@ def runTheShape():
 
         ROOT.gROOT.SetBatch(True)
         ROOT.setTDRStyle()
-        ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
-                       "plots/{tag}_{name}_{option}".format(**pars),
-                       "{lumi} fb^{{-1}}".format(**pars), 
-                       110, 600, 1, 1, 
-                       "H #rightarrow WW #rightarrow 2l2#nu",
-                       True, 0, 'pdf')
-        ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
-                       "plots/{tag}_{name}_{option}".format(**pars),
-                       "{lumi} fb^{{-1}}".format(**pars), 
-                       110, 600, 1, 1, 
-                       "H #rightarrow WW #rightarrow 2l2#nu",
-                       True, 0, 'png')
-        ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
-                       "plots/{tag}_{name}_{option}".format(**pars),
-                       "{lumi} fb^{{-1}}".format(**pars),
-                       110, 250, 0, 1,
-                       "H #rightarrow WW #rightarrow 2l2#nu",
-                       True, 0, 'pdf')
-        ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
-                       "plots/{tag}_{name}_{option}".format(**pars),
-                       "{lumi} fb^{{-1}}".format(**pars),
-                       110, 250, 0, 1,
-                       "H #rightarrow WW #rightarrow 2l2#nu",
-                       True, 0, 'png')
-
+        if int(opt.lumi)<22:
+            ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
+                           "plots/{tag}_{name}_{option}".format(**pars),
+                           ("{lumi} fb^{{-1}} ({data} TeV)".format(**pars)), 
+                           110, 600, 1, 1, 
+                           "H #rightarrow WW #rightarrow 2l2#nu",
+                           True, 0, 'pdf')
+            ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
+                           "plots/{tag}_{name}_{option}".format(**pars),
+                           ("{lumi} fb^{{-1}} ({data} TeV)".format(**pars)),
+                           110, 600, 1, 1,
+                           "H #rightarrow WW #rightarrow 2l2#nu",
+                           True, 0, 'png')
+        else:
+            ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
+                           "plots/{tag}_{name}_{option}".format(**pars),
+                           "default",
+                           110, 600, 1, 1,
+                           "H #rightarrow WW #rightarrow 2l2#nu",
+                           True, 0, 'pdf')
+            ROOT.PlotLimit("limits/{option}_shape.summary".format(**pars),
+                           "plots/{tag}_{name}_{option}".format(**pars),
+                           "default",
+                           110, 600, 1, 1, 
+                           "H #rightarrow WW #rightarrow 2l2#nu",
+                           True, 0, 'png')
 #     p.communicate()
 #     os.system('; '.join(commands))
     

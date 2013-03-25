@@ -52,6 +52,7 @@ def main():
 
     allcards = [(mass,os.path.join(indir,tmpl.format(mass=mass, tag=tag, lumi=opt.lumi))) for mass in masses] 
     for mass,card in allcards:
+        if ((int(opt.lumi)<10 or int(opt.lumi)>22) and (int(mass)==145 or int(mass)==155)): continue
         if not os.path.exists(card):
             print 'Error: missing datacard: '+card
             sys.exit(-1)
@@ -60,6 +61,8 @@ def main():
 
     tagname = 'HWW_'+tag+'_shape'
     for mass,card in allcards:
+        print opt.lumi, mass
+        if ((int(opt.lumi)<10 or int(opt.lumi)>22) and (int(mass)==145 or int(mass)==155)): continue
         exe  = 'combine -v 2 -M Asymptotic'
         flags = ' -n %s -m %s %s'%(tagname,mass,card)
         if opt.stepping:
