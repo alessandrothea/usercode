@@ -345,7 +345,7 @@ class ShapeFactory:
                     print '-'*80
 
                     # define samples here and remove DYLL from DF and DYTT from SF
-                    samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
+                    samples = hwwsamples.samples(mass,self._energy,self._dataTag, self._sigTag, self._mcTag)
                     if (flavor=='em' or flavor=='me'):
                         if 'DYLL'              in samples: samples.pop('DYLL')
                         if 'DYLL-template'     in samples: samples.pop('DYLL-template')
@@ -436,7 +436,7 @@ class ShapeFactory:
                     pars['nick'] = nicks[syst] if nicks else syst
 
                     # define samples here and remove DYLL from DF and DYTT from SF
-                    samples = hwwsamples.samples(mass, self._dataTag, self._sigTag, self._mcTag)
+                    samples = hwwsamples.samples(mass, self._energy, self._dataTag, self._sigTag, self._mcTag)
                     # remove the dirname
                     for tag,files in samples.iteritems():
                         samples[tag] = map(os.path.basename,files)
@@ -933,6 +933,7 @@ if __name__ == '__main__':
     try:
 #    if True:
         checks = [
+            ('energy'         , 'Energy not defined')            , 
             ('sigset'         , 'Signal not defined')            , 
             ('mcset'          , 'MonteCarlo not defined')        , 
             ('dataset'        , 'Dataset not defined')           , 
@@ -979,6 +980,7 @@ if __name__ == '__main__':
         factory._paths['bdtl']  = bdtDir
         factory._paths['bdts']  = bdtDir
 
+        factory._energy    = opt.energy
         factory._dataTag   = opt.dataset
         factory._sigTag    = opt.sigset
         factory._mcTag     = opt.mcset

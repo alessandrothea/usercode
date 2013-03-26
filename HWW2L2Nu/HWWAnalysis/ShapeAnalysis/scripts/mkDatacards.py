@@ -30,7 +30,7 @@ from systematicUncertainties import getCommonSysts,addFakeBackgroundSysts,floatN
 #             return value
 
 class ShapeDatacardWriter:
-    _logger = logging.getLogger('ShapeDatacardWriter')
+    _log = logging.getLogger('ShapeDatacardWriter')
 
     '''Dump a crappy datacard to file'''
     
@@ -58,7 +58,7 @@ class ShapeDatacardWriter:
         card.write('-'*100+'\n')
         card.write('bin         %s' % self._bin+'\n')
         if 'Data' not in yields:
-            self._logger.warning( 'Yields: '+','.join(yields.keys()) )
+            self._log.warning( 'Yields: '+','.join(yields.keys()) )
             raise RuntimeError('No Data found!')
         card.write('observation %.0f\n' % yields['Data']._N)
         # replace the second * with the bin?
@@ -120,7 +120,7 @@ class ShapeLoader:
     '''Load the histogram data from the shape file
     + Yields
     + Nuisance shapes and parameters'''
-    _logger = logging.getLogger('ShapeLoader')
+    _log = logging.getLogger('ShapeLoader')
 
     def __init__(self, path):
         self._src = ROOT.TFile.Open(path)
@@ -199,7 +199,7 @@ class ShapeLoader:
         self._effects = ups
 
 class NuisanceMapBuilder:
-    _logger = logging.getLogger('NuisanceMapBuilder')
+    _log = logging.getLogger('NuisanceMapBuilder')
 
     def __init__(self, ddPath, noWWddAbove, shape=True, isssactive=False):
         self._common       = OrderedDict()
@@ -393,7 +393,7 @@ class NuisanceMapBuilder:
 #             if m:
 #                 print m.group(1), self.statShapeVeto
             if m and m.group(1) in self.statShapeVeto:
-                self._logger.info( 'Skipping %s (vetoed, data driven)', eff )
+                self._log.info( 'Skipping %s (vetoed, data driven)', eff )
                 continue
             tag = eff
             if tag in nuisances: del nuisances[tag]
@@ -448,8 +448,10 @@ class NuisanceMapBuilder:
 
         if jetcat not in ['0j','1j','2j']: raise ValueError('Unsupported jet category found: %s')
 
-        suffix = '_8TeV'
-        if '2011' in opt.dataset: suffix = '_7TeV'
+#         suffix = '_8TeV'
+#         if '2011' in opt.dataset: suffix = '_7TeV'
+
+        suffix = '_'+opt.energy
 
         CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, self._shape, optMatt, suffix, self._isssactive)
         if self._shape:

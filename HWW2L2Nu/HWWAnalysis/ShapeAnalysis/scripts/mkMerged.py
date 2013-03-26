@@ -90,9 +90,6 @@ class ShapeMerger:
         sisignals = [ n for n in self.processes if injRegex.match(n) ]
         backgrounds = [ n for n in self.histograms if n not in sisignals and n not in signals and nomRegex.match(n) ]
 
-#         print sisignals
-#         print backgrounds
-
 
         # filter the sisignals on simask
         injected = [ n for n in sisignals if n[:-3] in self._simask ] if self._simask else sisignals 
@@ -108,8 +105,6 @@ class ShapeMerger:
             self._logger.debug('SI: adding %s',n)
             pseudo.Add(self.histograms[n])
 
-#         for n in injected:
-#             self.histograms.pop(n)
         # remove the injected from the histograms and processes
         map(self.histograms.pop,   sisignals)
         map(self.processes.remove, sisignals)
@@ -376,14 +371,13 @@ class ShapeMixer:
         return morphed
 
 
-#     def mix(self, cat, flavor):
+    # ---
     def mix(self, chan):
         # mixing histograms
 
         self._connect()
 
-        suffix = '_8TeV'
-        if '2011' in opt.dataset: suffix = '_7TeV'
+        suffix = '_'+opt.energy
 
         # -----------------------------------------------------------------
         # Nominal shapes
