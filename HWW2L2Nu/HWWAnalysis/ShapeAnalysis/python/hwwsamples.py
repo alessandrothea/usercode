@@ -160,6 +160,7 @@ mcsets = {
         # bkgs
         #'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL',
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYee','DYmm',
+        'VVV',
         # templates
         'VgS-template','Vg-template',
     ],
@@ -168,12 +169,33 @@ mcsets = {
         'ggH','vbfH','wH','zH','ttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT',
+        'VVV',
         # templates
         'VgS-template','Vg-template',
         # 2j specific
         #('WJet-template',    'WJet-template-2j'),              #    A   <-   sorgente
         #('WJet-templatesyst','WJet-templatesyst-2j')           #    mkmerged vuole "-template"
     ],
+
+    'zh4j_mm' : [
+        #signals
+        'ggH','vbfH','wH','zH','ttH',
+        # bkgs
+        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYee','DYmm','DYTT'
+        'VVV',
+        # templates
+        'VgS-template','Vg-template',
+    ],
+   'zh4j_ee' : [
+        #signals
+        'ggH','vbfH','wH','zH','ttH',
+        # bkgs
+        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYee','DYmm','DYTT'
+        'VVV',
+        # templates
+        'VgS-template','Vg-template',
+    ],
+
 }
 
 #--------------
