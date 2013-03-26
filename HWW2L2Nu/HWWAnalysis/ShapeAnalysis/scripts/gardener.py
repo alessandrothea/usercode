@@ -18,6 +18,9 @@ from tree.dymvaVar          import DymvaVarFiller
 from tree.xyShift           import XYShiftVarFiller
 from tree.higgsLineShape    import HiggsLineshapeWeightAdder
 from tree.jetHiggsVar       import JetHiggsVarFiller
+from tree.vbfMVAVar         import VbfMVAVarFiller
+from tree.manyJetsHiggsVar  import ManyJetsHiggsVarFiller
+
 
 
 
@@ -25,25 +28,27 @@ if __name__ == '__main__':
 
     
     modules = ModuleManager()
-    modules['filter']          = Pruner()
-    modules['adder']           = Grafter()
-    modules['alias']           = AliasGrafter()
-    modules['rootweighter']    = RootWeighter()
-    modules['wwfilter']        = WWPruner()
-    modules['wwflagger']       = WWFlagsGrafter()
-    modules['puadder']         = PUpper()
-    modules['effwfiller']      = EffLepFiller()
-    modules['efftfiller']      = EffTrgFiller()
-    modules['susyVar']         = SusyVarFiller()
-    modules['mTVar']           = MTVarFiller()
-    modules['chessVar']        = ChessVarGrafter()
-    modules['unBoostedVar']    = UnBoostedVarFiller()
-    modules['WobblyBinVar']    = WobblyBinVarGrafter()
-    modules['likelihoodQGVar'] = likelihoodQGVarFiller()
-    modules['susyVar2B2LMET']  = SusyVar2B2LMETFiller()
-    modules['dymvaVar']        = DymvaVarFiller()
-    modules['xyShift']         = XYShiftVarFiller()
-    modules['higgsLS']         = HiggsLineshapeWeightAdder()
-    modules['jetHiggsVar']     = JetHiggsVarFiller()
+    modules['filter']           = Pruner()
+    modules['adder']            = Grafter()
+    modules['alias']            = AliasGrafter()
+    modules['rootweighter']     = RootWeighter()
+    modules['wwfilter']         = WWPruner()
+    modules['wwflagger']        = WWFlagsGrafter()
+    modules['puadder']          = PUpper()
+    modules['effwfiller']       = EffLepFiller()
+    modules['efftfiller']       = EffTrgFiller()
+    modules['susyVar']          = SusyVarFiller()
+    modules['mTVar']            = MTVarFiller()
+    modules['chessVar']         = ChessVarGrafter()
+    modules['unBoostedVar']     = UnBoostedVarFiller()
+    modules['WobblyBinVar']     = WobblyBinVarGrafter()
+    modules['likelihoodQGVar']  = likelihoodQGVarFiller()
+    modules['susyVar2B2LMET']   = SusyVar2B2LMETFiller()
+    modules['dymvaVar']         = DymvaVarFiller()
+    modules['xyShift']          = XYShiftVarFiller()
+    modules['higgsLS']          = HiggsLineshapeWeightAdder()
+    modules['jetHiggsVar']      = JetHiggsVarFiller()
+    modules['vbfMVAVar']        = VbfMVAVarFiller()
+    modules['manyJetsHiggsVar'] = ManyJetsHiggsVarFiller()
 
     gardener_cli( modules )
