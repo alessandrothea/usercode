@@ -3,6 +3,9 @@ import re
 
 
 backgrounds = {
+    'VVV'                     : ['nominals/latino_092_WWWJets.root',
+                                 'nominals/latino_091_WWZJets.root',
+                                ],
     'WW'                      : ['nominals/latino_000_WWJets2LMad.root'],
     'ggWW'                    : ['nominals/latino_001_GluGluToWWTo4L.root'],
     'VgS'                     : ['nominals/latino_082_WGstarToElNuMad.root',
@@ -52,9 +55,11 @@ backgrounds = {
     'DYLL'                    : ['nominals/latino_036_DY10toLLMad.root',
                                  'nominals/latino_037_DY50toLLMad.root',
                                 ],
-    'DYee'                    : ['nominals/latino_000_WWJets2LMad.root',   # dummy, just to have the histogram in cut based
+    'DYmm'                    : ['nominals/latino_036_DY10toLLMad.root',
+                                 'nominals/latino_037_DY50toLLMad.root',
                                 ],
-    'DYmm'                    : ['nominals/latino_000_WWJets2LMad.root',   # dummy, just to have the histogram in cut based
+    'DYee'                    : ['nominals/latino_036_DY10toLLMad.root',
+                                 'nominals/latino_037_DY50toLLMad.root',
                                 ],
     'DYLL-template-0j1j'      : ['dyTemplate/latino_036_DY10toLLMad.root',
                                  'dyTemplate/latino_037_DY50toLLMad.root',

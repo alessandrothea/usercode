@@ -127,7 +127,10 @@ mcsets = {
         'ggH','vbfH','wzttH',
         # bkgs
         #'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL',
-        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYee','DYmm',
+        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT',
+        # dummy
+        ('DYee', 'WW'),
+        ('DYmm', 'WW'),
         # systematics
         'WJetFakeRate-nominal',
         ('WJetFakeRate-eUp', 'WJetFakeRate-nominal'),
@@ -158,9 +161,11 @@ mcsets = {
         #signals
         'ggH','vbfH','wH','zH','ttH',
         # bkgs
-        #'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL',
-        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYee','DYmm',
+        'WW','ggWW','VgS','Vg','WJet','Top','VV',
         'VVV',
+         # dummy
+        ('DYee', 'WW'),
+        ('DYmm', 'WW'),
         # templates
         'VgS-template','Vg-template',
     ],
@@ -181,8 +186,11 @@ mcsets = {
         #signals
         'ggH','vbfH','wH','zH','ttH',
         # bkgs
-        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYee','DYmm','DYTT'
+        'WW','ggWW','VgS','Vg','WJet','Top','VV',
         'VVV',
+         # dummy
+        ('DYee', 'WW'),
+        ('DYmm', 'WW'),
         # templates
         'VgS-template','Vg-template',
     ],
@@ -190,8 +198,11 @@ mcsets = {
         #signals
         'ggH','vbfH','wH','zH','ttH',
         # bkgs
-        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYee','DYmm','DYTT'
+        'WW','ggWW','VgS','Vg','WJet','Top','VV',
         'VVV',
+         # dummy
+        ('DYee', 'WW'),
+        ('DYmm', 'WW'),
         # templates
         'VgS-template','Vg-template',
     ],
