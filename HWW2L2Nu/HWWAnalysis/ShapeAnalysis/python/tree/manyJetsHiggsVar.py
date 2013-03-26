@@ -6,8 +6,8 @@ import sys
 import ROOT
 import numpy
 import re
-import warnings
 import os.path
+import math
 from math import *
 from array import array;
 
@@ -37,7 +37,7 @@ from array import array;
 
 class ManyJetsHiggsVarFiller(TreeCloner):
 
-
+    
     def __init__(self):
         pass
 
@@ -57,6 +57,12 @@ class ManyJetsHiggsVarFiller(TreeCloner):
     def checkOptions(self,opts):
         pass
 
+    @staticmethod
+    def _deltamassw( jets ):
+        mW = 80.385
+        return math.fabs( mW - (jets[0] + jets[1]).M() )
+        
+
     def process(self,**kwargs):
         tree  = kwargs['tree']
         input = kwargs['input']
@@ -66,7 +72,6 @@ class ManyJetsHiggsVarFiller(TreeCloner):
         newbranches = ['m4j', 'm3j', 'mW1jj', 'mW2jj', 'pt4j', 'pt3j', 'eta4j', 'eta3j', 'phi4j', 'phi3j', 'dphill4j',  'dphill3j']
         self.clone(output,newbranches)
 
-        mW = 80.385
 
 
         m4j           = numpy.ones(1, dtype=numpy.float32)
@@ -137,10 +142,12 @@ class ManyJetsHiggsVarFiller(TreeCloner):
             jet4 = ROOT.TLorentzVector()
             jet4.SetPtEtaPhiM(itree.jetpt4, itree.jeteta4, itree.jetphi4, 0)
 
-            jetSum4 = ROOT.TLorentzVector()
+            jets = [jet1,jet2,jet3,jet4]
+
+#             jetSum4 = ROOT.TLorentzVector()
             jetSum4 = jet1 + jet2 + jet3 + jet4
 
-            jetSum3 = ROOT.TLorentzVector()
+#             jetSum3 = ROOT.TLorentzVector()
             jetSum3 = jet1 + jet2 + jet3
 
             l1 = ROOT.TLorentzVector()
@@ -153,49 +160,53 @@ class ManyJetsHiggsVarFiller(TreeCloner):
             ll = l1+l2;
 
 
-            mW1jj[0] = -999
-            mW2jj[0] = -999
-            m4j[0] = -999
-            m3j[0] = -999
-            pt4j[0] = -999
-            pt3j[0] = -999
-            eta4j[0] = -999
-            eta3j[0] = -999
-            phi4j[0] = -999
-            phi3j[0] = -999
+            mW1jj[0]    = -999
+            mW2jj[0]    = -999
+            m4j[0]      = -999
+            m3j[0]      = -999
+            pt4j[0]     = -999
+            pt3j[0]     = -999
+            eta4j[0]    = -999
+            eta3j[0]    = -999
+            phi4j[0]    = -999
+            phi3j[0]    = -999
             dphill4j[0] = -999
             dphill3j[0] = -999
 
             if (jetpt4 > 0) :
-               m4j[0]      = jetSum4.M()
-               pt4j[0]     = jetSum4.Pt()
-               eta4j[0]    = jetSum4.Eta()
-               phi4j[0]    = jetSum4.Phi()
-               dphill4j[0] = jetSum4.DeltaPhi(ll)
+                m4j[0]      = jetSum4.M()
+                pt4j[0]     = jetSum4.Pt()
+                eta4j[0]    = jetSum4.Eta()
+                phi4j[0]    = jetSum4.Phi()
+                dphill4j[0] = jetSum4.DeltaPhi(ll)
 
-              (mA1, mA2) = math.fabs( MW - (jet1 + jet2).M() ), math.fabs( MW - (jet3 + jet4).M() )
-              (mB1, mB2) = math.fabs( MW - (jet1 + jet3).M() ), math.fabs( MW - (jet2 + jet4).M() )
-              (mC1, mC2) = math.fabs( MW - (jet1 + jet4).M() ), math.fabs( MW - (jet2 + jet3).M() )
+                # list of all possible couples
+                sjets = sorted([ (jets[i],jets[j]) for i in xrange(4) for j in xrange(4) if i<j], key=self._deltamassw)
 
-              # choose best pair: the pair with one of the two W-candidates nearest to MW 
+#                 for jA,jB in sjets:
+#                     print (jA+jB).M(),'->', self._deltamassw( (jA,jB) )
 
-              if A:
-                W1 = jet1 + jet2
-                W2 = jet3 + jet4
+                # choose best pair: the pair with one of the two W-candidates nearest to MW 
+                best = sjets[0]
+                # the companion is made of the other 2 jets
+                other = tuple( [j for j in jets if j not in best] )
+            
+                W1 = best[0] + best[1]
+                W2 = other[0]+other[1]
                 if W1.Pt() > W2.Pt() :
-                   mW1jj[0] = W1.M()
-                   mW2jj[0] = W2.M()
+                    mW1jj[0] = W1.M()
+                    mW2jj[0] = W2.M()
                 else :
-                   mW1jj[0] = W2.M()
-                   mW2jj[0] = W1.M()
+                    mW1jj[0] = W2.M()
+                    mW2jj[0] = W1.M()
 
 
             if (jetpt3 > 0) :
-               m3j[0]      = jetSum3.M()
-               pt3j[0]     = jetSum3.Pt()
-               eta3j[0]    = jetSum3.Eta()
-               phi3j[0]    = jetSum3.Phi()
-               dphill3j[0] = jetSum3.DeltaPhi(ll)
+                m3j[0]      = jetSum3.M()
+                pt3j[0]     = jetSum3.Pt()
+                eta3j[0]    = jetSum3.Eta()
+                phi3j[0]    = jetSum3.Phi()
+                dphill3j[0] = jetSum3.DeltaPhi(ll)
 
 
             otree.Fill()
