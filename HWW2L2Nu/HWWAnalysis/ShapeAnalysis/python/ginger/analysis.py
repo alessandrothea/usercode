@@ -256,6 +256,11 @@ class TreeAnalyser(object):
         return self._worker
 
     #---
+    @property
+    def views(self):
+        return self._views
+
+    #---
     def cutstring(self,name, extra=None):
         i = self._cuts.index(name)
 
@@ -365,6 +370,12 @@ class TreeAnalyser(object):
         del self._cuts[name]
         self._modified = True
 
+    #---
+    def update(self, cutflow):
+        self._cuts.update(cutflow)
+        self._modified = True
+    
+    #--- 
     def entries(self):
         return self._worker.entries()
         

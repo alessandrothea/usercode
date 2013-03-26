@@ -207,9 +207,9 @@ class list_maker:
 def addOptions(parser):
     parser.add_option('-l', '--lumi'     , dest='lumi'        , help='Luminosity'                            , default=None   , type='float'   )
     parser.add_option('-v', '--variable' , dest='variable'    , help='variable'                              , default=None )
-#     parser.add_option('-m', '--mass'     , dest='mass'        , help='run on one mass point only '           , default=0      , type='int'     )
     parser.add_option('-m', '--mass'     , dest='mass'        , help='run on one mass point only '           , default=hwwinfo.masses[:]      , type='string' , action='callback' , callback=list_maker('mass',',',int))
     parser.add_option('-d', '--debug'    , dest='debug'       , help='Debug level'                           , default=0      , action='count' )
     parser.add_option('-c', '--chans'    , dest='chans'       , help='list of channels'                      , default=['0j'] , type='string' , action='callback' , callback=list_maker('chans'))
+    parser.add_option('-E', '--energy'   , dest='energy'      , help='Energy'                                , default='8TeV' , type='string')
     parser.add_option('--pycfg'          , dest='pycfg'       , help='configuration file (default=%default)' , default='shape.py')
 

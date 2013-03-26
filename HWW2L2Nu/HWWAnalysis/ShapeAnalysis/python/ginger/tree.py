@@ -486,18 +486,23 @@ class TreeWorker:
 
     #---
     def yieldsflow(self, cuts, options=''):
-        '''Does it make sense to have a double step?
-        In a way yes, because otherwise one would have to loop over all the events for each step
+        '''Does it make sense to have a double step?  In a way yes, because
+        otherwise one would have to loop over all the events for each step
         '''
 
         views = self.views(cuts)
-        return odict.OrderedDict([( n,v.yields(options=options) ) for n,v in views.iteritems()])
+        return odict.OrderedDict(
+            [( n,v.yields(options=options) ) for n,v in views.iteritems()]
+        )
 
     #---
     def plotsflow(self, name, varexp, cuts, options='', bins=None, *args, **kwargs):
 
         views = self.views(cuts)
-        return odict.OrderedDict([( n,v.plot('%s_%s' % (name,n),varexp,cuts,options,bins) ) for n,v in views.iteritems()])
+        return odict.OrderedDict(
+            [( n,v.plot('%s_%s' % (name,n),varexp,cuts,options,bins) ) for n,v in views.iteritems()]
+        )
+
 
     #--- 
     def fill(self, h, varexp, cut='', options='', *args, **kwargs):
@@ -606,22 +611,22 @@ class TreeView:
         return TreeView.Sentry(self._worker,self._elist)
     
     # ---
-    def entries(self,extracut=None):
+    def entries(self,extra=None):
         # get the entries from worker after setting the entrylist
         sentry = self._sentry()
-        return self._worker.entries(extracut)
+        return self._worker.entries(extra)
 
     # ---
-    def yields(self, extracut='', options='', *args, **kwargs):
+    def yields(self, extra='', options='', *args, **kwargs):
         # set temporarily my entrlylist
         sentry = self._sentry()
-        return self._worker.yields(extracut, options, *args, **kwargs)
+        return self._worker.yields(extra, options, *args, **kwargs)
 
     # ---
-    def plot(self, name, varexp, extracut='', options='', bins=None, *args, **kwargs):
+    def plot(self, name, varexp, extra='', options='', bins=None, *args, **kwargs):
         # set temporarily my entrlylist
         sentry = self._sentry()
-        return self._worker.plot(name, varexp, extracut, options, bins, *args, **kwargs)
+        return self._worker.plot(name, varexp, extra, options, bins, *args, **kwargs)
     
     # ---
     def spawn(self,cut,name=None):
