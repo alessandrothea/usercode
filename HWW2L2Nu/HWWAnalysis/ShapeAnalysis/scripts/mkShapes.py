@@ -39,6 +39,7 @@ class ShapeFactory:
         ranges['mth-mll-hilospin'] = self._getMllMth2DSpinrange
         ranges['mth-mll-hilospin-withControlRegion']  = self._getMllMth2DSpinrangeWithControlRegion
         ranges['mth-mll-hilospin-withSSmirrorRegion'] = self._getMllMth2DSpinrangeWithSSmirrorRegion
+        ranges['vhMll-range']        = self._getMllVHrange
         ranges['vhMllBanana-range']  = self._getMllVHrangeWithControlRegion
         ranges['vbfMllBanana-range'] = self._getMllVBFrangeWithControlRegion
 
@@ -111,7 +112,6 @@ class ShapeFactory:
             raise RuntimeError('mll range in VBF for '+str(cat)+' not defined. Must be 2')
 
         return 'mll*((ch1*ch2)<0)-5*((ch1*ch2)>0)'
-
 
 
     # _____________________________________________________________________________
@@ -228,6 +228,16 @@ class ShapeFactory:
 
         #return ([-10,0,12,30,50,70,90,120,150,200,250,300,350,400,500,600],)
         return ([-10,0,12,35,60,90,120,160,200,250,300,350,400,500,600],)
+
+
+    # _____________________________________________________________________________
+    def _getMllVHrange(self,mass,cat):
+
+        if cat not in ['vh2j']:
+            print cat
+            raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
+
+        return ([12,30,50,75,100,150,200],)
 
 
     # _____________________________________________________________________________
@@ -699,8 +709,14 @@ class ShapeFactory:
         # problem with DYTT using embedded for em/me, for ee/mm it is inlcuded in DD DY estimate
         weights['DYTT']              = self._stdWgt
         weights['DYLL']              = self._stdWgt+'*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))*(channel<1.5)'
-        weights['DYee']              = self._stdWgt+'*(channel<1.5)'
-        weights['DYmm']              = self._stdWgt+'*(channel<1.5)'
+
+        # beware:
+        # mumu #    channel == 0
+        # mue #     channel == 3
+        # emu #     channel == 2
+        # ee #      channel == 1
+        weights['DYee']              = self._stdWgt+'*(channel<1.5 && channel>0.5)'
+        weights['DYmm']              = self._stdWgt+'*(channel<0.5 && channel>-0.5)'
         weights['DYLL-template']     = self._stdWgt+'* dyW *(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         weights['DYLL-templatesyst'] = self._stdWgt+'*dyWUp*(1-(( dataset == 36 || dataset == 37 ) && mctruth == 2 ))'
         #systematics
@@ -1018,7 +1034,7 @@ if __name__ == '__main__':
 
             factory._systByWeight = systByWeight
 
-            processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT', 'Other', 'ggH125', 'vbfH125']
+            processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT', 'Other', 'ggH125', 'vbfH125','VVV']
             if '2011' in opt.dataset:
                 processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'jhu', 'jhu_ALT', 'ggH125', 'vbfH125']
 
