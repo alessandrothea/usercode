@@ -3,8 +3,9 @@
 #if !defined (__CINT__) || defined (__MAKECINT__)
 #include "THStack.h"
 #include "TGaxis.h"
-#include "TH1F.h"
-#include "TH2F.h"
+#include "TArrayD.h"
+#include "TH1.h"
+#include "TH2.h"
 #include "TLatex.h"
 #include "TPad.h"
 #include "TCanvas.h"
@@ -26,27 +27,17 @@
 
 #ifdef __MAKECINT__
 #pragma link C++ class std::vector<TH1*>;
+#pragma link C++ class std::vector<TH1F*>;
 #endif
 
-// float xPos[] = {0.0,0.0,0.0,0.0,1.3,1.3,1.3,1.3,2.3,3.0,3.3,0.0,1.3,2.3,3.3,0.0,1.3,2.3,3.3}; 
-// float yOff[] = {  0,  1,  2,  3,  0,  1,  2,  3,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,  5};
+float xPos6[]  = { 0.0 , 0.0 , 0.0 , 1.0 , 1.0 , 1.0 };
+float yOff6[]  = { 0   , 1   , 2   , 0   , 1   , 2   };
 
-float xPos[] = { 0.0 , 0.0 , 0.0 ,  0.0 , 1.3 , 1.3 , 1.3 , 1.3 , 1.3 , 2.3 , 2.3 , 3.3 , 3.3  };
-float yOff[] = {   0 ,   1 ,   2 ,    3 ,   0 ,   1 ,   2 ,   3 ,   4 ,   3 ,   4 ,   3 ,   4  };
+float xPos10[] = { 0.0 , 0.0 , 0.0 , 0.0 , 1.0 , 1.0 , 1.0 , 1.0 , 2.0 , 3.0 };
+float yOff10[] = { 0   , 1   , 2   , 3   , 0   , 1   , 2   , 3   , 3   , 3   };
 
-
-//              1 2 3 4 5 6 7 8 9 101112131415161718
-//                                    12    15
-float xPosA[] = {0,0,0,1,1,1,0,1,2,0,1,2,0,1,2}; 
-float yOffA[] = {0,1,2,0,1,2,3,3,3,4,4,4,5,5,5};
-
-//              1 2 3 4 5 6 7 8 9 101112131415161718
-//                                  11   
-float xPosB[] = {0,0,0,1,1,1,0,1,0,1,2}; 
-float yOffB[] = {0,1,2,0,1,2,3,3,4,4,4};
-
-
-
+float xPosN[]  = { 0.0 , 0.0 , 0.0 , 0.0 , 0.0 , 1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 2.0 , 2.0 , 3.0 , 3.0 };
+float yOffN[]  = { 0   , 1   , 2   , 3   , 4   , 0   , 1   , 2   , 3   , 4   , 3   , 4   , 3   , 4   };
 
 //------------------------------------------------------------------------------
 // GetMaximumIncludingErrors
@@ -84,6 +75,7 @@ class PlotVHqqHggH {
    _labelOffset      = 0.02;
    _titleOffset      = 1.6;
             
+
    _xoffset          = 0.20;
    _yoffset          = 0.06;
    _globalYoffset    = 0.80;
@@ -1312,12 +1304,16 @@ class PlotVHqqHggH {
   }
 
 
-        //---- draw only background -> normalized to 1! ----
-
+  //-------------------------------------------------------------------------------- 
+  // draw only background -> normalized to 1! ----
+  //-------------------------------------------------------------------------------- 
   void DrawNormalized(const int &rebin=1) {
    DrawNormalized(new TCanvas(),rebin);
   }
 
+  //-------------------------------------------------------------------------------- 
+  // draw only background -> normalized to 1! ----
+  //-------------------------------------------------------------------------------- 
   void DrawNormalized(TCanvas *c1, const int &rebin=1) {
    int rebin2 = rebin; //---> just not to have warning :)
    rebin2+=0; 
@@ -1398,13 +1394,16 @@ class PlotVHqqHggH {
 
 
 
-
-        //---- draw ----
-
+  //-------------------------------------------------------------------------------- 
+  // Draw
+  //-------------------------------------------------------------------------------- 
   void Draw(const int &rebin=1,const bool &div=false,  const bool &shadow=true) {
    Draw(new TCanvas(),rebin,div, shadow);
   }
 
+  //-------------------------------------------------------------------------------- 
+  // Draw
+  //-------------------------------------------------------------------------------- 
   void Draw(TCanvas *c1, const int &rebin=1, const bool &div=false, const bool &shadow=true, TCanvas *cAdditional=0) {
             //      std::cout << " rebin = " << rebin << std::endl; 
    int rebin2 = rebin; //---> just not to have warning :)
@@ -1546,45 +1545,40 @@ class PlotVHqqHggH {
    summed->SetFillColor(kBlack);
    summed->SetMarkerSize(0);
 
-   if (_doBandError) {
-    double allTG = 0;
-    for (int iBin = 0; iBin < summed->GetNbinsX(); iBin ++) {
-     /*                     std::cout << " iBin = " << iBin << " :: " << summed->GetNbinsX(); */
-     /*                     std::cout << " => " << (_BandError->GetY()) [iBin] << " / " << summed->GetBinContent(iBin+1) << " = "; */
-     /*                     std::cout << " ( X = " << (_BandError->GetX()) [iBin] << " ) "; */
-     /*                     if (summed->GetBinContent(iBin+1) != 0) std::cout << (_BandError->GetY()) [iBin] / summed->GetBinContent(iBin+1) << std::endl; */
-     /*                     else std::cout << std::endl; */
+   if (shadow) {
+     if (_doBandError) {
+       double allTG = 0;
+       for (int iBin = 0; iBin < summed->GetNbinsX(); iBin ++) {
+         /*                     std::cout << " iBin = " << iBin << " :: " << summed->GetNbinsX(); */
+         /*                     std::cout << " => " << (_BandError->GetY()) [iBin] << " / " << summed->GetBinContent(iBin+1) << " = "; */
+         /*                     std::cout << " ( X = " << (_BandError->GetX()) [iBin] << " ) "; */
+         /*                     if (summed->GetBinContent(iBin+1) != 0) std::cout << (_BandError->GetY()) [iBin] / summed->GetBinContent(iBin+1) << std::endl; */
+         /*                     else std::cout << std::endl; */
 
-     if ((_BandError->GetY()) [iBin]) {
-      allTG += (_BandError->GetY()) [iBin];
-      double alpha =  summed->GetBinContent(iBin+1) / (_BandError->GetY()) [iBin];
+         if ((_BandError->GetY()) [iBin]) {
+           allTG += (_BandError->GetY()) [iBin];
+           double alpha =  summed->GetBinContent(iBin+1) / (_BandError->GetY()) [iBin];
 
-      double Y = (_BandError->GetY()) [iBin];
-      double X = (_BandError->GetX()) [iBin];
-      double errXUp      = _BandError->GetErrorXhigh(iBin);
-      double errXDown    = _BandError->GetErrorXlow(iBin);
-      double errYUp      = _BandError->GetErrorYhigh(iBin);
-      double errYDown    = _BandError->GetErrorYlow(iBin);
+           double Y = (_BandError->GetY()) [iBin];
+           double X = (_BandError->GetX()) [iBin];
+           double errXUp      = _BandError->GetErrorXhigh(iBin);
+           double errXDown    = _BandError->GetErrorXlow(iBin);
+           double errYUp      = _BandError->GetErrorYhigh(iBin);
+           double errYDown    = _BandError->GetErrorYlow(iBin);
 
-      _BandError->SetPoint(iBin, X, alpha*Y);
-      _BandError->SetPointError(iBin, errXDown, errXUp, errYDown * alpha, errYUp * alpha);
+           _BandError->SetPoint(iBin, X, alpha*Y);
+           _BandError->SetPointError(iBin, errXDown, errXUp, errYDown * alpha, errYUp * alpha);
 
+         }
+       }
+       //              summed->Draw("same");
+       _BandError -> SetFillStyle (3345);
+       _BandError -> Draw("E2same");
+       std::cout << " allTG = " << allTG << std::endl;
      }
-    }
-                //              summed->Draw("same");
-    if (shadow) {
-     _BandError -> SetFillStyle (3345);
-     _BandError -> Draw("E2same");
-    }
-    std::cout << " allTG = " << allTG << std::endl;
-   }
-   else {
-    if (shadow) {
-     summed->Draw("sameE2");
-    }
-    else {
-     summed->Draw("same");
-    }
+     else {
+       summed->Draw("sameE2");
+     }
    }
 
    _max = hstack->GetMaximum() * 1.1;
@@ -1786,8 +1780,8 @@ class PlotVHqqHggH {
      else {
       /*                         std::cout << " I'm doing bin = " << i << " and binXerror = " << summed->GetBinWidth(i+1)/2. << " and binCenter = " << summed->GetBinCenter(i+1) << std::endl; */
       rdat->SetBinContent(i+1, rdat->GetBinContent(i+1)/scale);
-                        //                         rref->SetPoint      (i,summed->GetBinCenter(i+1) - summed->GetBinWidth(i+1)/2., summed->GetBinContent(i+1)/scale);
-                        //                         rref->SetPoint      (i,summed->GetBinCenter(i+1), summed->GetBinContent(i+1)/scale);
+      //                         rref->SetPoint      (i,summed->GetBinCenter(i+1) - summed->GetBinWidth(i+1)/2., summed->GetBinContent(i+1)/scale);
+      //                         rref->SetPoint      (i,summed->GetBinCenter(i+1), summed->GetBinContent(i+1)/scale);
       rdat->SetBinError(i+1, rdat->GetBinError(i+1)/scale);
 
       double xx = summed->GetBinCenter(i+1);
@@ -1809,8 +1803,8 @@ class PlotVHqqHggH {
 
 
       if (!_doBandError) {
-       errYup = summed->GetBinError(i+1);
-       errYlo = summed->GetBinError(i+1);
+       errYup = summed->GetBinError(i+1)/summed->GetBinContent(i+1);
+       errYlo = summed->GetBinError(i+1)/summed->GetBinContent(i+1);
        errYlo = errYlo/scale;
        errYup = errYup/scale;
       }
@@ -1823,26 +1817,26 @@ class PlotVHqqHggH {
        errYlo = errYlo/scale;
        errYup = errYup/scale;
 
-                            //                          if (i!=0 && i!=n+1) {
-                            //                           errYup = _BandError->GetErrorYhigh(i-1);  //---- no under/overflow bin!
-                            //                           errYlo = _BandError->GetErrorYlow(i-1);  //---- no under/overflow bin!
-                            //                          }
+       //                          if (i!=0 && i!=n+1) {
+       //                           errYup = _BandError->GetErrorYhigh(i-1);  //---- no under/overflow bin!
+       //                           errYlo = _BandError->GetErrorYlow(i-1);  //---- no under/overflow bin!
+       //                          }
        //                          
-                            //                          rref->SetPointEYhigh (i, errYup/scale);
-                            //                          rref->SetPointEYlow  (i, errYlo/scale);
-                            //                          rref->SetPointEXhigh (i, errXup);
-                            //                          rref->SetPointEXlow  (i, errXlo);
+       //                          rref->SetPointEYhigh (i, errYup/scale);
+       //                          rref->SetPointEYlow  (i, errYlo/scale);
+       //                          rref->SetPointEXhigh (i, errXup);
+       //                          rref->SetPointEXlow  (i, errXlo);
        //                          
-                            //                          std::cout << " ~~~~~~~~~~~~~~~~~~~ " << std::endl;
-                            //                          std::cout << " errYup/scale = " << errYup/scale ;
-                            //                          std::cout << " errYlo/scale = " << errYlo/scale ;
-                            //                          double tempx, tempy;
-                            //                          rref->GetPoint(i, tempx, tempy);
-                            //                          std::cout << " X      = " << tempx;
-                            //                          std::cout << " errXup = " << errXup ;
-                            //                          std::cout << " errXlo = " << errXlo ;
-                            //                          std::cout << std::endl;
-                            //                          std::cout << " summed->GetBinWidth(" << i+1 << ") = " << summed->GetBinWidth(i+1) << std::endl;
+       //                          std::cout << " ~~~~~~~~~~~~~~~~~~~ " << std::endl;
+       //                          std::cout << " errYup/scale = " << errYup/scale ;
+       //                          std::cout << " errYlo/scale = " << errYlo/scale ;
+       //                          double tempx, tempy;
+       //                          rref->GetPoint(i, tempx, tempy);
+       //                          std::cout << " X      = " << tempx;
+       //                          std::cout << " errXup = " << errXup ;
+       //                          std::cout << " errXlo = " << errXlo ;
+       //                          std::cout << std::endl;
+       //                          std::cout << " summed->GetBinWidth(" << i+1 << ") = " << summed->GetBinWidth(i+1) << std::endl;
 
       }
       rref->SetPointError (i,errXlo, errXup, errYlo, errYup); 
@@ -2166,6 +2160,9 @@ class PlotVHqqHggH {
   }
 
 
+  //
+  // Get Data histogram
+  //
   TH1* GetDataHist() { 
 
    if(_data) _data->SetLineColor  (kBlack);
@@ -2173,13 +2170,17 @@ class PlotVHqqHggH {
    return _data; 
   }
 
+  //
+  // Get the sum of mc histograms 
+  //
   TH1 *GetSummedMCHist() {
 
-   if ( _nbins == -1 && _vectTHBkg.size() != 0) {
-    _nbins  = _vectTHBkg.at(0)->GetNbinsX();
-    _low    = _vectTHBkg.at(0)->GetXaxis()->GetBinLowEdge(1);
-    _high   = _vectTHBkg.at(0)->GetBinLowEdge(_nbins+1);
-   }
+    if ( _nbins == -1 && _vectTHBkg.size() != 0) {
+      _nbins  = _vectTHBkg.at(0)->GetNbinsX();
+      _low    = _vectTHBkg.at(0)->GetXaxis()->GetBinLowEdge(1);
+      _high   = _vectTHBkg.at(0)->GetBinLowEdge(_nbins+1);
+      _vectTHBkg.at(0)->GetXaxis()->GetXbins()->Copy(this->_xbins);
+    }
 
    if(gROOT->FindObject("hMC")) {
     gROOT->FindObject("hMC")->Delete();
@@ -2191,9 +2192,11 @@ class PlotVHqqHggH {
      Xedge[iEdg] = _vEdges.at(iEdg);
     }
     hMC= new TH1D("hMC","hMC",_nbins, Xedge);
-   }
-   else {
-    hMC = new TH1D("hMC","hMC",_nbins,_low,_high);
+   } else {
+	  if (_xbins.GetSize() == 0)
+		hMC = new TH1D("hMC","hMC",_nbins,_low,_high);
+	  else
+		hMC = new TH1D("hMC","hMC",_nbins,_xbins.fArray);
    }
    hMC->Sumw2();
    for (unsigned int iBkg = 0; iBkg<_vectTHBkg.size(); iBkg++) {
@@ -2212,6 +2215,9 @@ class PlotVHqqHggH {
    return hMC;   
   }
 
+  //---
+  // Get the stack histogram
+  //---
   THStack* GetStack(bool isLog) {
    THStack* hstack = new THStack();
             //             float binWidth = 0;
@@ -2332,41 +2338,73 @@ class PlotVHqqHggH {
 
   void DrawLabels(bool plotData=true) {
 
-            // total mess to get it nice, should be redone
+   // total mess to get it nice, should be redone
    size_t j=0;
 
-   float *pos,*off;
-   int sampCount = GetSampCount();
-//             if(sampCount == 12 || sampCount == 15) { pos = xPosA; off = yOffA; }
-//             else if(sampCount == 11 )              { pos = xPosB; off = yOffB; }
-//             else                                   { pos = xPos;  off = yOff;  }
-   pos = xPos;  off = yOff;
-   float x0=0.22; float wx=0.19;
-   if(_data   && plotData     ) { 
-    DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _data,                  " data",                "lp");
-    j++; 
-   }
-   else {
-                //              if (plotData == false) j++;
-   }
-   for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) {
-    if (_mergeSignal == 0 ||  iSig == (_vectTHstackSig.size()-1)) {
-     if (_mergeSignal == 1) {
-      TString name4Legend;
-      if (_mass == -1) {
-       name4Legend = Form ("Higgs");
-      }
-      else {
-       name4Legend = Form ("Higgs %d GeV", _mass);
-      }
-      DrawLegend(x0+pos[1]*wx, _globalYoffset - off[1]*_yoffset, _vectTHstackSig.at(iSig)         , name4Legend.Data() ,           "l" );
-     }
-     else {
-      DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHstackSig.at(iSig)         , _vectNameSig.at(iSig) ,           "l" );
-     }
+    float *pos,*off;
+    int sampCount = GetSampCount();
+
+    std::cout << "sampCount" << sampCount  << std::endl;
+
+    if (sampCount < 7 )         { pos = xPos6 ; off = yOff6 ; }
+    else if ( sampCount < 11 )  { pos = xPos10; off = yOff10; }
+    else                        { pos = xPosN ; off = yOffN ; }
+    float x0=0.22; float wx=0.19;
+    if(_data   && plotData     ) { 
+      DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _data,                  " data",                "lp");
+      j++; 
     }
-    j++;
-   }
+    else {
+      //              if (plotData == false) j++;
+    }
+
+    // plot signals
+    if ( _mergeSignal == 1 ) { 
+      TString name4Legend = (_mass == -1) ? Form("Higgs") : Form ("H^{ %d}", _mass);
+      unsigned int iSig = _vectTHstackSig.size()-1;
+      DrawLegend(x0+pos[1]*wx, _globalYoffset - off[1]*_yoffset, _vectTHstackSig.at(iSig) , name4Legend.Data() , "l" );
+      ++j;
+    } else {
+      for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); ++iSig, ++j) {
+        DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHstackSig.at(iSig) , _vectNameSig.at(iSig) ,"l" );
+      }
+    }
+
+
+/*    float *pos,*off; */
+/*    int sampCount = GetSampCount(); */
+/* //             if(sampCount == 12 || sampCount == 15) { pos = xPosA; off = yOffA; } */
+/* //             else if(sampCount == 11 )              { pos = xPosB; off = yOffB; } */
+/* //             else                                   { pos = xPos;  off = yOff;  } */
+/*    pos = xPos;  off = yOff; */
+/*    float x0=0.22; float wx=0.19; */
+/*    if(_data   && plotData     ) {  */
+/*     DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _data,                  " data",                "lp"); */
+/*     j++;  */
+/*    } */
+/*    else { */
+/*                 //              if (plotData == false) j++; */
+/*    } */
+/*    for (unsigned int iSig = 0; iSig<_vectTHstackSig.size(); iSig++) { */
+/*     if (_mergeSignal == 0 ||  iSig == (_vectTHstackSig.size()-1)) { */
+/*      if (_mergeSignal == 1) { */
+/*       TString name4Legend; */
+/*       if (_mass == -1) { */
+/*        name4Legend = Form ("Higgs"); */
+/*       } */
+/*       else { */
+/*        name4Legend = Form ("Higgs %d GeV", _mass); */
+/*       } */
+/*       DrawLegend(x0+pos[1]*wx, _globalYoffset - off[1]*_yoffset, _vectTHstackSig.at(iSig)         , name4Legend.Data() ,           "l" ); */
+/*      } */
+/*      else { */
+/*       DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHstackSig.at(iSig)         , _vectNameSig.at(iSig) ,           "l" ); */
+/*      } */
+/*     } */
+/*     j++; */
+/*    } */
+
+
 
    if (plotData == false) j++;
 
@@ -2374,7 +2412,6 @@ class PlotVHqqHggH {
     DrawLegend(x0+pos[j]*wx, _globalYoffset - off[j]*_yoffset, _vectTHBkg.at(iBkg)         , _vectNameBkg.at(iBkg) ,           "f" );
     j++; 
    }
-
 
    if (plotData) {
     TLatex* luminosity;
@@ -2430,6 +2467,7 @@ class PlotVHqqHggH {
 
    legend->SetBorderSize(     0);
    legend->SetFillColor (     0);
+   legend->SetFillStyle (     0);
    legend->SetTextAlign (    12);
    legend->SetTextFont  (_labelFont);
    legend->SetTextSize  (_legendTextSize);
@@ -2489,6 +2527,7 @@ class PlotVHqqHggH {
   int      _nbins;
   float    _low;
   float    _high;
+  TArrayD  _xbins;
 
   float    _max;
   float    _min;
