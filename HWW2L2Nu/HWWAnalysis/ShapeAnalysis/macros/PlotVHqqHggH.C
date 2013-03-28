@@ -1803,8 +1803,8 @@ class PlotVHqqHggH {
 
 
       if (!_doBandError) {
-       errYup = summed->GetBinError(i+1)/summed->GetBinContent(i+1);
-       errYlo = summed->GetBinError(i+1)/summed->GetBinContent(i+1);
+       errYup = summed->GetBinError(i+1);
+       errYlo = summed->GetBinError(i+1);
        errYlo = errYlo/scale;
        errYup = errYup/scale;
       }
