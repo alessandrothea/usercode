@@ -1,60 +1,110 @@
 #!/bin/env python
 
 import HWWAnalysis.Misc.ROOTAndUtils as utils
+from painter import Canvas,Pad,Legend,Latex
+import ROOT
+import array
 
-class PadDesigner(object):
-    ''' this class is meant to provide an interface to design the layout of a
-    canvas/pad in terms of pixels or equivalent units, overcaming the intrinsic
-    ROOT issue of describing the pads in relative units
-    
-    
-    Possible approach: 
-    define pads first (w,h) and then ask the designer to produce a canvas where
-    to accomodate them.  maybe define the a grid where to accomodate the pads,
-    and then the pads inside?  where to define the pad size? in the grid
-    definition?
+class H1RatioPlotter(object):
 
-    Then designer then will be in charge to produce the canvas with the pads
-    inside. Each one already set to fulfill the constraints.  '''
-    def __init__(self):
-        pass
+    class mystyle(object):
+        def __init__(self):
+            from ROOT import kRed,kOrange,kAzure
+            from ROOT import kFullCircle, kOpenCircle
 
-class H1DiffPlotter:
+            self.scalemax  = 1.
+            self.ltitle    = ''
+            self.rtitle    = ''
+            self.ytitle2   = 'ratio'
+            self.colors    = [kRed+1      , kOrange+7   , kAzure-6    , kAzure+9    , kOrange+7   , kOrange-2  ]
+            self.markers   = [kFullCircle , kOpenCircle , kFullCircle , kOpenCircle , kFullCircle , kFullCircle]
+            self.plotratio = True
+
+            self.left        = 100
+            self.right       = 75
+            self.top         = 75
+            self.bottom      = 100
+
+            self.gap         = 5
+            self.width       = 500
+            self.heightf0    = 500
+            self.heightf1    = 200
+
+            self.linewidth   = 2
+            self.markersize  = 10
+            self.textsize    = 30
+            self.titley      = 60
+
+            self.legmargin   = 25
+            self.legboxsize  = 50 
+            self.legtextsize = 30
+
+            self.axsty = {
+                'labelfamily' : 44,
+                'labelsize'   : 30,
+                'labeloffset' : 5,
+                'titlefamily' : 44,
+                'titlesize'   : 30,
+                'titleoffset' : 75,
+                'ticklength'  : 20,
+                'ndivisions'  : 505,
+            }
+
+            self.errsty = 3005
+            self.errcol = ROOT.kGray+1
+
+            self.userrange = (0.,0.)
+
+            # something more active
+            self._legalign  = ('l','t')
+
+        @property
+        def legalign(self): return self._legalign
+
+        @legalign.setter
+        def legalign(self, align): 
+            ha,va = align
+            if ha not in 'lr': raise ValueError('Align can only be \'l\' or \'r\'')
+            if va not in 'tb': raise ValueError('Align can only be \'t\' or \'b\'')
+            self._legalign = align
+
+
+
     def __init__(self, **kwargs):
-        import ROOT
-        self._ratio   = 0.7
-        self._outer   = 0.1
-        self._inner   = 0.02
-        self._marg    = 0.1
-        self._ltitle  = ''
-        self._rtitle  = ''
-        self._ytitle2 = 'ratio'
-        self._legsize = (0.2,0.2)
-        self._colors  = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen]
-        self._h0      = None
-#         self._h1      = None
-        self._hists   = []
-        self._pad0    = None
-        self._pad1    = None
-        self._legend  = None
-        self._logx    = False
-        self._logy    = False
-        self._stack   = None
-        self._dstack   = None
+
+        from ROOT import kRed,kOrange,kAzure
+        from ROOT import kFullCircle, kOpenCircle
+        
+        self.__dict__['_style'] = self.mystyle()
 
         for k,v in kwargs.iteritems():
-            if not hasattr(self,'_'+k): continue
-            setattr(self,'_'+k,v)
+            if not hasattr(self._style,k): raise Attribute('No '+k+' style attribute')
+            setattr(self._style,k,v)
 
-    #---
-    def __del__(self):
-        del self._h0
-#         del self._h1
+        self._h0     = None
+        self._hists  = []
+        self._canvas = None
+        self._pad0   = None
+        self._pad1   = None
+        self._legend = None
+        self._stack  = None
+        self._dstack = None
 
-    @staticmethod
-    def _resize(x,ratio):
-        x.SetLabelSize(x.GetLabelSize()*ratio/(1-ratio))
-        x.SetTitleSize(x.GetTitleSize()*ratio/(1-ratio))
+    # ---
+    def __getattr__(self,name):
+        if hasattr(self,'_style'):
+            return getattr(self._style,name)
+        else:
+            raise AttributeError('Attribute '+name+' not found')
+
+    # ---
+    def __setattr__(self,name,value):
+        # if the name starts with '_' it is a data member
+        if name[0] != '_' and hasattr(self,'_style') and hasattr(self._style,name):
+#             print 'setting opt:',name,value
+            return setattr(self._style,name,value)
+        else:
+            self.__dict__[name] = value
 
     #---
     def set(self, h0, *hs ):
@@ -65,119 +115,215 @@ class H1DiffPlotter:
             raise ValueError('Cannot compare histograms with different dimensions')
         sentry = utils.TH1AddDirSentry()
         self._h0 = h0.Clone()
-#         self._h1 = h[0].Clone()
-        self._hists = [ h.Clone() for h in hs ]
-
+        self._hists = [ h.Clone() for h in hs ] 
 
     #---
-    def draw(self, options='hist'):
-        import ROOT
-        if not ROOT.gPad.func():
-            raise RuntimeError('No active pad defined')
+    @staticmethod
+    def _setrangeuser( ax, style ):
+        lb  = ax.FindBin( style.userrange[0] )
+        ub  = ax.FindBin( style.userrange[1] )
+        print lb,ub
+        ax.SetRange( lb,ub ) 
 
-        thePad = ROOT.gPad.func()
-        thePad.cd()
+    #---
+    def plot(self, options=''):
 
-        self._pad0 = ROOT.TPad('pad0','pad0',0.,(1-self._ratio),1.,1.)
-        self._pad0.SetLogx( 1 if self._logx else 0 )
-        self._pad0.SetLogy( 1 if self._logy else 0 )
-        self._pad0.SetTopMargin(self._outer/self._ratio)
-        self._pad0.SetBottomMargin(self._inner/self._ratio)
-        self._pad0.SetTicks()
-        self._pad0.Draw()
+        style = self._style
 
+        left       = style.left      
+        right      = style.right     
+        top        = style.top       
+        bottom     = style.bottom    
+
+        gap        = style.gap       
+        width      = style.width     
+        heightf0   = style.heightf0  
+        heightf1   = style.heightf1  
+
+        linewidth  = style.linewidth
+        markersize = style.markersize
+        textsize   = style.textsize  
+        legmargin  = style.legmargin   
+        titley     = style.titley    
+
+        axsty      = style.axsty     
+
+        # pads size
+        pw = width+left+right
+        ph = heightf0+top+bottom
+
+        ph0 = heightf0+top+gap
+        ph1 = heightf1+gap+bottom
+        
+        c = Canvas(1,2)
+
+        xaxsty = axsty.copy()
+        xaxsty['labelsize'] = 0
+
+        yaxsty = axsty.copy()
+        yaxsty['ndivisions'] = 505
+
+        
+        if style.plotratio:
+            self._pad0 = c[0,0] = Pad('p0',pw,ph0,margins=(left,right, top,    gap), xaxis=xaxsty, yaxis=axsty) 
+            self._pad1 = c[0,1] = Pad('p0',pw,ph1,margins=(left,right, gap, bottom), xaxis=axsty,  yaxis=yaxsty) 
+        else:
+            self._pad0 = c[0,0] = Pad('p0',pw,ph ,margins=(left,right, top, bottom), xaxis=axsty, yaxis=axsty) 
+
+        c.makecanvas()
+        self._canvas = c
+
+        # ---
+        # main plot
         self._pad0.cd()
 
         hists = [self._h0] + self._hists
         ndim = hists[0].GetDimension()
 
-        marker = 24 if ndim == 1 else 1
-        map(lambda h: ROOT.TH1.SetLineWidth(h,2),hists)
-        map(lambda h: ROOT.TH1.SetMarkerStyle(h,marker),hists)
+        map(lambda h: ROOT.TH1.SetLineWidth(h,linewidth),hists)
 
-        for i,h in enumerate(hists):
-            h.SetLineColor(self._colors[i])
-            h.SetMarkerColor(self._colors[i])
+        # border between frame and legend
 
-        
-        self._stack = None
+        ha,va = style.legalign
+        x0 = (left+legmargin) if ha == 'l' else (left+width   -legmargin)
+        y0 = (top +legmargin) if va == 't' else (top +heightf0-legmargin)
+        leg = Legend(1,len(hists),style.legboxsize,anchor=(x0,y0), style={'textsize':self.legtextsize}, align=style.legalign)
+
+        # ROOT marker size 1 = 8px. Convert pixel to root size
+        markersize /= 8.
+
+        from itertools import izip
+
+        for h,col,mrk in izip(hists,style.colors,style.markers):
+            h.SetFillColor  (col)
+            h.SetLineColor  (col)
+            h.SetMarkerColor(col)
+            h.SetMarkerStyle(mrk)
+            h.SetMarkerSize (markersize)
+            leg.addentry( h, 'pl')
 
         stack = ROOT.THStack('overlap','')
-        ROOT.SetOwnership(stack,True)
 
         map(stack.Add,hists)
-        stack.Draw('nostack')
-        stack.GetXaxis().SetLabelSize(0.00)
+        stack.Draw('nostack %s' % options)
         stack.GetYaxis().SetTitle(self._h0.GetYaxis().GetTitle())
 
-        anchor = (1-self._marg,1-self._outer/self._ratio)
-
-
-        self._legend = None
-        legend = ROOT.TLegend(anchor[0]-self._legsize[0],anchor[1]-self._legsize[1],anchor[0],anchor[1],'','NDC')
-        legend.SetFillColor(ROOT.kWhite)
-        legend.SetFillStyle(0)
-        legend.SetBorderSize(0)
-        # leg.SetNColumns(2)
-        for h in hists: legend.AddEntry(h,'','pl')
-        legend.Draw()
-        self._legend = legend
-
-
-        l = ROOT.TLatex()
-        l.SetNDC()
-        l.SetTextAlign(12)
-        l.DrawLatex(ROOT.gPad.GetLeftMargin(),1-(0.5*self._outer/self._ratio),self._ltitle)
-        l.SetTextAlign(32)
-        l.DrawLatex(1-ROOT.gPad.GetRightMargin(),1-(0.5*self._outer/self._ratio),self._rtitle)
+#         if style.userrange != (0.,0.): self._setrangeuser( stack.GetXaxis(), style )
+        if style.userrange != (0.,0.): stack.GetXaxis().SetRangeUser(*(style.userrange) )
+        
+        if style.scalemax != 1:  stack.SetMaximum(style.scalemax*stack.GetMaximum('nostack '+options))
 
         self._stack = stack
 
+        leg.draw()
+        self._legend = leg
 
-        #- pad2 ---
+        #title left
+        self._ltitleobj = Latex(style.ltitle, anchor=(left,titley),     align=('l','b'), style={'textsize':textsize} )
+        self._ltitleobj.draw()
 
-        sentry = utils.TH1AddDirSentry()
-#         print thePad
-        thePad.cd()
-        self._pad1 = ROOT.TPad('pad1','pad1',0.,0.0,1.,(1-self._ratio))
-        self._pad1.SetTopMargin(self._inner/(1-self._ratio))
-        self._pad1.SetBottomMargin(self._outer/(1-self._ratio))
-        self._pad1.SetTicks()
-        self._pad1.SetGridy()
-        self._pad1.Draw()
+        #rtitle
+        self._rtitleobj = Latex(style.rtitle, anchor=(pw-right,titley), align=('r','b'), style={'textsize':textsize} )
+        self._rtitleobj.draw()
 
-        self._pad1.cd()
+        if style.plotratio:
+            # ---
+            # ratio plot
+            self._pad1.cd()
+            h0 = self._h0
+            nbins = h0.GetNbinsX()
+            xax   = h0.GetXaxis()
 
-        hdiffs = []
-        colors = self._colors[1:] if len(self._hists) > 1 else [ROOT.kBlack] 
-        for i,h in enumerate(self._hists):
-            hd = h.Clone('diff'+h.GetName())
-            hd.Divide(self._h0)
-            hd.SetMarkerStyle(20)
-            hd.SetLineWidth(1)
-#             hd.SetLineColor(ROOT.kBlack)
-#             hd.SetMarkerColor(ROOT.kBlack)
-            hd.SetLineColor(colors[i])
-            hd.SetMarkerColor(colors[i])
-            hdiffs.append(hd)
+            sentry = utils.TH1AddDirSentry()
 
-        self._dstack = None
+            # create the h0 to hx rato
+            hratios = []
+            colors  = [style.errcol]     + (style.colors[1:]  if len(self._hists) > 1 else [ROOT.kBlack]     )
+            markers = [ROOT.kFullCircle] + (style.markers[1:] if len(self._hists) > 1 else [ROOT.kFullCircle])
+            allh    = [self._h0]+self._hists 
+        
+            for hx,col,mrk in izip(allh,colors,markers):
+                hr = hx.Clone('ratio_%s_%s' % (hx.GetName(),h.GetName()) )
 
-        dstack = ROOT.THStack('diffs','')
-        ROOT.SetOwnership(dstack,False)
+                # divide by hand to preserve the errors
+                for k in xrange(nbins+2):
+                    br,er = hr.GetBinContent(k),hr.GetBinError(k)
+                    b0  = h0.GetBinContent(k)
+                    if b0 == 0:
+                        # empty h0 bin
+                        br = 0
+                        er = 0
+                    else:
+                        br /= b0
+                        er /= b0
 
-        map(dstack.Add,hdiffs)
-        dstack.Draw('nostack')
+                    hr.SetBinContent(k,br)
+                    hr.SetBinError(k,er)
 
-        ax = dstack.GetXaxis()
-        ay = dstack.GetYaxis()
-        ax.SetTitle(self._h0.GetXaxis().GetTitle())
-        ay.SetTitle(self._ytitle2)
-        ay.SetTitleOffset(ay.GetTitleOffset()/self._ratio*(1-self._ratio) )
-        self._resize(ax,self._ratio)
-        self._resize(ay,self._ratio)
+                hr.SetLineWidth   (linewidth)
+                hr.SetMarkerSize  (markersize)
+                hr.SetMarkerStyle (mrk)
+                hr.SetLineColor   (col)
+                hr.SetMarkerColor (col)
+                hratios.append(hr)
 
-        self._dstack = dstack
+            dstack = ROOT.THStack('ratios','ratios')
+            ROOT.SetOwnership(dstack,True)
+
+            # and then the ratios
+            herr = hratios[0]
+            herr.SetNameTitle('err0','zero errors')
+            herr.SetMarkerSize(0)
+            herr.SetMarkerColor(style.errcol)
+            herr.SetFillStyle(0)
+            herr.SetFillColor(style.errcol)
+            herr.SetLineColor(style.errcol)
+
+            # error borders
+            herrUp = herr.Clone('errup')
+            herrDw = herr.Clone('errdw')
+
+            herrUp.Reset()
+            herrDw.Reset()
+
+            for k in xrange(nbins+2):
+                b,e = herr.GetBinContent(k),herr.GetBinError(k)
+                herrUp.SetAt( 1+e, k)
+                herrDw.SetAt( 1-e, k)
+
+            herr.SetFillStyle(style.errsty)
+
+            # build the stack
+            dstack.Add(herr,'E2')
+            dstack.Add(herrUp,'hist')
+            dstack.Add(herrDw,'hist')
+            map(dstack.Add,hratios[1:])
+
+            dstack.Draw('nostack %s' % options )
+            dstack.SetMinimum(0.)
+            dstack.SetMaximum(2.)
+
+            ax = dstack.GetXaxis()
+            ay = dstack.GetYaxis()
+            ax.SetTitle(h0.GetXaxis().GetTitle())
+            ay.SetTitle(style.ytitle2)
+            
+            self._dstack = dstack
+
+            line = ROOT.TGraph(2)
+            line.SetNameTitle('oneline','oneline')
+            line.SetPoint(0,ax.GetXmin(),1)
+            line.SetPoint(1,ax.GetXmax(),1)
+            line.SetBit(ROOT.kCanDelete)
+            ROOT.SetOwnership(line,False)
+            line.Draw()
+
+#             if style.userrange != (0.,0.): self._setrangeuser( ax, style )
+            if style.userrange != (0.,0.): ax.SetRangeUser(*(style.userrange) )
+
+        c.applystyle()
+
+        return c
 
 if __name__ == '__main__':
     import os.path

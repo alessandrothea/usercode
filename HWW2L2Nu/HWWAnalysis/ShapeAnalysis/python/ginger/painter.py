@@ -1,11 +1,46 @@
 #!/bin/env python
 
+# TAxis mistery quantities
+
+# labeloffset: TAxis wants it in units of the pad height(width) for the x(y) axis. The value in pixel must be divided by height-top-bottom (width-left-right)
+# ticklength : The lenght is computed as fraction of the pad length times the ratio between the axis length and the total length of the other axis
+#              i.e.: tick_x = k*axis_x/(axis_y/height)
+# titleoffset: to be written
+#        left,right,top,bottom = self._margins
+#        lax = self._w-left-right
+#        lay = self._h-top-bottom
+#        style['ticklength']  *= self._w/float(lax*self._h)
+#        style['labeloffset'] /= float(self._h-top-bottom)
+#        style['titleoffset'] *= self._obj.GetWh()/(1.6*self._h*style['titlesize']) if style['titlesize'] else 0
+#
+# TLatex BoxSize:
+# for some reasons GetBoundingBox returns 0
+# 
+# TLatex::GetXsize(), TLatex::GetYsize() are working, but the result have to be converted
+#
+#        pw = pad.GetWw()*pad.GetWNDC()
+#        ph = pad.GetWh()*pad.GetHNDC()
+#
+#        uxmin = pad.GetUxmin()
+#        uxmax = pad.GetUxmax()
+#        uymin = pad.GetUymin()
+#        uymax = pad.GetUymax()
+#
+#        dx = (uxmax-uxmin)/(1-pad.GetLeftMargin()-pad.GetRightMargin())
+#        dy = (uymax-uymin)/(1-pad.GetTopMargin()-pad.GetBottomMargin())
+#
+#        pxlength = dummy.GetXsize()*pw/(ph*dx) 
+#        pxheight = dummy.GetYsize()*pw/(ph*dx) 
+
 import ROOT
 import uuid
 import sys
 import copy
+import logging
 
 class StyleSetter:
+    _log = logging.getLogger('StyleSetter')
+
     _setters = {
         ROOT.TAttAxis:[ 
             ('labelfamily' , ROOT.TAxis.SetLabelFont), 
@@ -52,9 +87,11 @@ class StyleSetter:
 
             for l,m in methods:
                 x = myopts.get(l,None)
-                if not x is None: m(tobj,x)
+                if not x is None: 
+                    m(tobj,x)
 
 class Pad(object):
+    _log = logging.getLogger('Pad')
 
     _axisstyle = {
         'labelfamily' : 44,
@@ -104,6 +141,12 @@ class Pad(object):
             else:
                 raise ValueError('margins must be a 1,2,4 length tuple')
         self._margins = m
+
+    @property
+    def xaxis(self): return xaxis
+
+    @property
+    def yaxis(self): return yaxis
 
     def __str__(self):
         return '%s(\'%s\',w=%d,h=%d,obj=%s)' % (self.__class__.__name__,self._name,self._w,self._h,self._obj)
@@ -163,19 +206,21 @@ class Pad(object):
         style = self._xaxis.copy()
         style['ticklength']  *= self._w/float(lax*self._h)
         style['labeloffset'] /= float(self._h-top-bottom)
-        style['titleoffset'] *= self._obj.GetWh()/(1.6*self._h*style['titlesize'])
+        style['titleoffset'] *= self._obj.GetWh()/(1.6*self._h*style['titlesize']) if style['titlesize'] else 0
         setter.apply(xax,**style)
+        self._log.debug('tick xaxis: %s => %s',self._xaxis['ticklength']),style['ticklength']
+
 
         yax = h.GetYaxis()
         style = self._yaxis.copy()
         style['ticklength']  *= self._h/float(lay*self._w)
         style['labeloffset'] /= float(self._w-left-right)
-        style['titleoffset'] *= self._obj.GetWh()/(1.6*self._w*style['titlesize'])
+        style['titleoffset'] *= self._obj.GetWh()/(1.6*self._w*style['titlesize']) if style['titlesize'] else 0
         setter.apply(yax,**style)
-
+        self._log.debug('tick yaxis: %s =>  %s',self._yaxis['ticklength'])
 
 class Canvas(object):
-    _log = None
+    _log = logging.getLogger('Canvas')
 
     #---
     def __init__(self, nx, ny):
@@ -199,10 +244,13 @@ class Canvas(object):
         if ( i < 0 and i > self._nx ) or ( j < 0 and j > self._ny ):
             raise IndexError('Index out of bounds (%d,%d) not in [0,%d],[0,%d]' % (i,j,self._nx,self._ny))
 
+        old = self._grid[i][j]
+        if not old is None: self._pads.pop(old)
+
+        if not pad: return
+
         self._grid[i][j] = pad
         self._pads.append(pad)
-#         print 'attach',i,j
-#         print self._grid
 
     def __setitem__(self,key,value):
         if not isinstance(key,tuple):
@@ -322,6 +370,7 @@ class Canvas(object):
 
 
 class Legend(object):
+    _log = logging.getLogger('Legend')
 
     _legendstyle = {
         'textfamily' : 44,
@@ -330,12 +379,12 @@ class Legend(object):
     }
 
     #---
-    def __init__(self, nx, ny, labelwidth, boxsize, **opts):
-        self._labelwidth = labelwidth 
+    def __init__(self, nx, ny, boxsize, **opts):
         self._boxsize = boxsize
         self._nx = nx
         self._ny = ny
 
+        self._labelwidth = None
         self._anchor = (0,0)
         self._align = ('c','m')
         self._style = self._legendstyle.copy() 
@@ -343,12 +392,16 @@ class Legend(object):
         for n,o in opts.iteritems():
             attr = '_'+n
             if not hasattr(self,attr): continue
-            setattr(self,attr,o)
+            if n == 'style':
+                getattr(self,attr).update(o)
+            else:
+                setattr(self,attr,o)
 
         self._grid = [[None]*ny for i in xrange(nx)]
         self._legends = []
         self._sequence = [ (i,j) for i in xrange(self._nx) for j in xrange(self._ny) ]
-        self._index = 0
+        self._cursor = 0
+        self._maxlabelwidth = 0
 
     #---
     @property
@@ -366,10 +419,74 @@ class Legend(object):
 
         self._sequence = value
 
+    #---
+    def _updatebox(self):
+        dummy = ROOT.TLatex(0,0,'')
+        setter = StyleSetter(**self._style)
+        setter.apply(dummy)
+
+        pad = ROOT.gPad.func()
+
+        pw = pad.GetWw()*pad.GetWNDC()
+        ph = pad.GetWh()*pad.GetHNDC()
+
+        uxmin = pad.GetUxmin()
+        uxmax = pad.GetUxmax()
+        uymin = pad.GetUymin()
+        uymax = pad.GetUymax()
+
+        dx = (uxmax-uxmin)/(1-pad.GetLeftMargin()-pad.GetRightMargin())
+        dy = (uymax-uymin)/(1-pad.GetTopMargin()-pad.GetBottomMargin())
+
+        # for each row and col check whether there is at lest an entry
+        hrows = [False]*self._ny
+        wcols = [False]*self._nx
+        widths = []
+
+        for i,col in enumerate(self._grid):
+            for j,entry in enumerate(col):
+                if not entry: continue
+                wcols[i] = True
+                hrows[j] = True
+                (title,leg) = entry
+
+                dummy.SetTitle(title)
+
+#                 print pad.GetName(),dummy.GetTitle(),dummy.GetXsize()*pw/(ph*dx),dummy.GetYsize()/dy
+                widths.append( dummy.GetXsize()*pw/(ph*dx) )
+
+        # add 10% 
+        self._maxlabelwidth = int(max(widths)*1.1)
+
+        self._colcount = wcols.count(True)
+        self._rowcount = hrows.count(True)
+  
 
     #---
     def _getanchor(self,i,j):
-        return (self._anchor[0]+i*self._labelwidth,self._anchor[1]+j*self._boxsize)
+        labelwidth = self._labelwidth if self._labelwidth is not None else self._maxlabelwidth
+        x0,y0 = self._anchor[0]+i*(labelwidth+self._boxsize),self._anchor[1]+j*self._boxsize
+        
+        ha,va = self._align
+        if   va == 't':
+            pass
+        elif va == 'm':
+            y0 -= self._rowcount*self._boxsize/2.
+        elif va == 'b':
+            y0 -= self._rowcount*self._boxsize
+        else:
+            raise KeyError('Unknown vertical alignement %s', va)   
+
+        if   ha == 'l':
+            pass
+        elif ha == 'c':
+            x0 -= self._colcount*(self._boxsize+labelwidth)/2.
+        elif ha == 'r':
+            x0 -= self._colcount*(self._boxsize+labelwidth)
+        else:
+            raise KeyError('Unknown horizontal alignement %s', ha)
+
+        return x0,y0
 
     #---
     def _applystyle(self,leg):
@@ -395,21 +512,31 @@ class Legend(object):
             if ( i < 0 and i > self._nx ) or ( j < 0 and j > self._ny ):
                 raise IndexError('Index out of bounds (%d,%d) not in [0,%d],[0,%d]' % (i,j,self._nx,self._ny))
         else:
-            if self._index >= len(self._sequence):
+            if self._cursor >= len(self._sequence):
                 raise IndexError('The legend is full!')
             
-            i,j = self._sequence[self._index]
+            i,j = self._sequence[self._cursor]
 
-            self._index += 1
+            self._cursor += 1
 
         if not self._grid[i][j] is None:
             raise RuntimeError('Entry (%d,%d) is already assigned' % (i,j))
 
         self._grid[i][j] = (obj,opt,title)
 
+        leg = ROOT.TLegend( 0, 0, 1, 1 )
+        title = obj.GetTitle() if title is None else title
+        leg.AddEntry(obj,title,opt)
+
+        self._applystyle(leg)
+        self._legends.append( leg )
+
+        self._grid[i][j] = (title,leg)
 
     #---
     def draw(self):
+
+        self._updatebox()
         
         pad = ROOT.gPad.func()
         fw = pad.GetWw()*pad.GetWNDC()
@@ -418,17 +545,22 @@ class Legend(object):
         for i,col in enumerate(self._grid):
             for j,entry in enumerate(col):
                 if not entry: continue
-                obj,opt,title = entry
+                title,leg = entry
 
                 x0,y0 = self._getanchor(i,j)
                 x1,y1 = x0+self._boxsize,y0+self._boxsize
-                ratio = float(self._boxsize)/float(self._labelwidth)
 
-                l = ROOT.TLegend( x0/fw, (fh-y1)/fh, x1/fw, (fh-y0)/fh )
-                l.AddEntry(obj,obj.GetTitle() if title is None else title,opt)
-                self._applystyle(l)
-                l.Draw()
-                self._legends.append(l)
+#                 leg = self._grid[i][j]
+                leg.SetX1( x0/fw )
+                leg.SetY1( (fh-y1)/fh )
+                leg.SetX2( x1/fw )
+                leg.SetY2( (fh-y0)/fh )
+                leg.Draw()
+#                 l = ROOT.TLegend( x0/fw, (fh-y1)/fh, x1/fw, (fh-y0)/fh )
+#                 l.AddEntry(obj,obj.GetTitle() if title is None else title,opt)
+#                 self._applystyle(l)
+#                 l.Draw()
+#                 self._legends.append(l)
 
 class Latex:
     _latexstyle = {
@@ -482,7 +614,6 @@ class Latex:
         setter.apply(self._latex)
 
         x0,y0 = self._anchor
-        print x0,y0
         self._latex.SetText( x0/fw, 1-(y0/fh), self._text )
 
         self._latex.Draw()
@@ -528,8 +659,6 @@ if __name__ == '__main__':
 
     tc = c.makecanvas()
     tc.SetName('aaa')
-
-    print c[1,0]
 
     bins = 10
     hdummy = ROOT.TH1F('dummy','',bins,0,bins)

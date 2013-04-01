@@ -284,9 +284,10 @@ class TreeAnalyser(object):
             self._modified = True
 
         if self._modified:
+            self._log.debug('modified cuts!')
             self._purgeviews(self._cuts, self._views)
-
-        self._growviews(self._cuts, self._views)
+            self._growviews(self._cuts, self._views)
+            self._modified = False
         return self._views
 
     # ---
@@ -297,7 +298,7 @@ class TreeAnalyser(object):
 
         nv = len(views)
         nc = len(cutflow)
-        if nv == nc : return
+        if nv == nc : return views
         elif nv > nc : raise ValueError('WTF!')
 
         # last is the last valid view, used to grow the list
