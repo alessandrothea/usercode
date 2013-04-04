@@ -210,6 +210,7 @@ class NuisanceMapBuilder:
         self._isssactive   = isssactive
         # to options
         self.statShapeVeto = []
+        self.expShapeVeto  = OrderedDict()
 
         # data driven reader and filter for the ww
         self._ddreader      = datadriven.DDCardReader(ddPath)
@@ -219,7 +220,7 @@ class NuisanceMapBuilder:
  
     def _build(self):
         # common 0/1 jet systematics
-        pureMC = [ 'VgS', 'Vg', 'VV', 'ggH', 'vbfH', 'wzttH', 'Other'] 
+        pureMC = [ 'VgS', 'Vg', 'VV', 'ggH', 'vbfH', 'wzttH', 'zH', 'wH', 'ttH', 'Other', 'VVV'] 
         dummy = {}
         dummy['CMS_fake_e']    = (1.50, ['WJet']) # take the average of ee/me 
 #         dummy['CMS_fake_m']    = (1.42, ['WJet']) # take the average of mm/em
@@ -257,7 +258,7 @@ class NuisanceMapBuilder:
 
         # 0 jets only
         dummy = {}
-        
+
         dummy['CMS_fake_Vg']  = (2.00,['Vg']) # Vg, 0jet 
         dummy['QCDscale_Vg']  = (1.50,['Vg']) 
         dummy['QCDscale_ggH'] = (1.16,['ggH']) # 0 jets only
@@ -270,7 +271,7 @@ class NuisanceMapBuilder:
         for k,v in dummy.iteritems():
             self._1jetOnly[k] = (['lnN'], dict([( process, v[0]) for process in v[1] ]) )
 
-    
+
     def _addDataDrivenNuisances(self, nuisances, yields, mass, channel, jetcat, suffix=''):
 
         if self._ddreader.iszombie: return
@@ -312,7 +313,7 @@ class NuisanceMapBuilder:
 
             # check the dd to have the same events in the ctr region before associating them
             listNctr = [ estimates[p].Nctr for p in available ]
-            
+
             if len(available) != listNctr.count(estimates[available[0]].Nctr):
                 raise RuntimeError('Mismatch between Nctr in the same systematic: '+', '.join([ '{0}{1}'.format(n[0],n[1]) for n in zip(available, listNctr) ]) )
 
@@ -338,19 +339,32 @@ class NuisanceMapBuilder:
                     del nuisances[eff_bin1]
 
 
-            nuisances[eff_extr] = ([pdf], extr_entries )
-            nuisances[eff_stat] = (['gmN',e.Nctr], stat_entries)
-
 #             if jetcat == '2j' and tag == 'Top' :
 #                 if flagdoextracorr == 1 :
 #                     nuisances[eff_extr_corr] = ([pdf], extr_corr_entries )
 
             if len(extr_corr_entries) > 0:
                 nuisances[eff_extr_corr] = ([pdf], extr_corr_entries )
-                
+            else :
+                if (tag=="WW" and (jetcat=="0j" or jetcat=="1j")) :
+                    eff_extr    = 'CMS{0}_hww_{1}_extr'.format(suffix,tag)
+                else :
+                   eff_extr    = 'CMS{0}_hww_{1}_{2}_{3}_extr'.format(suffix,tag,context,channel)
+                eff_stat        = 'CMS{0}_hww_{1}_{2}_{3}_stat'.format(suffix,tag,context,channel)
+
+
             if len(extr_uncorr_entries) > 0:
                 nuisances[eff_extr_uncorr] = ([pdf], extr_uncorr_entries )
+            else :
+                if (tag=="WW" and (jetcat=="0j" or jetcat=="1j")) :
+                    eff_extr    = 'CMS{0}_hww_{1}_extr'.format(suffix,tag)
+                else :
+                   eff_extr    = 'CMS{0}_hww_{1}_{2}_{3}_extr'.format(suffix,tag,context,channel)
+                eff_stat        = 'CMS{0}_hww_{1}_{2}_{3}_stat'.format(suffix,tag,context,channel)
 
+
+            nuisances[eff_extr] = ([pdf], extr_entries )
+            nuisances[eff_stat] = (['gmN',e.Nctr], stat_entries)
 
 
 
@@ -395,9 +409,12 @@ class NuisanceMapBuilder:
             if m and m.group(1) in self.statShapeVeto:
                 self._log.info( 'Skipping %s (vetoed, data driven)', eff )
                 continue
+
             tag = eff
             if tag in nuisances: del nuisances[tag]
-            nuisances[tag] = (['shapeN2'],dict([ (p,1) for p in effects[eff] ]) )
+          # nuisances[tag] = (['shapeN2'],dict([ (p,1) for p in effects[eff] if p not in self.expShapeVeto[tag]]) )
+          # nuisances[tag] = (['shapeN2'],dict([ (p,1) for p in effects[eff] if p not in self.expShapeVeto.get(tag,[])]) )
+            nuisances[tag] = (['shapeN2'],dict([ (p,1) for p in effects[eff] if (not (tag in self.expShapeVeto) or p not in self.expShapeVeto[tag]) ]) )
 
     def _addShapeNuisances(self, nuisances, effects, opts, suffix=''):
         # local copy
@@ -591,8 +608,17 @@ if __name__ == '__main__':
     #mask = ['Vg','DYLL','DYTT']
     mask = ['DYLL']
 
+    maskVeto = {
+       'CMS_8TeV_p_scale_j':['DYTT'],
+       'CMS_8TeV_puModel'  :['DYTT'],
+       }
+
+
+
     builder = NuisanceMapBuilder( opt.path_dd, opt.noWWddAbove, opt.shape, opt.isssactive )
     builder.statShapeVeto = mask
+    builder.expShapeVeto  = maskVeto
+
     for mass in masses:
         if '2011' in opt.dataset and (mass==145 or mass==155): continue
         for ch,(jcat,fl) in channels.iteritems():
@@ -609,7 +635,7 @@ if __name__ == '__main__':
 
             # reshuffle the order
             #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
-            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Other', 'ggH125', 'vbfH125', 'wzttH125', 'Data']
+            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Other', 'ggH125', 'vbfH125', 'wzttH125', 'VVV', 'Data']
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             
@@ -634,4 +660,9 @@ if __name__ == '__main__':
                  basename  = basename + '_shape'
             print '   + dumping all to file'
             writer.write(yields,nuisances,outPath+basename+'.txt',shapeSubDir+basename+'.root')
+
+
+
+
+
 

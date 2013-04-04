@@ -1022,6 +1022,8 @@ if __name__ == '__main__':
                 ('jetEnergyScale_up'     , 'p_scale_jUp'),
                 ('leptonEfficiency_down' , 'eff_lDown'),
                 ('leptonEfficiency_up'   , 'eff_lUp'),
+                ('puW_up'                , 'puModelUp'),
+                ('puW_down'              , 'puModelDown'),
                 ('metResolution'         , 'met'),
                 ('muonScale_down'        , 'p_scale_mDown'),
                 ('muonScale_up'          , 'p_scale_mUp'),
@@ -1032,9 +1034,12 @@ if __name__ == '__main__':
             systByWeight['leptonEfficiency_down'] = 'effWDown/effW'
             systByWeight['leptonEfficiency_up']   = 'effWUp/effW'
 
+            systByWeight['puW_down'] = 'puWup/puW'
+            systByWeight['puW_up']   = 'puWdown/puW'
+
             factory._systByWeight = systByWeight
 
-            processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT', 'Other', 'ggH125', 'vbfH125','VVV']
+            processMask = ['ggH', 'vbfH','vbfH_ALT', 'wzttH', 'zH', 'wH', 'ttH', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT', 'Other', 'ggH125', 'vbfH125','VVV']
             if '2011' in opt.dataset:
                 processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'jhu', 'jhu_ALT', 'ggH125', 'vbfH125']
 

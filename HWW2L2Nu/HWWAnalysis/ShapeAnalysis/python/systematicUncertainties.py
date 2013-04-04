@@ -57,14 +57,14 @@ ggH_intf = dict([(m, dict(zip(['intf'], vals))) for m,vals in file2map(SYST_PATH
 def getCommonSysts(mass,channel,jets,qqWWfromData,shape,options,suffix,isssactive):
     nuisances = {} 
     #MCPROC = ['ggH', 'vbfH', 'DTT', 'ggWW', 'VV', 'Vg' ]; 
-    MCPROC = ['ggH', 'vbfH', 'wzttH', 'wH', 'zH', 'ttH', 'DYTT', 'VV', 'VgS', 'Vg', 'Other', 'ggH125', 'vbfH125', 'wzttH125'];
+    MCPROC = ['ggH', 'vbfH', 'wzttH', 'wH', 'zH', 'ttH', 'DYTT', 'VV', 'VgS', 'Vg', 'Other', 'VVV', 'ggH125', 'vbfH125', 'wzttH125'];
     if channel == 'elmu' or channel == 'muel': MCPROC+=['DYMM','DYEE']
     if channel == 'of': MCPROC += ['DYLL']
     if not qqWWfromData: MCPROC+=['WW','ggWW']
     # -- Luminosity ---------------------
     lumiunc = 1.044
     if '7TeV' in suffix: lumiunc = 1.022
-    nuisances['lumi'+suffix] = [ ['lnN'], dict([(p,lumiunc) for p in MCPROC])]
+    nuisances['lumi'+suffix] = [ ['lnN'], dict([(p,lumiunc) for p in MCPROC if p!='DYTT'])]
     # -- PDF ---------------------
     #nuisances['pdf_gg']    = [ ['lnN'], { 'ggH':ggH_pdfErrYR[mass], 'ggWW':(1.00 if qqWWfromData else 1.04) }]
     nuisances['pdf_gg']    = [ ['lnN'], { 'ggH':ggH_pdfErrYR[mass], 'ggWW':1.04 }]
@@ -156,8 +156,8 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,shape,options,suffix,isssactiv
     elif channel in ['all', 'sf', 'of']: 
        nuisances['CMS'+suffix+'_p_scale_e'] = [ ['lnN'], dict([(p,1.020) for p in MCPROC if p != 'DTT'] )]
        nuisances['CMS'+suffix+'_p_scale_m'] = [ ['lnN'], dict([(p,1.015) for p in MCPROC if p != 'DTT'] )]
-    nuisances['CMS'+suffix+'_met'] = [ ['lnN'], dict([(p,1.02) for p in MCPROC])]
-    nuisances['CMS'+suffix+'_p_scale_j'] = [ ['lnN'], dict([(p,1.02) for p in MCPROC])]
+    nuisances['CMS'+suffix+'_met'] = [ ['lnN'], dict([(p,1.02) for p in MCPROC if p!='DYTT'])]
+    nuisances['CMS'+suffix+'_p_scale_j'] = [ ['lnN'], dict([(p,1.02) for p in MCPROC if p!='DYTT'])]
     if channel == 'of':
        nuisances['CMS'+suffix+'_norm_DYof'] = [ ['lnN'], { 'DYLL':2.0 } ]
     nuisances['CMS'+suffix+'_norm_DYTT'] = [ ['lnN'], { 'DYTT':1.3 } ]

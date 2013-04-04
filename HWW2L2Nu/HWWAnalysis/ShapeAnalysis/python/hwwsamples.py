@@ -151,6 +151,9 @@ mcsets = {
         ('WJetFakeRate-eDn', 'WJetFakeRate-nominal'),
         ('WJetFakeRate-mUp', 'WJetFakeRate-nominal'),
         ('WJetFakeRate-mDn', 'WJetFakeRate-nominal'),
+        # top shape ---> to be checked if needed
+        #('TopTW',   'Top'),
+        #('TopCtrl', 'Top'),
         # templates
         'VgS-template','Vg-template',
         # 2j specific
