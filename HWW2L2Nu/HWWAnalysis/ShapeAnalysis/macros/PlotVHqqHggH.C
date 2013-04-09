@@ -460,15 +460,17 @@ class PlotVHqqHggH {
             //---- in case division by bin width to be applied
    if (_divide) {
     std::cout << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " << std::endl;
+	bool hasEdges = _vEdges.size() != 0; 
+
     if (_vectTHBkg.size() != 0) {
      for (unsigned int iBkg = 0; iBkg<_vectTHBkg.size(); iBkg++) {
       std::cout << " iBkg = " << iBkg << " :: " << _vectTHBkg.size() << std::endl;
       int nbin = _vectTHBkg.at(iBkg) -> GetNbinsX();
       for (int iBin = 0; iBin < nbin; iBin++) {
        double err_before = _vectTHBkg.at(iBkg) -> GetBinError(iBin+1);
-       double value = _vectTHBkg.at(iBkg) -> GetBinContent(iBin+1);
-       double scale = 1./(_vEdges.at(iBin+1) - _vEdges.at(iBin));
-//                 std::cout << " scale = " << scale << std::endl;
+       double value      = _vectTHBkg.at(iBkg) -> GetBinContent(iBin+1);
+       double scale = 1./( hasEdges ? (_vEdges.at(iBin+1) - _vEdges.at(iBin)) : _vectTHBkg.at(iBkg) -> GetBinWidth(iBin+1) );
+/*        std::cout << " scale = " << scale << std::endl; */
        double err_after = scale * err_before;
        double value_after = scale * value;
        _vectTHBkg.at(iBkg) -> SetBinError   (iBin+1, err_after);
@@ -484,7 +486,7 @@ class PlotVHqqHggH {
       for (int iBin = 0; iBin < nbin; iBin++) {
        double err_before = _vectTHSig.at(iSig) -> GetBinError(iBin+1);
        double value = _vectTHSig.at(iSig) -> GetBinContent(iBin+1);
-       double scale = 1./(_vEdges.at(iBin+1) - _vEdges.at(iBin));
+       double scale = 1./( hasEdges ? (_vEdges.at(iBin+1) - _vEdges.at(iBin)) : _vectTHSig.at(iSig) -> GetBinWidth(iBin+1) );
        double err_after = scale*err_before;
        double value_after = scale * value;
        _vectTHSig.at(iSig) -> SetBinError   (iBin+1, err_after);
@@ -498,7 +500,7 @@ class PlotVHqqHggH {
      for (int iBin = 0; iBin < nbin; iBin++) {
       double err_before = _data -> GetBinError(iBin+1);
       double value = _data -> GetBinContent(iBin+1);
-      double scale = 1./(_vEdges.at(iBin+1) - _vEdges.at(iBin));
+      double scale = 1./( hasEdges ? (_vEdges.at(iBin+1) - _vEdges.at(iBin)) : _data -> GetBinWidth(iBin+1) );
       double err_after = scale*err_before;
       double value_after = scale * value;
       _data -> SetBinError   (iBin+1, err_after);
@@ -513,7 +515,7 @@ class PlotVHqqHggH {
       double errXUp      = _BandError->GetErrorXhigh(iBin);
       double errXDown    = _BandError->GetErrorXlow(iBin);
                
-      double scale = 1./(_vEdges.at(iBin+1) - _vEdges.at(iBin));
+      double scale = 1./( hasEdges ? (_vEdges.at(iBin+1) - _vEdges.at(iBin)) : (errXUp + errXDown) );
       double Y           = scale * (_BandError->GetY()) [iBin];
       double errYUp      = scale * _BandError->GetErrorYhigh(iBin);
       double errYDown    = scale * _BandError->GetErrorYlow(iBin);
