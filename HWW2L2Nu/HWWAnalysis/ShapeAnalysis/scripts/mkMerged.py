@@ -553,7 +553,7 @@ class ShapeMixer:
                 self.nominals['WJet'] = WJetnom
 
         if 'WJetFakeRate-2j-eUp' in self.nominals:
-            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape'.format(suffix)
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape_2j'.format(suffix)
             wJetEffeUp = self.nominals.pop('WJetFakeRate-2j-eUp')
             wJetShapeUp = wJetEffeUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
@@ -561,7 +561,7 @@ class ShapeMixer:
             self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
         if 'WJetFakeRate-2j-eDn' in self.nominals:
-            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape'.format(suffix)
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape_2j'.format(suffix)
             wJetEffeDown = self.nominals.pop('WJetFakeRate-2j-eDn')
             wJetShapeDown = wJetEffeDown.Clone('histo_WJet_'+wJetSystName+'Down')
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
@@ -569,7 +569,7 @@ class ShapeMixer:
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
         if 'WJetFakeRate-2j-mUp' in self.nominals:
-            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape'.format(suffix)
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape_2j'.format(suffix)
             wJetEffmUp = self.nominals.pop('WJetFakeRate-2j-mUp')
             wJetShapeUp = wJetEffmUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
@@ -577,7 +577,7 @@ class ShapeMixer:
             self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
         if 'WJetFakeRate-2j-mDn' in self.nominals:
-            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape'.format(suffix)
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape_2j'.format(suffix)
             wJetEffmDown = self.nominals.pop('WJetFakeRate-2j-mDn')
             wJetShapeDown = wJetEffmDown.Clone('histo_WJet_'+wJetSystName+'Down')
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')

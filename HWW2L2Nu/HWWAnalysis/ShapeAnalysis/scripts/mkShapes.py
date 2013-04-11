@@ -1053,7 +1053,7 @@ if __name__ == '__main__':
 
             # remove skip-syst list
             if opt.skipSyst!='':
-               for s in opt.skipSyst.split(' '):
+               for s in opt.skipSyst.split(','):
                   print 'skipping systematics: '+s
                   systematics.pop(s)
 
