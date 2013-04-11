@@ -183,6 +183,16 @@ mcsets = {
         # 2j specific
         #('WJet-template',    'WJet-template-2j'),              #    A   <-   sorgente
         #('WJet-templatesyst','WJet-templatesyst-2j')           #    mkmerged vuole "-template"
+        #('WJetFakeRate-nominal', 'WJetFakeRate-vh-template-nominal'),
+        #('WJetFakeRate-eUp',     'WJetFakeRate-vh-template-nominal'),
+        #('WJetFakeRate-eDn',     'WJetFakeRate-vh-template-nominal'),
+        #('WJetFakeRate-mUp',     'WJetFakeRate-vh-template-nominal'),
+        #('WJetFakeRate-mDn',     'WJetFakeRate-vh-template-nominal'),
+        ('WJetFakeRate-2j-template', 'WJetFakeRate-nominal'), # here and in the following I put the "template" distributions (relaxed cuts)
+        ('WJetFakeRate-2j-eUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-eDn',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mDn',     'WJetFakeRate-nominal'),
     ],
 
     'zh4j_mm' : [

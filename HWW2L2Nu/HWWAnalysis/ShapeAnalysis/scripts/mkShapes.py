@@ -39,6 +39,7 @@ class ShapeFactory:
         ranges['mth-mll-hilospin'] = self._getMllMth2DSpinrange
         ranges['mth-mll-hilospin-withControlRegion']  = self._getMllMth2DSpinrangeWithControlRegion
         ranges['mth-mll-hilospin-withSSmirrorRegion'] = self._getMllMth2DSpinrangeWithSSmirrorRegion
+        ranges['vbfMll-range']       = self._getMllVBFrange
         ranges['vhMll-range']        = self._getMllVHrange
         ranges['vhMllBanana-range']  = self._getMllVHrangeWithControlRegion
         ranges['vbfMllBanana-range'] = self._getMllVBFrangeWithControlRegion
@@ -231,13 +232,24 @@ class ShapeFactory:
 
 
     # _____________________________________________________________________________
+    def _getMllVBFrange(self,mass,cat):
+
+        if cat not in ['2j']:
+            print cat
+            raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
+
+        return ([12,30,45,60,75,100,125,150,175,200,250,300,350,400,600],)
+
+
+    # _____________________________________________________________________________
     def _getMllVHrange(self,mass,cat):
 
         if cat not in ['vh2j']:
             print cat
             raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
 
-        return ([12,30,50,75,100,150,200],)
+        return ([12,30,45,60,75,100,125,150,175,200],)
+        #return ([12,30,50,75,100,150,200],)
 
 
     # _____________________________________________________________________________
@@ -699,6 +711,14 @@ class ShapeFactory:
         weights['WJetFakeRate-eDn']  = 'baseW*fakeWElDown*(run!=201191)'
         weights['WJetFakeRate-mUp']  = 'baseW*fakeWMuUp*(run!=201191)'
         weights['WJetFakeRate-mDn']  = 'baseW*fakeWMuDown*(run!=201191)'
+
+
+        weights['WJetFakeRate-2j-template']              = 'baseW*fakeW'
+        weights['WJetFakeRate-2j-eUp']  = 'baseW*fakeWElUp*(run!=201191)'
+        weights['WJetFakeRate-2j-eDn']  = 'baseW*fakeWElDown*(run!=201191)'
+        weights['WJetFakeRate-2j-mUp']  = 'baseW*fakeWMuUp*(run!=201191)'
+        weights['WJetFakeRate-2j-mDn']  = 'baseW*fakeWMuDown*(run!=201191)'
+
         weights['WJetSS']            = 'baseW*fakeW*ssW*(run!=201191)'
 
         weights['WJet-template']              = 'baseW*fakeW'
@@ -1030,11 +1050,12 @@ if __name__ == '__main__':
                 ('muonScale_up'          , 'p_scale_mUp'),
                 ('chargeResolution'      , 'ch_res'),
             ])
+
             # remove skip-syst list
             if opt.skipSyst!='':
-                for s in opt.skipSyst.split(' '):
-                    print 'skipping systematics: '+s
-                    systematics.pop(s) 
+               for s in opt.skipSyst.split(' '):
+                  print 'skipping systematics: '+s
+                  systematics.pop(s)
 
             systByWeight = {}
             systByWeight['leptonEfficiency_down'] = 'effWDown/effW'

@@ -462,7 +462,7 @@ class ShapeMixer:
             wJetShapeDown.Add(wJetSSUp, -1)
             wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
-            
+
         # -----------------------------------------------------------------
         # WJets shape syst
         #
@@ -497,7 +497,7 @@ class ShapeMixer:
                     self.templates[WJetShapeUp.GetTitle()]   = WJetShapeUp
                     self.templates[WJetShapeDown.GetTitle()] = WJetShapeDown
 
-        if 'WJetFakeRate-template' in self.nominals: 
+        if 'WJetFakeRate-template' in self.nominals:
             wJetEff = self.nominals.pop('WJetFakeRate-template')
             wJetSystName = 'CMS{0}_hww_WJet_FakeRate_jet_shape'.format(suffix)
             wJetShapeUp = wJetEff.Clone('histo_WJet_'+wJetSystName+'Up')
@@ -510,6 +510,78 @@ class ShapeMixer:
             wJetShapeDown.Scale(2)
             wJetShapeDown.Add(wJetShapeUp,-1)
             wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
+            self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
+
+
+        # -----------------------------------------------------------------
+        # WJets shape syst for vh analysis
+        #
+        #   Using the "2j" tag in the sample name we trigger this feature
+        #   -> no effect of 0/1 jet bin since since no "2j" in the samples names
+        #
+        #   Using different pt threshold as systematics
+        #   calculated on the fly, for both shape AND normalization
+        #   -> shape is NOT normalized to nominal!
+        #
+        #   Generic case: the variation is calculated in a template phase space
+        #                 "template" is used as a reference, while "Wjet" is the target
+        #                 "up/down" are then scaled to *target/nominal
+        #                 In case no template (or template = nominal) then, it is just as using "up/down" after nominal cuts
+        #
+
+        wjet2jScale = 1.
+
+        if 'WJetFakeRate-2j-template' in self.nominals:
+            WJetmc        = self.nominals.pop('WJet')
+            WJetShape     = self.nominals.pop('WJetFakeRate-2j-template')
+            WJetSystName = 'CMS{0}_hww_WJet_template_shape_2j'.format(suffix)
+
+            WJetnom = WJetShape.Clone('histo_WJet')
+            WJetnom.SetTitle('WJet')
+            if WJetnom.Integral() == 0.:
+                # no entries in the template shape --> what?!? How the heck is it possible?
+                #
+                if WJetmc.Integral() != 0.:
+                    self._logger.warn('WJet shape template has no entries, but the standard mc is not (%f,%d)', WJetmc.Integral(), WJetmc.GetEntries())
+                    self.nominals['WJet'] = WJetmc
+                else:
+                    self.nominals['WJet'] = WJetnom
+            else:
+                # scale the "template" to the "nominal"
+                wjet2jScale = (WJetmc.Integral()/WJetnom.Integral()) if WJetmc.Integral() != 0. else 1.0
+                WJetnom.Scale( (WJetmc.Integral() if WJetmc.Integral() != 0. else 0.001)/WJetnom.Integral() )
+                self.nominals['WJet'] = WJetnom
+
+        if 'WJetFakeRate-2j-eUp' in self.nominals:
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape'.format(suffix)
+            wJetEffeUp = self.nominals.pop('WJetFakeRate-2j-eUp')
+            wJetShapeUp = wJetEffeUp.Clone('histo_WJet_'+wJetSystName+'Up')
+            wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
+            wJetShapeUp.Scale(wjet2jScale)  # in case it is a template it scales!
+            self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
+
+        if 'WJetFakeRate-2j-eDn' in self.nominals:
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape'.format(suffix)
+            wJetEffeDown = self.nominals.pop('WJetFakeRate-2j-eDn')
+            wJetShapeDown = wJetEffeDown.Clone('histo_WJet_'+wJetSystName+'Down')
+            wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
+            wJetShapeDown.Scale(wjet2jScale)  # in case it is a template it scales!
+            self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
+
+        if 'WJetFakeRate-2j-mUp' in self.nominals:
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape'.format(suffix)
+            wJetEffmUp = self.nominals.pop('WJetFakeRate-2j-mUp')
+            wJetShapeUp = wJetEffmUp.Clone('histo_WJet_'+wJetSystName+'Up')
+            wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
+            wJetShapeUp.Scale(wjet2jScale)  # in case it is a template it scales!
+            self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
+
+        if 'WJetFakeRate-2j-mDn' in self.nominals:
+            wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape'.format(suffix)
+            wJetEffmDown = self.nominals.pop('WJetFakeRate-2j-mDn')
+            wJetShapeDown = wJetEffmDown.Clone('histo_WJet_'+wJetSystName+'Down')
+            wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
+            wJetShapeDown.Scale(wjet2jScale)  # in case it is a template it scales!
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
 
