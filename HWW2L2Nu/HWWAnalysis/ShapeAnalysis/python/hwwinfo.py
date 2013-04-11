@@ -45,6 +45,7 @@ class wwcutsB:
 
     # met cuts 
     met  = '( !sameflav || ( (njet!=0 || dymva1>0.88) && (njet!=1 || dymva1>0.84) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
+    mpmet  = '( !sameflav || ( (njet>1 || (mpmet>45 && dphiveto)) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) )'
 
     wwcommon.update([
         ('d#Phi_{lljj}', dphilljj),
@@ -366,8 +367,8 @@ def massSelections(mass):
     sel['ww-common-ss']           = sel['ww-common'].replace("(ch1*ch2)<0.5", "(ch1*ch2)>0.5")
     sel['shape-ss-selection']     = sel['ww-common-ss'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common-ss'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
 
-    sel['shape-selection']        = sel['ww-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
-    sel['shapebtag-selection']    = sel['wwbtag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['wwbtag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-himass']
+    sel['shape-selection']        = sel['ww-common'].replace("zveto==1", "zveto>-1").replace(wwcuts.met, wwcuts.mpmet)+' && '+sel['shape-lomass'] if mass <=250 else sel['ww-common'].replace("zveto==1", "zveto>-1").replace(wwcuts.met, wwcuts.mpmet)+' && '+sel['shape-himass']
+    sel['shapebtag-selection']    = sel['wwbtag-common'].replace("zveto==1", "zveto>-1").replace(wwcuts.met, wwcuts.mpmet)+' && '+sel['shape-lomass'] if mass <=250 else sel['wwbtag-common'].replace("zveto==1", "zveto>-1").replace(wwcuts.met, wwcuts.mpmet)+' && '+sel['shape-himass']
     sel['shape2011-selection']     = sel['ww2011-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww2011-common'].replace("zveto==1","zveto>-1")+' && '+sel['shape-himass']
     sel['shape2011btag-selection'] = sel['ww2011btag-common'].replace("zveto==1", "zveto>-1")+' && '+sel['shape-lomass'] if mass <=250 else sel['ww2011btag-common'].replace("zveto==1","zveto>-1")+' && '+sel['shape-himass']
 
