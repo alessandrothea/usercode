@@ -50,10 +50,18 @@ class H1RatioPlotter(object):
                 'ndivisions'  : 505,
             }
 
-            self.errsty = 3005
-            self.errcol = ROOT.kGray+1
+            self.errsty      = 3005
+            self.errcol      = ROOT.kGray+1
 
-            self.userrange = (0.,0.)
+            self.logx        = False
+            self.logy        = False
+
+            self.morelogx    = False
+            self.morelogy    = False
+
+            self.userrangex = (0.,0.)
+
+            self.yrange = (0.,0.)
 
             # something more active
             self._legalign  = ('l','t')
@@ -119,9 +127,9 @@ class H1RatioPlotter(object):
 
     #---
     @staticmethod
-    def _setrangeuser( ax, style ):
-        lb  = ax.FindBin( style.userrange[0] )
-        ub  = ax.FindBin( style.userrange[1] )
+    def _setrangeuser( ax, urange ):
+        lb  = ax.FindBin( urange[0] )
+        ub  = ax.FindBin( urange[1] )
         print lb,ub
         ax.SetRange( lb,ub ) 
 
@@ -176,6 +184,8 @@ class H1RatioPlotter(object):
         # ---
         # main plot
         self._pad0.cd()
+        self._pad0.SetLogx(style.logx)
+        self._pad0.SetLogy(style.logy)
 
         hists = [self._h0] + self._hists
         ndim = hists[0].GetDimension()
@@ -206,12 +216,22 @@ class H1RatioPlotter(object):
 
         map(stack.Add,hists)
         stack.Draw('nostack %s' % options)
-        stack.GetYaxis().SetTitle(self._h0.GetYaxis().GetTitle())
 
-#         if style.userrange != (0.,0.): self._setrangeuser( stack.GetXaxis(), style )
-        if style.userrange != (0.,0.): stack.GetXaxis().SetRangeUser(*(style.userrange) )
+        stack.GetXaxis().SetTitle(self._h0.GetXaxis().GetTitle())
+        stack.GetXaxis().SetMoreLogLabels(style.morelogx)
+
+        stack.GetYaxis().SetTitle(self._h0.GetYaxis().GetTitle())
+        stack.GetYaxis().SetMoreLogLabels(style.morelogy)
+
+#         if style.userrangex != (0.,0.): self._setrangeuser( stack.GetXaxis(), style )
+        if style.userrangex != (0.,0.): stack.GetXaxis().SetRangeUser(*(style.userrangex) )
         
-        if style.scalemax != 1:  stack.SetMaximum(style.scalemax*stack.GetMaximum('nostack '+options))
+        if style.yrange != (0.,0.):
+            stack.SetMinimum(style.yrange[0] )
+            stack.SetMaximum(style.yrange[1] )
+
+        elif style.scalemax != 1:  stack.SetMaximum(style.scalemax*stack.GetMaximum('nostack '+options))
+
 
         self._stack = stack
 
@@ -230,6 +250,7 @@ class H1RatioPlotter(object):
             # ---
             # ratio plot
             self._pad1.cd()
+            self._pad1.SetLogx(style.logx)
             h0 = self._h0
             nbins = h0.GetNbinsX()
             xax   = h0.GetXaxis()
@@ -306,6 +327,7 @@ class H1RatioPlotter(object):
             ax = dstack.GetXaxis()
             ay = dstack.GetYaxis()
             ax.SetTitle(h0.GetXaxis().GetTitle())
+            ax.SetMoreLogLabels(style.morelogx)
             ay.SetTitle(style.ytitle2)
             
             self._dstack = dstack
@@ -318,8 +340,8 @@ class H1RatioPlotter(object):
             ROOT.SetOwnership(line,False)
             line.Draw()
 
-#             if style.userrange != (0.,0.): self._setrangeuser( ax, style )
-            if style.userrange != (0.,0.): ax.SetRangeUser(*(style.userrange) )
+#             if style.userrangex != (0.,0.): self._setrangeuser( ax, style )
+            if style.userrangex != (0.,0.): ax.SetRangeUser(*(style.userrangex) )
 
         c.applystyle()
 

@@ -206,10 +206,10 @@ class TreeAnalyser(object):
 
     #---
     def __init__(self, sample=None, cuts=None ):
-        self._cuts       = cuts
-        self._views = None
-        self._modified   = True
-        self._worker     =  TreeWorker.fromsample(sample) if sample else None
+        self._cuts     = cuts
+        self._views    = None
+        self._modified = True
+        self._worker   = TreeWorker.fromsample(sample) if sample else None
 
     #---
     def __del__(self):
@@ -225,11 +225,11 @@ class TreeAnalyser(object):
     def __copy__(self):
         self._log.debug('-GremlinS-')
 
-        other             = TreeAnalyser()
-        other._cuts       = copy.deepcopy(self._cuts)
-        other._views = copy.deepcopy(self._views)
-        other._worker     = self._worker
-        other._modified   = self._modified
+        other           = TreeAnalyser()
+        other._cuts     = copy.deepcopy(self._cuts)
+        other._views    = copy.deepcopy(self._views)
+        other._worker   = self._worker
+        other._modified = self._modified
 
         return other
 
@@ -258,6 +258,7 @@ class TreeAnalyser(object):
     #---
     @property
     def views(self):
+        self._ensureviews()
         return self._views
 
     #---

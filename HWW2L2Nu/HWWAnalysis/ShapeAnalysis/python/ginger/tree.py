@@ -15,6 +15,8 @@ import ROOT
 import copy
 from .base import Labelled
 
+from abc import ABCMeta, abstractmethod
+
 # _____________________________________________________________________________
 #    __  ____  _ __    
 #   / / / / /_(_) /____
@@ -147,7 +149,7 @@ class Yield:
     '''
     def __init__(self, y, ey):
         self.value = y 
-        self.error  = ey
+        self.error = ey
 
     #---
     def __add__(self,other):
@@ -166,6 +168,17 @@ class Yield:
         return Yield(value,error)
 
     #---
+    def __radd__(self,other):
+        '''
+        Right addition used in cases as
+        0 + y = y
+        (useful in cases as sum([y1,y2,...,yN])
+        '''
+        if isinstance(other,float) or isinstance(other,int):
+            return Yield(other + self.value, self.error)
+        else:
+            raise ValueError('Right addition with type \'%s\' not supported' % other.__class__.__name__)
+    #---
     def __rmul__(self,other):
         if isinstance(other,float) or isinstance(other,int):
             return Yield(other * self.value, other * self.error)
@@ -180,8 +193,6 @@ class Yield:
     def __str__(self):
         return '%s +/- %s' % (self.value, self.error)
 
-
-
 # _____________________________________________________________________________
 #    ______             _       __           __            
 #   /_  __/_______  ___| |     / /___  _____/ /_____  _____
@@ -189,7 +200,7 @@ class Yield:
 #   / / / /  /  __/  __/ |/ |/ / /_/ / /  / ,< /  __/ /    
 #  /_/ /_/   \___/\___/|__/|__/\____/_/  /_/|_|\___/_/     
 #                                                          
-class TreeWorker:
+class TreeWorker(object):
     '''
     t = TreeWorker( tree='latino',files=['a.root','b.root'], selection='x <1', weight='3*x', friends=[('bdt',['c.root','d.root']),...]
 
@@ -207,7 +218,9 @@ class TreeWorker:
     def __init__(self, name, files, selection='', weight='', scale=1., friends=None):
 
         self._chain = _buildchain(name, files)
+        # force the loading of the chains
         self._chain.GetEntries()
+
         self._elist     = None
         self._friends   = []
 
@@ -239,16 +252,6 @@ class TreeWorker:
     def _link(self,friends):
         for ftree,ffilenames in friends:
             self.addfriend(free,ffilenames)
-
-    #---
-    def addfriend(name,files):
-        fchain = _buildchain(ftree,ffilenames)
-        if self._chain.GetEntriesFast() != fchain.GetEntries():
-            raise RuntimeError('Mismatching number of entries: '
-                               +self._chain.GetName()+'('+str(self._chain.GetEntriesFast())+'), '
-                               +fchain.GetName()+'('+str(fchain.GetEntriesFast())+')')
-        self._chain.AddFriend(fchain)
-        self._friends.append(fchain)
 
     #---
     def __del__(self):
@@ -289,11 +292,21 @@ class TreeWorker:
         return views
         
     #---
-    def _delroots(self,roots):
-        for l in roots.itervalues():
-            self._log.debug( 'obj before %s',l.__repr__())
-            l.IsA().Destructor(l)
-            self._log.debug( 'obj after  %s', l.__repr__())
+#     def _delroots(self,roots):
+#         for l in roots.itervalues():
+#             self._log.debug( 'obj before %s',l.__repr__())
+#             l.IsA().Destructor(l)
+#             self._log.debug( 'obj after  %s', l.__repr__())
+
+    #---
+    def addfriend(name,files):
+        fchain = _buildchain(ftree,ffilenames)
+        if self._chain.GetEntriesFast() != fchain.GetEntries():
+            raise RuntimeError('Mismatching number of entries: '
+                               +self._chain.GetName()+'('+str(self._chain.GetEntriesFast())+'), '
+                               +fchain.GetName()+'('+str(fchain.GetEntriesFast())+')')
+        self._chain.AddFriend(fchain)
+        self._friends.append(fchain)
 
     #---
     def setweight(self,w):
@@ -352,10 +365,18 @@ class TreeWorker:
             return self._chain.Draw('1.', cut,'goff')
 
     #---
-    def draw(self, *args, **kwargs):
+    def rawdraw(self, *args, **kwargs):
         '''Direct access to the chain Draw. Is it really necessary?'''
         return self._chain.Draw(*args, **kwargs)
-    
+
+    #---
+    def setalias(self,name,alias):
+        return self._chain.SetAlias(name,alias)
+   
+    #---
+    def aliases(self):
+        return dict([ (n.GetName(),n.GetTitle()) for n in self._chain.GetListOfAliases()])
+
     #--
     def _cutexpr(self,cuts,addweight=True,addselection=False):
         '''
@@ -505,7 +526,7 @@ class TreeWorker:
 
 
     #--- 
-    def fill(self, h, varexp, cut='', options='', *args, **kwargs):
+    def project(self, h, varexp, cut='', options='', *args, **kwargs):
        
         # check where we are
         here = ROOT.gDirectory.func()
@@ -525,7 +546,7 @@ class TreeWorker:
         varexp = '%s >> %s' % (varexp,h.GetName())
         cut = self._cutexpr(cut)
 
-        hout = self._plot( varexp, cut, options, *args, **kwargs)
+        hout = self._plot( varexp, cut, options+'goff', *args, **kwargs)
         
         if hout != h: raise ValueError('What happened to my histogram?!?!')
 
@@ -547,59 +568,70 @@ class TreeWorker:
 # /_/ /_/   \___/\___/|___/_/\___/|__/|__/  
 #                                           
 
-class TreeView:
+class TreeView(object):
     '''
     A Class to create iews (via TEntryList) on a TreeWorker
     '''
     class Sentry:
         '''
+        A class to insert and clean an entrylist from a worker when needed
         '''
-        def __init__(self,worker,list):
+        def __init__(self,worker,elist):
             self._worker = worker
 
             current = self._worker.GetEntryList()
 
             self._oldlist = current if current.__nonzero__() else 0x0
-            if list: self._worker.SetEntryList(list)
+            if elist: self._worker.SetEntryList(elist)
 
         def __del__(self):
             # reset the old configuration
             self._worker.SetEntryList(self._oldlist)
 
     _log = logging.getLogger('TreeView')
+
     # ---
-    def __init__(self, worker, cut='', name=None):
+    def __init__(self, worker=None, cut='', name=None):
         self._worker = worker
         self._cut    = cut
         self._expcut = cut
-        self._elist = None
+        self._elist  = None
 
         # don't build the list if no worker (used by copy)  
         if not worker: return
+#         if not worker: assert(0)
 
         # make myself a name if I don't have one
-        name = name if name else str(uuid.uuid1())
+        self._name = name if name else str(uuid.uuid1())
         if cut:
-            self._elist = self._worker._makeentrylist(name,cut)
+            self._elist = self._worker._makeentrylist(self._name,cut)
         elif self._worker._elist:
             self._elist = self._worker._elist.Clone()
+            self._name  = self._elist.GetName()
 
     #---
     def __copy__(self):
         other             = TreeView()
         other._cut        = copy.deepcopy(self._cut)
-        other._extcut     = copy.deepcopy(self._extcut)
+        other._expcut     = copy.deepcopy(self._expcut)
         other._worker     = self._worker
         other._elist      = self._elist.Clone() if self._elist else None
 
+#         assert(0)
+        return other
+
+    def __deepcopy__(self,memo):
+        return self.__copy__()
+
     # ---
     def __repr__(self):
-        return '%s(w=%r,c=%r,%d)' % (self.__class__.__name__,self._worker, self._expcut, self.entries())
+        return '%s(w=%r,c=%r)' % (self.__class__.__name__,self._worker, self._expcut)
 
     # ---
     @property
     def name():
-        return self._elist.GetName()
+#         return self._elist.GetName()
+        return self._name
 
     @property
     def cut(self):
@@ -627,6 +659,18 @@ class TreeView:
         # set temporarily my entrlylist
         sentry = self._sentry()
         return self._worker.plot(name, varexp, extra, options, bins, *args, **kwargs)
+
+    # ---
+    def project(self, h, varexp, extra='', options='', *args, **kwargs):
+        # set temporarily my entrlylist
+        sentry = self._sentry()
+        self._worker.project(h, varexp, cut, option, *args, **kwargs)
+
+    # ---
+    def rawdraw(self, *args, **kwargs):
+        sentry = self._sentry()
+        return self._worker.rawdraw(*args, **kwargs)
+
     
     # ---
     def spawn(self,cut,name=None):
