@@ -473,7 +473,8 @@ class NuisanceMapBuilder:
         CutBased = getCommonSysts(int(mass),flavor,int(jetcat[0]),qqWWfromData, self._shape, optMatt, suffix, self._isssactive)
         if self._shape:
             # float WW+ggWW background normalisation float together
-            for p in opts['floatN'].split(' '):
+#             for p in opts['floatN'].split(' '):
+            for p in opts['floatN']:
                 print p
                 floatN = floatNorm(p)
                 CutBased.update( floatN )
@@ -515,6 +516,8 @@ class NuisanceMapBuilder:
 def incexc(option, opt_str, value, parser):
     if not hasattr(parser.values,'shapeFlags'):
         setattr(parser.values,'shapeFlags',[])
+    if not hasattr(parser.values,'nuisFlags'):
+        setattr(parser.values,'nuisFlags',[])
 
     optarray = str(option).split('/')
     print optarray
@@ -553,8 +556,9 @@ if __name__ == '__main__':
     parser.add_option('-I','--include',         dest='nuisFlags'         , help='include nuisances matching the expression',        action='callback', type='string', callback=incexc)
     parser.add_option('--path_dd'           ,   dest='path_dd'           , help='Data driven path'                 , default=None)
     parser.add_option('--path_shape_merged' ,   dest='path_shape_merged' , help='Destination directory for merged' , default=None)
-    parser.add_option('--floatN',               dest='floatN'            , help='float normalisation of particular processes, separate by space ', default=' ')
-    parser.add_option('--isssactive'          , dest='isssactive'        , help='Is samesign datacard available'                           , default=False)
+#     parser.add_option('--floatN',               dest='floatN'            , help='float normalisation of particular processes, separate by space ', default=' ')
+    parser.add_option('--isssactive',           dest='isssactive'        , help='Is samesign datacard available'                           , default=False)
+    parser.add_option('--floatN',               dest='floatN'            , help='float normalisation of particular processes, separate by space',  default=[] , type='string' , action='callback' , callback=hwwtools.list_maker('floatN'))
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
 

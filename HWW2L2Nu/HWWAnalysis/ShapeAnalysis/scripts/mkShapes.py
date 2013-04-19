@@ -950,7 +950,8 @@ if __name__ == '__main__':
     parser.add_option('--no-noms',       dest='makeNoms',   help='Do not produce the nominal',            action='store_false',   default=True)
     parser.add_option('--no-syst',       dest='makeSyst',   help='Do not produce the systematics',        action='store_false',   default=True)
     parser.add_option('--do-syst',       dest='doSyst',     help='Do only one systematic',                default=None)
-    parser.add_option('--skip-syst',     dest='skipSyst',   help='Skip set of systematics',               default='')
+#     parser.add_option('--skip-syst',     dest='skipSyst',   help='Skip set of systematics',               default='')
+    parser.add_option('--skip-syst',     dest='skipSyst',   help='Skip set of systematics',               default=[] , type='string' , action='callback' , callback=hwwtools.list_maker('skipSyst'))
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
@@ -1052,10 +1053,11 @@ if __name__ == '__main__':
             ])
 
             # remove skip-syst list
-            if opt.skipSyst!='':
-               for s in opt.skipSyst.split(','):
-                  print 'skipping systematics: '+s
-                  systematics.pop(s)
+#             if opt.skipSyst!='':
+#                for s in opt.skipSyst.split(','):
+           for s in opt.skipSyst:
+              print 'skipping systematics: '+s
+              systematics.pop(s)
 
             systByWeight = {}
             systByWeight['leptonEfficiency_down'] = 'effWDown/effW'
