@@ -127,6 +127,14 @@ def setDebugLevel(opt):
         logging.basicConfig(level=logging.INFO)
     
 #---
+def findopt(parser,dest):
+    ''' fint the option with dest as destination'''
+    for o in parser.option_list:
+        if hasattr(o,'dest') and o.dest==dest:
+            return o
+    return None
+
+#---
 def loadOptDefaults(parser,pycfg=None,quiet=False):
     '''
     Load the default options from the configuation file.
@@ -161,10 +169,10 @@ def loadOptDefaults(parser,pycfg=None,quiet=False):
 
         for opt_name, opt_value in vars.iteritems():
             if opt_name[0] == '-': continue
-            opt_longname = '--'+opt_name
-            if not parser.has_option(opt_longname): continue
+                
+            o = findopt(parser, opt_name)
+            if o is None: continue
 
-            o = parser.get_option(opt_longname)
             o.default = opt_value
             parser.defaults[opt_name] = opt_value
 
