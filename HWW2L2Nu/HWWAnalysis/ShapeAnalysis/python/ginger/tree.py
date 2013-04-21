@@ -15,7 +15,7 @@ import ROOT
 import copy
 from .base import Labelled
 
-from abc import ABCMeta, abstractmethod
+
 
 # _____________________________________________________________________________
 #    __  ____  _ __    
@@ -50,7 +50,7 @@ def _bins2hclass( bins ):
         hclass = ROOT.TH1D
         xbins = bins[0]
         hargs = (len(xbins)-1, array('d',xbins))
-    elif l == 2 and  isinstance(bins[0],list) and  isinstance(bins[1],list):
+    elif l == 2 and isinstance(bins[0],list) and isinstance(bins[1],list):
         ndim=2
         hclass = ROOT.TH2D
         xbins = bins[0]
@@ -133,65 +133,7 @@ class Sample(Labelled):
     def addfriend(self, name, files):
         self.friends.append( (name, files) )
 
-
-# _____________________________________________________________________________
-# __  ___      __    __
-# \ \/ (_)__  / /___/ /
-#  \  / / _ \/ / __  / 
-#  / / /  __/ / /_/ /  
-# /_/_/\___/_/\__,_/   
-#                      
-                     
-class Yield:
-    '''
-    Class to describe yields and errors
-    A value with its error
-    '''
-    def __init__(self, y, ey):
-        self.value = y 
-        self.error = ey
-
-    #---
-    def __add__(self,other):
-        
-        value = self.value+other.value
-        error = math.sqrt(self.error**2 +other.error**2)
-
-        return Yield(value,error)
-
-    #---
-    def __sub__(self,other):
-        
-        value = self.value-other.value
-        error = math.sqrt(self.error**2 +other.error**2)
-
-        return Yield(value,error)
-
-    #---
-    def __radd__(self,other):
-        '''
-        Right addition used in cases as
-        0 + y = y
-        (useful in cases as sum([y1,y2,...,yN])
-        '''
-        if isinstance(other,float) or isinstance(other,int):
-            return Yield(other + self.value, self.error)
-        else:
-            raise ValueError('Right addition with type \'%s\' not supported' % other.__class__.__name__)
-    #---
-    def __rmul__(self,other):
-        if isinstance(other,float) or isinstance(other,int):
-            return Yield(other * self.value, other * self.error)
-        else:
-            raise ValueError('Right multiplication with type \'%s\' not supported' % other.__class__.__name__)
-
-    #---
-    def __repr__(self):
-        return '(%s+/-%s)' % (self.value, self.error)
-
-    #---
-    def __str__(self):
-        return '%s +/- %s' % (self.value, self.error)
+from .core import AbsWorker,AbsView,Chained,Yield
 
 # _____________________________________________________________________________
 #    ______             _       __           __            
@@ -200,14 +142,16 @@ class Yield:
 #   / / / /  /  __/  __/ |/ |/ / /_/ / /  / ,< /  __/ /    
 #  /_/ /_/   \___/\___/|__/|__/\____/_/  /_/|_|\___/_/     
 #                                                          
-class TreeWorker(object):
+
+# class TreeWorker(object):
+class TreeWorker(AbsWorker):
     '''
     t = TreeWorker( tree='latino',files=['a.root','b.root'], selection='x <1', weight='3*x', friends=[('bdt',['c.root','d.root']),...]
 
     t = TreeWorker('latino', ['a.root','b.root'] )
     t.addfriend('bdt',['c.root','d.root'])
-    t.setweight('3*x')
-    t.setselection('x < 1')
+    t.weight    = '3*x'
+    t.selection = 'x < 1'
 
     t = TreeWorker.fromSample( sample )
     '''
@@ -215,7 +159,7 @@ class TreeWorker(object):
     #---
 
     # ---
-    def __init__(self, name, files, selection='', weight='', scale=1., friends=None):
+    def __init__(self, name, files, selection='', weight='', friends=None):
 
         self._chain = _buildchain(name, files)
         # force the loading of the chains
@@ -224,12 +168,10 @@ class TreeWorker(object):
         self._elist     = None
         self._friends   = []
 
-        self._weight    = weight
-        self._selection = selection
-        self._scale     = scale
+        self.weight    = weight
+        self.selection = selection
+        self.scale     = 1.
         if friends: self._link(friends)
-
-        self.setselection(self._selection)
 
     # ---
     @staticmethod
@@ -237,8 +179,8 @@ class TreeWorker(object):
         if not isinstance( sample, Sample):
             raise ValueError('sample must inherit from %s (found %s)' % (Sample.__name__, sample.__class__.__name__) )
         t = TreeWorker( sample.name, sample.files )
-        t.setselection( sample.preselection )
-        t.setweight( sample.weight )
+        t.selection = sample.preselection
+        t.weight    = sample.weight
         return t
 
     #---
@@ -279,6 +221,10 @@ class TreeWorker(object):
 
         return l
 
+    #---
+    def spawnview(self, cut='', name=None):
+        return TreeView(self,cut,name)
+
     # ---
     def views(self,cuts):
         if not cuts: return odict.OrderedDict()
@@ -309,15 +255,31 @@ class TreeWorker(object):
         self._friends.append(fchain)
 
     #---
-    def setweight(self,w):
-        self._weight = str(w)
+    @property
+    def scale(self):
+        return self._scale
 
     #---
-    def setscale(self,s):
+    @scale.setter
+    def scale(self,s):
         self._scale = float(s)
 
     #---
-    def setselection(self,c):
+    @property
+    def weight(self):    return self._weight
+    
+    #---
+    @property
+    def selection(self): return self._selection
+    
+    #---
+    @weight.setter
+    def weight(self,w):
+        self._weight = str(w)
+
+    #---
+    @selection.setter
+    def selection(self,c):
         # shall we work in a protected directory?
         self._selection = str(c)
         # make an entrylist with only the selected events
@@ -365,9 +327,9 @@ class TreeWorker(object):
             return self._chain.Draw('1.', cut,'goff')
 
     #---
-    def rawdraw(self, *args, **kwargs):
+    def rawdraw(self, *args):
         '''Direct access to the chain Draw. Is it really necessary?'''
-        return self._chain.Draw(*args, **kwargs)
+        return self._chain.Draw(*args)
 
     #---
     def setalias(self,name,alias):
@@ -411,7 +373,8 @@ class TreeWorker(object):
         
         l = len(bins)
         # if the tuple is made of lists
-        if l in [1,2] and all(map(lambda o: isinstance(o,list),bins)):
+#         if l in [1,2] and all(map(lambda o: isinstance(o,list),bins)):
+        if (l in [1,2] and all(map(lambda o: isinstance(o,list),bins))) or (l in [3,6]):
             dirsentry = utils.TH1AddDirSentry()
             sumsentry = utils.TH1Sumw2Sentry()
 
@@ -425,11 +388,17 @@ class TreeWorker(object):
 
         else:
             # standard approach, the string goes into the expression
-            if l in [1,3]:
-                # nx,xmin,xmax
+            # WARNING: this way the constuction of the histogram is delegated to TTree::Draw, which produces a TH1F
+            # IT would be better to retain the control over the histogram type selection (i.e. being able to make TH1D always)
+            # In order to do so, we need to mimik the with which TTree Draw creates its histograms:
+            #   - x-check the dimention in varexp and projexp
+            #   - initial xmin,xmax (and likewise for y)
+            #   - default number of bins
+            if l in [1]:
+                # nx (free xmin, xmax)
                 ndim=1
-            elif l in [4,6]:
-                # nx,xmin,xmax,ny,ymin,ymax
+            elif l in [4]:
+                # nx,xmin,xmax,ny (free ymin,ymax)
                 ndim=2
             else:
                 # only 1d or 2 d hist
@@ -443,6 +412,8 @@ class TreeWorker(object):
         '''
         Primitive method to produce histograms and projections
         '''
+
+        if kwargs: print 'kwargs',kwargs
         dirsentry = utils.TH1AddDirSentry()
         sumsentry = utils.TH1Sumw2Sentry()
         options = 'goff '+options
@@ -543,7 +514,7 @@ class TreeWorker(object):
 
         hdir.cd()
 
-        varexp = '%s >> %s' % (varexp,h.GetName())
+        varexp = '%s >> +%s' % (varexp,h.GetName())
         cut = self._cutexpr(cut)
 
         hout = self._plot( varexp, cut, options+'goff', *args, **kwargs)
@@ -559,6 +530,75 @@ class TreeWorker(object):
 
         return h
 
+# _____________________________________________________________________________
+#    ________          _     _       __           __            
+#   / ____/ /_  ____ _(_)___| |     / /___  _____/ /_____  _____
+#  / /   / __ \/ __ `/ / __ \ | /| / / __ \/ ___/ //_/ _ \/ ___/
+# / /___/ / / / /_/ / / / / / |/ |/ / /_/ / /  / ,< /  __/ /    
+# \____/_/ /_/\__,_/_/_/ /_/|__/|__/\____/_/  /_/|_|\___/_/     
+#                                                               
+class ChainWorker(Chained,AbsWorker):
+
+    def __init__(self,*workers):
+        '''  '''
+        super(ChainWorker,self).__init__(AbsWorker,*workers)
+        self._scale = 1.
+
+    #---
+    @property
+    def scale(self):
+        return self._scale
+
+    #---
+    @scale.setter
+    def scale(self,s):
+        oldscale = self._scale
+        newscale = float(s)
+
+        for o in self._objs:
+            o.scale *= (newscale/oldscale)
+
+        self._scale = float(s)
+
+    #---
+    def spawnview(self, cut='', name=None):
+        return ChainView(self,cut,name)
+
+    # is this method really useful?
+    def views(self,cuts):
+
+        # put the treeviews in a temporary container
+        allviews = [ o.views(cuts) for o in self._objs ]
+        # but what we need are the 
+        alliters = [ v.itervalues() for v in allviews ]
+
+        import itertools
+        chainviews=odict.OrderedDict()
+        # make an iterator with everything inside
+        # cut,tview1,tview2,...,tviewN
+        # to repack them as 
+        # cut,cview
+        for it in itertools.izip(cuts,*alliters):
+            
+            # create a new view
+            cv = ChainView()
+
+            # add all the treeviews
+            cv.add( *it[1:] )
+
+            #add it to the list of views
+            chainviews[it[0]] = cv 
+
+        return chainviews
+
+    @staticmethod
+    def fromsamples( *samples ):
+        ''' build each sample into a TreeWorker and add them together'''
+
+        trees = [TreeWorker.fromsample(s) for s in samples]
+        return ChainWorker(*trees)
+
+
 
 # _____________________________________________________________________________
 #   ______             _    ___             
@@ -568,7 +608,8 @@ class TreeWorker(object):
 # /_/ /_/   \___/\___/|___/_/\___/|__/|__/  
 #                                           
 
-class TreeView(object):
+# class TreeView(object):
+class TreeView(AbsView):
     '''
     A Class to create iews (via TEntryList) on a TreeWorker
     '''
@@ -592,6 +633,10 @@ class TreeView(object):
 
     # ---
     def __init__(self, worker=None, cut='', name=None):
+
+        if worker and not isinstance(worker,TreeWorker):
+            raise TypeError('worker must ve of class TreeWorker')
+
         self._worker = worker
         self._cut    = cut
         self._expcut = cut
@@ -629,8 +674,7 @@ class TreeView(object):
 
     # ---
     @property
-    def name():
-#         return self._elist.GetName()
+    def name(self):
         return self._name
 
     @property
@@ -643,33 +687,33 @@ class TreeView(object):
         return TreeView.Sentry(self._worker,self._elist)
     
     # ---
-    def entries(self,extra=None):
+    def entries(self,cut=None):
         # get the entries from worker after setting the entrylist
         sentry = self._sentry()
-        return self._worker.entries(extra)
+        return self._worker.entries(cut)
 
     # ---
-    def yields(self, extra='', options='', *args, **kwargs):
+    def yields(self, cut='', options='', *args, **kwargs):
         # set temporarily my entrlylist
         sentry = self._sentry()
-        return self._worker.yields(extra, options, *args, **kwargs)
+        return self._worker.yields(cut, options, *args, **kwargs)
 
     # ---
-    def plot(self, name, varexp, extra='', options='', bins=None, *args, **kwargs):
+    def plot(self, name, varexp, cut='', options='', bins=None, *args, **kwargs):
         # set temporarily my entrlylist
         sentry = self._sentry()
-        return self._worker.plot(name, varexp, extra, options, bins, *args, **kwargs)
+        return self._worker.plot(name, varexp, cut, options, bins, *args, **kwargs)
 
     # ---
-    def project(self, h, varexp, extra='', options='', *args, **kwargs):
+    def project(self, h, varexp, cut='', options='', *args, **kwargs):
         # set temporarily my entrlylist
         sentry = self._sentry()
         self._worker.project(h, varexp, cut, option, *args, **kwargs)
 
     # ---
-    def rawdraw(self, *args, **kwargs):
+    def rawdraw(self, *args):
         sentry = self._sentry()
-        return self._worker.rawdraw(*args, **kwargs)
+        return self._worker.rawdraw(*args)
 
     
     # ---
@@ -683,4 +727,64 @@ class TreeView(object):
 
         v._expcut = '(%s) && (%s)' % (self._expcut,cut) if self._expcut else cut
         return v
+
+#_______________________________________________________________________________
+#    ________          _     _    ___             
+#   / ____/ /_  ____ _(_)___| |  / (_)__ _      __
+#  / /   / __ \/ __ `/ / __ \ | / / / _ \ | /| / /
+# / /___/ / / / /_/ / / / / / |/ / /  __/ |/ |/ / 
+# \____/_/ /_/\__,_/_/_/ /_/|___/_/\___/|__/|__/  
+#                                                 
+
+class ChainView(Chained,AbsView):
+
+    # ---
+    def __init__(self,worker=None, cut='',name=None):
+        if worker and not isinstance(worker,ChainWorker):
+            raise TypeError('worker must ve of class TreeWorker')
+
+        super(ChainView,self).__init__(AbsView)
+
+        # copied from TreeView. Slim it?
+        self._worker = worker
+        self._cut    = cut
+        self._expcut = cut
+        self._elist  = None 
+
+        # used by copy operations (default constructor)
+        if worker is None: return
+
+        views = [t.spawnview(cut,name) for t in worker]
+        self.add(*views)
+
+    # ---
+    @property
+    # copied from TreeView. Move it to AbsView??
+    def name(self):
+        return self._name
+
+    @property
+    # copied from TreeView. Move it to AbsView??
+    def cut(self):
+        return self._cut
+
+    def __copy__(self):
+        objs  = copy.deepcopy(self._objs)
+        other = ChainView()
+        other.add(*objs)
+        return other
+
+    def __deepcopy__(self,memo):
+        return self.__copy__()
+
+    # ---
+    def spawn(self,*args, **kwargs):
+
+        child = ChainView()
+
+        views = [ o.spawn(*args, **kwargs) for o in self._objs]
+        
+        child.add(*views)
+
+        return child
 

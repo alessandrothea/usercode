@@ -1,5 +1,5 @@
 import HWWAnalysis.Misc.odict as odict
-from .tree import TreeWorker, TreeView, Sample
+from .tree import TreeWorker, ChainWorker, TreeView, ChainView, Sample
 from .base import Labelled
 import os.path
 import ROOT
@@ -205,12 +205,13 @@ class TreeAnalyser(object):
     _log = logging.getLogger('TreeAnalyser')
 
     #---
-    def __init__(self, sample=None, cuts=None ):
+    def __init__(self, samples=None, cuts=None ):
         self._cuts     = cuts
         self._views    = None
         self._modified = True
-        self._worker   = TreeWorker.fromsample(sample) if sample else None
-
+        self._worker   = ChainWorker.fromsamples(*samples) if samples else None
+#         self._worker   = TreeWorker.fromsamples(samples) if sample else None
+        
     #---
     def __del__(self):
         self._deleteentries()
@@ -219,7 +220,6 @@ class TreeAnalyser(object):
     #---
     def __repr__(self):
         return '%s( %s )' % (self.__class__.__name__,self._cuts)
-
     
     #---
     def __copy__(self):
@@ -242,7 +242,7 @@ class TreeAnalyser(object):
     #---
     def __setattr__(self,key,value):
         if key == 'lumi':
-            self._worker.setscale(value)
+            self._worker.scale = value
         else:
             self.__dict__[key] = value
 
@@ -303,7 +303,8 @@ class TreeAnalyser(object):
         elif nv > nc : raise ValueError('WTF!')
 
         # last is the last valid view, used to grow the list
-        last = views.values()[-1] if nv > 0 else TreeView(self._worker)
+        last = views.values()[-1] if nv > 0 else ChainView(self._worker)
+#         last = views.values()[-1] if nv > 0 else TreeView(self._worker)
 
         newcuts = cutflow[nv:]
         self._log.debug('appending %s', newcuts)
