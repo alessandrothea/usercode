@@ -152,7 +152,7 @@ def getJEUFactor(pt, eta, jeuList):
                 if pt <  float(s[3]): # 3 = minimum pt in table
                     scale = float(s[4]) # 4 = corresponding smallest uncertainty
 ##                     print ' ----------------------------------'
-                    print 'Jet has too low pt: '+str(pt)
+                    print 'Jet has too low pt: '+str(pt)+' << '+s[3]
 ##                     print 'Setting uncertainty to minimum pt uncertainty: '+str(scale)
 ##                     print 'pseudorapidity: '+str(eta)
                     break
@@ -1095,7 +1095,10 @@ class scaleAndSmear:
         ## read the JES corrections
         jeu = []
         base_path = os.path.join(os.getenv('CMSSW_BASE'),'src/HWWAnalysis/ShapeAnalysis/data/')
-        file = open(base_path+'START38_V13_AK5PF_Uncertainty.txt')
+        #file = open(base_path+'START38_V13_AK5PF_Uncertainty.txt')
+        file = open(base_path+'Fall12_V7_DATA_AK5PF_Uncertainty.txt')
+
+
 
         for line in file:
             if (line[0] == '#' or line[0] == '{'):
@@ -1338,18 +1341,21 @@ class scaleAndSmear:
             if jetpt4[0] > 0:
                 j4.SetPtEtaPhiM(jetpt4[0], eta4, phi4, 0)
 
-            ## PFMET:
-            met = ROOT.TLorentzVector()
-            met.SetPtEtaPhiM(self.oldttree.pfmet, 0, self.oldttree.pfmetphi, 0)           
-            ## FIXME: cross-check this!!
-            ## add "old jets" and subtract the "new" ones:
-            #met = met + j1_hold - j1 + j2_hold - j2
-            met = correctMet(met, j1_hold, j2_hold, j1, j2)
-            met = correctMet(met, j3_hold, j4_hold, j3, j4)
+
+            correctMETwithJES = False
+            if correctMETwithJES :
+               ## PFMET:
+               met = ROOT.TLorentzVector()
+               met.SetPtEtaPhiM(self.oldttree.pfmet, 0, self.oldttree.pfmetphi, 0)           
+               ## FIXME: cross-check this!!
+               ## add "old jets" and subtract the "new" ones:
+               #met = met + j1_hold - j1 + j2_hold - j2
+               met = correctMet(met, j1_hold, j2_hold, j1, j2)
+               met = correctMet(met, j3_hold, j4_hold, j3, j4)
             
-            ## substitute the values
-            pfmet[0] = met.Pt()
-            pfmetphi[0] = met.Phi()
+               ## substitute the values
+               pfmet[0] = met.Pt()
+               pfmetphi[0] = met.Phi()
 
 
             ## changing MET means also changing transverse masses...
@@ -1358,28 +1364,31 @@ class scaleAndSmear:
             l1.SetPtEtaPhiM(self.oldttree.pt1, self.oldttree.eta1, self.oldttree.phi1, 0)
             l2.SetPtEtaPhiM(self.oldttree.pt2, self.oldttree.eta2, self.oldttree.phi2, 0)
             ## recalculate mth
-            mth[0] = transverseMass((l1+l2),met)
-            mtw1[0] = transverseMass((l1),met)
-            mtw2[0] = transverseMass((l2),met)
+            if correctMETwithJES :
+               mth[0] = transverseMass((l1+l2),met)
+               mtw1[0] = transverseMass((l1),met)
+               mtw2[0] = transverseMass((l2),met)
 
 ##             dphill[0] =  deltaPhi(l1,l2)
-            dphillmet[0] =  deltaPhi(l1+l2,met)
-            dphilmet1[0] =  deltaPhi(l1,met)
-            dphilmet2[0] =  deltaPhi(l2,met)
-            dphilmet[0]  = min(dphilmet1[0], dphilmet2[0])  
+               dphillmet[0] =  deltaPhi(l1+l2,met)
+               dphilmet1[0] =  deltaPhi(l1,met)
+               dphilmet2[0] =  deltaPhi(l2,met)
+               dphilmet[0]  = min(dphilmet1[0], dphilmet2[0])  
 ##             dphilljet[0] =  deltaPhi(l1+l2,j1)
+
             dphilljetjet[0] =  deltaPhi(l1+l2,j1+j2)
             mjj[0] = invariantMass(j1,j2)
 ##             mjj[0] = (j1+j2).M()
 
             ## other METs:
             ## - chmet
-            chmet4 = ROOT.TLorentzVector()
-            chmet4.SetPtEtaPhiM(self.oldttree.chmet, 0, self.oldttree.chmetphi, 0)      
-            chmet4 = correctMet(chmet4, j1_hold, j2_hold, j1, j2)
-            chmet4 = correctMet(chmet4, j3_hold, j4_hold, j3, j4)            
-            chmet[0] = chmet4.Pt()
-            chmetphi[0] = chmet4.Phi()
+            if correctMETwithJES :
+               chmet4 = ROOT.TLorentzVector()
+               chmet4.SetPtEtaPhiM(self.oldttree.chmet, 0, self.oldttree.chmetphi, 0)      
+               chmet4 = correctMet(chmet4, j1_hold, j2_hold, j1, j2)
+               chmet4 = correctMet(chmet4, j3_hold, j4_hold, j3, j4)            
+               chmet[0] = chmet4.Pt()
+               chmetphi[0] = chmet4.Phi()
             ## ## - tcmet
             ## tcmet4 = ROOT.TLorentzVector()
             ## tcmet4.SetPtEtaPhiM(self.oldttree.tcmet, 0, self.oldttree.tcmetphi, 0)      
@@ -1389,13 +1398,13 @@ class scaleAndSmear:
             ## tcmetphi[0] = tcmet4.Phi()
 
             ## correct projected MET
-            ratio = pfmet[0] / self.oldttree.pfmet
-            ppfmet[0] = self.oldttree.ppfmet * ratio
-            chratio = chmet[0] / self.oldttree.chmet
-            pchmet[0] = self.oldttree.pchmet * chratio
+               ratio = pfmet[0] / self.oldttree.pfmet
+               ppfmet[0] = self.oldttree.ppfmet * ratio
+               chratio = chmet[0] / self.oldttree.chmet
+               pchmet[0] = self.oldttree.pchmet * chratio
             ## tcratio = tcmet[0] / self.oldttree.tcmet
             ## ptcmet[0] = self.oldttree.ptcmet * tcratio
-            mpmet[0] = min( ppfmet[0], pchmet[0] )
+               mpmet[0] = min( ppfmet[0], pchmet[0] )
 
 
             if self.verbose is True:
