@@ -187,6 +187,7 @@ class scaleAndSmear:
         self.nentries = 0
         self.systArgument = ''
         self.direction = ''
+        self.correctMETwithJES = False
 
         
     def __del__(self):
@@ -353,34 +354,35 @@ class scaleAndSmear:
             oldTree.SetBranchStatus('jetpt1'    ,0)
             oldTree.SetBranchStatus('jetpt2'    ,0)
             oldTree.SetBranchStatus('njet'      ,0)
-            oldTree.SetBranchStatus('pfmet'     ,0)
-            oldTree.SetBranchStatus('pfmetphi'  ,0)
-            oldTree.SetBranchStatus('chmet'     ,0)
-            oldTree.SetBranchStatus('chmetphi'  ,0)
-            ## oldTree.SetBranchStatus('tcmet'     ,0)
-            ## oldTree.SetBranchStatus('tcmetphi'  ,0)
-            oldTree.SetBranchStatus('mth'       ,0)
-            oldTree.SetBranchStatus('mtw1'      ,0)
-            oldTree.SetBranchStatus('mtw2'      ,0)
-##             oldTree.SetBranchStatus('dphill'    ,0)
-##             oldTree.SetBranchStatus('dphilljet' ,0)
-            oldTree.SetBranchStatus('dphilljetjet' ,0)
-            oldTree.SetBranchStatus('dphillmet' ,0)
-            oldTree.SetBranchStatus('dphilmet' ,0)
-            oldTree.SetBranchStatus('dphilmet1' ,0)
-            oldTree.SetBranchStatus('dphilmet2' ,0)
             oldTree.SetBranchStatus('mjj'       ,0)
-            oldTree.SetBranchStatus('ppfmet'    ,0)
-            oldTree.SetBranchStatus('pchmet'    ,0)
-            ## oldTree.SetBranchStatus('ptcmet'    ,0)
-            ## oldTree.SetBranchStatus('mpmet'     ,0)
-            #oldTree.SetBranchStatus('hardbdisctche' ,0)
-            #oldTree.SetBranchStatus('softbdisctche' ,0)
+            oldTree.SetBranchStatus('dphilljetjet' ,0)
             oldTree.SetBranchStatus('jetpt3'    ,0)
             oldTree.SetBranchStatus('jetpt4'    ,0)
             oldTree.SetBranchStatus('cjetpt1'    ,0)
             oldTree.SetBranchStatus('cjetpt2'    ,0)
             oldTree.SetBranchStatus('njetvbf'    ,0)
+            if self.correctMETwithJES:
+               oldTree.SetBranchStatus('pfmet'     ,0)
+               oldTree.SetBranchStatus('pfmetphi'  ,0)
+               oldTree.SetBranchStatus('chmet'     ,0)
+               oldTree.SetBranchStatus('chmetphi'  ,0)
+            ## oldTree.SetBranchStatus('tcmet'     ,0)
+            ## oldTree.SetBranchStatus('tcmetphi'  ,0)
+               oldTree.SetBranchStatus('mth'       ,0)
+               oldTree.SetBranchStatus('mtw1'      ,0)
+               oldTree.SetBranchStatus('mtw2'      ,0)
+##             oldTree.SetBranchStatus('dphill'    ,0)
+##             oldTree.SetBranchStatus('dphilljet' ,0)
+               oldTree.SetBranchStatus('dphillmet' ,0)
+               oldTree.SetBranchStatus('dphilmet' ,0)
+               oldTree.SetBranchStatus('dphilmet1' ,0)
+               oldTree.SetBranchStatus('dphilmet2' ,0)
+               oldTree.SetBranchStatus('ppfmet'    ,0)
+               oldTree.SetBranchStatus('pchmet'    ,0)
+            ## oldTree.SetBranchStatus('ptcmet'    ,0)
+            ## oldTree.SetBranchStatus('mpmet'     ,0)
+            #oldTree.SetBranchStatus('hardbdisctche' ,0)
+            #oldTree.SetBranchStatus('softbdisctche' ,0)
             
         if self.systArgument == 'metResolution':
             oldTree.SetBranchStatus('pfmet'     ,0)
@@ -1086,6 +1088,7 @@ class scaleAndSmear:
 ##                                        |___/ |___/                           
 ##
     def jetEnergyScale(self):
+
         jetthreshold = 30.
         if self.direction == 'up':
             direction = +1.0
@@ -1144,34 +1147,35 @@ class scaleAndSmear:
         self.ttree.Branch('jetpt1',jetpt1,'jetpt1/F')
         self.ttree.Branch('jetpt2',jetpt2,'jetpt2/F')
         self.ttree.Branch('njet',njet,'njet/F')
-        self.ttree.Branch('pfmet',pfmet,'pfmet/F')
-        self.ttree.Branch('pfmetphi',pfmetphi,'pfmetphi/F')
-        self.ttree.Branch('chmet',chmet,'chmet/F')
-        self.ttree.Branch('chmetphi',chmetphi,'chmetphi/F')
-        ## self.ttree.Branch('tcmet',tcmet,'tcmet/F')
-        ## self.ttree.Branch('tcmetphi',tcmetphi,'tcmetphi/F')
-        self.ttree.Branch('mth',mth,'mth/F')
-        self.ttree.Branch('mtw1',mtw1,'mtw1/F')
-        self.ttree.Branch('mtw2',mtw2,'mtw2/F')
-##         self.ttree.Branch('dphill',dphill,'dphill/F')
-##         self.ttree.Branch('dphilljet',dphilljet,'dphilljet/F')
-        self.ttree.Branch('dphilljetjet',dphilljetjet,'dphilljetjet/F')
-        self.ttree.Branch('dphillmet',dphillmet,'dphillmet/F')
-        self.ttree.Branch('dphilmet',dphilmet,'dphilmet/F')
-        self.ttree.Branch('dphilmet1',dphilmet1,'dphilmet1/F')
-        self.ttree.Branch('dphilmet2',dphilmet2,'dphilmet2/F')
         self.ttree.Branch('mjj',mjj,'mjj/F')
-        self.ttree.Branch('ppfmet',ppfmet,'ppfmet/F')
-        self.ttree.Branch('pchmet',pchmet,'pchmet/F')
-        ## self.ttree.Branch('ptcmet',ptcmet,'ptcmet/F')     
-        self.ttree.Branch('mpmet',mpmet,'mpmet/F')
-        #self.ttree.Branch('hardbdisctche',hardbdisctche,'hardbdisctche/F')
-        #self.ttree.Branch('softbdisctche',softbdisctche,'softbdisctche/F')
+        self.ttree.Branch('dphilljetjet',dphilljetjet,'dphilljetjet/F')
         self.ttree.Branch('jetpt3',jetpt3,'jetpt3/F')
         self.ttree.Branch('jetpt4',jetpt4,'jetpt4/F')
         self.ttree.Branch('cjetpt1',cjetpt1,'cjetpt1/F')
         self.ttree.Branch('cjetpt2',cjetpt2,'cjetpt2/F')
         self.ttree.Branch('njetvbf',njetvbf,'njetvbf/F')
+        if self.correctMETwithJES :
+           self.ttree.Branch('pfmet',pfmet,'pfmet/F')
+           self.ttree.Branch('pfmetphi',pfmetphi,'pfmetphi/F')
+           self.ttree.Branch('chmet',chmet,'chmet/F')
+           self.ttree.Branch('chmetphi',chmetphi,'chmetphi/F')
+        ## self.ttree.Branch('tcmet',tcmet,'tcmet/F')
+        ## self.ttree.Branch('tcmetphi',tcmetphi,'tcmetphi/F')
+           self.ttree.Branch('mth',mth,'mth/F')
+           self.ttree.Branch('mtw1',mtw1,'mtw1/F')
+           self.ttree.Branch('mtw2',mtw2,'mtw2/F')
+##         self.ttree.Branch('dphill',dphill,'dphill/F')
+##         self.ttree.Branch('dphilljet',dphilljet,'dphilljet/F')
+           self.ttree.Branch('dphillmet',dphillmet,'dphillmet/F')
+           self.ttree.Branch('dphilmet',dphilmet,'dphilmet/F')
+           self.ttree.Branch('dphilmet1',dphilmet1,'dphilmet1/F')
+           self.ttree.Branch('dphilmet2',dphilmet2,'dphilmet2/F')
+           self.ttree.Branch('ppfmet',ppfmet,'ppfmet/F')
+           self.ttree.Branch('pchmet',pchmet,'pchmet/F')
+        ## self.ttree.Branch('ptcmet',ptcmet,'ptcmet/F')     
+           self.ttree.Branch('mpmet',mpmet,'mpmet/F')
+        #self.ttree.Branch('hardbdisctche',hardbdisctche,'hardbdisctche/F')
+        #self.ttree.Branch('softbdisctche',softbdisctche,'softbdisctche/F')
 
         nentries = self.nentries
         print 'total number of entries: '+str(nentries)
@@ -1342,8 +1346,7 @@ class scaleAndSmear:
                 j4.SetPtEtaPhiM(jetpt4[0], eta4, phi4, 0)
 
 
-            correctMETwithJES = False
-            if correctMETwithJES :
+            if self.correctMETwithJES :
                ## PFMET:
                met = ROOT.TLorentzVector()
                met.SetPtEtaPhiM(self.oldttree.pfmet, 0, self.oldttree.pfmetphi, 0)           
@@ -1364,7 +1367,13 @@ class scaleAndSmear:
             l1.SetPtEtaPhiM(self.oldttree.pt1, self.oldttree.eta1, self.oldttree.phi1, 0)
             l2.SetPtEtaPhiM(self.oldttree.pt2, self.oldttree.eta2, self.oldttree.phi2, 0)
             ## recalculate mth
-            if correctMETwithJES :
+
+            dphilljetjet[0] =  deltaPhi(l1+l2,j1+j2)
+            mjj[0] = invariantMass(j1,j2)
+##             mjj[0] = (j1+j2).M()
+
+
+            if self.correctMETwithJES :
                mth[0] = transverseMass((l1+l2),met)
                mtw1[0] = transverseMass((l1),met)
                mtw2[0] = transverseMass((l2),met)
@@ -1376,13 +1385,8 @@ class scaleAndSmear:
                dphilmet[0]  = min(dphilmet1[0], dphilmet2[0])  
 ##             dphilljet[0] =  deltaPhi(l1+l2,j1)
 
-            dphilljetjet[0] =  deltaPhi(l1+l2,j1+j2)
-            mjj[0] = invariantMass(j1,j2)
-##             mjj[0] = (j1+j2).M()
-
             ## other METs:
             ## - chmet
-            if correctMETwithJES :
                chmet4 = ROOT.TLorentzVector()
                chmet4.SetPtEtaPhiM(self.oldttree.chmet, 0, self.oldttree.chmetphi, 0)      
                chmet4 = correctMet(chmet4, j1_hold, j2_hold, j1, j2)
