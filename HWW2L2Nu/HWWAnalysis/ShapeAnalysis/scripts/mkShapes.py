@@ -1037,19 +1037,19 @@ if __name__ == '__main__':
                     pass
             # systematic shapes
             systematics = OrderedDict([
-                ('electronResolution'    , 'p_res_e'),
-                ('electronScale_down'    , 'p_scale_eDown'),
-                ('electronScale_up'      , 'p_scale_eUp'),
-                ('jetEnergyScale_down'   , 'p_scale_jDown'),
-                ('jetEnergyScale_up'     , 'p_scale_jUp'),
-                ('leptonEfficiency_down' , 'eff_lDown'),
-                ('leptonEfficiency_up'   , 'eff_lUp'),
-                ('puW_up'                , 'puModelUp'),
-                ('puW_down'              , 'puModelDown'),
-                ('metResolution'         , 'met'),
-                ('muonScale_down'        , 'p_scale_mDown'),
-                ('muonScale_up'          , 'p_scale_mUp'),
-                ('chargeResolution'      , 'ch_res'),
+                ('electronResolution'      , 'p_res_e'),
+                ('electronScale_down'      , 'p_scale_eDown'),
+                ('electronScale_up'        , 'p_scale_eUp'),
+                ('jetEnergyScale_down'     , 'p_scale_jDown'),
+                ('jetEnergyScale_up'       , 'p_scale_jUp'),
+                ('leptonEfficiency_down'   , 'eff_lDown'),
+                ('leptonEfficiency_up'     , 'eff_lUp'),
+                ('puW_up'                  , 'puModelUp'),
+                ('puW_down'                , 'puModelDown'),
+                ('metResolution'           , 'met'),
+                ('muonScale_down'          , 'p_scale_mDown'),
+                ('muonScale_up'            , 'p_scale_mUp'),
+                ('chargeResolution'        , 'ch_res'),
             ])
 
             # remove skip-syst list
