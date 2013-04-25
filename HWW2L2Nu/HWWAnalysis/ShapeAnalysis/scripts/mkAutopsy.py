@@ -111,13 +111,14 @@ class Coroner:
         while itdata.Next():
             i += 1
         self._nentries = i
-        if self._nentries != self._template.GetNbinsX():
-            # correct ofor cut based: 1 --> N bins
-            # e.g.: The bins in shape template do not match the workspace dataset, for bin ll2jVH2012SF: 9 != 1
-            self._template = ROOT.TH1F('shape_template','shape_template',self._nentries,0,self._nentries)
-            self._template.SetTitle('shape_template')
-            self._template.Reset()
-            #raise ValueError('The bins in shape template do not match the workspace dataset, for bin %s: %d != %d ' % (self._bin, self._nentries, self._template.GetNbinsX()) )
+        if self._nentries > self._template.GetNbinsX():
+#             raise ValueError('The bins in shape template do not match the workspace dataset, for bin %d: %d != %d ' % (self._bin, self._nentries, self._template.GetNbinsX()) )
+            self._log.warn('The bins in shape template do not match the workspace dataset, for bin %s: %d != %d ')
+            self._nentries = self._template.GetNbinsX()
+        elif self._nentries < self._template.GetNbinsX():
+            raise ValueError('There are less entries than template bins, for bin %d: %d != %d ' % (self._bin, self._nentries, self._template.GetNbinsX()) )
+
+
         self._log.info('Will make shapes with %d entries (aka histogram bins)' % self._nentries )
 
         # list the processes with non 0 yield
@@ -295,6 +296,7 @@ class Coroner:
             pdf_obs.__assign__(data.get())
             bins[i] = pdf.getVal(pdf_obs)
             i += 1
+            if i>= self._nentries: break
 
         # the pdf should have area equal 1
         if norm or norm == 0:
