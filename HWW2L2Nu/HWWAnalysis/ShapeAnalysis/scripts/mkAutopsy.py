@@ -113,10 +113,10 @@ class Coroner:
         self._nentries = i
         if self._nentries > self._template.GetNbinsX():
 #             raise ValueError('The bins in shape template do not match the workspace dataset, for bin %d: %d != %d ' % (self._bin, self._nentries, self._template.GetNbinsX()) )
-            self._log.warn('The bins in shape template do not match the workspace dataset, for bin %s: %d != %d ')
+            self._log.warn('The bins in shape template do not match the workspace dataset, for bin %s: %d != %d' % (self._bin, self._nentries, self._template.GetNbinsX()) )
             self._nentries = self._template.GetNbinsX()
         elif self._nentries < self._template.GetNbinsX():
-            raise ValueError('There are less entries than template bins, for bin %d: %d != %d ' % (self._bin, self._nentries, self._template.GetNbinsX()) )
+            raise ValueError('There are less entries than template bins, for bin %s: %d != %d ' % (self._bin, self._nentries, self._template.GetNbinsX()) )
 
 
         self._log.info('Will make shapes with %d entries (aka histogram bins)' % self._nentries )
