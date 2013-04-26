@@ -66,7 +66,7 @@ class roofiter:
         return o
 
 # ---
-class Coroner:
+class Coroner(object):
     '''Class to recompose a histograms-base combined model into drawable objects'''
     _log = logging.getLogger('Coroner')
     def __init__(self, bin, DC, MB, ws, fit): 
@@ -80,8 +80,25 @@ class Coroner:
         self._model    = fit[0]  
         self._fitpars  = fit[1]
         self._fitnorms = fit[2]
-        
+
         self._build()
+
+        # set the default error calc function
+        self.errmode  = 'errorband'
+
+    @property
+    def errmode(self): return self._errmode
+    
+    @errmode.setter
+    def errmode(self, mode):
+        if   mode == 'errorband':
+            self._computeerrors = self._errorband
+        elif mode == 'rawerrors':
+            self._computeerrors = self._rawerrors
+        else:
+            raise ValueError('Unknown error mode: %s [allowed errorband,rawerrors]' % mode)
+
+        self._errmode = mode
 
 
     #---
@@ -112,7 +129,6 @@ class Coroner:
             i += 1
         self._nentries = i
         if self._nentries > self._template.GetNbinsX():
-#             raise ValueError('The bins in shape template do not match the workspace dataset, for bin %d: %d != %d ' % (self._bin, self._nentries, self._template.GetNbinsX()) )
             self._log.warn('The bins in shape template do not match the workspace dataset, for bin %s: %d != %d' % (self._bin, self._nentries, self._template.GetNbinsX()) )
             self._nentries = self._template.GetNbinsX()
         elif self._nentries < self._template.GetNbinsX():
@@ -564,9 +580,10 @@ class Coroner:
         print 'Creating the ROOT objects'
 
         # convert the shapes into histograms
-        hists = dict( [
-            (p,self._array2TH1('histo_'+p, a, title=p)) for p,a in nmarrays.iteritems()
-        ] )
+#         hists = dict( [
+#             (p,self._array2TH1('histo_'+p, a, title=p)) for p,a in nmarrays.iteritems()
+#         ] )
+        hists = { p:self._array2TH1('histo_'+p, a, title=p) for p,a in nmarrays.iteritems() }
 
         errs = {}
 
@@ -605,6 +622,39 @@ class Coroner:
         return (upfloat,dwfloat)
 
     #---
+    def _errorband(self,nmarray,uparray,dwarray):
+
+#         nentries = self._data.numEntries()
+
+        upfloat = np.zeros(self._nentries, np.float32)
+        dwfloat = np.zeros(self._nentries, np.float32)
+
+        # and calculate the fluctuations in terms of the model
+        for i in xrange(self._nentries):
+            upfloat[i] =  max(uparray[i],dwarray[i],nmarray[i])-nmarray[i]
+            dwfloat[i] = -min(uparray[i],dwarray[i],nmarray[i])+nmarray[i]
+#             upfloat[i] = u if u > 0 else 0
+#             dwfloat[i] = d if d > 0 else 0
+
+        return (upfloat,dwfloat)
+
+    #---
+    def _rawerrors(self,nmarray,uparray,dwarray):
+
+#         nentries = self._data.numEntries()
+
+        upfloat = np.zeros(self._nentries, np.float32)
+        dwfloat = np.zeros(self._nentries, np.float32)
+
+        # and calculate the fluctuations in terms of the model
+        for i in xrange(self._nentries):
+            upfloat[i] =  uparray[i]-nmarray[i]
+            dwfloat[i] = -dwarray[i]+nmarray[i]
+
+        return (upfloat,dwfloat)
+
+
+    #---
     def _variatemodel(self,pars,nuistofloat):
         '''variates a subgroup of nuisances by their error and calculate the fluctuation from the nominal value
         
@@ -639,7 +689,6 @@ class Coroner:
         uparrays =  self._model2arrays( ups,  procs2save )
         dwarrays =  self._model2arrays( dws,  procs2save )
 
-
         # transform the fluctuations in differences
         # filter those which do not differ from the nominal
         vararrays = []
@@ -650,7 +699,8 @@ class Coroner:
             if (nmarrays[p] == uparrays[p]).all() and (nmarrays[p] == dwarrays[p]).all(): 
                 self._log.warn('Pdf %s: No changes in bin %s when %s were varied. Is it OK?',p, self._bin, ', '.join(nuistofloat))
                 continue
-            vararrays.append( ( p, self._dovariations(nmarrays[p],uparrays[p],dwarrays[p])) )
+#             vararrays.append( ( p, self._dovariations(nmarrays[p],uparrays[p],dwarrays[p])) )
+            vararrays.append( ( p, self._computeerrors(nmarrays[p],uparrays[p],dwarrays[p])) )
 
         variations = dict(vararrays)
             
@@ -813,6 +863,7 @@ def fitAndPlot( dcpath, opts ):
         for bin in DC.bins:
             print ' - Bin:',bin
             coroner = Coroner(bin, DC, MB, w, fit)
+            coroner.errmode = opt.errmode
             shapes,errs = coroner.perform()
             nuisancemap[bin] = coroner.nuisances()
 
@@ -990,9 +1041,10 @@ def addOptions( parser ):
     
     parser.add_option('-o' , '--output' , dest='output' , help='Output directory (%default)'     , default=None)
     parser.add_option('-x' , '--xlabel' , dest='xlabel' , help='X-axis label'                    , default='')
-    parser.add_option('-r' , '--ratio'  , dest='ratio'  , help='Plot the data/mc ration'         , default=True    , action='store_false')
-    parser.add_option('--nofit'         , dest='fit'    , help='Don\'t fit'                      , default=True    , action='store_false')
-    parser.add_option('--clean'         , dest='clean'  , help='Clean the ws (regenerate it'     , default=False   , action='store_true')
+    parser.add_option('-r' , '--ratio'  , dest='ratio'  , help='Plot the data/mc ration'         , default=True       , action='store_false')
+    parser.add_option('--errormode'     , dest='errmode', help='Algo to calculate the errors'    , default='errorband')
+    parser.add_option('--nofit'         , dest='fit'    , help='Don\'t fit'                      , default=True       , action='store_false')
+    parser.add_option('--clean'         , dest='clean'  , help='Clean the ws (regenerate)'       , default=False      , action='store_true')
     parser.add_option('--dump'          , dest='dump'   , help='Dump the histograms to file'     , default=None)
     parser.add_option('--tmpdir'        , dest='tmpdir' , help='Temporary directory'             , default=None)
     parser.add_option('--usefit'        , dest='usefit' , help='Do not fit, use an external file', default=None)
