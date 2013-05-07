@@ -57,18 +57,19 @@ ggH_intf = dict([(m, dict(zip(['intf'], vals))) for m,vals in file2map(SYST_PATH
 def getCommonSysts(mass,channel,jets,qqWWfromData,shape,options,suffix,isssactive):
     nuisances = {} 
     #MCPROC = ['ggH', 'vbfH', 'DTT', 'ggWW', 'VV', 'Vg' ]; 
-    MCPROC = ['ggH', 'vbfH', 'wzttH', 'wH', 'zH', 'ttH', 'DYTT', 'VV', 'VgS', 'Vg', 'Other', 'VVV', 'ggH125', 'vbfH125', 'wzttH125'];
+    MCPROC = ['ggH', 'qqH', 'wzttH', 'WH', 'ZH', 'ttH', 'DYTT', 'VV', 'VgS', 'Vg', 'Other', 'VVV', 'WWewk', 'ggH125', 'qqH125', 'wzttH125'];
+    MCPROC+=['Top']
     if channel == 'elmu' or channel == 'muel': MCPROC+=['DYMM','DYEE']
     if channel == 'of': MCPROC += ['DYLL']
     if not qqWWfromData: MCPROC+=['WW','ggWW']
     # -- Luminosity ---------------------
     lumiunc = 1.044
     if '7TeV' in suffix: lumiunc = 1.022
-    nuisances['lumi'+suffix] = [ ['lnN'], dict([(p,lumiunc) for p in MCPROC if p!='DYTT'])]
+    nuisances['lumi'+suffix] = [ ['lnN'], dict([(p,lumiunc) for p in MCPROC if p!='DYTT' and p!='Top'])]
     # -- PDF ---------------------
     #nuisances['pdf_gg']    = [ ['lnN'], { 'ggH':ggH_pdfErrYR[mass], 'ggWW':(1.00 if qqWWfromData else 1.04) }]
     nuisances['pdf_gg']    = [ ['lnN'], { 'ggH':ggH_pdfErrYR[mass], 'ggWW':1.04 }]
-    nuisances['pdf_qqbar'] = [ ['lnN'], { 'wzttH':(1.0 if mass>300 else wzttH_pdfErrYR[mass]),  'wH':(1.0 if mass>300 else wH_pdfErrYR[mass]),  'zH':(1.0 if mass>300 else zH_pdfErrYR[mass]),  'ttH':(1.0 if mass>300 else ttH_pdfErrYR[mass]), 'vbfH':vbfH_pdfErrYR[mass], 'VV':1.04, 'WW':(1.0 if qqWWfromData else 1.04), 'wzttH125':(1.0 if mass>300 else wzttH_pdfErrYR[mass]) }]
+    nuisances['pdf_qqbar'] = [ ['lnN'], { 'wzttH':(1.0 if mass>300 else wzttH_pdfErrYR[mass]),  'WH':(1.0 if mass>300 else wH_pdfErrYR[mass]),  'ZH':(1.0 if mass>300 else zH_pdfErrYR[mass]),  'ttH':(1.0 if mass>300 else ttH_pdfErrYR[mass]), 'qqH':vbfH_pdfErrYR[mass], 'VV':1.04, 'WW':(1.0 if qqWWfromData else 1.04), 'wzttH125':(1.0 if mass>300 else wzttH_pdfErrYR[mass]) }]
     # -- Theory ---------------------
     if jets == 0:
         # appendix D of https://indico.cern.ch/getFile.py/access?contribId=0&resId=0&materialId=0&confId=135333
@@ -95,11 +96,17 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,shape,options,suffix,isssactiv
             nuisances['QCDscale_ggH2in'] = [  ['lnN'], { 'ggH':ggH_jets[mass]['k2'], 'ggH125':ggH_jets[mass]['k2'] }]
         if not qqWWfromData:
             nuisances['QCDscale_WW2in'] = [ ['lnN'], {'WW': 1.210 }] # reduce by 1/2 because not applicable to vbf
-            if not options.VH:
-               nuisances['QCDscale_WWvbf'] = [ ['lnN'], {'WW': 1.500 }]
+            if not options.VH: 
+               #--> now we have Phantom WW+2jets ewk sample, no need this nuisance
+               #nuisances['QCDscale_WWvbf'] = [ ['lnN'], {'WW': 1.500 }]
+               nuisances['QCDscale_WWewk']     = [ ['lnN'], {'WWewk':1.20 }]
+
     nuisances['QCDscale_ggWW'] = [ ['lnN'], {'ggWW': 1.30}]
-    nuisances['QCDscale_qqH']    = [ ['lnN'], { 'vbfH':vbfH_scaErrYR[mass] }]
+    nuisances['QCDscale_qqH']    = [ ['lnN'], { 'qqH':vbfH_scaErrYR[mass] }]
     if mass in wzttH_scaErrYR: nuisances['QCDscale_VH']  = [ ['lnN'], { 'wzttH':wzttH_scaErrYR[mass], 'wzttH125':wzttH_scaErrYR[mass] }]
+    if mass in wH_scaErrYR : nuisances['QCDscale_wH']  = [ ['lnN'], { 'WH':wH_scaErrYR[mass]}]
+    if mass in zH_scaErrYR : nuisances['QCDscale_zH']  = [ ['lnN'], { 'ZH':wH_scaErrYR[mass]}]
+    if mass in ttH_scaErrYR: nuisances['QCDscale_ttH'] = [ ['lnN'], {'ttH':wH_scaErrYR[mass]}]
     nuisances['QCDscale_VV']     = [ ['lnN'], { 'VV':1.03 }]
     nuisances['QCDscale_VgS']    = [ ['lnN'], {'VgS':1.30 }]
 
@@ -117,12 +124,22 @@ def getCommonSysts(mass,channel,jets,qqWWfromData,shape,options,suffix,isssactiv
     # uncertainty on H125
     #nuisances['CMS_hww_SMH125']  = [ ['lnN'], {'ggH125':1.30, 'vbfH125':1.30, 'wzttH125':1.30} ]
 
+
     # -- Experimental ---------------------
-    nuisances['QCDscale_ggH_ACCEPT'] = [ ['lnN'], {'ggH':1.02, 'ggH125':1.02}]
-    nuisances['QCDscale_qqH_ACCEPT'] = [ ['lnN'], {'vbfH':1.02, 'vbfH125':1.02}]
+    nuisances['QCDscale_ggH_ACCEPT'] = [ ['lnN'], {'ggH':1.02,  'ggH125':1.02}]
+    nuisances['QCDscale_qqH_ACCEPT'] = [ ['lnN'], {'qqH':1.02,  'qqH125':1.02}]
+    nuisances['QCDscale_wH_ACCEPT']  = [ ['lnN'], {'WH':1.02 ,  'WH125':1.02}]
+    nuisances['QCDscale_zH_ACCEPT']  = [ ['lnN'], {'ZH':1.02 ,  'ZH125':1.02}]
+    nuisances['QCDscale_ttH_ACCEPT'] = [ ['lnN'], {'ttH':1.02,  'ttH125':1.02}]
     if   jets == 0: nuisances['UEPS'] = [ ['lnN'], {'ggH':ggH_UEPS[mass]['u0'], 'ggH125':ggH_UEPS[mass]['u0']}]
     elif jets == 1: nuisances['UEPS'] = [ ['lnN'], {'ggH':ggH_UEPS[mass]['u1'], 'ggH125':ggH_UEPS[mass]['u1']}]
-    elif jets == 2: nuisances['UEPS'] = [ ['lnN'], {'ggH':ggH_UEPS[mass]['u2'], 'ggH125':ggH_UEPS[mass]['u2']}]
+    #elif jets == 2: nuisances['UEPS'] = [ ['lnN'], {'ggH':ggH_UEPS[mass]['u2'], 'ggH125':ggH_UEPS[mass]['u2']}]
+    elif jets == 2:
+      if options.VH:
+          nuisances['UEPS_hww_vh']  = [ ['lnN'], {'ggH':1.05, 'ggH125':1.05, 'WH':1.08, 'ZH':1.08, 'VH':1.08, 'qqH':1.04}]
+      else :
+          nuisances['UEPS_hww_vbf'] = [ ['lnN'], {'ggH':1.20, 'ggH125':1.20, 'qqH':1.10}]
+
     if ((not qqWWfromData) and (jets != 2)): nuisances['QCDscale_WW_EXTRAP'] = [ ['lnN'], {'WW':1.06}]
     # --- new ---
     # not needed with line-shape reweighting

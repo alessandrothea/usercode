@@ -2,7 +2,7 @@ import hwwtools
 import re
 
 
-signals = ['ggH','vbfH','wzttH','ggH_ALT','wH','zH','ttH']
+signals = ['ggH','qqH','wzttH','ggH_ALT','WH','ZH','ttH']
 
 #--------------
 # mcsets,
@@ -35,7 +35,7 @@ mcsets = {
     ],
     '0j1j-JHUOthers' : [
         #signals
-        'ggH','ggH_ALT','jhu_NORM','jhu_NLO','vbfH','wzttH',
+        'ggH','ggH_ALT','jhu_NORM','jhu_NLO','qqH','wzttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown',
         # systematics
@@ -54,7 +54,7 @@ mcsets = {
     ],
     '0j1j' : [
         #signals
-        'ggH','vbfH','wzttH',
+        'ggH','qqH','wzttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown',
         # systematics
@@ -73,7 +73,7 @@ mcsets = {
     ],
     '0j1j-mH125' : [
         #signals
-        'ggH','vbfH','wzttH',
+        'ggH','qqH','wzttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown',
         # systematics
@@ -90,11 +90,11 @@ mcsets = {
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j') ,         #    mkmerged vuole "-template"
         # mH125 as background
-        'ggH125', 'vbfH125', 'wzttH125', 
+        'ggH125', 'qqH125', 'wzttH125', 
     ],
      '0j1j-ss' : [
         #signals
-        'ggH','vbfH','wzttH',
+        'ggH','qqH','wzttH',
         # bkgs
         'Other','VgS','Vg','WJet',
         #'WW',
@@ -113,7 +113,7 @@ mcsets = {
     ],
     'cutbased' : [
         #signals
-        'ggH','vbfH','wzttH',
+        'ggH','qqH','wzttH',
         # bkgs
         'WW', 'VgS','Vg','WJet','Top','VV','DYTT',
         # templates
@@ -124,61 +124,90 @@ mcsets = {
     ],
     'vbf_sf' : [
         #signals
-        'ggH','vbfH','wzttH',
+        'ggH','qqH','wzttH',
         # bkgs
         #'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL',
-        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT',
+        'WW','ggWW','VgS','Vg','WJet','Top','VV',
+        'WWewk',
         # dummy
-        ('DYee', 'WW'),
-        ('DYmm', 'WW'),
+        ('DYee', 'qqH'),
+        ('DYmm', 'qqH'),
+        # nuisance
+        'WWpow',
         # systematics
-        'WJetFakeRate-nominal',
-        ('WJetFakeRate-eUp', 'WJetFakeRate-nominal'),
-        ('WJetFakeRate-eDn', 'WJetFakeRate-nominal'),
-        ('WJetFakeRate-mUp', 'WJetFakeRate-nominal'),
-        ('WJetFakeRate-mDn', 'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-template','WJetFakeRate-nominal'), # here and in the following I put the "template" distributions (relaxed cuts)
+        ('WJetFakeRate-2j-eUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-eDn',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mDn',     'WJetFakeRate-nominal'),
         # templates
         'VgS-template','Vg-template',
+        # templates for Top estimation
+        ('CHITOP-Top',     'Top'),
     ],
    'vbf_of' : [
         #signals
-        'ggH','vbfH','wzttH',
+        'ggH','qqH','wzttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT',
+        'WWewk',
+        # nuisance
+        'WWpow',
         # systematics
-        'WJetFakeRate-nominal',
-        ('WJetFakeRate-eUp', 'WJetFakeRate-nominal'),
-        ('WJetFakeRate-eDn', 'WJetFakeRate-nominal'),
-        ('WJetFakeRate-mUp', 'WJetFakeRate-nominal'),
-        ('WJetFakeRate-mDn', 'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-template','WJetFakeRate-nominal'), # here and in the following I put the "template" distributions (relaxed cuts)
+        ('WJetFakeRate-2j-eUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-eDn',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mDn',     'WJetFakeRate-nominal'),
         # top shape ---> to be checked if needed
         #('TopTW',   'Top'),
         #('TopCtrl', 'Top'),
         # templates
         'VgS-template','Vg-template',
         # 2j specific
-        ('WJet-template',    'WJet-template-2j'),              #    A   <-   sorgente
-        ('WJet-templatesyst','WJet-templatesyst-2j')           #    mkmerged vuole "-template"
+        #('WJet-template',    'WJet-template-2j'),              #    A   <-   sorgente
+        #('WJet-templatesyst','WJet-templatesyst-2j')           #    mkmerged vuole "-template"
+        # templates for Top estimation
+        ('CHITOP-Top',     'Top'),
     ],
     'vh_sf' : [
         #signals
-        'ggH','vbfH','wH','zH','ttH',
+        'ggH','qqH','WH','ZH','ttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV',
         'VVV',
+        # nuisance
+        'WWpow',
+        #'WWnloNorm',
+        #'WWnlo','WWnloUp','WWnloDown',
+        # templates
+        ('WJetFakeRate-2j-template','WJetFakeRate-nominal'), # here and in the following I put the "template" distributions (relaxed cuts)
+        ('WJetFakeRate-2j-eUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-eDn',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mDn',     'WJetFakeRate-nominal'),
+        # templates
+        'VgS-template','Vg-template',
          # dummy
         ('DYee', 'WW'),
         ('DYmm', 'WW'),
-        # templates
-        'VgS-template','Vg-template',
     ],
    'vh_of' : [
         #signals
-        'ggH','vbfH','wH','zH','ttH',
+        'ggH','qqH','WH','ZH','ttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT',
         'VVV',
+        # nuisance
+        'WWpow',
+        #'WWnloNorm',
+        #'WWnlo','WWnloUp','WWnloDown',
         # templates
+        ('WJetFakeRate-2j-template','WJetFakeRate-nominal'), # here and in the following I put the "template" distributions (relaxed cuts)
+        ('WJetFakeRate-2j-eUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-eDn',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mUp',     'WJetFakeRate-nominal'),
+        ('WJetFakeRate-2j-mDn',     'WJetFakeRate-nominal'),
         'VgS-template','Vg-template',
         # 2j specific
         #('WJet-template',    'WJet-template-2j'),              #    A   <-   sorgente
@@ -188,16 +217,11 @@ mcsets = {
         #('WJetFakeRate-eDn',     'WJetFakeRate-vh-template-nominal'),
         #('WJetFakeRate-mUp',     'WJetFakeRate-vh-template-nominal'),
         #('WJetFakeRate-mDn',     'WJetFakeRate-vh-template-nominal'),
-        ('WJetFakeRate-2j-template', 'WJetFakeRate-nominal'), # here and in the following I put the "template" distributions (relaxed cuts)
-        ('WJetFakeRate-2j-eUp',     'WJetFakeRate-nominal'),
-        ('WJetFakeRate-2j-eDn',     'WJetFakeRate-nominal'),
-        ('WJetFakeRate-2j-mUp',     'WJetFakeRate-nominal'),
-        ('WJetFakeRate-2j-mDn',     'WJetFakeRate-nominal'),
     ],
 
     'zh4j_mm' : [
         #signals
-        'ggH','vbfH','wH','zH','ttH',
+        'ggH','qqH','WH','ZH','ttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV',
         'VVV',
@@ -209,7 +233,7 @@ mcsets = {
     ],
    'zh4j_ee' : [
         #signals
-        'ggH','vbfH','wH','zH','ttH',
+        'ggH','qqH','WH','ZH','ttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV',
         'VVV',

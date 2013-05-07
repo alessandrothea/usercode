@@ -113,7 +113,7 @@ def signalSamples(sigtag,mass=125,suffix=''):
 
     # some preliminary definitions
     std_ggH      = ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
-    std_vbf      = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+    std_qqH      = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
     std_wzttH    = ['nominals/latino_3125_wzttH125ToWW.root']
 
     jhu_ggSM     = ['nominals/latino_13001_SMH125ToWW2L2Nu.root',
@@ -141,11 +141,11 @@ def signalSamples(sigtag,mass=125,suffix=''):
                'nominals/latino_3{mass}_ggToH{mass}toWWto2Tau2Nu.root',
               ]
         ggHnew = ['nominals/latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root']
-        vbfH   = ['nominals/latino_4{mass}_vbfToH{mass}toWWto2L2Nu.root',
+        qqH    = ['nominals/latino_4{mass}_vbfToH{mass}toWWto2L2Nu.root',
                   'nominals/latino_5{mass}_vbfToH{mass}toWWtoLNuTauNu.root',
                   'nominals/latino_6{mass}_vbfToH{mass}toWWto2Tau2Nu.root',
                  ]
-        vbfHnew = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root']
+        qqHnew  = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root']
         wzttH   = ['nominals/latino_7{mass}_wzttH{mass}ToWW.root']
         
         if int(mass)==122:
@@ -153,15 +153,15 @@ def signalSamples(sigtag,mass=125,suffix=''):
             signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
         elif int(mass)==118 or (int(mass)>120 and int(mass)<130) or int(mass)==135:
             signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggHnew]
-            signals['vbfH'+suffix] = [f.format(mass = mass) for f in vbfHnew]
+            signals['qqH'+suffix]  = [f.format(mass = mass) for f in qqHnew]
             signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
         elif int(mass) > 115:
             signals['ggH'+suffix]  = [f.format(mass = mass) for f in ggH]
-            signals['vbfH'+suffix] = [f.format(mass = mass) for f in vbfH]
+            signals['qqH'+suffix]  = [f.format(mass = mass) for f in qqH]
             signals['wzttH'+suffix] = [f.format(mass = mass) for f in wzttH]
         else:
             signals['ggH'+suffix]  = ['nominals/latino_9{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
-            signals['vbfH'+suffix] = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
+            signals['qqH'+suffix]  = ['nominals/latino_8{mass}_vbfToH{mass}toWWTo2LAndTau2Nu.root'.format(mass = mass)]
 
 
 # and the JHU case:
@@ -169,7 +169,7 @@ def signalSamples(sigtag,mass=125,suffix=''):
     elif sigtag == 'Grav2PM' and mass==125:
 
         signals['ggH']     = std_ggH
-        signals['vbfH']    = std_vbf
+        signals['qqH']     = std_qqH
         signals['wzttH']   = std_wzttH
                
         signals['ggH_ALT'] = jhu_ggGrav2PM
@@ -178,7 +178,7 @@ def signalSamples(sigtag,mass=125,suffix=''):
     elif sigtag == 'Higgs0M' and mass==125:
 
         signals['ggH']     = std_ggH
-        signals['vbfH']    = std_vbf
+        signals['qqH']     = std_qqH
         signals['wzttH']   = std_wzttH
                
         signals['ggH_ALT'] = jhu_ggHiggs0M
