@@ -124,6 +124,7 @@ class ShapeMerger:
         self.histograms['Data'] = data
         self.processes.append('Data')
 
+    
     def _removeNegativeBins(self,h):
         # move it in the merger as last step
         # TODO
@@ -139,6 +140,7 @@ class ShapeMerger:
         if h.Integral() > 0:
             h.Scale(integral/h.Integral())
 
+
     def _fillEmptyBins(self,h):
         
         integral = h.Integral() if h.Integral() >=0 else 0.001
@@ -152,9 +154,12 @@ class ShapeMerger:
         if h.Integral() > 0:
             h.Scale(integral/h.Integral())
 
+
     def applyDataDriven(self, mass,estimates):
         ''' rescale to the data driven estimates if available'''
         for p,e in estimates.iteritems():
+            # p is "Top", "DYmm", ... only the ones that are datadriven
+
             nominal = self.histograms[p]
             proRegex = re.compile('^'+p+' .+')
             # move here the selection on 
@@ -163,11 +168,53 @@ class ShapeMerger:
             shapes.append(nominal)
 
             for shape in shapes:
+                # shape.GetName() e.g. histo_Top_CMS_8TeV_hww_Top_of_2j_stat_shapeUp
                 if shape.Integral() == 0.: 
                     self._logger.warning('Empty histogram: '+p)
                     continue
                 self._logger.debug('DD to %-50s : %.3f -> %.3f',shape.GetName(), shape.Integral(), e.Nsig())
-                shape.Scale(e.Nsig()/shape.Integral())
+
+                # - check if there are "CHI" regions (CHI samples), where datadriven estimations have been performed
+                # p = "Top"
+
+                #  e.g. histo_Top_CMS_8TeV_hww_Top_of_2j_stat_shapeUp
+                reducedName = shape.GetName()
+                #  e.g.       Top_CMS_8TeV_hww_Top_of_2j_stat_shapeUp
+                reducedName = reducedName[6:]
+
+                foundCHI = False
+                for vNameHisto,vHisto in self.histograms.iteritems() :
+                  reducedNameInHisto = vHisto.GetName()
+                  reducedNameInHisto = reducedNameInHisto[6:]
+
+                  if reducedNameInHisto == 'CHITOP-'+reducedName :
+                    # scale by datadriven/systematics at CHI level, so that at CHI level, the two coincide
+                    scaleFactor = e.Nsig()/vHisto.Integral()
+                    scaleFactorToScaleAlpha = shape.Integral()/vHisto.Integral()
+                    shape.Scale(scaleFactor)
+                    print "ScaleFactor[",reducedName,",",shape.GetName(),"] = ",scaleFactor
+
+                    if reducedNameInHisto == 'CHITOP-'+p : # the nominal!
+                        card = open( "ScaleFactors.py" ,"a")
+                        card.write('scaleFactor.update({%d' % mass + ': {\'%s' % reducedNameInHisto + '\': %-.5f' % scaleFactorToScaleAlpha + '}})\n')
+                        card.close()
+
+                    foundCHI = True
+
+                  # the statistical fluctuation fails with this "string" test:
+                  #     e.g. Top_CMS_8TeV_hww_Top_of_2j_stat_shapeDown
+                  #specialReducedName = 'CHITOP-',p
+                  if reducedNameInHisto.startswith("CHITOP-"+p) and ( (reducedNameInHisto.endswith("_stat_shapeDown") and reducedName.endswith("_stat_shapeDown")) or (reducedNameInHisto.endswith("_stat_shapeUp") and reducedName.endswith("_stat_shapeUp")) ):
+                    scaleFactor = e.Nsig()/vHisto.Integral()
+                    shape.Scale(scaleFactor)
+                    print "special (statistical) ScaleFactor[",reducedName,",",shape.GetName(),"] = ",scaleFactor
+                    foundCHI = True
+
+                if not foundCHI :
+                  # "normal" data driven
+                  print "normal ScaleFactor[",reducedName,",",shape.GetName(),"] = ",e.Nsig()/shape.Integral()
+                  shape.Scale(e.Nsig()/shape.Integral())
+
 
     def applyDataDrivenRelative(self, estimates):
         ''' rescale to the data driven estimates if available'''
@@ -539,13 +586,15 @@ class ShapeMixer:
             WJetnom = WJetShape.Clone('histo_WJet')
             WJetnom.SetTitle('WJet')
             if WJetnom.Integral() == 0.:
+                wjet2jScale = 0
+                # then quit shape uncertainty for Wjets!!!
                 # no entries in the template shape --> what?!? How the heck is it possible?
-                #
-                if WJetmc.Integral() != 0.:
-                    self._logger.warn('WJet shape template has no entries, but the standard mc is not (%f,%d)', WJetmc.Integral(), WJetmc.GetEntries())
-                    self.nominals['WJet'] = WJetmc
-                else:
-                    self.nominals['WJet'] = WJetnom
+                #   0 entries, then let's neglect the Wjets sample!
+                #if WJetmc.Integral() != 0.:
+                    #self._logger.warn('WJet shape template has no entries, but the standard mc is not (%f,%d)', WJetmc.Integral(), WJetmc.GetEntries())
+                    #self.nominals['WJet'] = WJetmc
+                #else:
+                    #self.nominals['WJet'] = WJetnom
             else:
                 # scale the "template" to the "nominal"
                 wjet2jScale = (WJetmc.Integral()/WJetnom.Integral()) if WJetmc.Integral() != 0. else 1.0
@@ -558,7 +607,8 @@ class ShapeMixer:
             wJetShapeUp = wJetEffeUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
             wJetShapeUp.Scale(wjet2jScale)  # in case it is a template it scales!
-            self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
+            if wjet2jScale != 0 and wJetShapeUp.Integral() != 0 :
+                self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
         if 'WJetFakeRate-2j-eDn' in self.nominals:
             wJetSystName = 'CMS{0}_hww_WJet_FakeRate_e_shape_2j'.format(suffix)
@@ -566,7 +616,8 @@ class ShapeMixer:
             wJetShapeDown = wJetEffeDown.Clone('histo_WJet_'+wJetSystName+'Down')
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
             wJetShapeDown.Scale(wjet2jScale)  # in case it is a template it scales!
-            self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
+            if wjet2jScale != 0 and wJetShapeDown.Integral() != 0 :
+                self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
         if 'WJetFakeRate-2j-mUp' in self.nominals:
             wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape_2j'.format(suffix)
@@ -574,7 +625,8 @@ class ShapeMixer:
             wJetShapeUp = wJetEffmUp.Clone('histo_WJet_'+wJetSystName+'Up')
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
             wJetShapeUp.Scale(wjet2jScale)  # in case it is a template it scales!
-            self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
+            if wjet2jScale != 0 and wJetShapeUp.Integral() != 0 :
+                self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
         if 'WJetFakeRate-2j-mDn' in self.nominals:
             wJetSystName = 'CMS{0}_hww_WJet_FakeRate_m_shape_2j'.format(suffix)
@@ -582,7 +634,8 @@ class ShapeMixer:
             wJetShapeDown = wJetEffmDown.Clone('histo_WJet_'+wJetSystName+'Down')
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
             wJetShapeDown.Scale(wjet2jScale)  # in case it is a template it scales!
-            self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
+            if wjet2jScale != 0 and wJetShapeDown.Integral() != 0 :
+                self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
 
         # -----------------------------------------------------------------
@@ -707,6 +760,66 @@ class ShapeMixer:
                 wwScaleDown.Multiply(madWW)
                 if (wwScaleDown.Integral() != 0) : wwScaleDown.Scale(madWW.Integral()/wwScaleDown.Integral())
                 self.generators[wwScaleDown.GetTitle()] = wwScaleDown
+
+        mcAtNLOnorm = {} 
+        if 'WW' in self.nominals:
+            madWW = self.nominals['WW']
+            wwNLOs = ['WWnloNorm']
+
+            if set(wwNLOs).issubset(self.nominals):
+                for t in wwNLOs:
+                    mcAtNLOnorm[t] = self.nominals[t]
+                    del self.nominals[t]
+
+                # A (nominal) and B (alternative)
+                # take B-A, divide by 2 and shape up/down symmetrically
+                # this will ensure |A-B| as error in normalization
+                # and not double count the downward variation!
+                # that is ---> up   = A + (A-B)/2
+                # that is ---> down = A - (A-B)/2
+
+                wwGenDifference = mcAtNLOnorm['WWnloNorm'].Clone('histo_WW_Gen_nlo_WW_difference')
+                wwGenDifference.SetTitle('WW Gen_nlo_WW difference temp')
+                wwGenDifference.Add(madWW, -1)
+                wwGenDifference.Scale(0.5)
+
+                wwGenUp = madWW.Clone('histo_WW_Gen_nlo_WWUp')
+                wwGenUp.SetTitle('WW Gen_nlo_WW Up')
+                wwGenUp.Add(wwGenDifference, 1)
+                self.generators[wwGenUp.GetTitle()] = wwGenUp
+
+                #copy the nominal
+                wwGenDown = madWW.Clone('histo_WW_Gen_nlo_WWDown')
+                wwGenDown.SetTitle('WW Gen_nlo_WW Down')
+                wwGenDown.Add(wwGenDifference, -1)
+                self.generators[wwGenDown.GetTitle()] = wwGenDown
+
+
+
+        mcPOWnorm = {} 
+        if 'WW' in self.nominals:
+            madWW = self.nominals['WW']
+            wwPOWs = ['WWpow']
+
+            if set(wwPOWs).issubset(self.nominals):
+                for t in wwPOWs:
+                    mcPOWnorm[t] = self.nominals[t]
+                    del self.nominals[t]
+
+                # A (nominal) and B (alternative)
+                # down = A
+                # up   = B
+
+                wwGenUp = mcPOWnorm['WWpow'].Clone('histo_WW_Gen_pow_WWUp')
+                wwGenUp.SetTitle('WW Gen_pow_WW Up')
+                self.generators[wwGenUp.GetTitle()] = wwGenUp
+
+                #copy the nominal
+                wwGenDown = madWW.Clone('histo_WW_Gen_pow_WWDown')
+                wwGenDown.SetTitle('WW Gen_pow_WW Down')
+                self.generators[wwGenDown.GetTitle()] = wwGenDown
+
+
 
         # -----------------------------------------------------------------
         # Top shapes
@@ -914,13 +1027,18 @@ class ShapeMixer:
 
                     self.experimental[systUp.GetTitle()] = systUp
 
-                    # copy the nominal histogram
+                    # down = nominal histogram
                     systDown = self.nominals[h.GetTitle()].Clone(h.GetName()+'_'+systName+'Down')
                     systDown.SetTitle(h.GetTitle()+' '+systName+' Down')
-                    systDown.Scale(2)
-                    systDown.Add(systUp,-1)
-
                     self.experimental[systDown.GetTitle()] = systDown
+
+                    # copy the nominal histogram
+                    #systDown = self.nominals[h.GetTitle()].Clone(h.GetName()+'_'+systName+'Down')
+                    #systDown.SetTitle(h.GetTitle()+' '+systName+' Down')
+                    #systDown.Scale(2)
+                    #systDown.Add(systUp,-1)
+
+                    #self.experimental[systDown.GetTitle()] = systDown
 
         # check none of the experimental systematics to be 0
         for n in self.experimental.keys():

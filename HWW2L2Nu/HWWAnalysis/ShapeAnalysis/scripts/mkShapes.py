@@ -40,6 +40,7 @@ class ShapeFactory:
         ranges['mth-mll-hilospin-withControlRegion']  = self._getMllMth2DSpinrangeWithControlRegion
         ranges['mth-mll-hilospin-withSSmirrorRegion'] = self._getMllMth2DSpinrangeWithSSmirrorRegion
         ranges['vbfMll-range']       = self._getMllVBFrange
+        ranges['vbfMll-fish-range']  = self._getMllVBFFishrange
         ranges['vhMll-range']        = self._getMllVHrange
         ranges['vhMllBanana-range']  = self._getMllVHrangeWithControlRegion
         ranges['vbfMllBanana-range'] = self._getMllVBFrangeWithControlRegion
@@ -242,6 +243,18 @@ class ShapeFactory:
 
 
     # _____________________________________________________________________________
+    def _getMllVBFFishrange(self,mass,cat):
+
+        if cat not in ['2j']:
+            print cat
+            raise RuntimeError('mll range for '+str(cat)+' not defined. Can be 0 or 1')
+
+        #return ([12,45,75,100,125,150,175,200,250,300,350,400,600],)
+        #return ([12,30,45,60,75,100,125,150,175,200,250,300,350,400,600],)
+        return ([12,45,60,75,100,125,150,175,200,250,300,350,400,600],)
+
+
+    # _____________________________________________________________________________
     def _getMllVHrange(self,mass,cat):
 
         if cat not in ['vh2j']:
@@ -400,12 +413,19 @@ class ShapeFactory:
                     print 'Output file:',output
 
                     # - now build the selection
-                    # - make a separate function to cotain the exceptions
+                    # - make a separate function to contain the exceptions
                     catSel = hwwinfo.categoryCuts[category]
                     selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
 
-                    self._addweights(mass,var,'nominals',selections,category)
+                    # - check if there are "CHI" regions, where datadriven estimations have been performed
+                    for vsample, vcut in selections.iteritems() :
+                       if vsample.startswith('CHITOP-') :
+                         self._logger.info('CHI-TOP changed')
+                         selections[vsample] = hwwinfo.flavorCuts[flavor]
+
+
+                    self._addweights(mass,var,'nominals',selections,category,sel)
 
                     print '.'*80
                     # - extract the histogram range
@@ -494,7 +514,15 @@ class ShapeFactory:
                     catSel = hwwinfo.categoryCuts[category]
                     selection = varSelection+' && '+catSel+' && '+hwwinfo.flavorCuts[flavor]
                     selections = dict(zip(samples.keys(),[selection]*len(samples)))
-                    self._addweights(mass,var,syst,selections, category)
+
+                    # - check if there are "CHI" regions, where datadriven estimations have been performed
+                    for vsample, vcut in selections.iteritems() :
+                       if vsample.startswith('CHITOP-') :
+                         self._logger.info('CHI-TOP changed')
+                         selections[vsample] = hwwinfo.flavorCuts[flavor]
+
+
+                    self._addweights(mass,var,syst,selections, category, sel)
 
                     print '.'*80
                     # - extract the histogram range
@@ -685,8 +713,8 @@ class ShapeFactory:
 
     # _____________________________________________________________________________
     # add the weights to the selection
-    def _addweights(self,mass,var,syst,selections,cat=''):
-        sampleWgts =  self._sampleWeights(mass,var,cat)
+    def _addweights(self,mass,var,syst,selections,cat='',sel=''):
+        sampleWgts =  self._sampleWeights(mass,var,cat,sel)
         print '--',selections.keys()
         for process,cut in selections.iteritems():
             wgt = self._stdWgt
@@ -702,7 +730,7 @@ class ShapeFactory:
     # _____________________________________________________________________________
     # this is too convoluted
     # define here the mass-dependent weights
-    def _sampleWeights(self,mass,var,cat):
+    def _sampleWeights(self,mass,var,cat,sel):
         weights = {}
         # tocheck
         weights['WJet']              = 'baseW*fakeW*(run!=201191)'
@@ -760,7 +788,13 @@ class ShapeFactory:
 
 
         if cat in ['2j']:
-            weights['WW']                = self._stdWgt+'*(1+(mjj>500)*(detajj>3.5))'
+            #weights['WW']                = self._stdWgt+'*(1+(mjj>500)*(detajj>3.5))'
+            weights['WW']                = self._stdWgt
+            weights['WWewk']             = self._stdWgt+'*(numbLHE==0)'
+            if (sel == 'vbf' or sel == 'vbf-shape') :
+              weights['CHITOP-Top']        = self._stdWgt+'*('+hwwinfo.massSelections(mass)['vbf-selection-top']+')'
+            if (sel == 'vbf-shape-fish') :
+              weights['CHITOP-Top']        = self._stdWgt+'*('+hwwinfo.massSelections(mass)['vbf-selection-fish-top']+')'
 
 
         if var in ['bdts','bdtl']:
@@ -1067,7 +1101,8 @@ if __name__ == '__main__':
 
             factory._systByWeight = systByWeight
 
-            processMask = ['ggH', 'ggH_ALT', 'vbfH', 'vbfH_ALT', 'wzttH', 'zH', 'wH', 'ttH', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'Other', 'ggH125', 'vbfH125','VVV']
+            processMask = ['ggH', 'ggH_ALT',  'qqH',  'qqH_ALT', 'wzttH', 'ZH', 'WH', 'ttH', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'Other', 'ggH125', 'vbfH125','VVV', 'WWewk', 'CHITOP-Top']
+
             if '2011' in opt.dataset:
                 processMask = ['ggH', 'ggH_ALT' 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'ggH125', 'vbfH125']
 
