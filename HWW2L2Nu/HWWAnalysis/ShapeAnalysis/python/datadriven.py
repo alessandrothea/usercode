@@ -144,12 +144,13 @@ class DDCardReader:
             raise KeyError('{0} {1}'.format(mass,channel))
 
 class DDEntry:
-    def __init__(self,Nctr,alpha,delta,deltaCorr=0,deltaUnCorr=0):
+    def __init__(self,Nctr,alpha,delta,deltaCorr=0,deltaUnCorr=0,alphaPrime=-1):
         self.Nctr     = Nctr
         self.alpha    = alpha
         self.delta    = delta
         self.deltaCorr = deltaCorr
         self.deltaUnCorr = deltaUnCorr
+        self.alphaPrime = alphaPrime    # -> alpha' = aplha with MC extrapolation
 
     def __repr__(self):
         return self.__str__()
@@ -171,7 +172,11 @@ class DDEntry:
         return sum
 
     def Nsig(self):
-        return self.Nctr*self.alpha
+        if self.alphaPrime<0 :
+          return self.Nctr*self.alpha
+        else :
+          return self.Nctr*self.alphaPrime
+          # fortunately, not used!
 
     def Usig(self):
         return self.Nctr*self.delta
