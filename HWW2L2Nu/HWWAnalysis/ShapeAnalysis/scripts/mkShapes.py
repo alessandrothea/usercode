@@ -753,8 +753,7 @@ class ShapeFactory:
         weights['zH']                = self._stdWgt+'*(mctruth == 24)'
         weights['ttH']               = self._stdWgt+'*(mctruth == 121)'
 
-        weights['jhu']               = self._stdWgt+'*kfW'
-        weights['jhu_ALT']           = self._stdWgt+'*kfW'
+        weights['ggH_ALT']           = self._stdWgt+'*kfW'
         weights['jhu_NORM']          = self._stdWgt+'*kfW'
         weights['jhu_NLO']           = self._stdWgt+'*kfW'
 
@@ -1068,9 +1067,9 @@ if __name__ == '__main__':
 
             factory._systByWeight = systByWeight
 
-            processMask = ['ggH', 'vbfH','vbfH_ALT', 'wzttH', 'zH', 'wH', 'ttH', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'jhu', 'jhu_ALT', 'Other', 'ggH125', 'vbfH125','VVV']
+            processMask = ['ggH', 'ggH_ALT', 'vbfH', 'vbfH_ALT', 'wzttH', 'zH', 'wH', 'ttH', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'Other', 'ggH125', 'vbfH125','VVV']
             if '2011' in opt.dataset:
-                processMask = ['ggH', 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'jhu', 'jhu_ALT', 'ggH125', 'vbfH125']
+                processMask = ['ggH', 'ggH_ALT' 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'ggH125', 'vbfH125']
 
             systMasks = dict([(s,processMask[:]) for s in systematics])
             systDirs  = dict([(s,systInputDir if s not in systByWeight else 'templates/' ) for s in systematics])

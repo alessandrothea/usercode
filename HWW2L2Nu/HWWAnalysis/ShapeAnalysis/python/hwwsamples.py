@@ -2,7 +2,7 @@ import hwwtools
 import re
 
 
-signals = ['ggH','vbfH','vbfH_ALT','wzttH','wzttH_ALT','jhu','jhu_ALT','wH','zH','ttH']
+signals = ['ggH','vbfH','wzttH','ggH_ALT','wH','zH','ttH']
 
 #--------------
 # mcsets,
@@ -16,7 +16,7 @@ signals = ['ggH','vbfH','vbfH_ALT','wzttH','wzttH_ALT','jhu','jhu_ALT','wH','zH'
 mcsets = {
     '0j1j-JHU' : [
         #signals
-        'jhu','jhu_ALT','jhu_NORM','jhu_NLO',
+        'ggH','ggH_ALT','jhu_NORM','jhu_NLO',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown',
         # systematics
@@ -35,7 +35,7 @@ mcsets = {
     ],
     '0j1j-JHUOthers' : [
         #signals
-        'jhu','jhu_ALT','jhu_NORM','jhu_NLO','vbfH','wzttH',
+        'ggH','ggH_ALT','jhu_NORM','jhu_NLO','vbfH','wzttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown',
         # systematics

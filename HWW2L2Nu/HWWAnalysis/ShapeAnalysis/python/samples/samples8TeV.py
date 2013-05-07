@@ -120,26 +120,29 @@ def signalSamples(sigtag,mass=125,suffix=''):
     signals = {}
 
     # some preliminary definitions
-    jhu_ggH      = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
-    jhu_vbf      = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
-    jhu_wzttH    = ['nominals/latino_3125_wzttH125ToWW.root']
+    std_ggH      = ['nominals/latino_1125_ggToH125toWWTo2LAndTau2Nu.root']
+    std_vbf      = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
+    std_wzttH    = ['nominals/latino_3125_wzttH125ToWW.root']
 
-    jhu_SM       = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
+    jhu_ggSM     = ['nominals/latino_8001_SMH125ToWW2L2Nu.root',
                     'nominals/latino_8004_SMH125ToWW2Tau2Nu.root',
                     'nominals/latino_8007_SMH125ToWWLTau2Nu.root' 
                    ]
 
-    jhu_Higgs0   = ['nominals/latino_8002_Higgs0M125ToWW2L2Nu.root',
+    jhu_ggHiggs0M= ['nominals/latino_8002_Higgs0M125ToWW2L2Nu.root',
                     'nominals/latino_8005_Higgs0M125ToWW2Tau2Nu.root',
                     'nominals/latino_8008_Higgs0M125ToWWLTau2Nu.root'
                    ]
 
-    jhu_Graviton = ['nominals/latino_8003_Graviton2PM.root',
+    jhu_ggGrav2PM= ['nominals/latino_8003_Graviton2PM.root',
                     'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
                     'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
                    ]
 
-
+    jhu_qqGrav2PM= ['nominals/latino_8003_Graviton2PM.root',
+                    'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
+                    'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
+                   ]
 
     if sigtag == 'SM':
         ggH   = ['nominals/latino_1{mass}_ggToH{mass}toWWTo2LAndTau2Nu.root',
@@ -166,107 +169,128 @@ def signalSamples(sigtag,mass=125,suffix=''):
 
 
 # and the JHU case:
-    elif sigtag == 'JHUSMONLY' and mass==125:
 
-        signals['jhu']     = jhu_SM 
-        signals['jhu_NORM']= jhu_ggH
+    elif sigtag == 'Grav2PM' and mass==125:
 
-
-    elif sigtag == 'JHU0MONLY' and mass==125:
-
-        signals['jhu']     = jhu_Higgs0 
-        signals['jhu_NORM']= jhu_ggH
-
-    elif sigtag == 'JHU2MONLY' and mass==125:
-
-        signals['jhu']     = jhu_Graviton
-        signals['jhu_NORM']= jhu_ggH
-
-    elif sigtag == 'JHUSMvs0M' and mass==125:
-        signals['jhu']     = jhu_SM 
-        signals['jhu_ALT'] = jhu_Higgs0
-        signals['jhu_NORM']= jhu_ggH
-
-    elif sigtag == 'JHUSMvs2M' and mass==125:
-        signals['jhu']     = jhu_SM
-        signals['jhu_ALT'] = jhu_Graviton
-        signals['jhu_NORM']= jhu_ggH
-        signals['jhu_NLO'] = jhu_ggH
-
-    elif sigtag == 'JHUSMvs2MnoNLO' and mass==125:
-        signals['jhu']     = jhu_SM
-        signals['jhu_ALT'] = jhu_Graviton
-        signals['jhu_NORM']= jhu_ggH
-
-    elif sigtag == 'PWGSMvs2M' and mass==125:
-
-        signals['jhu']      = jhu_ggH
-        signals['jhu_ALT']  = jhu_Graviton
-        signals['jhu_NORM'] = jhu_ggH
-        signals['jhu_NLO']  = jhu_ggH 
-
-    elif sigtag == 'PWGSMvs2MnoNLO' and mass==125:
-        signals['jhu']     = jhu_ggH
-        signals['jhu_ALT'] = jhu_Graviton
-        signals['jhu_NORM']= jhu_ggH
-
-    elif sigtag == 'JHUSMvs2MplOthers' and mass==125:
-
-        signals['jhu']       = jhu_SM
-        signals['vbfH']      = jhu_vbf
-        signals['wzttH']     = jhu_wzttH
-
-        signals['jhu_ALT']   = jhu_Graviton
-        signals['vbfH_ALT']  = jhu_vbf
-        signals['wzttH_ALT'] = jhu_wzttH
-        signals['jhu_NORM']  = jhu_ggH
-
-
-    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLO' and mass==125:
-
-        signals['jhu']     = jhu_ggH
-        signals['vbfH']    = jhu_vbf
-        signals['wzttH']   = jhu_wzttH
+        signals['ggH']     = std_ggH
+        signals['vbfH']    = std_vbf
+        signals['wzttH']   = std_wzttH
                
-        signals['jhu_ALT'] = jhu_Graviton
-        #signals['vbfH_ALT'] = jhu_vbf
-        #signals['wzttH_ALT']= jhu_wzttH
-        signals['jhu_NORM']= jhu_ggH
+        signals['ggH_ALT'] = jhu_ggGrav2PM
+        signals['jhu_NORM']= std_ggH
 
-    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLOnormALL' and mass==125:
+    elif sigtag == 'Higgs0M' and mass==125:
 
-        signals['jhu']     = jhu_ggH
-        signals['vbfH']    = jhu_vbf
-        signals['wzttH']   = jhu_wzttH
-
-        signals['jhu_ALT'] = jhu_Graviton
-        #signals['vbfH_ALT'] = jhu_vbf
-        #signals['wzttH_ALT']= jhu_wzttH
-        signals['jhu_NORM']= jhu_ggH+jhu_vbf+jhu_wzttH
-
-    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLOnoNorm' and mass==125:
+        signals['ggH']     = std_ggH
+        signals['vbfH']    = std_vbf
+        signals['wzttH']   = std_wzttH
+               
+        signals['ggH_ALT'] = jhu_ggHiggs0M
+        signals['jhu_NORM']= std_ggH
 
 
-        signals['jhu']       = jhu_ggH
-        signals['vbfH']      = jhu_vbf
-        signals['wzttH']     = jhu_wzttH
-
-        signals['jhu_ALT']   = jhu_Graviton
-        #signals['vbfH_ALT'] = jhu_vbf
-        #signals['wzttH_ALT']= jhu_wzttH
-        #signals['jhu_NORM'] = jhu_ggH+jhu_vbf+jhu_wzttH
-
-    elif sigtag == 'PWGSMqqHwzttHvs0MnoNLO' and mass==125:
-
-        signals['jhu']     = jhu_ggH
-        signals['vbfH']    = jhu_vbf
-        signals['wzttH']   = jhu_wzttH
-
-        signals['jhu_ALT'] = jhu_Higgs0
-
-        #signals['vbfH_ALT'] = jhu_vbf
-        #signals['wzttH_ALT']= jhu_wzttH
-        signals['jhu_NORM']= jhu_ggH
+# some old stuff (kept for reference & commented out)
+#    elif sigtag == 'JHUSMONLY' and mass==125:
+#
+#        signals['jhu']     = jhu_ggSM 
+#        signals['jhu_NORM']= std_ggH
+#
+#
+#    elif sigtag == 'JHU0MONLY' and mass==125:
+#
+#        signals['jhu']     = jhu_ggHiggs0M 
+#        signals['jhu_NORM']= std_ggH
+#
+#    elif sigtag == 'JHU2MONLY' and mass==125:
+#
+#        signals['jhu']     = jhu_ggGrav2PM
+#        signals['jhu_NORM']= std_ggH
+#
+#    elif sigtag == 'JHUSMvs0M' and mass==125:
+#        signals['jhu']     = jhu_ggSM 
+#        signals['jhu_ALT'] = jhu_ggHiggs0M
+#        signals['jhu_NORM']= std_ggH
+#
+#    elif sigtag == 'JHUSMvs2M' and mass==125:
+#        signals['jhu']     = jhu_ggSM
+#        signals['jhu_ALT'] = jhu_ggGrav2PM
+#        signals['jhu_NORM']= std_ggH
+#        signals['jhu_NLO'] = std_ggH
+#
+#    elif sigtag == 'JHUSMvs2MnoNLO' and mass==125:
+#        signals['jhu']     = jhu_ggSM
+#        signals['jhu_ALT'] = jhu_ggGrav2PM
+#        signals['jhu_NORM']= std_ggH
+#
+#    elif sigtag == 'PWGSMvs2M' and mass==125:
+#
+#        signals['jhu']      = std_ggH
+#        signals['jhu_ALT']  = jhu_ggGrav2PM
+#        signals['jhu_NORM'] = std_ggH
+#        signals['jhu_NLO']  = std_ggH 
+#
+#    elif sigtag == 'PWGSMvs2MnoNLO' and mass==125:
+#        signals['jhu']     = std_ggH
+#        signals['jhu_ALT'] = jhu_ggGrav2PM
+#        signals['jhu_NORM']= std_ggH
+#
+#    elif sigtag == 'JHUSMvs2MplOthers' and mass==125:
+#
+#        signals['jhu']       = jhu_ggSM
+#        signals['vbfH']      = std_vbf
+#        signals['wzttH']     = std_wzttH
+#
+#        signals['jhu_ALT']   = jhu_ggGrav2PM
+#        signals['vbfH_ALT']  = std_vbf
+#        signals['wzttH_ALT'] = std_wzttH
+#        signals['jhu_NORM']  = std_ggH
+#
+#
+#    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLO' and mass==125:
+#
+#        signals['jhu']     = std_ggH
+#        signals['vbfH']    = std_vbf
+#        signals['wzttH']   = std_wzttH
+#               
+#        signals['jhu_ALT'] = jhu_ggGrav2PM
+#        #signals['vbfH_ALT'] = std_vbf
+#        #signals['wzttH_ALT']= std_wzttH
+#        signals['jhu_NORM']= std_ggH
+#
+#    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLOnormALL' and mass==125:
+#
+#        signals['jhu']     = std_ggH
+#        signals['vbfH']    = std_vbf
+#        signals['wzttH']   = std_wzttH
+#
+#        signals['jhu_ALT'] = jhu_ggGrav2PM
+#        #signals['vbfH_ALT'] = std_vbf
+#        #signals['wzttH_ALT']= std_wzttH
+#        signals['jhu_NORM']= std_ggH+std_vbf+std_wzttH
+#
+#    elif sigtag == 'PWGSMqqHwzttHvs2MnoNLOnoNorm' and mass==125:
+#
+#
+#        signals['jhu']       = std_ggH
+#        signals['vbfH']      = std_vbf
+#        signals['wzttH']     = std_wzttH
+#
+#        signals['jhu_ALT']   = jhu_ggGrav2PM
+#        #signals['vbfH_ALT'] = std_vbf
+#        #signals['wzttH_ALT']= std_wzttH
+#        #signals['jhu_NORM'] = std_ggH+std_vbf+std_wzttH
+#
+#    elif sigtag == 'PWGSMqqHwzttHvs0MnoNLO' and mass==125:
+#
+#        signals['jhu']     = std_ggH
+#        signals['vbfH']    = std_vbf
+#        signals['wzttH']   = std_wzttH
+#
+#        signals['jhu_ALT'] = jhu_ggHiggs0M
+#
+#        #signals['vbfH_ALT'] = std_vbf
+#        #signals['wzttH_ALT']= std_wzttH
+#        signals['jhu_NORM']= std_ggH
 
     else:
         raise ValueError('Signal tag %s not found for mass %d' % (sigtag,mass) )

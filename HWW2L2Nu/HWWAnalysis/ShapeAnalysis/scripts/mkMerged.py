@@ -784,9 +784,9 @@ class ShapeMixer:
         #   jhuShape = self.nominals['jhu']
         #   jhuShape.Scale( (jhuNORM.Integral() if jhuNORM.Integral() !=0. else jhuShape.Integral()) / jhuShape.Integral() )
 
-        if ('jhu_ALT' in self.nominals) and ('jhu_NORM' in self.nominals):
+        if ('ggH_ALT' in self.nominals) and ('jhu_NORM' in self.nominals):
            jhuNORM  = self.nominals['jhu_NORM']
-           jhuShape = self.nominals['jhu_ALT']
+           jhuShape = self.nominals['ggH_ALT']
            jhuShape.Scale( (jhuNORM.Integral() if jhuNORM.Integral() !=0. else jhuShape.Integral()) / jhuShape.Integral() )
 
         if 'jhu_NORM' in self.nominals: 
@@ -799,7 +799,7 @@ class ShapeMixer:
         if 'jhu_NLO' in self.nominals:
            jhuNLO = self.nominals.pop('jhu_NLO')
            if 'jhu' in self.nominals:
-             jhuNom    = self.nominals['jhu']
+             jhuNom    = self.nominals['ggH']
              jhuRel    = jhuNLO.Clone('jhuRel') 
              jhuRel.Add(jhuNom,-1)
              jhuRel.Divide(jhuNom)
@@ -816,18 +816,18 @@ class ShapeMixer:
              jhuNLODown.Add(jhuSys,-1.)
              self.generators[jhuNLODown.GetTitle()] = jhuNLODown
 
-             if 'jhu_ALT' in self.nominals: 
-                jhu_ALTNom = self.nominals['jhu_ALT']
+             if 'ggH_ALT' in self.nominals: 
+                jhu_ALTNom = self.nominals['ggH_ALT']
 
                 jhu_ALTSys    = jhu_ALTNom.Clone('jhuALTSys')
                 jhu_ALTSys.Multiply(jhuRel)
-                jhu_ALTNLOUp  = jhu_ALTNom.Clone('histo_jhu_ALT_Gen_JHU_NLOUp')
-                jhu_ALTNLOUp.SetTitle('JHU_ALT NLO Up')
+                jhu_ALTNLOUp  = jhu_ALTNom.Clone('histo_ggH_ALT_Gen_JHU_NLOUp')
+                jhu_ALTNLOUp.SetTitle('ggH_ALT NLO Up')
                 jhu_ALTNLOUp.Add(jhu_ALTSys,1.)
                 self.generators[jhu_ALTNLOUp.GetTitle()] = jhu_ALTNLOUp
 
-                jhu_ALTNLODown= jhu_ALTNom.Clone('histo_jhu_ALT_Gen_JHU_NLODown')
-                jhu_ALTNLODown.SetTitle('JHU_ALT NLO Down')
+                jhu_ALTNLODown= jhu_ALTNom.Clone('histo_ggH_ALT_Gen_JHU_NLODown')
+                jhu_ALTNLODown.SetTitle('ggH_ALT NLO Down')
                 jhu_ALTNLODown.Add(jhu_ALTSys,-1.)
                 self.generators[jhu_ALTNLODown.GetTitle()] = jhu_ALTNLODown
 
@@ -1083,7 +1083,7 @@ if __name__ == '__main__':
 
     scale2nom = []
     if '2012' in opt.dataset: scale2nom = scale2nom+[('Vg','*'), ('VgS','*')]
-    if 'JHU' in opt.mcset: scale2nom = scale2nom+[('jhu_ALT','*')]
+    if 'JHU' in opt.mcset: scale2nom = scale2nom+[('ggH_ALT','*')]
     # in the future good to have a way of removing processes which are not in mcset
     #scale2nom = [(p,s) for p,s in scale2nom if p in hwwsamples.mcsets(opt.mcset)]
     for p,s in scale2nom:

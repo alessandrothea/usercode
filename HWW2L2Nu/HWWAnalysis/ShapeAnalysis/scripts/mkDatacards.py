@@ -639,7 +639,7 @@ if __name__ == '__main__':
 
             # reshuffle the order
             #order = [ 'vbfH', 'ggH', 'wzttH', 'ggWW', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'Data']
-            order = [ 'jhu','jhu_ALT','vbfH','vbfH_ALT', 'ggH', 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Other', 'ggH125', 'vbfH125', 'wzttH125', 'VVV', 'Data']
+            order = [ 'ggH', 'ggH_ALT', 'vbfH','vbfH_ALT' , 'wzttH','wzttH_ALT', 'wH', 'zH', 'ttH', 'ggWW', 'VgS', 'Vg', 'WJet', 'Top', 'WW', 'DYLL', 'VV', 'DYTT', 'DYee', 'DYmm', 'Other', 'ggH125', 'vbfH125', 'wzttH125', 'VVV', 'Data']
             oldYields = yields.copy()
             yields = OrderedDict([ (k,oldYields[k]) for k in order if k in oldYields])
             
@@ -651,8 +651,7 @@ if __name__ == '__main__':
 
             for n,(pdf, eff) in nuisances.iteritems():
                 if 'ggH' in eff and 'shape' not in pdf[0] and 'stat_bin' not in n :
-                    eff['jhu']     =  eff['ggH']
-                    eff['jhu_ALT'] =  eff['ggH']
+                    eff['ggH_ALT'] =  eff['ggH']
                 if 'vbfH' in eff and 'shape' not in pdf[0] and 'stat_bin' not in n :
                     eff['vbfH_ALT'] =  eff['vbfH']
                 if 'wzttH' in eff and 'shape' not in pdf[0] and 'stat_bin' not in n :
