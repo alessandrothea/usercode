@@ -2,6 +2,7 @@
 import os
 import ROOT
 import HWWAnalysis.Misc.odict as odict
+import HWWAnalysis.Misc.ROOTAndUtils as utils
 import logging
 import hwwtools
 import pdb
@@ -23,8 +24,8 @@ _defaults  = odict.OrderedDict([
     ('VgS',  { 'color':ROOT.kMagenta+2, 'label':'V+#gamma*' , }),
     ('WJet', { 'color':ROOT.kGray+1,    'label':'W+jets'    , }),
     ('Top',  { 'color':ROOT.kYellow,    'label':'top'       , }),
-    ('ttbar',{ 'color':ROOT.kOrange-2,  'label':'t#bar{t}'  , }),
-    ('tW',   { 'color':ROOT.kOrange-4,  'label':'tW'        , }),
+    ('ttbar',{ 'color':ROOT.kYellow-4,  'label':'t#bar{t}'  , }),
+    ('tW',   { 'color':ROOT.kOrange-2,  'label':'tW'        , }),
     ('WW',   { 'color':ROOT.kAzure-9,   'label':'WW'        , }),
     ('ggWW', { 'color':ROOT.kAzure-7,   'label':'WW'        , }),
 ])
@@ -50,33 +51,36 @@ class NullStdOutSentry:
 
 class HWWPlot(ROOT.PlotVHqqHggH):
 
-
     _log = logging.getLogger('HWWPlot') 
     
-    _properties = ['label','color','scale','norm']
+#     _properties = ['label','color','scale','norm']
 
     #---
     def __init__(self, properties=_defaults):
         super(HWWPlot,self).__init__()
 
         self._properties = properties
-        self._sortbydef = False
+        self._autosort   = False
+        self._order      = None
 
-        self._data = None
-        self._sigs = odict.OrderedDict()
-        self._bkgs = odict.OrderedDict()
-        self._errors = None
-        self._verbose = False
+        self._data       = None
+        self._sigs       = odict.OrderedDict()
+        self._bkgs       = odict.OrderedDict()
+        self._errors     = None
+        self._verbose    = False
 
     @property
     def properties(self):
         return self._properties
 
-    def _add(self, name, coll, h, **kwargs):
-        coll[name] = (h,kwargs) 
+    def _add(self, name, collection, h, **kwargs):
+        collection[name] = (h,kwargs) 
 
     def setautosort(self, auto=True):
-        self._sortbydef = auto
+        self._autosort = auto
+
+    def setorder(self, order=None):
+        self._order = order
 
     def seterror(self,eg):
         self._errors = eg
@@ -90,7 +94,7 @@ class HWWPlot(ROOT.PlotVHqqHggH):
     def addbkg(self, name, h, **kwargs):
         self._add( name, self._bkgs, h, **kwargs) 
 
-    def _fillvecs(self, coll ):
+    def _fillvecs(self, collection ):
 
         # init the vectors
         vecs = {
@@ -103,12 +107,19 @@ class HWWPlot(ROOT.PlotVHqqHggH):
         }
         
 
-        itproc = coll.iterkeys() if not self._sortbydef else self._properties.iterkeys()
+        # order takes precedence
+        if self._order:
+            iproc = self._order
+        elif self._autosort:
+            iproc = self._properties.iterkeys()
+        else:
+            iproc = collection.iterkeys()
+
             
         # and fill them
-        for name in itproc:
+        for name in iproc:
             try:
-                (h,props) = coll[name]
+                (h,props) = collection[name]
             except KeyError:
                 # some of the processes might not be there
                 continue
@@ -116,7 +127,9 @@ class HWWPlot(ROOT.PlotVHqqHggH):
             dummy = self._properties[name].copy()
             dummy.update(props)
 
-            vecs['th1']  .push_back(h)
+            sentry = utils.TH1AddDirSentry()
+
+            vecs['th1']  .push_back(h.Clone())
             vecs['label'].push_back( dummy.get('label',h.GetTitle() ) )
             vecs['color'].push_back( dummy.get('color',h.GetFillColor() ) )
             vecs['scale'].push_back( dummy.get('scale',1. ) )
@@ -127,7 +140,6 @@ class HWWPlot(ROOT.PlotVHqqHggH):
 
     # ---
     def prepare(self):
-
         if not self._verbose: sentry = NullStdOutSentry()
 
         if self._data:   self.setDataHist(self._data)
@@ -149,12 +161,12 @@ class HWWPlot(ROOT.PlotVHqqHggH):
 
     # ---
     def draw(self,*args,**kwargs):
-        sentry = NullStdOutSentry()
+        if not self._verbose: sentry = NullStdOutSentry()
         super(HWWPlot,self).Draw(*args,**kwargs)
     
     # ---
     def mergeSamples(self,*args,**kwargs):
-        sentry = NullStdOutSentry()
+        if not self._verbose: sentry = NullStdOutSentry()
         super(HWWPlot,self).mergeSamples(*args,**kwargs)
 
 if __name__ == '__main__':
