@@ -1,11 +1,31 @@
 import ROOT
 
+#----
+import sys
+
+class Tee(object):
+    def __init__(self, name, mode='w'):
+        self.file = open(name, mode)
+        self.stdout = sys.stdout
+        sys.stdout = self
+
+    def __del__(self):
+        sys.stdout = self.stdout
+        self.file.close()
+
+    def write(self, data):
+        self.file.write(data)
+        self.stdout.write(data)
+
+    def flush(self):
+        self.file.flush()
+        self.stdout.flush()
 #---
 class TH1AddDirSentry:
     def __init__(self):
         self.status = ROOT.TH1.AddDirectoryStatus()
         ROOT.TH1.AddDirectory(False)
-        
+
     def __del__(self):
         ROOT.TH1.AddDirectory(self.status)
 
@@ -32,7 +52,7 @@ class TH1Sumw2Sentry:
 #---
 class TStyleSentry:
     def __init__(self, style):
-        
+
         if isinstance(style,str):
             style = ROOT.gROOT.GetStyle(style)
         elif not isinstance(style,ROOT.TStyle):
@@ -59,8 +79,8 @@ class PadPrinter(object):
 
     # ---
     def __init__(self,prefix='',types=['pdf','png']):
-        self.prefix = prefix 
-        self.types  = types 
+        self.prefix = prefix
+        self.types  = types
 
     # ---
     def saveas(self, pad, filename):
@@ -69,7 +89,7 @@ class PadPrinter(object):
         ww = int(pad.GetWNDC()*pad.GetWw())
         wh = int(pad.GetHNDC()*pad.GetWh())
 
-        nm = '%s_%s' % (filename,pad.GetName()) 
+        nm = '%s_%s' % (filename,pad.GetName())
 
         c = ROOT.TCanvas(nm, nm, ww+self._tcanvas_winframe_width, wh+self._tcanvas_winframe_height)
         c.cd()
@@ -88,7 +108,14 @@ class PadPrinter(object):
         for filename,pad in pads.iteritems():
             self.saveas(pad,filename)
 
+    # ---
+    def savefromcanvas(self, canvas, **pads):
+        args = {n:canvas.GetPad(i) for n,i in pads.iteritems()}
+
+        self.saveall(**args)
+
     __call__ = saveall
+
 
 # ---
 def openROOTFile(path, option=''):
@@ -112,7 +139,7 @@ def ROOTInheritsFrom( objClass, theClass ):
 class ObjFinder:
     def __init__(self, classname):
         self.classname = classname
-        
+
     def find(self, rootFile ):
         if not rootFile.__nonzero__() or not rootFile.IsOpen():
             raise ValueError('ROOTFile '+rootFile.GetName()+' is not valid')
@@ -122,7 +149,7 @@ class ObjFinder:
         keys = dir.GetListOfKeys();
         dirname = dir.GetName()+'/' if not ROOTInheritsFrom(dir.IsA().GetName(),'TFile') else ''
 
-        subdirs = [d.ReadObj() for d in filter( lambda key: ROOTInheritsFrom(key.GetClassName(),'TDirectoryFile'), keys) ] 
+        subdirs = [d.ReadObj() for d in filter( lambda key: ROOTInheritsFrom(key.GetClassName(),'TDirectoryFile'), keys) ]
         paths   = [ dirname+obj.GetName() for obj in filter( lambda key:ROOTInheritsFrom( key.GetClassName(),self.classname), keys) ]
         for d in subdirs:
             paths.extend( [dirname+p for p in self.findRecursive(d)] )
@@ -141,14 +168,14 @@ class ObjFinder:
         dirname = fullname+'/' if fullname != '/' else '/'
         print fullname
 
-        subdirs = [d.ReadObj() for d in filter( lambda key: ROOTInheritsFrom(key.GetClassName(),'TDirectoryFile'), keys) ] 
+        subdirs = [d.ReadObj() for d in filter( lambda key: ROOTInheritsFrom(key.GetClassName(),'TDirectoryFile'), keys) ]
         paths   = [dirname+obj.GetName() for obj in filter( lambda key:ROOTInheritsFrom( key.GetClassName(),self.classname), keys) ]
 
         branch = []
 
         for d in subdirs:
             branch.append( (dirname+d.GetName(), self.treeRecursive(d)) )
-        
+
         branch.extend( paths )
         return branch
 
