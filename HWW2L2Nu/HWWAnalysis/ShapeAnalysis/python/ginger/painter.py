@@ -15,7 +15,7 @@
 #
 # TLatex BoxSize:
 # for some reasons GetBoundingBox returns 0
-# 
+#
 # TLatex::GetXsize(), TLatex::GetYsize() are working, but the result have to be converted
 #
 #        pw = pad.GetWw()*pad.GetWNDC()
@@ -29,8 +29,8 @@
 #        dx = (uxmax-uxmin)/(1-pad.GetLeftMargin()-pad.GetRightMargin())
 #        dy = (uymax-uymin)/(1-pad.GetTopMargin()-pad.GetBottomMargin())
 #
-#        pxlength = dummy.GetXsize()*pw/(ph*dx) 
-#        pxheight = dummy.GetYsize()*pw/(ph*dx) 
+#        pxlength = dummy.GetXsize()*pw/(ph*dx)
+#        pxheight = dummy.GetYsize()*pw/(ph*dx)
 
 import ROOT
 import uuid
@@ -38,19 +38,26 @@ import sys
 import copy
 import logging
 
+_tcanvas_winframe_width  = 4
+_tcanvas_winframe_height = 28
+
+def _makecanvas(name,title,w,h):
+    return ROOT.TCanvas(name,title, w+_tcanvas_winframe_width, h+_tcanvas_winframe_height)
+
+
 class StyleSetter:
     _log = logging.getLogger('StyleSetter')
 
     _setters = {
-        ROOT.TAttAxis:[ 
-            ('labelfamily' , ROOT.TAxis.SetLabelFont), 
-            ('labelsize'   , ROOT.TAxis.SetLabelSize), 
-            ('labeloffset' , ROOT.TAxis.SetLabelOffset), 
-            ('titlefamily' , ROOT.TAxis.SetTitleFont), 
-            ('titlesize'   , ROOT.TAxis.SetTitleSize), 
-            ('titleoffset' , ROOT.TAxis.SetTitleOffset), 
-            ('ticklength'  , ROOT.TAxis.SetTickLength), 
-            ('ndivisions'  , ROOT.TAxis.SetNdivisions), 
+        ROOT.TAttAxis:[
+            ('labelfamily' , ROOT.TAxis.SetLabelFont),
+            ('labelsize'   , ROOT.TAxis.SetLabelSize),
+            ('labeloffset' , ROOT.TAxis.SetLabelOffset),
+            ('titlefamily' , ROOT.TAxis.SetTitleFont),
+            ('titlesize'   , ROOT.TAxis.SetTitleSize),
+            ('titleoffset' , ROOT.TAxis.SetTitleOffset),
+            ('ticklength'  , ROOT.TAxis.SetTickLength),
+            ('ndivisions'  , ROOT.TAxis.SetNdivisions),
         ],
 
         ROOT.TAttText:[
@@ -81,13 +88,13 @@ class StyleSetter:
 
         myopts = self._opts.copy()
         myopts.update( opts )
-        
+
         for cls,methods in self._setters.iteritems():
             if not isinstance(tobj,cls): continue
 
             for l,m in methods:
                 x = myopts.get(l,None)
-                if not x is None: 
+                if not x is None:
                     m(tobj,x)
 
 class Pad(object):
@@ -116,7 +123,7 @@ class Pad(object):
         self._margins = (60,60,60,60)
         self._xaxis = self._axisstyle.copy()
         self._yaxis = self._axisstyle.copy()
-    
+
         # temp solution
 
         for n,o in opts.iteritems():
@@ -195,7 +202,7 @@ class Pad(object):
             if o.__nonzero__():
                 ROOT.SetOwnership(o,True)
                 del o
-        
+
         left,right,top,bottom = self._margins
         lax = self._w-left-right
         lay = self._h-top-bottom
@@ -223,16 +230,20 @@ class Canvas(object):
     _log = logging.getLogger('Canvas')
 
     #---
-    def __init__(self, nx, ny):
-        self._nx = nx
-        self._ny = ny
+    def __init__(self, minsize=(0,0)):
+        #self._nx = nx
+        #self._ny = ny
+        self._minsize = minsize
         self._pads = []
-        self._grid = [[None]*ny for i in xrange(nx)]
-        self._hrows = [0.]*nx
-        self._wcols = [0.]*ny
+        #self._grid = [[None]*ny for i in xrange(nx)] #old
+        self._gridX = {} #new
+        self._hrows = []
+        self._wcols = []
+        #self._hrows = [0.]*nx
+        #self._wcols = [0.]*ny
         self._obj = None
 
-    
+
     #---
     def __getattr__(self,name):
         if not self._obj:
@@ -241,15 +252,16 @@ class Canvas(object):
 
     # the alignement should be decided here
     def attach(self, pad, i, j ):
-        if ( i < 0 and i > self._nx ) or ( j < 0 and j > self._ny ):
-            raise IndexError('Index out of bounds (%d,%d) not in [0,%d],[0,%d]' % (i,j,self._nx,self._ny))
+        #if ( i < 0 and i > self._nx ) or ( j < 0 and j > self._ny ):
+            #raise IndexError('Index out of bounds (%d,%d) not in [0,%d],[0,%d]' % (i,j,self._nx,self._ny))
 
-        old = self._grid[i][j]
-        if not old is None: self._pads.pop(old)
+        #old = self._grid[i][j]
+        #if not old is None: self._pads.pop(old)
 
+        self._gridX[i,j] = pad #new
         if not pad: return
 
-        self._grid[i][j] = pad
+        #self._grid[i][j] = pad #old
         self._pads.append(pad)
 
     def __setitem__(self,key,value):
@@ -258,12 +270,17 @@ class Canvas(object):
 
         if len(key) != 2:
             raise RuntimeError('Wrong dimension')
-        
+
         self.attach( value, *key )
 
     #---
     def get(self,i,j):
-        return self._grid[i][j]
+        #assert(self._grid[i][j] == self._gridX[i,j])
+        pad = self._gridX[i,j] if (i,j) in self._gridX else None
+        #return self._gridX[i,j] #new
+
+        #return self._grid[i][j] #old
+        return pad
 
     #---
     def __getitem__(self, key):
@@ -272,27 +289,54 @@ class Canvas(object):
 
         if len(key) != 2:
             raise RuntimeError('Wrong dimension')
-        
+
         return self.get( *key )
 
     #---
-    def _computesize(self):
-        
-        hrows = [0]*self._ny
-        wcols = [0]*self._nx
+#    def _computesize(self):
 
-        for i,col in enumerate(self._grid):
-            wcols[i] = max([(pad._w if pad else 0) for pad in col])
-            for j,pad in enumerate(col):
-                if not pad: continue
-                hrows[j] = max(hrows[j],pad._h)
+        #hrows = [0]*self._ny
+        #wcols = [0]*self._nx
 
-        
+        #for i,col in enumerate(self._grid):
+            #wcols[i] = max([(pad._w if pad else 0) for pad in col])
+            #for j,pad in enumerate(col):
+                #if not pad: continue
+                #hrows[j] = max(hrows[j],pad._h)
+
+        ##self._hrows = hrows
+        ##self._wcols = wcols
+        ##h = sum(self._hrows)
+        ##w = sum(self._wcols)
+        #h = sum(hrows)
+        #w = sum(wcols)
+
+        #return w,h
+
+    #---
+    def _computesize(self): # new
+
+        nx = max( i for i,j in self._gridX.iterkeys())+1
+        ny = max( j for i,j in self._gridX.iterkeys())+1
+
+        print nx,ny,self._gridX.keys()
+
+        mw,mh = self._minsize
+        hrows = [mh]*ny
+        wcols = [mw]*nx
+
+        for (i,j),pad in self._gridX.iteritems():
+            if not pad: continue
+            wcols[i] = max(wcols[i],pad._w)
+            hrows[j] = max(hrows[j],pad._h)
+            print wcols[i],hrows[j]
+
         self._hrows = hrows
         self._wcols = wcols
         h = sum(self._hrows)
         w = sum(self._wcols)
-
+        #h = sum(hrows)
+        #w = sum(wcols)
         return w,h
 
     #---
@@ -305,67 +349,116 @@ class Canvas(object):
         if not name : name = 'canvas_'+str(uuid.uuid1())
         if not title: title = name
 
-        w,h = self._computesize()
+        w,h = self._computesize() #new
+        #wZ,hZ = self._computesize() #old
+        #if (wZ != w) or (hZ != h): raise ValueError('%d,%d -> %d,%d'%(w,h,wZ,hZ))
+
         fw,fh = float(w),float(h)
-        c = ROOT.TCanvas(name,title, w+4, h+28)
+#         c = ROOT.TCanvas(name,title, w+4, h+28)
+        c = _makecanvas(name,title,w,h)
         c.Draw()
 
         k = 2
-        
+
         # loop over rows (y-index j)
 
-        for i,col in enumerate(self._grid):
-            # loop over columns (x-index i)
-            for j,pad in enumerate(col):
-                if not pad: continue
+        #for i,col in enumerate(self._grid):
+            ## loop over columns (x-index i)
+            #for j,pad in enumerate(col):
+                #if not pad: continue
 
-                # assule left-top alignement
-                x0,y0 = self._getanchors(i,j)
-                x1,y1 = x0+pad._w,y0+pad._h
+                ## assule left-top alignement
+                #x0,y0 = self._getanchors(i,j)
+                #x1,y1 = x0+pad._w,y0+pad._h
 
-                gw,gh = self._wcols[i],self._hrows[j]
+                #gw,gh = self._wcols[i],self._hrows[j]
+##                 print i,j,gw,gh,pad._w,pad._h
+
+                #ha,va = pad._align
+
+                #if   va == 't':
+                    #pass
+                #elif va == 'm':
+                    #y0 += (gh-pad._h)/2.
+                    #y1 += (gh-pad._h)/2.
+                #elif va == 'b':
+                    #y0 += gh-pad._h
+                    #y1 += gh-pad._h
+                #else:
+                    #raise KeyError('Unknown vertical alignement %s', va)
+
+                #if   ha == 'l':
+                    #pass
+                #elif ha == 'c':
+                    #x0 += (gw-pad._w)/2.
+                    #x1 += (gw-pad._w)/2.
+                #elif ha == 'r':
+                    #x0 += gw-pad._w
+                    #x1 += gw-pad._w
+                #else:
+                    #raise KeyError('Unknown horizontal alignement %s', ha)
+
+                #pname = 'pad_%d_%d' % (i,j)
+
+##                 print pname,' [%d,%d][%d,%d] - [%d,%d][%d,%d]'% (x0,x1,y0,y1,x0,x1,(h-y1),(h-y0)), k
+##                 print pname,x0/fw,(h-y0)/fh,x1/fw,(h-y1)/fh, k
+                #tpad = ROOT.TPad(pname,pname,x0/fw,(h-y1)/fh,x1/fw,(h-y0)/fh)#, k)
+                #tpad.Draw()
+                #pad._obj = tpad
+                #pad._applypadstyle()
+                #k += 1
+
+        for (i,j),pad in self._gridX.iteritems():
+            if not pad: continue
+
+            # assule left-top alignement
+            x0,y0 = self._getanchors(i,j)
+            x1,y1 = x0+pad._w,y0+pad._h
+
+            gw,gh = self._wcols[i],self._hrows[j]
 #                 print i,j,gw,gh,pad._w,pad._h
 
-                ha,va = pad._align
-                
-                if   va == 't':
-                    pass
-                elif va == 'm':
-                    y0 += (gh-pad._h)/2.
-                    y1 += (gh-pad._h)/2.
-                elif va == 'b':
-                    y0 += gh-pad._h
-                    y1 += gh-pad._h
-                else:
-                    raise KeyError('Unknown vertical alignement %s', va)
+            ha,va = pad._align
 
-                if   ha == 'l':
-                    pass
-                elif ha == 'c':
-                    x0 += (gw-pad._w)/2.
-                    x1 += (gw-pad._w)/2.
-                elif ha == 'r':
-                    x0 += gw-pad._w  
-                    x1 += gw-pad._w
-                else:
-                    raise KeyError('Unknown horizontal alignement %s', ha)
+            if   va == 't':
+                pass
+            elif va == 'm':
+                y0 += (gh-pad._h)/2.
+                y1 += (gh-pad._h)/2.
+            elif va == 'b':
+                y0 += gh-pad._h
+                y1 += gh-pad._h
+            else:
+                raise KeyError('Unknown vertical alignement %s', va)
 
-                pname = 'pad_%d_%d' % (i,j)
+            if   ha == 'l':
+                pass
+            elif ha == 'c':
+                x0 += (gw-pad._w)/2.
+                x1 += (gw-pad._w)/2.
+            elif ha == 'r':
+                x0 += gw-pad._w
+                x1 += gw-pad._w
+            else:
+                raise KeyError('Unknown horizontal alignement %s', ha)
+
+            pname = 'pad_%d_%d' % (i,j)
 
 #                 print pname,' [%d,%d][%d,%d] - [%d,%d][%d,%d]'% (x0,x1,y0,y1,x0,x1,(h-y1),(h-y0)), k
 #                 print pname,x0/fw,(h-y0)/fh,x1/fw,(h-y1)/fh, k
-                tpad = ROOT.TPad(pname,pname,x0/fw,(h-y1)/fh,x1/fw,(h-y0)/fh)#, k)
-                tpad.Draw()
-                pad._obj = tpad
-                pad._applypadstyle()
-                k += 1
-        
+            tpad = ROOT.TPad(pname,pname,x0/fw,(h-y1)/fh,x1/fw,(h-y0)/fh)#, k)
+            tpad.Draw()
+            pad._obj = tpad
+            pad._applypadstyle()
+            k += 1
+
+
         self._obj = c
         return c
-        
+
     #---
     def applystyle(self):
-        
+
         map(Pad._applyframestyle,self._pads)
 
 
@@ -387,7 +480,7 @@ class Legend(object):
         self._labelwidth = None
         self._anchor = (0,0)
         self._align = ('c','m')
-        self._style = self._legendstyle.copy() 
+        self._style = self._legendstyle.copy()
 
         for n,o in opts.iteritems():
             attr = '_'+n
@@ -455,18 +548,18 @@ class Legend(object):
 #                 print pad.GetName(),dummy.GetTitle(),dummy.GetXsize()*pw/(ph*dx),dummy.GetYsize()/dy
                 widths.append( dummy.GetXsize()*pw/(ph*dx) )
 
-        # add 10% 
+        # add 10%
         self._maxlabelwidth = int(max(widths)*1.1)
 
         self._colcount = wcols.count(True)
         self._rowcount = hrows.count(True)
-  
+
 
     #---
     def _getanchor(self,i,j):
         labelwidth = self._labelwidth if self._labelwidth is not None else self._maxlabelwidth
         x0,y0 = self._anchor[0]+i*(labelwidth+self._boxsize),self._anchor[1]+j*self._boxsize
-        
+
         ha,va = self._align
         if   va == 't':
             pass
@@ -475,7 +568,7 @@ class Legend(object):
         elif va == 'b':
             y0 -= self._rowcount*self._boxsize
         else:
-            raise KeyError('Unknown vertical alignement %s', va)   
+            raise KeyError('Unknown vertical alignement %s', va)
 
         if   ha == 'l':
             pass
@@ -514,7 +607,7 @@ class Legend(object):
         else:
             if self._cursor >= len(self._sequence):
                 raise IndexError('The legend is full!')
-            
+
             i,j = self._sequence[self._cursor]
 
             self._cursor += 1
@@ -533,15 +626,62 @@ class Legend(object):
 
         self._grid[i][j] = (title,leg)
 
-    #---
-    def draw(self):
 
-        self._updatebox()
-        
+    #---
+    def _point(self, x,y):
+
         pad = ROOT.gPad.func()
         fw = pad.GetWw()*pad.GetWNDC()
         fh = pad.GetWh()*pad.GetHNDC()
 
+        mxsize = 16
+        mosize = 8
+
+        u = x/fw
+        v = (fh-y)/fh
+
+        ul = (x+mxsize/2)/fw
+        vl = (fh-(y-mxsize/2))/fh
+
+        l = ROOT.TLatex(ul,vl,'(%d,%d)'% (x,y) )
+        l.SetTextFont(44)
+        l.SetTextSize(10)
+        l.SetNDC()
+        ROOT.SetOwnership(l,False)
+
+        mx = ROOT.TMarker(u,v,ROOT.kPlus)
+        mx.SetNDC()
+        mx.SetMarkerSize(mxsize/8.)
+        mx.SetBit(ROOT.TMarker.kCanDelete)
+        ROOT.SetOwnership(mx,False)
+
+        mo = ROOT.TMarker(u,v,ROOT.kCircle)
+        mo.SetNDC()
+        mo.SetMarkerSize(mosize/8.)
+        mo.SetBit(ROOT.TMarker.kCanDelete)
+        ROOT.SetOwnership(mo,False)
+
+        ms = ROOT.TList()
+        ms.Add(mx)
+        ms.Add(mo)
+        ms.Add(l)
+
+        ROOT.SetOwnership(ms,False)
+
+        return ms
+
+    #---
+    def draw(self):
+
+        self._updatebox()
+
+        pad = ROOT.gPad.func()
+        fw = pad.GetWw()*pad.GetWNDC()
+        fh = pad.GetWh()*pad.GetHNDC()
+
+        #self._point(*(self._anchor)).Draw()
+        #m = ROOT.TMarker(0,0,ROOT.kPlus)
+        #l = ROOT.TLatex()
         for i,col in enumerate(self._grid):
             for j,entry in enumerate(col):
                 if not entry: continue
@@ -550,17 +690,19 @@ class Legend(object):
                 x0,y0 = self._getanchor(i,j)
                 x1,y1 = x0+self._boxsize,y0+self._boxsize
 
-#                 leg = self._grid[i][j]
-                leg.SetX1( x0/fw )
-                leg.SetY1( (fh-y1)/fh )
-                leg.SetX2( x1/fw )
-                leg.SetY2( (fh-y0)/fh )
+                #self._point(x0,y0).Draw()
+                #self._point(x1,y1).Draw()
+
+                u0 = x0/fw
+                v0 = (fh-y1)/fh
+                u1 = x1/fw
+                v1 = (fh-y0)/fh
+
+                leg.SetX1( u0 )
+                leg.SetY1( v0 )
+                leg.SetX2( u1 )
+                leg.SetY2( v1 )
                 leg.Draw()
-#                 l = ROOT.TLegend( x0/fw, (fh-y1)/fh, x1/fw, (fh-y0)/fh )
-#                 l.AddEntry(obj,obj.GetTitle() if title is None else title,opt)
-#                 self._applystyle(l)
-#                 l.Draw()
-#                 self._legends.append(l)
 
 class Latex:
     _latexstyle = {
@@ -623,7 +765,7 @@ if __name__ == '__main__':
 
     sys.argv.append('-b')
     ROOT.gROOT.SetBatch()
-    
+
     c = Canvas(2,3)
 
     axst = {
@@ -735,7 +877,7 @@ if __name__ == '__main__':
 
 #     tc.ls()
     ROOT.gSystem.ProcessEvents()
-    
+
 
 #     tc.Print('des.png')
     tc.Print('des.pdf')
@@ -743,4 +885,4 @@ if __name__ == '__main__':
 
 
 
-        
+

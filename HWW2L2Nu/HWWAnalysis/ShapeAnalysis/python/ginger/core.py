@@ -52,6 +52,22 @@ class Yield:
         return Yield(value,error)
 
     #---
+    def __mul__(self,other):
+
+        value = self.value*other.value
+        error = math.sqrt( (self.error/self.value)**2+(other.error/other.value)**2 )*value
+
+        return Yield(value,error)
+
+    #---
+    def __div__(self,other):
+
+        value = self.value/other.value
+        error = math.sqrt( (self.error/self.value)**2+(other.error/other.value)**2 )*value
+
+        return Yield(value,error)
+
+    #---
     def __radd__(self,other):
         '''
         Right addition used in cases as
@@ -71,11 +87,20 @@ class Yield:
 
     #---
     def __repr__(self):
-        return '(%s+/-%s)' % (self.value, self.error)
+        return '(%s+-%s)' % (self.value, self.error)
 
     #---
     def __str__(self):
-        return '%s +/- %s' % (self.value, self.error)
+        x = int(math.floor(math.log10(self.error))) if self.error!=0 else 0
+        y = int(math.floor(math.log10(self.value))) if self.error!=0 else 0
+        k = min(x,y)
+        if k < 4 and k >= 0:
+            return ('%.2f +- %.2f') % (self.value, self.error)
+        if k < 0 and k > -4:
+            return ('%.'+str(-k+1)+'f +- %.'+str(-k+1)+'f') % (self.value, self.error)
+        else:
+            e = float(10**k)
+            return '(%.2f +- %.2f)E%d' % (self.value/e, self.error/e, k)
 
 # _____________________________________________________________________________
 #     ____      __            ____              
@@ -133,7 +158,7 @@ class Chained:
         return self._objs.pop(i)
     
     #---
-    # here are the summable methods
+    # here are the methods providing the default sum
     def entries(self,cut=None):
         return sum([ o.entries(cut) for o in self._objs  ])
     
@@ -151,10 +176,17 @@ class Chained:
     #--- 
     def plot(self, name, varexp, cut='', options='', bins=None, *args, **kwargs):
         if not self._objs: return ROOT.TH1D()
-        
+
+        # for the future (>2.7)
+        # import numbers
+        # len(bins) == 1 and isinstance(bins[0], numbers.Number)
         # check for TTree aout-binnig
-        if (  bins is None or
+        if (  
+            # fully free binning
+            bins is None or
+            # free x binning
             ( len(bins) == 1 and isinstance(bins[0], (int,float)) ) or 
+            # free y binning
             ( len(bins) == 4 and isinstance(bins[3], (int,float)) )
            ):
             # ValueError('Automatic binning not supported by ChainWorker
@@ -188,7 +220,8 @@ class AbsWorker(AbsSet):
     def views(self):
         ''' '''
 
-    # ward against unwanted copies: Overloading left to child classes
+    # ward against unwanted copies: Overloading left to child classes if
+    # required
     def __copy__(self):
         raise RuntimeError('Can\'t copy a %s' % self.__class__.__name__)
 
@@ -202,6 +235,8 @@ class AbsView(AbsSet):
     def spawn(self):
         ''' '''
 
+    # ward against unwanted copies: Overloading left to child classes if
+    # required
     def __copy__(self):
         raise RuntimeError('Can\'t copy a %s' % self.__class__.__name__)
 

@@ -18,6 +18,7 @@ class H1RatioPlotter(object):
             self.ytitle2   = 'ratio'
             self.colors    = [kRed+1      , kOrange+7   , kAzure-6    , kAzure+9    , kOrange+7   , kOrange-2  ]
             self.markers   = [kFullCircle , kOpenCircle , kFullCircle , kOpenCircle , kFullCircle , kFullCircle]
+            self.fills     = [0           , 0           , 0           , 0           , 0           , 0          ]
             self.plotratio = True
 
             self.left        = 100
@@ -36,7 +37,7 @@ class H1RatioPlotter(object):
             self.titley      = 60
 
             self.legmargin   = 25
-            self.legboxsize  = 50 
+            self.legboxsize  = 50
             self.legtextsize = 30
 
             self.axsty = {
@@ -70,7 +71,7 @@ class H1RatioPlotter(object):
         def legalign(self): return self._legalign
 
         @legalign.setter
-        def legalign(self, align): 
+        def legalign(self, align):
             ha,va = align
             if ha not in 'lr': raise ValueError('Align can only be \'l\' or \'r\'')
             if va not in 'tb': raise ValueError('Align can only be \'t\' or \'b\'')
@@ -82,7 +83,7 @@ class H1RatioPlotter(object):
 
         from ROOT import kRed,kOrange,kAzure
         from ROOT import kFullCircle, kOpenCircle
-        
+
         self.__dict__['_style'] = self.mystyle()
 
         for k,v in kwargs.iteritems():
@@ -123,7 +124,7 @@ class H1RatioPlotter(object):
             raise ValueError('Cannot compare histograms with different dimensions')
         sentry = utils.TH1AddDirSentry()
         self._h0 = h0.Clone()
-        self._hists = [ h.Clone() for h in hs ] 
+        self._hists = [ h.Clone() for h in hs ]
 
     #---
     @staticmethod
@@ -131,30 +132,30 @@ class H1RatioPlotter(object):
         lb  = ax.FindBin( urange[0] )
         ub  = ax.FindBin( urange[1] )
         print lb,ub
-        ax.SetRange( lb,ub ) 
+        ax.SetRange( lb,ub )
 
     #---
     def plot(self, options=''):
 
         style = self._style
 
-        left       = style.left      
-        right      = style.right     
-        top        = style.top       
-        bottom     = style.bottom    
+        left       = style.left
+        right      = style.right
+        top        = style.top
+        bottom     = style.bottom
 
-        gap        = style.gap       
-        width      = style.width     
-        heightf0   = style.heightf0  
-        heightf1   = style.heightf1  
+        gap        = style.gap
+        width      = style.width
+        heightf0   = style.heightf0
+        heightf1   = style.heightf1
 
         linewidth  = style.linewidth
         markersize = style.markersize
-        textsize   = style.textsize  
-        legmargin  = style.legmargin   
-        titley     = style.titley    
+        textsize   = style.textsize
+        legmargin  = style.legmargin
+        titley     = style.titley
 
-        axsty      = style.axsty     
+        axsty      = style.axsty
 
         # pads size
         pw = width+left+right
@@ -162,8 +163,7 @@ class H1RatioPlotter(object):
 
         ph0 = heightf0+top+gap
         ph1 = heightf1+gap+bottom
-        
-        c = Canvas(1,2)
+
 
         xaxsty = axsty.copy()
         xaxsty['labelsize'] = 0
@@ -171,12 +171,13 @@ class H1RatioPlotter(object):
         yaxsty = axsty.copy()
         yaxsty['ndivisions'] = 505
 
-        
+
+        c = Canvas()
         if style.plotratio:
-            self._pad0 = c[0,0] = Pad('p0',pw,ph0,margins=(left,right, top,    gap), xaxis=xaxsty, yaxis=axsty) 
-            self._pad1 = c[0,1] = Pad('p0',pw,ph1,margins=(left,right, gap, bottom), xaxis=axsty,  yaxis=yaxsty) 
+            self._pad0 = c[0,0] = Pad('p0',pw,ph0,margins=(left,right, top,    gap), xaxis=xaxsty, yaxis=axsty)
+            self._pad1 = c[0,1] = Pad('p0',pw,ph1,margins=(left,right, gap, bottom), xaxis=axsty,  yaxis=yaxsty)
         else:
-            self._pad0 = c[0,0] = Pad('p0',pw,ph ,margins=(left,right, top, bottom), xaxis=axsty, yaxis=axsty) 
+            self._pad0 = c[0,0] = Pad('p0',pw,ph ,margins=(left,right, top, bottom), xaxis=axsty, yaxis=axsty)
 
         c.makecanvas()
         self._canvas = c
@@ -204,7 +205,8 @@ class H1RatioPlotter(object):
 
         from itertools import izip
 
-        for h,col,mrk in izip(hists,style.colors,style.markers):
+        for h,col,mrk,fll in izip(hists,style.colors,style.markers,style.fills):
+            h.SetFillStyle  (fll)
             h.SetFillColor  (col)
             h.SetLineColor  (col)
             h.SetMarkerColor(col)
@@ -225,7 +227,7 @@ class H1RatioPlotter(object):
 
 #         if style.userrangex != (0.,0.): self._setrangeuser( stack.GetXaxis(), style )
         if style.userrangex != (0.,0.): stack.GetXaxis().SetRangeUser(*(style.userrangex) )
-        
+
         if style.yrange != (0.,0.):
             stack.SetMinimum(style.yrange[0] )
             stack.SetMaximum(style.yrange[1] )
@@ -261,8 +263,8 @@ class H1RatioPlotter(object):
             hratios = []
             colors  = [style.errcol]     + (style.colors[1:]  if len(self._hists) > 1 else [ROOT.kBlack]     )
             markers = [ROOT.kFullCircle] + (style.markers[1:] if len(self._hists) > 1 else [ROOT.kFullCircle])
-            allh    = [self._h0]+self._hists 
-        
+            allh    = [self._h0]+self._hists
+
             for hx,col,mrk in izip(allh,colors,markers):
                 hr = hx.Clone('ratio_%s_%s' % (hx.GetName(),h.GetName()) )
 
@@ -329,7 +331,7 @@ class H1RatioPlotter(object):
             ax.SetTitle(h0.GetXaxis().GetTitle())
             ax.SetMoreLogLabels(style.morelogx)
             ay.SetTitle(style.ytitle2)
-            
+
             self._dstack = dstack
 
             line = ROOT.TGraph(2)
@@ -349,7 +351,7 @@ class H1RatioPlotter(object):
 
 if __name__ == '__main__':
     import os.path
-    
+
     import ROOT
     ROOT.TH1.SetDefaultSumw2()
     mypath = os.path.dirname(os.path.abspath(__file__))

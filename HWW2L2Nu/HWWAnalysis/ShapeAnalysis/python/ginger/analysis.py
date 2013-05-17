@@ -9,15 +9,57 @@ import itertools
 import pdb
 
 
+#______________________________________________________________________________
+# bridge class for the current sad
+class Latino:
+
+    # ---
+    def __init__(self, **kwargs):
+
+        self.weight       = ''
+        self.preselection = ''
+        self.files        = []
+
+        for k,v in kwargs.iteritems():
+            if not hasattr(self,k): continue
+            setattr(self,k,v)
+
+    # ---
+    def __repr__(self):
+        return 'Latino(\'%s\', \'%s\', %s)' % (self.weight, self.preselection, str(self.files) )
+
+    # ---
+    def __add__(self,other):
+        if self.weight != other.weight or self.preselection != other.preselection:
+            raise ValueError('self and other are mismatching weight/preselection')
+
+        return Latino(weight = self.weight, preselection = self.preselection, files = self.files+other.files)
+
+    # ---
+    def makeSample( self, masterpath ):
+
+        files = [ os.path.join(masterpath,f) for f in self.files ]
+
+#         friends = []
+#         for key,path in kwargs.iteritems():
+#             friends.append( (key, [os.path.join(path,f) for f in self.files ]) )
+
+
+        s = Sample('latino', files)
+        s.weight       = self.weight
+        s.preselection = self.preselection
+
+        return s
+
 
 #______________________________________________________________________________
 class CutFlow(odict.OrderedDict):
 
     #---
     def __init__(self, init_val=(), strict=False):
-        odict.OrderedDict.__init__(self,(), strict) 
+        odict.OrderedDict.__init__(self,(), strict)
         self._import(init_val)
-    
+
     #---
     def _import(self,l):
         if isinstance(l,list):
@@ -40,10 +82,10 @@ class CutFlow(odict.OrderedDict):
     #---
     def __setitem__(self, key, val):
         if isinstance(val,str):
-            val = Cut(val)    
+            val = Cut(val)
         elif not isinstance(val,Cut):
             raise TypeError('CutFlow need CutSteps')
-        
+
         val.name = key
 
         odict.OrderedDict.__setitem__(self,key,val)
@@ -75,11 +117,11 @@ class CutFlow(odict.OrderedDict):
 
     #---
     def __repr__(self):
-        return '%s([%s])' % (self.__class__.__name__, ', '.join( 
+        return '%s([%s])' % (self.__class__.__name__, ', '.join(
             ['(%r, %r)' % (key, self[key].cut) for key in self.iterkeys()]))
-    
+
     def __str__(self):
-        return '%s(%s)' % (self.__class__.__name__, ', '.join( 
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(
             ['%d: %s = %r' % (i,key, self[key].cut) for i,key in enumerate(self.iterkeys())]))
 
     #---
@@ -113,7 +155,7 @@ class CutFlow(odict.OrderedDict):
 
     #---
     def string(self):
-        return ' && '.join( [ '(%s)' % step.cut for step in self.itervalues() ] ) 
+        return ' && '.join( [ '(%s)' % step.cut for step in self.itervalues() ] )
 
     #---
     def list(self):
@@ -132,7 +174,7 @@ class Cut(Labelled):
 
         for k,v in kwargs.iteritems():
             if not hasattr(self,k): continue
-            setattr(self,k,v)    
+            setattr(self,k,v)
 
     def __str__(self):
         return self.cut
@@ -144,54 +186,28 @@ class Cut(Labelled):
             repr = '%s(\'%s\')' % (self.__class__.__name__,self.cut)
 
         return repr
-    
-  
-
-#______________________________________________________________________________
-class Latino:
-
-    def __init__(self, **kwargs):
-
-        self.weight       = ''
-        self.preselection = ''
-        self.files        = []
-
-        for k,v in kwargs.iteritems():
-            if not hasattr(self,k): continue
-            setattr(self,k,v)   
-
-    def __repr__(self):
-        return 'Latino(\'%s\', \'%s\', %s)' % (self.weight, self.preselection, str(self.files) )
-
-    def __add__(self,other):
-        if self.weight != other.weight or self.preselection != other.preselection:
-            raise ValueError('self and other are mismatching weight/preselection')
-
-        return Latino(weight = self.weight, preselection = self.preselection, files = self.files+other.files)
-
-    def makeSample( self, masterpath ):
-
-        files = [ os.path.join(masterpath,f) for f in self.files ]
-
-#         friends = []
-#         for key,path in kwargs.iteritems():
-#             friends.append( (key, [os.path.join(path,f) for f in self.files ]) )
 
 
-        s = Sample('latino', files)
-        s.weight       = self.weight
-        s.preselection = self.preselection
+class ViewFlowManager:
+    pass
 
-        return s
+class ViewPoolManager:
+    pass
 
 
 import types
 #______________________________________________________________________________
+#   ______               ___                __
+#  /_  __/_______  ___  /   |  ____  ____ _/ /_  __________  _____
+#   / / / ___/ _ \/ _ \/ /| | / __ \/ __ `/ / / / / ___/ _ \/ ___/
+#  / / / /  /  __/  __/ ___ |/ / / / /_/ / / /_/ (__  )  __/ /
+# /_/ /_/   \___/\___/_/  |_/_/ /_/\__,_/_/\__, /____/\___/_/
+#                                         /____/
 class TreeAnalyser(object):
     '''
     TODO: Add the capability of adding analysis steps:
         It can happen to have multiple selections chains with a partial selection overlap
-        
+
         the goal would be to be capable of:
 
         mother = TreeAnalyser(sample, cuts)
@@ -210,8 +226,7 @@ class TreeAnalyser(object):
         self._views    = None
         self._modified = True
         self._worker   = ChainWorker.fromsamples(*samples) if samples else None
-#         self._worker   = TreeWorker.fromsamples(samples) if sample else None
-        
+
     #---
     def __del__(self):
         self._deleteentries()
@@ -220,7 +235,7 @@ class TreeAnalyser(object):
     #---
     def __repr__(self):
         return '%s( %s )' % (self.__class__.__name__,self._cuts)
-    
+
     #---
     def __copy__(self):
         self._log.debug('-GremlinS-')
@@ -235,16 +250,27 @@ class TreeAnalyser(object):
 
     def __deepcopy__(self,memo):
         return self.__copy__()
-        
+
     def clone(self):
         return self.__copy__()
 
     #---
-    def __setattr__(self,key,value):
-        if key == 'lumi':
-            self._worker.scale = value
-        else:
-            self.__dict__[key] = value
+    #def __setattr__(self,key,value):
+        #if key == 'lumi':
+            #self._worker.scale = value
+        #else:
+            #self.__dict__[key] = value
+
+    #---
+    @property
+    def lumi(self):
+        return self._lumi
+
+    #---
+    @lumi.setter
+    def lumi(self,lumi):
+        self._lumi = lumi
+        self._worker.scale = self._lumi
 
     #---
     @property
@@ -295,7 +321,7 @@ class TreeAnalyser(object):
     def _growviews(self, cutflow, views ):
         # does it need to depend on cutflow and views?
         self._log.debug('growing viewlist')
-        # explect cutflow to be longer than 
+        # explect cutflow to be longer than
 
         nv = len(views)
         nc = len(cutflow)
@@ -304,13 +330,12 @@ class TreeAnalyser(object):
 
         # last is the last valid view, used to grow the list
         last = views.values()[-1] if nv > 0 else ChainView(self._worker)
-#         last = views.values()[-1] if nv > 0 else TreeView(self._worker)
 
         newcuts = cutflow[nv:]
         self._log.debug('appending %s', newcuts)
         for i,(n,c) in enumerate(newcuts.iteritems()):
             m = last.spawn(c,'elist%d' % (i+nv) )
-            last = m  
+            last = m
             views[n] = m
 
         return views
@@ -352,9 +377,9 @@ class TreeAnalyser(object):
             self._log.debug('views left')
             for i,(n,l) in enumerate(views.iteritems()):
                 self._log.debug('- %d %s,%d', i,n,l.entries())
-    
+
         return views
- 
+
 
     #---
     def bufferentries(self, force=False):
@@ -368,6 +393,15 @@ class TreeAnalyser(object):
         self._modified = True
 
     #---
+    def extend(self,cuts):
+        if isinstance(cuts, odict.OrderedDict):
+            citer = cuts.iteritems()
+        elif isinstance(cuts,list) and all(isinstance(o,tuple) for o in cuts):
+            citer = iter(cuts)
+
+        for n,c in citer:
+            self.append(n,c)
+    #---
     def remove(self,name):
         '''remove a cut, and if the entrylist has been already made, update it'''
         del self._cuts[name]
@@ -377,33 +411,33 @@ class TreeAnalyser(object):
     def update(self, cutflow):
         self._cuts.update(cutflow)
         self._modified = True
-    
-    #--- 
-    def entries(self):
-        return self._worker.entries()
-        
-    #---
-    def selectedentries(self):
-        elist = self._ensureviews()
-        
-        # check that the cutlist is not empty
-        if not elist:
-            return self._worker.entries() 
-        else:
-            return elist[elist.keys()[-1]].entries()
 
     #---
-    def entriesflow(self):
+    def entries(self,cut=None):
+        return self._worker.entries(cut)
+
+    #---
+    def selectedentries(self,cut=None):
+        elist = self._ensureviews()
+
+        # check that the cutlist is not empty
+        if not elist:
+            return self._worker.entries(cut)
+        else:
+            return elist[elist.keys()[-1]].entries(cut)
+
+    #---
+    def entriesflow(self,cut):
         '''TODO: use the entrylist'''
 
         self._ensureviews()
-        return odict.OrderedDict([ (n, l.entries()) for n,l in self._views.iteritems()])
+        return odict.OrderedDict([ (n, l.entries(cut)) for n,l in self._views.iteritems()])
 
     #---
     def yields(self, extra=None):
         # make the entries
         views = self._ensureviews()
-        
+
         # using elist[:] doesn't clone the TEntryList, but inserts the reference only.
         if not views:
             return self._worker.yields(extra)
@@ -418,9 +452,11 @@ class TreeAnalyser(object):
         if not views: return odict.OrderedDict()
 
         return odict.OrderedDict([( n,v.yields(extra) ) for n,v in views.iteritems()])
-        
+
     #---
     def plot(self, name, varexp, extra=None, options='', bins=None):
+        # make the entries
+        views = self._ensureviews()
 
         if not views:
             return self._worker.plot(name,varexp,extra,options,bins)
@@ -431,7 +467,7 @@ class TreeAnalyser(object):
     def plotsflow(self, name, varexp, options='', bins=None, extra=None):
         # make the entries
         views = self._ensureviews()
-        
+
         # add the weight and get the yields
         if not views: return odict.OrderedDict()
 
@@ -439,7 +475,7 @@ class TreeAnalyser(object):
 
 if __name__ == '__main__':
 
-    basepath = '/shome/thea/HWW/work/shape2012/trees/latino_skim' 
+    basepath = '/shome/thea/HWW/work/shape2012/trees/latino_skim'
 
     flow = CutFlow()
 
@@ -466,13 +502,13 @@ if __name__ == '__main__':
     print s
 
     a = TreeAnalyser(s,None)
-    
+
     print a.selectedentries()
-    
+
     print a._worker._friends
 
     del a
-    
+
 
 
 

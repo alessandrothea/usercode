@@ -14,16 +14,17 @@ import array
 import ROOT
 import copy
 from .base import Labelled
+from .core import AbsWorker,AbsView,Chained,Yield
 
 
 
 # _____________________________________________________________________________
-#    __  ____  _ __    
+#    __  ____  _ __
 #   / / / / /_(_) /____
 #  / / / / __/ / / ___/
-# / /_/ / /_/ / (__  ) 
-# \____/\__/_/_/____/  
-#                      
+# / /_/ / /_/ / (__  )
+# \____/\__/_/_/____/
+#
 
 # ---
 def _bins2hclass( bins ):
@@ -34,7 +35,7 @@ def _bins2hclass( bins ):
     Variable bin width
     bins = ([x0,...,xn])
     bins = ([x0,...,xn],[y0,...,ym])
-    
+
     '''
 
     from array import array
@@ -70,7 +71,7 @@ def _bins2hclass( bins ):
     else:
         # only 1d or 2 d hist
         raise RuntimeError('What a mess!!! bin malformed!')
-    
+
     return ndim,hclass,hargs
 
 # _____________________________________________________________________________
@@ -81,18 +82,18 @@ def _buildchain(treeName,files):
         filepath = path if '#' not in path else path[:path.index('#')]
         if not os.path.exists(filepath):
             raise RuntimeError('File '+filepath+' doesn\'t exists')
-        tree.Add(path) 
+        tree.Add(path)
 
     return tree
 
 
 # ______________________________________________________________________________
-#    _____                       __   
-#   / ___/____ _____ ___  ____  / /__ 
+#    _____                       __
+#   / ___/____ _____ ___  ____  / /__
 #   \__ \/ __ `/ __ `__ \/ __ \/ / _ \
 #  ___/ / /_/ / / / / / / /_/ / /  __/
-# /____/\__,_/_/ /_/ /_/ .___/_/\___/ 
-#                     /_/             
+# /____/\__,_/_/ /_/ /_/ .___/_/\___/
+#                     /_/
 
 class Sample(Labelled):
     '''
@@ -133,17 +134,15 @@ class Sample(Labelled):
     def addfriend(self, name, files):
         self.friends.append( (name, files) )
 
-from .core import AbsWorker,AbsView,Chained,Yield
 
 # _____________________________________________________________________________
-#    ______             _       __           __            
+#    ______             _       __           __
 #   /_  __/_______  ___| |     / /___  _____/ /_____  _____
 #    / / / ___/ _ \/ _ \ | /| / / __ \/ ___/ //_/ _ \/ ___/
-#   / / / /  /  __/  __/ |/ |/ / /_/ / /  / ,< /  __/ /    
-#  /_/ /_/   \___/\___/|__/|__/\____/_/  /_/|_|\___/_/     
-#                                                          
+#   / / / /  /  __/  __/ |/ |/ / /_/ / /  / ,< /  __/ /
+#  /_/ /_/   \___/\___/|__/|__/\____/_/  /_/|_|\___/_/
+#
 
-# class TreeWorker(object):
 class TreeWorker(AbsWorker):
     '''
     t = TreeWorker( tree='latino',files=['a.root','b.root'], selection='x <1', weight='3*x', friends=[('bdt',['c.root','d.root']),...]
@@ -212,7 +211,7 @@ class TreeWorker(AbsWorker):
 
         cutexpr = self._cutexpr(cut)
         self._plot('>>'+label,cutexpr,'entrylist')
-        
+
         l = ROOT.gDirectory.Get(label)
         # detach the list
         l.SetDirectory(0x0)
@@ -232,11 +231,11 @@ class TreeWorker(AbsWorker):
         last = TreeView(self)
         for i,(n,c) in enumerate(cuts.iteritems()):
             m = last.spawn(c,'elist%d' % (i+nv) )
-            last = m  
+            last = m
             views[n] = m
 
         return views
-        
+
     #---
 #     def _delroots(self,roots):
 #         for l in roots.itervalues():
@@ -267,11 +266,11 @@ class TreeWorker(AbsWorker):
     #---
     @property
     def weight(self):    return self._weight
-    
+
     #---
     @property
     def selection(self): return self._selection
-    
+
     #---
     @weight.setter
     def weight(self,w):
@@ -284,7 +283,7 @@ class TreeWorker(AbsWorker):
         self._selection = str(c)
         # make an entrylist with only the selected events
         name = 'selection'
-        
+
         self._chain.SetEntryList(0x0)
 
         if self._elist: del self._elist
@@ -310,7 +309,7 @@ class TreeWorker(AbsWorker):
         # check var is one of the branches, otherwise it doesn't work
         import math
         xmin,xmax = self._chain.GetMinimum(var),self._chain.GetMaximum(var)
-        
+
         if binsize > 0:
             xmin,xmax = math.floor(xmin/binsize)*binsize,math.ceil(xmax/binsize)*binsize
 
@@ -319,7 +318,7 @@ class TreeWorker(AbsWorker):
     #---
     def entries(self,cut=None):
         if not cut:
-            el = self._chain.GetEntryList() 
+            el = self._chain.GetEntryList()
             if el.__nonzero__(): return el.GetN()
             else:                return self._chain.GetEntries()
         else:
@@ -334,7 +333,7 @@ class TreeWorker(AbsWorker):
     #---
     def setalias(self,name,alias):
         return self._chain.SetAlias(name,alias)
-   
+
     #---
     def aliases(self):
         return dict([ (n.GetName(),n.GetTitle()) for n in self._chain.GetListOfAliases()])
@@ -370,7 +369,7 @@ class TreeWorker(AbsWorker):
             return 0,name,None
         elif not isinstance(bins, tuple):
             raise TypeError('bin must be an ntuple or an array')
-        
+
         l = len(bins)
         # if the tuple is made of lists
 #         if l in [1,2] and all(map(lambda o: isinstance(o,list),bins)):
@@ -432,7 +431,7 @@ class TreeWorker(AbsWorker):
         else:
             self._log.debug('entries  %d', n)
             return None
-    
+
     #---
     def yields(self, cut='', options='', *args, **kwargs):
         cut = self._cutexpr(cut)
@@ -441,12 +440,12 @@ class TreeWorker(AbsWorker):
         xax = h.GetXaxis()
         err = ctypes.c_double(0.)
         int = h.IntegralAndError(xax.GetFirst(), xax.GetLast(), err)
-        
+
         return Yield(int,err.value)
 
     #---
     def plot(self, name, varexp, cut='', options='', bins=None, *args, **kwargs):
-    
+
         # check the name doesn't contain project infos
         m = re.match(r'.*(\([^\)]*\))',name)
         if m: raise ValueError('Use bins argument to specify the binning %s' % m.group(1))
@@ -460,13 +459,14 @@ class TreeWorker(AbsWorker):
             # make an unique name (juust in case)
             tname = '%s_%s' % (htemp.GetName(),uuid.uuid1())
             htemp.SetName( tname )
-            htemp.SetDirectory( ROOT.gDirectory.func()) 
+            htemp.SetDirectory( ROOT.gDirectory.func())
             hstr = hstr.replace(name,tname)
 
-            varexp = '%s >> %s' % (varexp,hstr)
-            h = self._plot( varexp, cut, options, *args, **kwargs)
+            projexp = '%s >> %s' % (varexp,hstr)
+            h = self._plot( projexp, cut, options, *args, **kwargs)
+            h.SetXTitle(varexp)
 
-            # reset the directory 
+            # reset the directory
             h.SetDirectory(0x0)
             h.SetName(name)
         else:
@@ -496,9 +496,9 @@ class TreeWorker(AbsWorker):
         )
 
 
-    #--- 
+    #---
     def project(self, h, varexp, cut='', options='', *args, **kwargs):
-       
+
         # check where we are
         here = ROOT.gDirectory.func()
         hdir = h.GetDirectory()
@@ -518,25 +518,25 @@ class TreeWorker(AbsWorker):
         cut = self._cutexpr(cut)
 
         hout = self._plot( varexp, cut, options+'goff', *args, **kwargs)
-        
+
         if hout != h: raise ValueError('What happened to my histogram?!?!')
 
         # go back home
         here.cd()
 
-        if tmp: 
+        if tmp:
             h.SetDirectory(0x0)
             ROOT.gROOT.rmdir(tmp)
 
         return h
 
 # _____________________________________________________________________________
-#    ________          _     _       __           __            
+#    ________          _     _       __           __
 #   / ____/ /_  ____ _(_)___| |     / /___  _____/ /_____  _____
 #  / /   / __ \/ __ `/ / __ \ | /| / / __ \/ ___/ //_/ _ \/ ___/
-# / /___/ / / / /_/ / / / / / |/ |/ / /_/ / /  / ,< /  __/ /    
-# \____/_/ /_/\__,_/_/_/ /_/|__/|__/\____/_/  /_/|_|\___/_/     
-#                                                               
+# / /___/ / / / /_/ / / / / / |/ |/ / /_/ / /  / ,< /  __/ /
+# \____/_/ /_/\__,_/_/_/ /_/|__/|__/\____/_/  /_/|_|\___/_/
+#
 class ChainWorker(Chained,AbsWorker):
 
     def __init__(self,*workers):
@@ -569,17 +569,17 @@ class ChainWorker(Chained,AbsWorker):
 
         # put the treeviews in a temporary container
         allviews = [ o.views(cuts) for o in self._objs ]
-        # but what we need are the 
+        # but what we need are the
         alliters = [ v.itervalues() for v in allviews ]
 
         import itertools
         chainviews=odict.OrderedDict()
         # make an iterator with everything inside
         # cut,tview1,tview2,...,tviewN
-        # to repack them as 
+        # to repack them as
         # cut,cview
         for it in itertools.izip(cuts,*alliters):
-            
+
             # create a new view
             cv = ChainView()
 
@@ -587,7 +587,7 @@ class ChainWorker(Chained,AbsWorker):
             cv.add( *it[1:] )
 
             #add it to the list of views
-            chainviews[it[0]] = cv 
+            chainviews[it[0]] = cv
 
         return chainviews
 
@@ -601,12 +601,12 @@ class ChainWorker(Chained,AbsWorker):
 
 
 # _____________________________________________________________________________
-#   ______             _    ___             
+#   ______             _    ___
 #  /_  __/_______  ___| |  / (_)__ _      __
 #   / / / ___/ _ \/ _ \ | / / / _ \ | /| / /
-#  / / / /  /  __/  __/ |/ / /  __/ |/ |/ / 
-# /_/ /_/   \___/\___/|___/_/\___/|__/|__/  
-#                                           
+#  / / / /  /  __/  __/ |/ / /  __/ |/ |/ /
+# /_/ /_/   \___/\___/|___/_/\___/|__/|__/
+#
 
 # class TreeView(object):
 class TreeView(AbsView):
@@ -642,7 +642,7 @@ class TreeView(AbsView):
         self._expcut = cut
         self._elist  = None
 
-        # don't build the list if no worker (used by copy)  
+        # don't build the list if no worker (used by copy)
         if not worker: return
 #         if not worker: assert(0)
 
@@ -685,7 +685,7 @@ class TreeView(AbsView):
     def _sentry(self):
         # make a sentry which sets the current entrlylist in the worker and removes it when going out of scope
         return TreeView.Sentry(self._worker,self._elist)
-    
+
     # ---
     def entries(self,cut=None):
         # get the entries from worker after setting the entrylist
@@ -715,7 +715,7 @@ class TreeView(AbsView):
         sentry = self._sentry()
         return self._worker.rawdraw(*args)
 
-    
+
     # ---
     def spawn(self,cut,name=None):
         # make myself a name if I don't have one
@@ -729,12 +729,12 @@ class TreeView(AbsView):
         return v
 
 #_______________________________________________________________________________
-#    ________          _     _    ___             
+#    ________          _     _    ___
 #   / ____/ /_  ____ _(_)___| |  / (_)__ _      __
 #  / /   / __ \/ __ `/ / __ \ | / / / _ \ | /| / /
-# / /___/ / / / /_/ / / / / / |/ / /  __/ |/ |/ / 
-# \____/_/ /_/\__,_/_/_/ /_/|___/_/\___/|__/|__/  
-#                                                 
+# / /___/ / / / /_/ / / / / / |/ / /  __/ |/ |/ /
+# \____/_/ /_/\__,_/_/_/ /_/|___/_/\___/|__/|__/
+#
 
 class ChainView(Chained,AbsView):
 
@@ -749,7 +749,7 @@ class ChainView(Chained,AbsView):
         self._worker = worker
         self._cut    = cut
         self._expcut = cut
-        self._elist  = None 
+        self._elist  = None
 
         # used by copy operations (default constructor)
         if worker is None: return
@@ -783,7 +783,7 @@ class ChainView(Chained,AbsView):
         child = ChainView()
 
         views = [ o.spawn(*args, **kwargs) for o in self._objs]
-        
+
         child.add(*views)
 
         return child
