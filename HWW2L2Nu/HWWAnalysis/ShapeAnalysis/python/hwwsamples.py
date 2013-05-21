@@ -2,7 +2,7 @@ import hwwtools
 import re
 
 
-signals = ['ggH','qqH','wzttH','ggH_ALT','WH','ZH','ttH']
+signals = ['ggH','qqH','wzttH','ggH_ALT','qqH_ALT','WH','ZH','ttH']
 
 #--------------
 # mcsets,
@@ -35,7 +35,7 @@ mcsets = {
     ],
     '0j1j-JHUOthers' : [
         #signals
-        'ggH','ggH_ALT','jhu_NORM','jhu_NLO','qqH','wzttH',
+        'ggH','ggH_ALT','jhu_NORM','jhu_NLO','qqH','qqH_ALT','wzttH',
         # bkgs
         'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL','WWnlo','WWnloUp','WWnloDown',
         # systematics

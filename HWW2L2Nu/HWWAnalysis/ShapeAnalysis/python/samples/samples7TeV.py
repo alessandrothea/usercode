@@ -102,7 +102,8 @@ data = {
 
 }
 
-data['Data2012'] = data['Data2012A']+data['Data2012B']+data['Data2012C']+data['Data2012D']
+#data['Data2012'] = data['Data2012A']+data['Data2012B']+data['Data2012C']+data['Data2012D']
+data['Data2011'] = data['Data2011A']+data['Data2011B']
 
 #--------------
 # signal samples labels and generation
@@ -113,8 +114,8 @@ def signalSamples(sigtag,mass=125,suffix=''):
 
     # some preliminary definitions
     std_ggH      = ['nominals/latino_9125_ggToH125toWWTo2LAndTau2Nu.root']
-    std_qqH      = ['nominals/latino_2125_vbfToH125toWWTo2LAndTau2Nu.root']
-    std_wzttH    = ['nominals/latino_3125_wzttH125ToWW.root']
+    std_qqH      = ['nominals/latino_8125_vbfToH125toWWTo2LAndTau2Nu.root']
+    std_wzttH    = ['nominals/latino_7125_wzttH125ToWW.root']
 
     jhu_ggSM     = ['nominals/latino_13001_SMH125ToWW2L2Nu.root',
                     'nominals/latino_13004_SMH125ToWW2Tau2Nu.root',
@@ -130,9 +131,9 @@ def signalSamples(sigtag,mass=125,suffix=''):
                     'nominals/latino_13009_Graviton2PMToWWLTau2Nu.root'
                    ]
 
-    jhu_qqGrav2PM= ['nominals/latino_13003_Graviton2PM2L2Nu.root',
-                    'nominals/latino_13006_Graviton2PMToWW2Tau2Nu.root',
-                    'nominals/latino_13009_Graviton2PMToWWLTau2Nu.root'
+    jhu_qqGrav2PM= ['nominals/latino_13010_Graviton2PMqqbarToWW2L2Nu.root',
+                    'nominals/latino_13011_Graviton2PMqqbarToWW2Tau2Nu.root',
+                    'nominals/latino_13012_Graviton2PMqqbarToWWLTau2Nu.root'
                    ]
 
     if sigtag == 'SM':
@@ -173,6 +174,7 @@ def signalSamples(sigtag,mass=125,suffix=''):
         signals['wzttH']   = std_wzttH
                
         signals['ggH_ALT'] = jhu_ggGrav2PM
+        signals['qqH_ALT'] = jhu_qqGrav2PM
         signals['jhu_NORM']= std_ggH
 
     elif sigtag == 'Higgs0M' and mass==125:

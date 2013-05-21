@@ -58,7 +58,7 @@ class ShapeFactory:
         self._range           = None
         self._splitmode       = None
         self._lumi            = 1
-
+        self._muVal           = 1.
 
         variables = {}
         variables['2dWithCR']             = self._getMllMth2DSpinWithControlRegion
@@ -774,16 +774,17 @@ class ShapeFactory:
         #filter and k-factor on Vg* done by kfW
         weights['VgS']               = self._stdWgt+'*kfW'
         weights['Vg']                = self._stdWgt+'*kfW'
-        weights['ggH']               = self._stdWgt+'*kfW'
-        weights['qqH']               = self._stdWgt+'*kfW'
+        weights['ggH']               = self._stdWgt+'*kfW*'+self._muVal
+        weights['qqH']               = self._stdWgt+'*kfW*'+self._muVal
 
-        weights['WH']                = self._stdWgt+'*(mctruth == 26)'
-        weights['ZH']                = self._stdWgt+'*(mctruth == 24)'
-        weights['ttH']               = self._stdWgt+'*(mctruth == 121)'
+        weights['WH']                = self._stdWgt+'*(mctruth == 26)*'+self._muVal
+        weights['ZH']                = self._stdWgt+'*(mctruth == 24)*'+self._muVal
+        weights['ttH']               = self._stdWgt+'*(mctruth == 121)*'+self._muVal
 
-        weights['ggH_ALT']           = self._stdWgt+'*kfW'
-        weights['jhu_NORM']          = self._stdWgt+'*kfW'
-        weights['jhu_NLO']           = self._stdWgt+'*kfW'
+        weights['ggH_ALT']           = self._stdWgt+'*kfW*'+self._muVal
+        weights['qqH_ALT']           = self._stdWgt+'*kfW*'+self._muVal
+        weights['jhu_NORM']          = self._stdWgt+'*kfW*'+self._muVal
+        weights['jhu_NLO']           = self._stdWgt+'*kfW*'+self._muVal
 
 
 
@@ -799,13 +800,13 @@ class ShapeFactory:
 
         if var in ['bdts','bdtl']:
             weights['WW']       = self._stdWgt+'*2*(event%2 == 0)'
-            weights['ggH']      = self._stdWgt+'*2*kfW*(event%2 == 0)'
-            weights['qqH']      = self._stdWgt+'*2*kfW*(event%2 == 0)'
-            weights['wzttH']    = self._stdWgt+'*2*(event%2 == 0)'
+            weights['ggH']      = self._stdWgt+'*2*kfW*(event%2 == 0)*'+self._muVal
+            weights['qqH']      = self._stdWgt+'*2*kfW*(event%2 == 0)*'+self._muVal
+            weights['wzttH']    = self._stdWgt+'*2*(event%2 == 0)*'+self._muVal
             # TODO Signal injection weights, if available
-            weights['ggH-SI']   = self._stdWgt+'*2*kfW*(event%2 == 0)'
-            weights['qqH-SI']   = self._stdWgt+'*2*kfW*(event%2 == 0)'
-            weights['wzttH-SI'] = self._stdWgt+'*2*(event%2 == 0)'
+            weights['ggH-SI']   = self._stdWgt+'*2*kfW*(event%2 == 0)*'+self._muVal
+            weights['qqH-SI']   = self._stdWgt+'*2*kfW*(event%2 == 0)*'+self._muVal
+            weights['wzttH-SI'] = self._stdWgt+'*2*(event%2 == 0)*'+self._muVal
 
         return weights
 
@@ -985,6 +986,7 @@ if __name__ == '__main__':
     parser.add_option('--do-syst',       dest='doSyst',     help='Do only one systematic',                default=None)
 #     parser.add_option('--skip-syst',     dest='skipSyst',   help='Skip set of systematics',               default='')
     parser.add_option('--skip-syst',     dest='skipSyst',   help='Skip set of systematics',               default=[] , type='string' , action='callback' , callback=hwwtools.list_maker('skipSyst'))
+    parser.add_option('--mu'       ,     dest='muVal',   help='Initial signal strengh',               default=1. , type='string' )
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
@@ -1058,7 +1060,7 @@ if __name__ == '__main__':
         factory._range     = opt.range
         factory._splitmode = opt.splitmode
         factory._lumi      = opt.lumi
-
+        factory._muVal     = opt.muVal 
 
         if opt.makeNoms:
             # nominal shapes
@@ -1104,7 +1106,7 @@ if __name__ == '__main__':
             processMask = ['ggH', 'ggH_ALT',  'qqH',  'qqH_ALT', 'wzttH', 'ZH', 'WH', 'ttH', 'ggWW', 'Top', 'WW', 'VV', 'VgS', 'Vg', 'DYTT', 'Other', 'ggH125', 'qqH125','VVV', 'WWewk', 'CHITOP-Top']
 
             if '2011' in opt.dataset:
-                processMask = ['ggH', 'ggH_ALT' 'vbfH','vbfH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'ggH125', 'vbfH125']
+                processMask = ['ggH', 'ggH_ALT','qqH','qqH_ALT', 'ggWW', 'Top', 'WW', 'VV', 'ggH125', 'vbfH125']
 
             systMasks = dict([(s,processMask[:]) for s in systematics])
             systDirs  = dict([(s,systInputDir if s not in systByWeight else 'templates/' ) for s in systematics])

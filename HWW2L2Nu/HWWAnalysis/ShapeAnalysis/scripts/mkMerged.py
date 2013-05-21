@@ -889,60 +889,43 @@ class ShapeMixer:
                 self.generators[topDDDown.GetTitle()] = topDDDown
 
         # -----------------------------------------------------------------
-        # JHU Normaliartion
-
-        #if 'jhu' in self.nominals:
-        #   print "Normalising JHU"
-        #   jhuNORM  = self.nominals['jhu_NORM']
-        #   jhuShape = self.nominals['jhu']
-        #   jhuShape.Scale( (jhuNORM.Integral() if jhuNORM.Integral() !=0. else jhuShape.Integral()) / jhuShape.Integral() )
-
-        if ('ggH_ALT' in self.nominals) and ('jhu_NORM' in self.nominals):
-           jhuNORM  = self.nominals['jhu_NORM']
-           jhuShape = self.nominals['ggH_ALT']
-           jhuShape.Scale( (jhuNORM.Integral() if jhuNORM.Integral() !=0. else jhuShape.Integral()) / jhuShape.Integral() )
-
-        if 'jhu_NORM' in self.nominals: 
-           self.nominals.pop('jhu_NORM')
-
-        # -----------------------------------------------------------------
-        # JHU vs PowHeg
+        # JHU vs PowHeg (DEPRECATED BUT DON'T DELETE FOR NOW PLEASE)
         #
 
-        if 'jhu_NLO' in self.nominals:
-           jhuNLO = self.nominals.pop('jhu_NLO')
-           if 'jhu' in self.nominals:
-             jhuNom    = self.nominals['ggH']
-             jhuRel    = jhuNLO.Clone('jhuRel') 
-             jhuRel.Add(jhuNom,-1)
-             jhuRel.Divide(jhuNom)
-
-             jhuSys    = jhuNom.Clone('jhuSys')
-             jhuSys.Multiply(jhuRel)
-             jhuNLOUp  = jhuNom.Clone('histo_jhu_Gen_JHU_NLOUp')
-             jhuNLOUp.SetTitle('JHU NLO Up')
-             jhuNLOUp.Add(jhuSys,1.) 
-             self.generators[jhuNLOUp.GetTitle()] = jhuNLOUp
- 
-             jhuNLODown= jhuNom.Clone('histo_jhu_Gen_JHU_NLODown')
-             jhuNLODown.SetTitle('JHU NLO Down')
-             jhuNLODown.Add(jhuSys,-1.)
-             self.generators[jhuNLODown.GetTitle()] = jhuNLODown
-
-             if 'ggH_ALT' in self.nominals: 
-                jhu_ALTNom = self.nominals['ggH_ALT']
-
-                jhu_ALTSys    = jhu_ALTNom.Clone('jhuALTSys')
-                jhu_ALTSys.Multiply(jhuRel)
-                jhu_ALTNLOUp  = jhu_ALTNom.Clone('histo_ggH_ALT_Gen_JHU_NLOUp')
-                jhu_ALTNLOUp.SetTitle('ggH_ALT NLO Up')
-                jhu_ALTNLOUp.Add(jhu_ALTSys,1.)
-                self.generators[jhu_ALTNLOUp.GetTitle()] = jhu_ALTNLOUp
-
-                jhu_ALTNLODown= jhu_ALTNom.Clone('histo_ggH_ALT_Gen_JHU_NLODown')
-                jhu_ALTNLODown.SetTitle('ggH_ALT NLO Down')
-                jhu_ALTNLODown.Add(jhu_ALTSys,-1.)
-                self.generators[jhu_ALTNLODown.GetTitle()] = jhu_ALTNLODown
+#        if 'jhu_NLO' in self.nominals:
+#           jhuNLO = self.nominals.pop('jhu_NLO')
+#           if 'jhu' in self.nominals:
+#             jhuNom    = self.nominals['ggH']
+#             jhuRel    = jhuNLO.Clone('jhuRel') 
+#             jhuRel.Add(jhuNom,-1)
+#             jhuRel.Divide(jhuNom)
+#
+#             jhuSys    = jhuNom.Clone('jhuSys')
+#             jhuSys.Multiply(jhuRel)
+#             jhuNLOUp  = jhuNom.Clone('histo_jhu_Gen_JHU_NLOUp')
+#             jhuNLOUp.SetTitle('JHU NLO Up')
+#             jhuNLOUp.Add(jhuSys,1.) 
+#             self.generators[jhuNLOUp.GetTitle()] = jhuNLOUp
+# 
+#             jhuNLODown= jhuNom.Clone('histo_jhu_Gen_JHU_NLODown')
+#             jhuNLODown.SetTitle('JHU NLO Down')
+#             jhuNLODown.Add(jhuSys,-1.)
+#             self.generators[jhuNLODown.GetTitle()] = jhuNLODown
+#
+#             if 'ggH_ALT' in self.nominals: 
+#                jhu_ALTNom = self.nominals['ggH_ALT']
+#
+#                jhu_ALTSys    = jhu_ALTNom.Clone('jhuALTSys')
+#                jhu_ALTSys.Multiply(jhuRel)
+#                jhu_ALTNLOUp  = jhu_ALTNom.Clone('histo_ggH_ALT_Gen_JHU_NLOUp')
+#                jhu_ALTNLOUp.SetTitle('ggH_ALT NLO Up')
+#                jhu_ALTNLOUp.Add(jhu_ALTSys,1.)
+#                self.generators[jhu_ALTNLOUp.GetTitle()] = jhu_ALTNLOUp
+#
+#                jhu_ALTNLODown= jhu_ALTNom.Clone('histo_ggH_ALT_Gen_JHU_NLODown')
+#                jhu_ALTNLODown.SetTitle('ggH_ALT NLO Down')
+#                jhu_ALTNLODown.Add(jhu_ALTSys,-1.)
+#                self.generators[jhu_ALTNLODown.GetTitle()] = jhu_ALTNLODown
 
         # -----------------------------------------------------------------
         # Statistical
@@ -1098,7 +1081,59 @@ class ShapeMixer:
             if k == 0:
                 raise NameError('sample,systematic pair not found '+ss[0]+':'+ss[1])
 
-        
+    def jhuMixer(self,ggqqMixIn):
+        ggqqMix = float(ggqqMixIn)
+        print '   - jhuMixer -> gg/qq Fraction = ',ggqqMix
+
+        # Find Nominal jhu histograms
+        ggH_ALT  = 0
+        qqH_ALT  = 0
+        jhu_NORM = 0
+        for name,hist in self.nominals.iteritems():
+            tokens = name.split()
+            sample = tokens[0]
+            if ( sample == 'ggH_ALT' ):
+               ggH_ALT = hist 
+            if ( sample == 'qqH_ALT' ):
+               qqH_ALT = hist 
+            if ( sample == 'jhu_NORM' ):
+               jhu_NORM = hist 
+        print ggH_ALT , qqH_ALT , jhu_NORM
+       
+        # Check if NORM is needed 
+        if not jhu_NORM: 
+            return
+        if (jhu_NORM.Integral() ==0.):
+            return
+
+        # Compute NORM factors
+        ggH_ALT_Scale  = 1.0
+        qqH_ALT_Scale  = 1.0
+        if ( ggH_ALT and qqH_ALT):
+           ggH_ALT_Scale = jhu_NORM.Integral()*ggqqMix       / ggH_ALT.Integral()
+           qqH_ALT_Scale = jhu_NORM.Integral()*(1.0-ggqqMix) / qqH_ALT.Integral()
+        elif ( ggH_ALT ):
+           ggH_ALT_Scale = jhu_NORM.Integral()               / ggH_ALT.Integral()
+        elif ( qqH_ALT ):
+           qqH_ALT_Scale = jhu_NORM.Integral()               / qqH_ALT.Integral()
+
+        # Apply to all 
+        for name,hist in self.histograms.iteritems():
+            tokens = name.split()
+            sample = tokens[0]
+            if ( sample == 'ggH_ALT' ):
+               if (ggH_ALT_Scale>0):
+                 hist.Scale(ggH_ALT_Scale)
+               else:
+                 hist.Reset()
+            if ( sample == 'qqH_ALT' ):
+               if (qqH_ALT_Scale>0):
+                 hist.Scale(qqH_ALT_Scale)
+               else:
+                 hist.Reset()
+        # Drop jhu_NORM
+        self.nominals.pop('jhu_NORM')
+
     def _rename(self):
         print '   - Renaming'
         histograms2 = {}
@@ -1128,7 +1163,7 @@ class ShapeMixer:
                 integral = h.Integral()
                 h.Scale(self.lumi)
                 self._logger.debug('Lumi scale (%.2f) %-50s : %.3f -> %.3f',self.lumi,h.GetName(),integral,h.Integral())
-
+    
     def close(self):
         self._disconnect()
 
@@ -1186,6 +1221,8 @@ if __name__ == '__main__':
 
     parser.add_option('--fillEmptyBins'     , dest='fillEmptyBins'     , help='fillEmptyBins used to fill empty bins' , default=False)
 
+    parser.add_option('--jhuMixFrac'        , dest='jhuMixFrac'        , help='gg JHU Faction'             , default=1)
+
 # discontined
 #     parser.add_option('--scale2nominal', dest='scale2nom', help='Systematics to normalize to nominal ', default='')
 #     parser.add_option('--ninja', dest='ninja', help='Ninja', action='store_true', default=False )
@@ -1199,9 +1236,10 @@ if __name__ == '__main__':
     print opt.simask
     print 'dataset:    ',opt.dataset
 
+    print 'jhuMixFrac = ',opt.jhuMixFrac
+
     scale2nom = []
     if '2012' in opt.dataset: scale2nom = scale2nom+[('Vg','*'), ('VgS','*')]
-    if 'JHU' in opt.mcset: scale2nom = scale2nom+[('ggH_ALT','*')]
     # in the future good to have a way of removing processes which are not in mcset
     #scale2nom = [(p,s) for p,s in scale2nom if p in hwwsamples.mcsets(opt.mcset)]
     for p,s in scale2nom:
@@ -1285,7 +1323,9 @@ if __name__ == '__main__':
                 ss.mix(chan)
 
                 ss.scale2Nominals( scale2nom )
-                
+
+                ss.jhuMixer(opt.jhuMixFrac) 
+
                 ss.applyScaleFactors()
                 
                 m.add(ss)

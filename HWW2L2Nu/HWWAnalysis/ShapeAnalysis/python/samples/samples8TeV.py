@@ -147,9 +147,9 @@ def signalSamples(sigtag,mass=125,suffix=''):
                     'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
                    ]
 
-    jhu_qqGrav2PM= ['nominals/latino_8003_Graviton2PM.root',
-                    'nominals/latino_8006_Graviton2PMToWW2Tau2nu.root',
-                    'nominals/latino_8009_Graviton2PMToWWLTau2nu.root'
+    jhu_qqGrav2PM= ['nominals/latino_8010_Graviton2PMqqbarToWW2L2nu.root',
+                    'nominals/latino_8011_Graviton2PMqqbarToWW2Tau2nu.root',
+                    'nominals/latino_8012_Graviton2PMqqbarToWWLTau2nu.root'
                    ]
 
     if sigtag == 'SM':
@@ -185,6 +185,7 @@ def signalSamples(sigtag,mass=125,suffix=''):
         signals['wzttH']   = std_wzttH
                
         signals['ggH_ALT'] = jhu_ggGrav2PM
+        signals['qqH_ALT'] = jhu_qqGrav2PM
         signals['jhu_NORM']= std_ggH
 
     elif sigtag == 'Higgs0M' and mass==125:
