@@ -21,6 +21,7 @@ class H1RatioPlotter(object):
             self.fills     = [0           , 0           , 0           , 0           , 0           , 0          ]
             self.plotratio = True
 
+            # lenghts
             self.left        = 100
             self.right       = 75
             self.top         = 75
@@ -41,10 +42,10 @@ class H1RatioPlotter(object):
             self.legtextsize = 30
 
             self.axsty = {
-                'labelfamily' : 44,
+                'labelfamily' : 4,
                 'labelsize'   : 30,
                 'labeloffset' : 5,
-                'titlefamily' : 44,
+                'titlefamily' : 4,
                 'titlesize'   : 30,
                 'titleoffset' : 75,
                 'ticklength'  : 20,
@@ -77,6 +78,33 @@ class H1RatioPlotter(object):
             if va not in 'tb': raise ValueError('Align can only be \'t\' or \'b\'')
             self._legalign = align
 
+        def scale(self,factor):
+            self.left        = int(factor*self.left)
+            self.right       = int(factor*self.right)
+            self.top         = int(factor*self.top)
+            self.bottom      = int(factor*self.bottom)
+
+            self.gap         = int(factor*self.gap)
+            self.width       = int(factor*self.width)
+            self.heightf0    = int(factor*self.heightf0)
+            self.heightf1    = int(factor*self.heightf1)
+
+            self.linewidth   = int(factor*self.linewidth)
+            self.markersize  = int(factor*self.markersize)
+            self.textsize    = int(factor*self.textsize)
+            self.titley      = int(factor*self.titley)
+
+            self.legmargin   = int(factor*self.legmargin)
+            self.legboxsize  = int(factor*self.legboxsize)
+            self.legtextsize = int(factor*self.legtextsize)
+
+
+
+            self.axsty['labelsize'   ] = int(factor*self.axsty['labelsize'   ])
+            self.axsty['labeloffset' ] = int(factor*self.axsty['labeloffset' ])
+            self.axsty['titlesize'   ] = int(factor*self.axsty['titlesize'   ])
+            self.axsty['titleoffset' ] = int(factor*self.axsty['titleoffset' ])
+            self.axsty['ticklength'  ] = int(factor*self.axsty['ticklength'  ])
 
 
     def __init__(self, **kwargs):
@@ -87,7 +115,7 @@ class H1RatioPlotter(object):
         self.__dict__['_style'] = self.mystyle()
 
         for k,v in kwargs.iteritems():
-            if not hasattr(self._style,k): raise Attribute('No '+k+' style attribute')
+            if not hasattr(self._style,k): raise AttributeError('No '+k+' style attribute')
             setattr(self._style,k,v)
 
         self._h0     = None
@@ -249,6 +277,9 @@ class H1RatioPlotter(object):
         self._rtitleobj.draw()
 
         if style.plotratio:
+            # kill the xtitle of the upper plot
+            self._stack.GetXaxis().SetTitle('')
+
             # ---
             # ratio plot
             self._pad1.cd()
