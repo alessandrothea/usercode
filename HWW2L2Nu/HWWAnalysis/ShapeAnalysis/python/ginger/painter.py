@@ -118,6 +118,7 @@ class Pad(object):
         'ticklength'  : 10,
         'ndivisions'  : 505,
     }
+
     #---
     def __init__(self, name, width=500, height=500, **opts ):
         self._name = name
@@ -162,6 +163,11 @@ class Pad(object):
 
     @property
     def yaxis(self): return yaxis
+
+    @property
+    def w(self): return self._w
+    @property
+    def h(self): return self._h
 
     def __str__(self):
         return '%s(\'%s\',w=%d,h=%d,obj=%s)' % (self.__class__.__name__,self._name,self._w,self._h,self._obj)
@@ -255,6 +261,46 @@ class Pad(object):
         setter.apply(yax,**style)
         self._log.debug('tick yaxis: %s =>  %s',self._yaxis['ticklength'])
 
+
+#_______________________________________________________________________________
+#     ______          __             ______            __
+#    / ____/___ ___  / /_  ___  ____/ / __ \____ _____/ /
+#   / __/ / __ `__ \/ __ \/ _ \/ __  / /_/ / __ `/ __  / 
+#  / /___/ / / / / / /_/ /  __/ /_/ / ____/ /_/ / /_/ /  
+# /_____/_/ /_/ /_/_.___/\___/\__,_/_/    \__,_/\__,_/   
+#                                                        
+class EmbedPad(object):
+    '''
+    Wrapper to easily embed a tcanvas in as Pad
+    '''
+
+    def __init__(self,tcanvas,align=('c','m')):
+        self._tcanvas = tcanvas
+        self._align   = align
+        self._obj     = None
+
+    @property
+    def w(self): return self._tcanvas.GetWw()
+    @property
+    def h(self): return self._tcanvas.GetWh()
+
+    def _applypadstyle(self):
+        pass
+
+    def _applyframestyle(self):
+        # here draw the 
+        self._obj.cd()
+        ROOT.gROOT.SetSelectedPad(self._obj)
+        self._tcanvas.DrawClonePad()
+
+
+#_______________________________________________________________________________
+#    ______                           
+#   / ____/___ _____ _   ______ ______
+#  / /   / __ `/ __ \ | / / __ `/ ___/
+# / /___/ /_/ / / / / |/ / /_/ (__  ) 
+# \____/\__,_/_/ /_/|___/\__,_/____/  
+#                                     
 class Canvas(object):
     _log = logging.getLogger('Canvas')
 
@@ -266,6 +312,9 @@ class Canvas(object):
         self._hrows = []
         self._wcols = []
         self._obj = None
+    #---
+    def __del__(self):
+        del self._obj
 
 
     #---
@@ -326,8 +375,8 @@ class Canvas(object):
 
         for (i,j),pad in self._gridX.iteritems():
             if not pad: continue
-            wcols[i] = max(wcols[i],pad._w)
-            hrows[j] = max(hrows[j],pad._h)
+            wcols[i] = max(wcols[i],pad.w)
+            hrows[j] = max(hrows[j],pad.h)
             #print wcols[i],hrows[j]
 
         self._hrows = hrows
@@ -364,32 +413,32 @@ class Canvas(object):
 
             # assule left-top alignement
             x0,y0 = self._getanchors(i,j)
-            x1,y1 = x0+pad._w,y0+pad._h
+            x1,y1 = x0+pad.w,y0+pad.h
 
             gw,gh = self._wcols[i],self._hrows[j]
-#                 print i,j,gw,gh,pad._w,pad._h
+#                 print i,j,gw,gh,pad.w,pad.h
 
             ha,va = pad._align
 
             if   va == 't':
                 pass
             elif va == 'm':
-                y0 += (gh-pad._h)/2.
-                y1 += (gh-pad._h)/2.
+                y0 += (gh-pad.h)/2.
+                y1 += (gh-pad.h)/2.
             elif va == 'b':
-                y0 += gh-pad._h
-                y1 += gh-pad._h
+                y0 += gh-pad.h
+                y1 += gh-pad.h
             else:
                 raise KeyError('Unknown vertical alignement %s', va)
 
             if   ha == 'l':
                 pass
             elif ha == 'c':
-                x0 += (gw-pad._w)/2.
-                x1 += (gw-pad._w)/2.
+                x0 += (gw-pad.w)/2.
+                x1 += (gw-pad.w)/2.
             elif ha == 'r':
-                x0 += gw-pad._w
-                x1 += gw-pad._w
+                x0 += gw-pad.w
+                x1 += gw-pad.w
             else:
                 raise KeyError('Unknown horizontal alignement %s', ha)
 
@@ -410,7 +459,11 @@ class Canvas(object):
     #---
     def applystyle(self):
 
-        map(Pad._applyframestyle,self._pads)
+        for p in self._pads:
+            p._applyframestyle()
+
+        # restore after makein g a proper interface for pad (or not)
+        #map(Pad._applyframestyle,self._pads)
 
 
 #_______________________________________________________________________________
@@ -685,6 +738,7 @@ class Legend(object):
                 leg.SetY2( v1 )
                 leg.Draw()
 
+#_______________________________________________________________________________
 #     __          __
 #    / /   ____ _/ /____  _  __
 #   / /   / __ `/ __/ _ \| |/_/
@@ -693,7 +747,7 @@ class Legend(object):
 #
 class Latex:
     _latexstyle = {
-            'textfamily':44,
+            'textfamily':4,
             'textsize'  :20,
             'textcolor' :ROOT.kBlack,
         }
