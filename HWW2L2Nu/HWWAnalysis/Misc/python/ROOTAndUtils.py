@@ -110,7 +110,9 @@ class PadPrinter(object):
 
     # ---
     def savefromcanvas(self, canvas, **pads):
-        args = {n:canvas.GetPad(i) for n,i in pads.iteritems()}
+        # waiting for python 2.7
+        #args = {n:canvas.GetPad(i) for n,i in pads.iteritems()}
+        args = dict( [ (n,canvas.GetPad(i)) for n,i in pads.iteritems() ] )
 
         self.saveall(**args)
 
