@@ -22,9 +22,9 @@ class Tee(object):
         self.stdout.flush()
 #---
 class TH1AddDirSentry:
-    def __init__(self):
+    def __init__(self, status=False):
         self.status = ROOT.TH1.AddDirectoryStatus()
-        ROOT.TH1.AddDirectory(False)
+        ROOT.TH1.AddDirectory(status)
 
     def __del__(self):
         ROOT.TH1.AddDirectory(self.status)
