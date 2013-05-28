@@ -21,23 +21,23 @@ import copy
 # _____________________________________________________________________________
 # __  ___      __    __
 # \ \/ (_)__  / /___/ /
-#  \  / / _ \/ / __  / 
-#  / / /  __/ / /_/ /  
-# /_/_/\___/_/\__,_/   
-#                      
-                     
+#  \  / / _ \/ / __  /
+#  / / /  __/ / /_/ /
+# /_/_/\___/_/\__,_/
+#
+
 class Yield:
     '''
     Class to describe yields and errors
     A value with its error
     '''
-    def __init__(self, y, ey):
-        self.value = y 
+    def __init__(self, y=0., ey=0.):
+        self.value = y
         self.error = ey
 
     #---
     def __add__(self,other):
-        
+
         value = self.value+other.value
         error = math.sqrt(self.error**2 +other.error**2)
 
@@ -45,7 +45,7 @@ class Yield:
 
     #---
     def __sub__(self,other):
-        
+
         value = self.value-other.value
         error = math.sqrt(self.error**2 +other.error**2)
 
@@ -103,12 +103,12 @@ class Yield:
             return '(%.2f +- %.2f)E%d' % (self.value/e, self.error/e, k)
 
 # _____________________________________________________________________________
-#     ____      __            ____              
-#    /  _/___  / /____  _____/ __/___ _________ 
+#     ____      __            ____
+#    /  _/___  / /____  _____/ __/___ _________
 #    / // __ \/ __/ _ \/ ___/ /_/ __ `/ ___/ _ \
 #  _/ // / / / /_/  __/ /  / __/ /_/ / /__/  __/
-# /___/_/ /_/\__/\___/_/  /_/  \__,_/\___/\___/ 
-#                                               
+# /___/_/ /_/\__/\___/_/  /_/  \__,_/\___/\___/
+#
 class AbsSet(object):
     __metaclass__ = ABCMeta
 
@@ -119,7 +119,7 @@ class AbsSet(object):
     @abstractmethod
     def plot(self): #, *args, **kwargs):
         ''' '''
-    
+
     @abstractmethod
     def project(self):
         ''' '''
@@ -130,7 +130,7 @@ class AbsSet(object):
 
 # ---
 class Chained:
-    
+
     def __init__(self, theclass, *args):
         import inspect
         if not inspect.isclass(theclass):
@@ -156,24 +156,24 @@ class Chained:
 
     def remove(self,i):
         return self._objs.pop(i)
-    
+
     #---
     # here are the methods providing the default sum
     def entries(self,cut=None):
         return sum([ o.entries(cut) for o in self._objs  ])
-    
+
     #---
     def yields(self, cut='', options='', *args, **kwargs):
         if not self._objs: return Yield(0,0)
-        
+
         first = self._objs[0].yields(cut,options,*args,**kwargs)
         for o in self._objs[1:]:
-            first += o.yields(cut,options,*args,**kwargs) 
+            first += o.yields(cut,options,*args,**kwargs)
 
         return first
 
 
-    #--- 
+    #---
     def plot(self, name, varexp, cut='', options='', bins=None, *args, **kwargs):
         if not self._objs: return ROOT.TH1D()
 
@@ -181,16 +181,16 @@ class Chained:
         # import numbers
         # len(bins) == 1 and isinstance(bins[0], numbers.Number)
         # check for TTree aout-binnig
-        if (  
+        if (
             # fully free binning
             bins is None or
             # free x binning
-            ( len(bins) == 1 and isinstance(bins[0], (int,float)) ) or 
+            ( len(bins) == 1 and isinstance(bins[0], (int,float)) ) or
             # free y binning
             ( len(bins) == 4 and isinstance(bins[3], (int,float)) )
            ):
             # ValueError('Automatic binning not supported by ChainWorker
-            # (yet)') 
+            # (yet)')
             print '\n-->',name,varexp,cut,options,bins,args, kwargs
             raise ValueError('Automatic binning not supported by ChainWorker (yet)')
 
@@ -202,7 +202,7 @@ class Chained:
         return first
 
 
-    #--- 
+    #---
     def project(self, name, varexp, cut='', options='', bins=None, *args, **kwargs):
         for o in self._objs:
             o.project(name, varexp, cut, options, bins, *args, **kwargs)
@@ -210,7 +210,7 @@ class Chained:
 #_______________________________________________________________________________
 # ---
 class AbsWorker(AbsSet):
-    
+
     # TODO better name?
     @abstractmethod
     def spawnview(self):
@@ -230,7 +230,7 @@ class AbsWorker(AbsSet):
 
 #---
 class AbsView(AbsSet):
-    
+
     @abstractmethod
     def spawn(self):
         ''' '''
@@ -285,17 +285,17 @@ class AbsView(AbsSet):
 
 #         # put the treeviews in a temporary container
 #         allviews = [ o.views(cuts) for o in self._objs ]
-#         # but what we need are the 
+#         # but what we need are the
 #         alliters = [ v.itervalues() for v in allviews ]
 
 #         import itertools
 #         chainviews=odict.OrderedDict()
 #         # make an iterator with everything inside
 #         # cut,tview1,tview2,...,tviewN
-#         # to repack them as 
+#         # to repack them as
 #         # cut,cview
 #         for it in itertools.izip(cuts,*alliters):
-#             
+#
 #             # create a new view
 #             cv = ChainView()
 
@@ -303,7 +303,7 @@ class AbsView(AbsSet):
 #             cv.add( *it[1:] )
 
 #             #add it to the list of views
-#             chainviews[it[0]] = cv 
+#             chainviews[it[0]] = cv
 
 #         return chainviews
 
@@ -341,7 +341,7 @@ class AbsView(AbsSet):
 #     # ---
 #     def plot(self, name, varexp, extra='', options='', bins=None, *args, **kwargs):
 #         # set temporarily my entrlylist
-#         return self._worker.plot(name, varexp, extra, options, bins, *args, **kwargs) 
+#         return self._worker.plot(name, varexp, extra, options, bins, *args, **kwargs)
 
 #     # ---
 #     def project(self, h, varexp, extra='', options='', *args, **kwargs):
@@ -358,7 +358,7 @@ class AbsView(AbsSet):
 #     # ---
 #     def __init__(self,chain=None, *args, **kwargs):
 #         super(ChainView,self).__init__(TreeView)
-#     
+#
 #         # used by copy operations (default constructor)
 #         if chain is None: return
 
@@ -371,7 +371,7 @@ class AbsView(AbsSet):
 #         child = ChainView()
 
 #         views = [ o.spawn(*args, **kwargs) for o in self._objs]
-#         
+#
 #         child.add(*views)
 
 #         return child

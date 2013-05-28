@@ -5,14 +5,82 @@ from painter import Canvas,Pad,Legend,Latex
 import ROOT
 import array
 
+
+
+
 class H1RatioPlotter(object):
 
     class mystyle(object):
         def __init__(self):
+            self._init_big()
+
+        def _init_small(self):
             from ROOT import kRed,kOrange,kAzure
             from ROOT import kFullCircle, kOpenCircle
 
             self.scalemax  = 1.
+            self.scalemin  = 1.
+            self.ltitle    = ''
+            self.rtitle    = ''
+            self.ytitle2   = 'ratio'
+            self.colors    = [kRed+1      , kOrange+7   , kAzure-6    , kAzure+9    , kOrange+7   , kOrange-2  ]
+            self.markers   = [kFullCircle , kOpenCircle , kFullCircle , kOpenCircle , kFullCircle , kFullCircle]
+            self.fills     = [0           , 0           , 0           , 0           , 0           , 0          ]
+            self.plotratio = True
+
+            # lenghts
+            self.left        = 50
+            self.right       = 35
+            self.top         = 35
+            self.bottom      = 50
+
+            self.gap         = 5
+            self.width       = 250
+            self.heightf0    = 250
+            self.heightf1    = 100
+
+            self.linewidth   = 1
+            self.markersize  = 5
+            self.textsize    = 15
+            self.titley      = 30
+
+            self.legmargin   = 12
+            self.legboxsize  = 25
+            self.legtextsize = 15
+
+            self.axsty = {
+                'labelfamily' : 4,
+                'labelsize'   : 15,
+                'labeloffset' : 2,
+                'titlefamily' : 4,
+                'titlesize'   : 15,
+                'titleoffset' : 35,
+                'ticklength'  : 10,
+                'ndivisions'  : 505,
+            }
+
+            self.errsty      = 3005
+            self.errcol      = ROOT.kGray+1
+
+            self.logx        = False
+            self.logy        = False
+
+            self.morelogx    = False
+            self.morelogy    = False
+
+            self.userrangex = (0.,0.)
+
+            self.yrange = (0.,0.)
+
+            # something more active
+            self._legalign  = ('l','t')
+
+        def _init_big(self):
+            from ROOT import kRed,kOrange,kAzure
+            from ROOT import kFullCircle, kOpenCircle
+
+            self.scalemax  = 1.
+            self.scalemin  = 1.
             self.ltitle    = ''
             self.rtitle    = ''
             self.ytitle2   = 'ratio'
@@ -145,7 +213,7 @@ class H1RatioPlotter(object):
 
     #---
     def set(self, h0, *hs ):
-        if not hs:
+        if not hs and self._style.plotratio:
             raise RuntimeError('cannot compare only 1 histogram')
         n = h0.GetDimension()
         if True in [ h.GetDimension() != n for h in hs ]:
@@ -256,11 +324,25 @@ class H1RatioPlotter(object):
 #         if style.userrangex != (0.,0.): self._setrangeuser( stack.GetXaxis(), style )
         if style.userrangex != (0.,0.): stack.GetXaxis().SetRangeUser(*(style.userrangex) )
 
-        if style.yrange != (0.,0.):
-            stack.SetMinimum(style.yrange[0] )
-            stack.SetMaximum(style.yrange[1] )
 
-        elif style.scalemax != 1:  stack.SetMaximum(style.scalemax*stack.GetMaximum('nostack '+options))
+        if style.yrange != (0.,0.):
+            ymin,ymax = style.yrange
+        else:
+            yminstored = stack.GetHistogram().GetMinimumStored()
+            ymaxstored = stack.GetHistogram().GetMaximumStored()
+
+            ymin = stack.GetMinimum('nostack '+options) if yminstored == -1111 else yminstored
+            ymax = stack.GetMaximum('nostack '+options) if ymaxstored == -1111 else ymaxstored
+
+        stack.SetMinimum( style.scalemin*ymin)
+        stack.SetMaximum( style.scalemax*ymax)
+
+        #if style.yrange != (0.,0.):
+            #stack.SetMinimum( style.scalemin*style.yrange[0] )
+            #stack.SetMaximum( style.scalemin*style.yrange[1] )
+        #else:
+            #if style.scalemax != 1:  stack.SetMaximum(style.scalemax*stack.GetMaximum('nostack '+options))
+            #if style.scalemin != 1:  stack.SetMaximum(style.scalemin*stack.GetMinimum('nostack '+options))
 
 
         self._stack = stack

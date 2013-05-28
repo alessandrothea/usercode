@@ -46,43 +46,49 @@ def _makecanvas(name,title,w,h):
     return ROOT.TCanvas(name,title, w+_tcanvas_winframe_width, h+_tcanvas_winframe_height)
 
 
-class StyleSetter:
+class StyleSetter(object):
     _log = logging.getLogger('StyleSetter')
 
-    _setters = {
-        ROOT.TAttAxis:[
-            ('labelfamily' , ROOT.TAxis.SetLabelFont),
-            ('labelsize'   , ROOT.TAxis.SetLabelSize),
-            ('labeloffset' , ROOT.TAxis.SetLabelOffset),
-            ('titlefamily' , ROOT.TAxis.SetTitleFont),
-            ('titlesize'   , ROOT.TAxis.SetTitleSize),
-            ('titleoffset' , ROOT.TAxis.SetTitleOffset),
-            ('ticklength'  , ROOT.TAxis.SetTickLength),
-            ('ndivisions'  , ROOT.TAxis.SetNdivisions),
-        ],
+    @staticmethod
+    def _initsetters():
+        '''_setters is initialized here rather than in the class definition to
+        avoid ROOT to be fully loaded when importing this module'''
+        if hasattr(StyleSetter,'_setters'): return
+        StyleSetter._setters = {
+            ROOT.TAttAxis:[
+                ('labelfamily' , ROOT.TAxis.SetLabelFont),
+                ('labelsize'   , ROOT.TAxis.SetLabelSize),
+                ('labeloffset' , ROOT.TAxis.SetLabelOffset),
+                ('titlefamily' , ROOT.TAxis.SetTitleFont),
+                ('titlesize'   , ROOT.TAxis.SetTitleSize),
+                ('titleoffset' , ROOT.TAxis.SetTitleOffset),
+                ('ticklength'  , ROOT.TAxis.SetTickLength),
+                ('ndivisions'  , ROOT.TAxis.SetNdivisions),
+            ],
 
-        ROOT.TAttText:[
-            ('textfamily',ROOT.TAttText.SetTextFont),
-            ('textsize'  ,ROOT.TAttText.SetTextSize),
-            ('textcolor' ,ROOT.TAttText.SetTextColor),
-            ('textangle' ,ROOT.TAttText.SetTextAngle),
-            ('textalign' ,ROOT.TAttText.SetTextAlign),
-        ],
+            ROOT.TAttText:[
+                ('textfamily',ROOT.TAttText.SetTextFont),
+                ('textsize'  ,ROOT.TAttText.SetTextSize),
+                ('textcolor' ,ROOT.TAttText.SetTextColor),
+                ('textangle' ,ROOT.TAttText.SetTextAngle),
+                ('textalign' ,ROOT.TAttText.SetTextAlign),
+            ],
 
-        ROOT.TAttLine:[
-            ('linecolor' ,ROOT.TAttLine.SetLineColor),
-            ('linestyle' ,ROOT.TAttLine.SetLineStyle),
-            ('linewidth' ,ROOT.TAttLine.SetLineWidth),
-        ],
+            ROOT.TAttLine:[
+                ('linecolor' ,ROOT.TAttLine.SetLineColor),
+                ('linestyle' ,ROOT.TAttLine.SetLineStyle),
+                ('linewidth' ,ROOT.TAttLine.SetLineWidth),
+            ],
 
-        ROOT.TAttFill:[
-            ('fillcolor' ,ROOT.TAttFill.SetFillColor),
-            ('fillstyle' ,ROOT.TAttFill.SetFillStyle),
-            ('fillstyle' ,ROOT.TAttFill.SetFillStyle),
-        ],
-    }
+            ROOT.TAttFill:[
+                ('fillcolor' ,ROOT.TAttFill.SetFillColor),
+                ('fillstyle' ,ROOT.TAttFill.SetFillStyle),
+                ('fillstyle' ,ROOT.TAttFill.SetFillStyle),
+            ],
+        }
 
     def __init__(self, **opts ):
+        self._initsetters()
         self._opts = opts
 
     def apply(self, tobj, **opts):
@@ -199,6 +205,13 @@ class Pad(object):
             h = o
             break
 
+        #TODO fix the frame line width
+        #for o in self._obj.GetListOfPrimitives():
+            #if isinstance(o,ROOT.TFrame):
+                #print 'TFrame linewidth', o.GetLineWidth()
+                #o.SetLineWidth(1)
+                #print 'TFrame linewidth', o.GetLineWidth()
+
         if not h: return
 
         if not self._showtitle:
@@ -265,10 +278,10 @@ class Pad(object):
 #_______________________________________________________________________________
 #     ______          __             ______            __
 #    / ____/___ ___  / /_  ___  ____/ / __ \____ _____/ /
-#   / __/ / __ `__ \/ __ \/ _ \/ __  / /_/ / __ `/ __  / 
-#  / /___/ / / / / / /_/ /  __/ /_/ / ____/ /_/ / /_/ /  
-# /_____/_/ /_/ /_/_.___/\___/\__,_/_/    \__,_/\__,_/   
-#                                                        
+#   / __/ / __ `__ \/ __ \/ _ \/ __  / /_/ / __ `/ __  /
+#  / /___/ / / / / / /_/ /  __/ /_/ / ____/ /_/ / /_/ /
+# /_____/_/ /_/ /_/_.___/\___/\__,_/_/    \__,_/\__,_/
+#
 class EmbedPad(object):
     '''
     Wrapper to easily embed a tcanvas in as Pad
@@ -288,19 +301,19 @@ class EmbedPad(object):
         pass
 
     def _applyframestyle(self):
-        # here draw the 
+        # here draw the
         self._obj.cd()
         ROOT.gROOT.SetSelectedPad(self._obj)
         self._tcanvas.DrawClonePad()
 
 
 #_______________________________________________________________________________
-#    ______                           
+#    ______
 #   / ____/___ _____ _   ______ ______
 #  / /   / __ `/ __ \ | / / __ `/ ___/
-# / /___/ /_/ / / / / |/ / /_/ (__  ) 
-# \____/\__,_/_/ /_/|___/\__,_/____/  
-#                                     
+# / /___/ /_/ / / / / |/ / /_/ (__  )
+# \____/\__,_/_/ /_/|___/\__,_/____/
+#
 class Canvas(object):
     _log = logging.getLogger('Canvas')
 
@@ -388,6 +401,12 @@ class Canvas(object):
     #---
     def size(self):
         return self._computesize()
+
+    #---
+    def gridsize(self):
+        nx = max( i for i,j in self._gridX.iterkeys())+1
+        ny = max( j for i,j in self._gridX.iterkeys())+1
+        return nx,ny
 
     #---
     def _getanchors(self,i,j):
@@ -479,7 +498,7 @@ class Legend(object):
     _legendstyle = {
         'textfamily' : 4,
         'textsize'   : 20,
-        'textcolor'  : ROOT.kBlack,
+        'textcolor'  : 1 #ROOT.kBlack
     }
 
     #---
@@ -749,7 +768,7 @@ class Latex:
     _latexstyle = {
             'textfamily':4,
             'textsize'  :20,
-            'textcolor' :ROOT.kBlack,
+            'textcolor' :1 #ROOT.kBlack,
         }
     _hcodes = {
         'l':10,

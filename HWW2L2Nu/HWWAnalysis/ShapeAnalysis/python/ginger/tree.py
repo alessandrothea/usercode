@@ -435,7 +435,11 @@ class TreeWorker(AbsWorker):
     #---
     def yields(self, cut='', options='', *args, **kwargs):
         cut = self._cutexpr(cut)
-        h = self._plot('0 >> counter(1,0.,1.)', cut, options, *args, **kwargs)
+        # it might look like an overkill, but the double here helps
+        sentry = utils.TH1AddDirSentry(True)
+        tname = 'counter_%s' % uuid.uuid1()
+        counter = ROOT.TH1D(tname,tname,1,0.,1.)
+        h = self._plot('0. >> '+tname, cut, options, *args, **kwargs)
 
         xax = h.GetXaxis()
         err = ctypes.c_double(0.)

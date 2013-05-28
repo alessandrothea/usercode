@@ -226,6 +226,7 @@ class TreeAnalyser(object):
         self._views    = None
         self._modified = True
         self._worker   = ChainWorker.fromsamples(*samples) if samples else None
+        self._plotprocs = []
 
     #---
     def __del__(self):
@@ -240,11 +241,12 @@ class TreeAnalyser(object):
     def __copy__(self):
         self._log.debug('-GremlinS-')
 
-        other           = TreeAnalyser()
-        other._cuts     = copy.deepcopy(self._cuts)
-        other._views    = copy.deepcopy(self._views)
-        other._worker   = self._worker
-        other._modified = self._modified
+        other            = TreeAnalyser()
+        other._cuts      = copy.deepcopy(self._cuts)
+        other._views     = copy.deepcopy(self._views)
+        other._worker    = self._worker
+        other._modified  = self._modified
+        other._plotprocs = copy.deepcopy(self._plotprocs)
 
         return other
 
@@ -427,11 +429,11 @@ class TreeAnalyser(object):
             return elist[elist.keys()[-1]].entries(cut)
 
     #---
-    def entriesflow(self,cut):
+    def entriesflow(self,cut=None):
         '''TODO: use the entrylist'''
 
         self._ensureviews()
-        return odict.OrderedDict([ (n, l.entries(cut)) for n,l in self._views.iteritems()])
+        return odict.OrderedDict([ (n, v.entries(cut)) for n,v in self._views.iteritems()])
 
     #---
     def yields(self, extra=None):
@@ -454,24 +456,42 @@ class TreeAnalyser(object):
         return odict.OrderedDict([( n,v.yields(extra) ) for n,v in views.iteritems()])
 
     #---
-    def plot(self, name, varexp, extra=None, options='', bins=None):
+    def plot(self, name, varexp, options='', bins=None, extra=None, postprocess=None):
         # make the entries
         views = self._ensureviews()
 
         if not views:
-            return self._worker.plot(name,varexp,extra,options,bins)
+            p = self._worker.plot(name,varexp,extra,options,bins)
         else:
-            return views[views.keys()[-1]].plot(name,varexp,extra,options,bins)
+            p = views[views.keys()[-1]].plot(name,varexp,extra,options,bins)
+
+        # make a list with all processors
+        procs = self._plotprocs if not postprocess else (self._plotprocs+[postprocess])
+
+        # apply post creation filters
+        for proc in procs: proc(p)
+
+        return p
 
     #---
-    def plotsflow(self, name, varexp, options='', bins=None, extra=None):
+    def plotsflow(self, name, varexp, options='', bins=None, extra=None, postprocess=None):
         # make the entries
         views = self._ensureviews()
 
         # add the weight and get the yields
         if not views: return odict.OrderedDict()
 
-        return odict.OrderedDict([( n,v.plot('%s_%s' % (name,n),varexp,extra,options,bins) ) for n,v in views.iteritems()])
+        plots =  odict.OrderedDict([( n,v.plot('%s_%s' % (name,n),varexp,extra,options,bins) ) for n,v in views.iteritems()])
+
+        # make a list with all processors
+        procs = self._plotprocs if not postprocess else (self._plotprocs+[postprocess])
+
+        # apply post creation filters
+        for p in plots.itervalues():
+            for proc in procs: proc(p)
+
+        return plots
+
 
 if __name__ == '__main__':
 
