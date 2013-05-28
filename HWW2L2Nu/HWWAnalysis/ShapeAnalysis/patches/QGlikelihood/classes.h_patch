@@ -1,12 +1,13 @@
 // #include "DataFormats/Common/interface/Wrapper.h"
 
 //Add includes for your classes here
-#include "HWWAnalysis/QuarkGluonTagger/interface/QGLikelihoodCalculator.h"
+#include "QuarkGluonTagger/EightTeV/interface/QGLikelihoodCalculator.h"
+#include "QuarkGluonTagger/EightTeV/interface/QGMLPCalculator.h"
 
 namespace {
-   struct pandolf_QuarkGluonTagger {
-
-       QGLikelihoodCalculator dummyQG;
-
+   struct test_QuarkGluonTagger {
+    QGLikelihoodCalculator dummyQG;
+    QGMLPCalculator dummyQGMLP;
+    std::map<TString, Float_t> test;
    };
 }

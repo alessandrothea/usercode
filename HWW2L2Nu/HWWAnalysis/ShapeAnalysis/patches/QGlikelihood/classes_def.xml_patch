@@ -1,3 +1,4 @@
 <lcgdict>
   <class name="QGLikelihoodCalculator"/>
+  <class name="QGMLPCalculator"/>
 </lcgdict>
