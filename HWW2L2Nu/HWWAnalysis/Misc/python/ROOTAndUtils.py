@@ -36,9 +36,9 @@ class TH1AddDirSentry:
         self.__del__()
 #---
 class TH1Sumw2Sentry:
-    def __init__(self):
+    def __init__(self,sumw2=True):
         self.status = ROOT.TH1.GetDefaultSumw2()
-        ROOT.TH1.SetDefaultSumw2()
+        ROOT.TH1.SetDefaultSumw2(sumw2)
 
     def __del__(self):
         ROOT.TH1.SetDefaultSumw2(self.status)
