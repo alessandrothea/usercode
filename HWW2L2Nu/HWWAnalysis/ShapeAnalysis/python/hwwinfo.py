@@ -1,11 +1,11 @@
 import re
 import HWWAnalysis.Misc.odict as odict
 
-#  ___                         _              
+#  ___                         _
 # | _ \__ _ _ _ __ _ _ __  ___| |_ ___ _ _ ___
 # |  _/ _` | '_/ _` | '  \/ -_)  _/ -_) '_(_-<
 # |_| \__,_|_| \__,_|_|_|_\___|\__\___|_| /__/
-#                                             
+#
 # flavors             = ['mm', 'ee', 'em', 'me']
 # flavors				 = dict( sf=['ee','mm'],of=['em','me'] )
 # masses               = [ 110 , 115 , 118 , 120 , 122 , 124 , 126 , 128 , 130 , 135 , 140 , 150 , 160 , 170 , 180 , 190 , 200 , 250 , 300 , 350 , 400 , 450 , 500 , 550 , 600]
@@ -124,7 +124,9 @@ class wwcuts:
                 
     zerojet = 'njet == 0'
     onejet  = 'njet == 1'
+    loosevbf= '(njet >= 2 && njet <= 3) '
     vbf     = '(njet >= 2 && njet <= 3 && (jetpt3 <= 30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0))))) '
+    vbf2011 = '(njet >= 2 && njet <= 3 && njetvbf == 0) '
     vh      = '(njet >= 2)'
 
 # da rifare
@@ -143,12 +145,13 @@ class vbfcuts:
         'mjj>200',
     ]
 
-#     vbflocut   = wwcuts.wwlo+_massindep+_cut
-#     vbfhicut   = wwcuts.wwhi+_massindep+_cut
-    vbfcut     = wwcuts.wwcommon+_massindep+_cut
-    #vbfshape   = wwcuts.wwcommon+_massindep+_shape
-    #vbfloshape = wwcuts.wwlo+_massindep+_shape
-    #vbfhishape = wwcuts.wwhi+_massindep+_shape
+    _jeteta2011 = [
+        'abs(jeteta1)<4.5 && abs(jeteta2)<4.5',
+    ]
+
+    vbfcut     = wwcuts.wwcommon     + [wwcuts.vbf]     + _massindep + _cut
+    vbf2011cut = wwcuts.wwcommon2011 + [wwcuts.vbf2011] + _massindep + _cut + _jeteta2011
+
 
     vbfshape = ['(ch1*ch2)<0 && pt1>20 && pt2>10 &&   trigger==1. && pfmet>20. && mll>12 && zveto==1 && mpmet>20. && (njet==0 || njet==1 || (dphilljetjet<pi/180.*165. || !sameflav )  ) && bveto_mu==1 && nextra==0 && (bveto_ip==1 &&  (nbjettche==0 || njet>3))  && ptll>45. &&   ( !sameflav || ( (njet!=0 || dymva1>0.88) && (njet!=1 || dymva1>0.84) && ( njet==0 || njet==1 || (pfmet > 45.0)) ) ) && (njet>=2 && njet<=3 && (jetpt3<=30 || !(jetpt3 > 30 && (  (jeteta1-jeteta3 > 0 && jeteta2-jeteta3 < 0) || (jeteta2-jeteta3 > 0 && jeteta1-jeteta3 < 0)))))   && abs(eta1 - (jeteta1+jeteta2)/2)/detajj < 0.5 && abs(eta2 - (jeteta1+jeteta2)/2)/detajj < 0.5      && detajj>3.5     && mjj>500']
 
@@ -204,7 +207,8 @@ masses = [110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 170, 180, 190, 
 categoryCuts = {}
 categoryCuts['0j'] = wwcuts.zerojet
 categoryCuts['1j'] = wwcuts.onejet
-categoryCuts['2j']   = wwcuts.vbf        # 2 or 3 jets, but the third not between the first two in \eta
+#categoryCuts['2j']   = wwcuts.vbf        # 2 or 3 jets, but the third not between the first two in \eta
+categoryCuts['2j']   = wwcuts.loosevbf   # 2 or 3 jets
 categoryCuts['vh2j'] = wwcuts.vh         # >=2 jets
 
 
@@ -316,7 +320,8 @@ def massSelections(mass):
     sel['shape-lomass'] = 'mth>%f && mth<%f && mll<%f '%(mthmin_2dlomass,mthmax_2dlomass,mllmax_2dlomass)
     sel['shape-himass'] = 'mth>80 && mth<380 && mll<450 && pt1>50'
     
-    sel['vbf-level']    = ' && '.join(vbfcuts.vbfcut)
+    sel['vbf-level']     = ' && '.join(vbfcuts.vbfcut)
+    sel['vbf2011-level'] = ' && '.join(vbfcuts.vbf2011cut)
 
     sel['ww-level']     = sel['ww-common']+'&& ptll>45'
     sel['wwbtag-level'] = sel['wwbtag-common']+'&& ptll>45'
@@ -393,6 +398,21 @@ def massSelections(mass):
     #sel['vbf-shape']    =  sel['vbf-shape'].replace("ptll>30.", "ptll>45.")
     #sel['vbf-shape-selection'] = sel['vbf-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
 
+    # vbf in 2011#
+    sel['vbf2011-selection-temp']     = ' && '.join([sel['vbf2011-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth' and var != 'mll' and var != 'pt1' and var != 'pt2' and var != 'dphill'])
+    #sel['vbf2011-selection-temp']     = ' && '.join([sel['vbf2011-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth'])
+    sel['vbf2011-selection-temp']     = sel['vbf2011-selection-temp'].replace('dphiveto', 'dphilljetjet<pi/180.*165.')
+    sel['vbf2011-selection-temp']     = sel['vbf2011-selection-temp'].replace('ptll>30.', 'ptll>45.')
+    sel['vbf2011-selection']          = sel['vbf2011-selection-temp'] + ' && (mth > {0:.1f} && mth < {1:.1f})'.format(mthmin_vbf, masscuts['mtmax'])
+    if (mass <= 200) :
+      sel['vbf2011-selection']        = sel['vbf2011-selection']      + ' && (mll<100)'
+
+    sel['vbf2011-selection-top-temp']  = ' && '.join([sel['vbf2011-level']])
+    sel['vbf2011-selection-top']       = sel['vbf2011-selection-top-temp'].replace('ptll>30.', 'ptll>45.')
+    sel['vbf2011-selection-top']       = sel['vbf2011-selection-top'].replace('dphiveto', 'dphilljetjet<pi/180.*165.')
+
+
+
 
     # vbf fisher discriminant
     sel['vbf-shape-fish-temp']      = ' && '.join([sel['vbf-level']]+[cut for var,cut in hwwlvl.iteritems() if var != 'mth' and var != 'mll'])
@@ -413,6 +433,11 @@ def massSelections(mass):
     sel['vbf-banana-shape']    = ' && '.join(vbfcuts.vbfshape)
     sel['vbf-banana-shape']    = sel['vbf-banana-shape'].replace("(ch1*ch2)<0", "((ch1*ch2)<0 || !sameflav)").replace("ptll>30.", "ptll>45.")
     sel['vbf-banana-shape-selection'] = sel['vbf-banana-shape']+' && (mth > 50 && mth < {0:.0f})'.format(int(mass))
+
+
+
+
+
 
     # vh #
     sel['vh-level']    = ' && '.join(vhcuts.vhcut)
