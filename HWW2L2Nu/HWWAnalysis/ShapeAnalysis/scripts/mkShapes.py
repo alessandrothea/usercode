@@ -58,7 +58,7 @@ class ShapeFactory:
         self._range           = None
         self._splitmode       = None
         self._lumi            = 1
-        self._muVal           = 1.
+        self._muVal           = '1.'
 
         variables = {}
         variables['2dWithCR']             = self._getMllMth2DSpinWithControlRegion
@@ -986,7 +986,7 @@ if __name__ == '__main__':
     parser.add_option('--do-syst',       dest='doSyst',     help='Do only one systematic',                default=None)
 #     parser.add_option('--skip-syst',     dest='skipSyst',   help='Skip set of systematics',               default='')
     parser.add_option('--skip-syst',     dest='skipSyst',   help='Skip set of systematics',               default=[] , type='string' , action='callback' , callback=hwwtools.list_maker('skipSyst'))
-    parser.add_option('--mu'       ,     dest='muVal',   help='Initial signal strengh',               default=1. , type='string' )
+    parser.add_option('--mu'       ,     dest='muVal',   help='Initial signal strengh',               default='1.' , type='string' )
     hwwtools.addOptions(parser)
     hwwtools.loadOptDefaults(parser)
     (opt, args) = parser.parse_args()
