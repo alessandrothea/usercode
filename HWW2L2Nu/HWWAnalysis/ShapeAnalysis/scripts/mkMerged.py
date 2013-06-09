@@ -462,7 +462,7 @@ class ShapeMixer:
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
             if wJetSystNom : wJetShapeUp.Divide(wJetSystNom)
             if wJetSystNom : wJetShapeUp.Multiply(wJet)
-            #wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
+            wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
             self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
         if 'WJetFakeRate-eDn' in self.nominals:
@@ -472,7 +472,7 @@ class ShapeMixer:
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
             if wJetSystNom : wJetShapeDown.Divide(wJetSystNom)
             if wJetSystNom : wJetShapeDown.Multiply(wJet)
-            #wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
+            wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
         if 'WJetFakeRate-mUp' in self.nominals:
@@ -482,7 +482,7 @@ class ShapeMixer:
             wJetShapeUp.SetTitle('WJet '+wJetSystName+' Up')
             if wJetSystNom : wJetShapeUp.Divide(wJetSystNom)
             if wJetSystNom : wJetShapeUp.Multiply(wJet)
-            #wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
+            wJetShapeUp.Scale(wJet.Integral()/wJetShapeUp.Integral())
             self.fakerate[wJetShapeUp.GetTitle()] = wJetShapeUp
 
         if 'WJetFakeRate-mDn' in self.nominals:
@@ -492,7 +492,7 @@ class ShapeMixer:
             wJetShapeDown.SetTitle('WJet '+wJetSystName+' Down')
             if wJetSystNom : wJetShapeDown.Divide(wJetSystNom)
             if wJetSystNom : wJetShapeDown.Multiply(wJet)
-            #wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
+            wJetShapeDown.Scale(wJet.Integral()/wJetShapeDown.Integral())
             self.fakerate[wJetShapeDown.GetTitle()] = wJetShapeDown
 
         if 'WJetSS' in self.nominals:
