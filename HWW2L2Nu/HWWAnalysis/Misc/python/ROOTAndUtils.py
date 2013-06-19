@@ -10,8 +10,8 @@ class Tee(object):
         sys.stdout = self
 
     def __del__(self):
-        sys.stdout = self.stdout
         self.file.close()
+        del self.stdout
 
     def write(self, data):
         self.file.write(data)
