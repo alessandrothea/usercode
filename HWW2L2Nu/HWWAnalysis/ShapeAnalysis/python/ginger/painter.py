@@ -253,7 +253,7 @@ class Pad(object):
         #print '->>>oioioioioi',style['titlefamily'],style['titlesize'],style['titleoffset']
 
         setter.apply(xax,**style)
-        self._log.debug('tick xaxis: %s => %s',self._xaxis['ticklength']),style['ticklength']
+        self._log.debug('tick xaxis: %s => %s',self._xaxis['ticklength'],style['ticklength'])
 
 
         yax = h.GetYaxis()

@@ -188,11 +188,52 @@ class Cut(Labelled):
         return repr
 
 
-class ViewFlowManager:
-    pass
+#______________________________________________________________________________
+class AnalysisView(object):
+    '''
+    Proxy class to add functionalities to the bare View
+    Used to include postprocessors
+    Not yet used so far
+    '''
+    # ---
+    def __init__(self,view,**kwargs):
+        self._view = view
+        self._filters = []
 
-class ViewPoolManager:
-    pass
+        self.__build(**kwargs)
+
+    # ---
+    def __build(self,**kwargs):
+        for k,v in kwargs.iteritems():
+            arg = '_'+k
+            if not hasattr(self,arg): raise AttributeError('No '+arg+' attribute')
+            setattr(self,arg,v)
+
+    # ---
+    def __getattr__( self, name ):
+        return getattr( self._view, name )
+
+    # ---
+    def plot(self, name, varexp, options='', bins=None, extra=None, postprocess=None):
+        p = self._view.plot(name,varexp,extra,options,bins)
+
+        # make a list with all processors
+        procs = self._filters if not postprocess else (self._filters+[postprocess])
+
+        # apply post creation filters
+        for proc in procs: proc(p)
+
+        return p
+
+    # ---
+    def spawn(self,*args, **kwargs):
+        child = self._view.spawn(*args,**kwargs)
+
+        v = AnalysisView(child)
+        # this way the proxy is synced with the parent
+        v._filters = self._filters
+        return v
+
 
 
 import types
@@ -222,16 +263,26 @@ class TreeAnalyser(object):
 
     #---
     def __init__(self, samples=None, cuts=None ):
-        self._cuts     = cuts
-        self._views    = None
-        self._modified = True
-        self._worker   = ChainWorker.fromsamples(*samples) if samples else None
-        self._plotprocs = []
+        self._cuts      = cuts
+        self._views     = None
+        self._modified  = True
+        self._worker    = None
+        self._cview     = None
+        self._aview     = None
+        self._filters = []
+
+        self.__build(samples)
+
+    def __build(self, samples):
+        # build the
+        self._worker = ChainWorker.fromsamples(*samples) if samples else None
+        self._cview  = ChainView(self._worker)
+
+        self._aview  = AnalysisView(self._cview, filters=self._filters)
 
     #---
     def __del__(self):
         self._deleteentries()
-
 
     #---
     def __repr__(self):
@@ -246,7 +297,10 @@ class TreeAnalyser(object):
         other._views     = copy.deepcopy(self._views)
         other._worker    = self._worker
         other._modified  = self._modified
-        other._plotprocs = copy.deepcopy(self._plotprocs)
+        other._cview     = self._cview
+        other._aview     = self._aview
+
+        other._filters = copy.deepcopy(self._filters)
 
         return other
 
@@ -257,11 +311,9 @@ class TreeAnalyser(object):
         return self.__copy__()
 
     #---
-    #def __setattr__(self,key,value):
-        #if key == 'lumi':
-            #self._worker.scale = value
-        #else:
-            #self.__dict__[key] = value
+    @property
+    def filters(self):
+        return self._filters
 
     #---
     @property
@@ -331,7 +383,8 @@ class TreeAnalyser(object):
         elif nv > nc : raise ValueError('WTF!')
 
         # last is the last valid view, used to grow the list
-        last = views.values()[-1] if nv > 0 else ChainView(self._worker)
+        #last = views.values()[-1] if nv > 0 else ChainView(self._worker)
+        last = views.values()[-1] if nv > 0 else self._cview
 
         newcuts = cutflow[nv:]
         self._log.debug('appending %s', newcuts)
@@ -420,13 +473,13 @@ class TreeAnalyser(object):
 
     #---
     def selectedentries(self,cut=None):
-        elist = self._ensureviews()
+        views = self._ensureviews()
 
         # check that the cutlist is not empty
-        if not elist:
+        if not views:
             return self._worker.entries(cut)
         else:
-            return elist[elist.keys()[-1]].entries(cut)
+            return views[views.keys()[-1]].entries(cut)
 
     #---
     def entriesflow(self,cut=None):
@@ -461,12 +514,16 @@ class TreeAnalyser(object):
         views = self._ensureviews()
 
         if not views:
-            p = self._worker.plot(name,varexp,extra,options,bins)
+            # here I might want to use a view anyway
+            #v = ChainView(self._worker)
+            v = self._cview
         else:
-            p = views[views.keys()[-1]].plot(name,varexp,extra,options,bins)
+            v = views[views.keys()[-1]]
+
+        p = v.plot(name,varexp,extra,options,bins)
 
         # make a list with all processors
-        procs = self._plotprocs if not postprocess else (self._plotprocs+[postprocess])
+        procs = self._filters if not postprocess else (self._filters+[postprocess])
 
         # apply post creation filters
         for proc in procs: proc(p)
@@ -475,6 +532,10 @@ class TreeAnalyser(object):
 
     #---
     def plotsflow(self, name, varexp, options='', bins=None, extra=None, postprocess=None):
+        '''
+        Create a flow of plots
+        Always call View.plot
+        '''
         # make the entries
         views = self._ensureviews()
 
@@ -484,7 +545,7 @@ class TreeAnalyser(object):
         plots =  odict.OrderedDict([( n,v.plot('%s_%s' % (name,n),varexp,extra,options,bins) ) for n,v in views.iteritems()])
 
         # make a list with all processors
-        procs = self._plotprocs if not postprocess else (self._plotprocs+[postprocess])
+        procs = self._filters if not postprocess else (self._filters+[postprocess])
 
         # apply post creation filters
         for p in plots.itervalues():

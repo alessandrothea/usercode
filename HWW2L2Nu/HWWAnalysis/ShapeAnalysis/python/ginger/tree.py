@@ -435,9 +435,12 @@ class TreeWorker(AbsWorker):
     #---
     def yields(self, cut='', options='', *args, **kwargs):
         cut = self._cutexpr(cut)
+        # DO add the histogram, and set sumw2 (why not using TH1::Sumw2()?
+        dirsentry = utils.TH1AddDirSentry(True)
+        sumsentry = utils.TH1Sumw2Sentry()
+        # new name per call or? what about using always the same histogram?
+        tname = 'counter' #'counter_%s' % uuid.uuid1()
         # it might look like an overkill, but the double here helps
-        sentry = utils.TH1AddDirSentry(True)
-        tname = 'counter_%s' % uuid.uuid1()
         counter = ROOT.TH1D(tname,tname,1,0.,1.)
         h = self._plot('0. >> '+tname, cut, options, *args, **kwargs)
 
@@ -450,7 +453,7 @@ class TreeWorker(AbsWorker):
     #---
     def plot(self, name, varexp, cut='', options='', bins=None, *args, **kwargs):
 
-        # check the name doesn't contain project infos
+        # check the name doesn't contain projection infos
         m = re.match(r'.*(\([^\)]*\))',name)
         if m: raise ValueError('Use bins argument to specify the binning %s' % m.group(1))
 

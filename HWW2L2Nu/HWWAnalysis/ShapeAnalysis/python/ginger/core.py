@@ -18,15 +18,8 @@ import copy
 # TView
 # TChain
 
-# _____________________________________________________________________________
-# __  ___      __    __
-# \ \/ (_)__  / /___/ /
-#  \  / / _ \/ / __  /
-#  / / /  __/ / /_/ /
-# /_/_/\___/_/\__,_/
-#
 
-class Yield:
+class ValErr:
     '''
     Class to describe yields and errors
     A value with its error
@@ -41,7 +34,7 @@ class Yield:
         value = self.value+other.value
         error = math.sqrt(self.error**2 +other.error**2)
 
-        return Yield(value,error)
+        return ValErr(value,error)
 
     #---
     def __sub__(self,other):
@@ -49,7 +42,7 @@ class Yield:
         value = self.value-other.value
         error = math.sqrt(self.error**2 +other.error**2)
 
-        return Yield(value,error)
+        return ValErr(value,error)
 
     #---
     def __mul__(self,other):
@@ -57,7 +50,7 @@ class Yield:
         value = self.value*other.value
         error = math.sqrt( (self.error/self.value)**2+(other.error/other.value)**2 )*value
 
-        return Yield(value,error)
+        return ValErr(value,error)
 
     #---
     def __div__(self,other):
@@ -65,7 +58,7 @@ class Yield:
         value = self.value/other.value
         error = math.sqrt( (self.error/self.value)**2+(other.error/other.value)**2 )*value
 
-        return Yield(value,error)
+        return ValErr(value,error)
 
     #---
     def __radd__(self,other):
@@ -75,13 +68,13 @@ class Yield:
         (useful in cases as sum([y1,y2,...,yN])
         '''
         if isinstance(other,float) or isinstance(other,int):
-            return Yield(other + self.value, self.error)
+            return ValErr(other + self.value, self.error)
         else:
             raise ValueError('Right addition with type \'%s\' not supported' % other.__class__.__name__)
     #---
     def __rmul__(self,other):
         if isinstance(other,float) or isinstance(other,int):
-            return Yield(other * self.value, other * self.error)
+            return ValErr(other * self.value, other * self.error)
         else:
             raise ValueError('Right multiplication with type \'%s\' not supported' % other.__class__.__name__)
 
@@ -101,6 +94,15 @@ class Yield:
         else:
             e = float(10**k)
             return '(%.2f +- %.2f)E%d' % (self.value/e, self.error/e, k)
+# _____________________________________________________________________________
+# __  ___      __    __
+# \ \/ (_)__  / /___/ /
+#  \  / / _ \/ / __  /
+#  / / /  __/ / /_/ /
+# /_/_/\___/_/\__,_/
+#
+class Yield(ValErr):
+    pass
 
 # _____________________________________________________________________________
 #     ____      __            ____
