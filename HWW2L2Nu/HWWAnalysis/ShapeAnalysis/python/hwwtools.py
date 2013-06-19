@@ -1,4 +1,4 @@
-#  _____         _    
+#  _____         _
 # |_   _|___ ___| |___
 #   | | / _ | _ \ (_-<
 #   |_| \___|___/_/__/
@@ -11,20 +11,20 @@ import hwwinfo
 def confirm(prompt=None, resp=False):
     """prompts for yes or no response from the user. Returns True for yes and
     False for no.
-    
+
     'resp' should be set to the default value assumed by the caller when
     user simply types ENTER.
     >>> confirm(prompt='Create Directory?', resp=True)
-    Create Directory? [y]|n: 
+    Create Directory? [y]|n:
     True
     >>> confirm(prompt='Create Directory?', resp=False)
-    Create Directory? [n]|y: 
+    Create Directory? [n]|y:
     False
     >>> confirm(prompt='Create Directory?', resp=False)
     Create Directory? [n]|y: y
     True
     """
-    
+
     if prompt is None:
         prompt = 'Confirm'
 
@@ -32,7 +32,7 @@ def confirm(prompt=None, resp=False):
         prompt = '%s [%s]|%s: ' % (prompt, 'y', 'n')
     else:
         prompt = '%s [%s]|%s: ' % (prompt, 'n', 'y')
-        
+
     while True:
         ans = raw_input(prompt)
         if not ans:
@@ -84,7 +84,7 @@ def loadAndCompile(macro,options='g'):
 
 #---
 def filterSamples( samples, voc ):
-    
+
     filtered = {}
 
     # convert the vocabulary, which is a mixture of strings and 2d tuples, into a dictionary
@@ -111,7 +111,7 @@ def getChain( sample, mass, path, tag='Data2011', tname='latino' ):
 
     chain = ROOT.TChain(tname)
     for f in files: chain.Add(os.path.join(path,f))
-    
+
     return chain
 
 # ---
@@ -125,7 +125,7 @@ def setDebugLevel(opt):
     elif opt.debug == 1:
         print 'Logging level set to INFO (%d)' % opt.debug
         logging.basicConfig(level=logging.INFO)
-    
+
 #---
 def findopt(parser,dest):
     ''' fint the option with dest as destination'''
@@ -158,7 +158,7 @@ def loadOptDefaults(parser,pycfg=None,quiet=False):
             dummy = []
         (opt,args) = parser.parse_args(dummy)
 
-        pycfg = opt.pycfg 
+        pycfg = opt.pycfg
 
     if os.path.exists(pycfg):
         handle = open(pycfg,'r')
@@ -169,7 +169,7 @@ def loadOptDefaults(parser,pycfg=None,quiet=False):
 
         for opt_name, opt_value in vars.iteritems():
             if opt_name[0] == '-': continue
-                
+
             o = findopt(parser, opt_name)
             if o is None: continue
 
@@ -220,6 +220,6 @@ def addOptions(parser):
     parser.add_option('-m', '--mass'     , dest='mass'        , help='run on one mass point only '           , default=hwwinfo.masses[:]      , type='string' , action='callback' , callback=list_maker('mass',',',int))
     parser.add_option('-d', '--debug'    , dest='debug'       , help='Debug level'                           , default=0      , action='count' )
     parser.add_option('-c', '--chans'    , dest='chans'       , help='list of channels'                      , default=['0j'] , type='string' , action='callback' , callback=list_maker('chans'))
-    parser.add_option('-E', '--energy'   , dest='energy'      , help='Energy'                                , default='8TeV' , type='string')
-    parser.add_option('--pycfg'          , dest='pycfg'       , help='configuration file (default=%default)' , default='shape.py')
+    parser.add_option('-E', '--energy'   , dest='energy'      , help='Energy (def=%default)'                 , default='8TeV' , type='string')
+    parser.add_option('--pycfg'          , dest='pycfg'       , help='configuration file (def=%default)' , default='shape.py')
 
