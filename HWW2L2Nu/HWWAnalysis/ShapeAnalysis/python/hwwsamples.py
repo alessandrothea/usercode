@@ -90,7 +90,7 @@ mcsets = {
         ('DYLL-template',    'DYLL-template-0j1j'),              #    A   <-   sorgente
         ('DYLL-templatesyst','DYLL-templatesyst-0j1j') ,         #    mkmerged vuole "-template"
         # mH125 as background
-        'ggH125', 'qqH125', 'wzttH125', 
+        'ggH125', 'qqH125', 'wzttH125',
     ],
      '0j1j-ss' : [
         #signals
@@ -218,7 +218,6 @@ mcsets = {
         #('WJetFakeRate-mUp',     'WJetFakeRate-vh-template-nominal'),
         #('WJetFakeRate-mDn',     'WJetFakeRate-vh-template-nominal'),
     ],
-
     'zh4j_mm' : [
         #signals
         'ggH','qqH','WH','ZH','ttH',
@@ -244,6 +243,18 @@ mcsets = {
         'VgS-template','Vg-template',
     ],
 
+   'topestimate' : [
+        # signals
+        'ggH','qqH','wzttH',
+        # backgrounds
+        'WW','ggWW','VgS','Vg','WJet','Top','VV','DYTT','DYLL',
+   ],
+   'topplots' : [
+        # signals
+        'ggH','qqH','wzttH',
+        # backgrounds
+        'WW','ggWW','VgS','Vg','WJet','ttbar','tW','VV','DYTT','DYLL',
+   ]
 }
 
 #--------------
@@ -255,7 +266,7 @@ def samples(mass, energytag, datatag='Data2012', sigtag='SM', mctag='all'):
     mctag: tag for the set of mc to be included
     '''
 
-    
+
     if energytag == '8TeV':
         import samples.samples8TeV as sampledb
     elif energytag == '7TeV':
