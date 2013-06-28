@@ -553,6 +553,26 @@ class TreeAnalyser(object):
 
         return plots
 
+    # ---
+    def splityields(self, regions, extra=None):
+
+        plots  = odict.OrderedDict()
+        for rname,rcut in regions.iteritems():
+            cut = rcut if not extra else '(%s) && (%s)' % (rname,extra)
+            plots[rname] = self.yields(cut)
+
+        return plots
+
+    # ---
+    def splitplot(self, name, varexp, regions, options='',bins=None, extra=None, postprocess=None):
+
+        plots  = odict.OrderedDict()
+        for rname,rcut in regions.iteritems():
+            cut = rcut if not extra else '(%s) && (%s)' % (rname,extra)
+            plots[rname] = self.plot(name,varexp,options,bins,cut,postprocess)
+
+        return plots
+
 
 if __name__ == '__main__':
 
