@@ -69,7 +69,7 @@ class ManyJetsHiggsVarFiller(TreeCloner):
         output = kwargs['output']
 
         self.connect(tree,input)
-        newbranches = ['m4j', 'm3j', 'mW1jj', 'mW2jj', 'pt4j', 'pt3j', 'eta4j', 'eta3j', 'phi4j', 'phi3j', 'dphill4j',  'dphill3j']
+        newbranches = ['m4j', 'm3j', 'mW1jj', 'mW2jj', 'pt4j', 'pt3j', 'eta4j', 'eta3j', 'phi4j', 'phi3j', 'dphill4j',  'dphill3j', 'best1', 'best2']
         self.clone(output,newbranches)
 
 
@@ -87,6 +87,9 @@ class ManyJetsHiggsVarFiller(TreeCloner):
         dphill4j      = numpy.ones(1, dtype=numpy.float32)
         dphill3j      = numpy.ones(1, dtype=numpy.float32)
 
+        best1         = numpy.ones(1, dtype=numpy.float32)
+        best2         = numpy.ones(1, dtype=numpy.float32)
+
         self.otree.Branch('m4j'             ,  m4j           ,  'm4j/F'        )
         self.otree.Branch('m3j'             ,  m3j           ,  'm3j/F'        )
         self.otree.Branch('mW1jj'           ,  mW1jj         ,  'mW1jj/F'      )
@@ -100,6 +103,8 @@ class ManyJetsHiggsVarFiller(TreeCloner):
         self.otree.Branch('dphill4j'        ,  dphill4j      ,  'dphill4j/F'   )
         self.otree.Branch('dphill3j'        ,  dphill3j      ,  'dphill3j/F'   )
 
+        self.otree.Branch('best1'           ,  best1         ,  'best1/F'   )
+        self.otree.Branch('best2'           ,  best2         ,  'best2/F'   )
 
         nentries = self.itree.GetEntries()
         print 'Total number of entries: ',nentries 
@@ -144,10 +149,8 @@ class ManyJetsHiggsVarFiller(TreeCloner):
 
             jets = [jet1,jet2,jet3,jet4]
 
-#             jetSum4 = ROOT.TLorentzVector()
             jetSum4 = jet1 + jet2 + jet3 + jet4
 
-#             jetSum3 = ROOT.TLorentzVector()
             jetSum3 = jet1 + jet2 + jet3
 
             l1 = ROOT.TLorentzVector()
@@ -173,6 +176,9 @@ class ManyJetsHiggsVarFiller(TreeCloner):
             dphill4j[0] = -999
             dphill3j[0] = -999
 
+            best1[0]    = -999
+            best2[0]    = -999
+
             if (jetpt4 > 0) :
                 m4j[0]      = jetSum4.M()
                 pt4j[0]     = jetSum4.Pt()
@@ -190,9 +196,13 @@ class ManyJetsHiggsVarFiller(TreeCloner):
                 best = sjets[0]
                 # the companion is made of the other 2 jets
                 other = tuple( [j for j in jets if j not in best] )
-            
+
                 W1 = best[0] + best[1]
                 W2 = other[0]+other[1]
+
+                best1[0] = jets.index(best[0])
+                best2[0] = jets.index(best[1])
+
                 if W1.Pt() > W2.Pt() :
                     mW1jj[0] = W1.M()
                     mW2jj[0] = W2.M()

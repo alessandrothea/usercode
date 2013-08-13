@@ -66,18 +66,20 @@ class JetHiggsVarFiller(TreeCloner):
         output = kwargs['output']
 
         self.connect(tree,input)
-        newbranches = ['dphiHj', 'dphiHjj', 'ptJoptH', 'ptJJoptH']
+        newbranches = ['dphiHj', 'dphiHjj', 'ptJoptH', 'ptJJoptH', 'ptllmet']
         self.clone(output,newbranches)
 
         dphiHj         = numpy.ones(1, dtype=numpy.float32)
         dphiHjj        = numpy.ones(1, dtype=numpy.float32)
         ptJoptH        = numpy.ones(1, dtype=numpy.float32)
         ptJJoptH       = numpy.ones(1, dtype=numpy.float32)
+        ptllmet        = numpy.ones(1, dtype=numpy.float32)
 
-        self.otree.Branch('dphiHj'        ,  dphiHj        ,  'dphiHj/F'    )
-        self.otree.Branch('dphiHjj'       ,  dphiHjj       ,  'dphiHjj/F'    )
-        self.otree.Branch('ptJoptH'       ,  ptJoptH       ,  'ptJoptH/F'    )
+        self.otree.Branch('dphiHj'        ,  dphiHj        ,  'dphiHj/F'      )
+        self.otree.Branch('dphiHjj'       ,  dphiHjj       ,  'dphiHjj/F'     )
+        self.otree.Branch('ptJoptH'       ,  ptJoptH       ,  'ptJoptH/F'     )
         self.otree.Branch('ptJJoptH'      ,  ptJJoptH      ,  'ptJJoptH/F'    )
+        self.otree.Branch('ptllmet'       ,  ptllmet       ,  'ptllmet/F'     )
 
 
 
@@ -119,6 +121,7 @@ class JetHiggsVarFiller(TreeCloner):
 
             ptH = sqrt((pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))*(pt1*cos(phi1)+pt2*cos(phi2)+pfmet*cos(pfmetphi))+(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi))*(pt1*sin(phi1)+pt2*sin(phi2)+pfmet*sin(pfmetphi)))
 
+            ptllmet[0] = ptH
             ptJJoptH[0] = -999
             if jetpt1>0 and jetpt2>0 :
                 if ptH != 0:
